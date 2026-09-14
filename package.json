@@ -1,0 +1,17 @@
+{
+  "name": "growforge-digital-ai-os",
+  "version": "1.0.0",
+  "description": "Local MCP server exposing GrowForge Digital's agent console to Claude Desktop.",
+  "main": "mcp-server.js",
+  "type": "module",
+  "scripts": {
+    "mcp-server": "node mcp-server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.4"
+  }
+}
