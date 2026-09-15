@@ -16,7 +16,7 @@ import { getSecretForServerUse } from "@/lib/serverVault";
  */
 
 const N8N_HOST_KEY = "integrations:n8n:host";
-const DEFAULT_HOST = "http://localhost:5678";
+const DEFAULT_HOST = "http://127.0.0.1:5678";
 const PROBE_TIMEOUT_MS = 4000;
 
 export async function GET() {
