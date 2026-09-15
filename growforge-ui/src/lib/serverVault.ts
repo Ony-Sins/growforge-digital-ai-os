@@ -71,8 +71,10 @@ let writeQueue: Promise<void> = Promise.resolve();
 function saveFile(data: VaultFile) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const json = JSON.stringify(data, null, 2);
+  const tmp = VAULT_FILE + ".tmp";
   writeQueue = writeQueue
-    .then(() => fs.promises.writeFile(VAULT_FILE, json, "utf8"))
+    .then(() => fs.promises.writeFile(tmp, json, "utf8"))
+    .then(() => fs.promises.rename(tmp, VAULT_FILE))
     .catch((err) => {
       console.error("[serverVault] failed to persist vault.json:", err);
     });

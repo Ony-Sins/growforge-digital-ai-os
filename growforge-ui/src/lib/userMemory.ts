@@ -79,8 +79,10 @@ function loadFromDisk(): MemoryStore {
 function persist(data: MemoryStore) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const json = JSON.stringify(data, null, 2);
+  const tmp = STORE_FILE + ".tmp";
   writeQueue = writeQueue
-    .then(() => fs.promises.writeFile(STORE_FILE, json, "utf8"))
+    .then(() => fs.promises.writeFile(tmp, json, "utf8"))
+    .then(() => fs.promises.rename(tmp, STORE_FILE))
     .catch((err) => console.error("[userMemory] failed to persist user_memories.json:", err));
 }
 
@@ -163,6 +165,69 @@ export function recordLearnedObservation(email: string, observation: string): vo
 
   const next = [clean, ...mem.learnedObservations].slice(0, 20);
   updateUserMemory(norm, { learnedObservations: next });
+}
+
+/** Canonical rejection trigger phrases. When a revision message contains any
+ *  of these tokens the full sentence is treated as an explicit constraint that
+ *  the model should never violate going forward. */
+const REJECTION_TRIGGERS = [
+  "don't use",
+  "do not use",
+  "never use",
+  "never suggest",
+  "never recommend",
+  "avoid",
+  "stop using",
+  "stop suggesting",
+  "remove",
+  "don't include",
+  "do not include",
+  "don't recommend",
+  "do not recommend",
+];
+
+/**
+ * Parses a revision message for rejection phrases and automatically appends
+ * each discovered constraint into the user's `explicitRejections` list.
+ *
+ * Deduplication is done by comparing normalized 40-character prefixes of the
+ * incoming entry against every item already stored — if a semantically
+ * equivalent entry exists it is silently skipped rather than duplicated.
+ */
+export function recordExplicitRejection(email: string, revisionMessage: string): void {
+  const norm = normalizeEmail(email);
+  const lower = revisionMessage.toLowerCase();
+  const triggered = REJECTION_TRIGGERS.some((kw) => lower.includes(kw));
+  if (!triggered) return;
+
+  // Sentence-split the message and collect all sentences that contain a trigger.
+  const sentences = revisionMessage
+    .split(/[.!?\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 4);
+
+  const newConstraints = sentences.filter((s) =>
+    REJECTION_TRIGGERS.some((kw) => s.toLowerCase().includes(kw)),
+  );
+
+  if (newConstraints.length === 0) return;
+
+  const mem = getUserMemory(norm);
+
+  const normalizeKey = (s: string) => s.toLowerCase().replace(/\s+/g, " ").slice(0, 40);
+  const existingKeys = new Set(mem.explicitRejections.map(normalizeKey));
+
+  const deduped = newConstraints.filter((c) => {
+    const k = normalizeKey(c);
+    if (existingKeys.has(k)) return false;
+    existingKeys.add(k);
+    return true;
+  });
+
+  if (deduped.length === 0) return;
+
+  const next = [...deduped, ...mem.explicitRejections].slice(0, 40);
+  updateUserMemory(norm, { explicitRejections: next });
 }
 
 /**

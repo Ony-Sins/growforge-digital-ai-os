@@ -1,7 +1,7 @@
 import { chatComplete } from "@/lib/llm";
 import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
-import { formatUserMemoryPrompt, recordLearnedObservation } from "@/lib/userMemory";
+import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
 import {
   addLiveNote,
   addRevisionEntry,
@@ -497,6 +497,7 @@ export async function reviseJob(jobId: string, message: string): Promise<Job> {
 
   if (job.createdBy) {
     recordLearnedObservation(job.createdBy, `Revision nuance: "${message.slice(0, 120)}"`);
+    recordExplicitRejection(job.createdBy, message);
   }
 
   if (job.status === "running") {

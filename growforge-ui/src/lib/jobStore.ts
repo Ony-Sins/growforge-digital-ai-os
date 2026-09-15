@@ -113,10 +113,12 @@ let writeQueue: Promise<void> = Promise.resolve();
 
 function persist() {
   const json = JSON.stringify(getStore(), null, 2);
+  const tmp = STORE_FILE + ".tmp";
   writeQueue = writeQueue
     .then(async () => {
       await fs.promises.mkdir(DATA_DIR, { recursive: true });
-      await fs.promises.writeFile(STORE_FILE, json, "utf8");
+      await fs.promises.writeFile(tmp, json, "utf8");
+      await fs.promises.rename(tmp, STORE_FILE);
     })
     .catch((err) => console.error("[jobStore] failed to persist jobs.json:", err));
 }
