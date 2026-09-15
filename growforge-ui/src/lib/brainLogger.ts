@@ -112,3 +112,107 @@ export function logStrategicDecision(input: {
 
   return writeToBoth("DECISION_REGISTRY.md", existing + entry);
 }
+export interface SwarmTelemetryInput {
+  directiveId: string;
+  title: string;
+  initialPrompt: string;
+  handoffDepth: number;
+  maxDepth: number;
+  activeAgent: string;
+  status: "running" | "completed" | "paused_for_operator" | "error";
+  agentTrace: Array<{
+    stepNumber: number;
+    agentId: string;
+    agentName: string;
+    action: string;
+    timestamp: string;
+    summary?: string;
+  }>;
+  history: Array<{
+    fromAgent: string;
+    toAgent: string;
+    task: string;
+    reason?: string;
+    timestamp: string;
+    output?: string;
+  }>;
+  variables: Record<string, unknown>;
+  toolOutputs: Array<{
+    agentId: string;
+    tool: string;
+    args: Record<string, unknown>;
+    result: string;
+    timestamp: string;
+  }>;
+  finalPayload?: {
+    summary: string;
+    deliverable: string;
+    metadata?: Record<string, unknown>;
+  };
+}
+
+/**
+ * Updates /docs/brain/CURRENT_STATE.md with real-time Kimi-style Swarm telemetry.
+ */
+export function logSwarmStateChange(swarm: SwarmTelemetryInput): Promise<void> {
+  const statusIcon =
+    swarm.status === "completed"
+      ? "✅ COMPLETED"
+      : swarm.status === "running"
+      ? "⚡ RUNNING"
+      : swarm.status === "paused_for_operator"
+      ? "⏸️ PAUSED (Awaiting Operator)"
+      : "❌ ERROR";
+
+  let md = `# GrowForge Digital — Current Operating State\n\n`;
+  md += `> **Architecture Mode:** ⚡ Kimi-Style Peer-to-Peer Agent Swarm  \n`;
+  md += `> **Last State Sync:** ${new Date().toISOString()}  \n`;
+  md += `> **Active Directive:** \`${swarm.title}\` (\`${swarm.directiveId}\`)  \n`;
+  md += `> **Swarm Status:** **${statusIcon}** (Handoff Depth: \`${swarm.handoffDepth}/${swarm.maxDepth}\`)  \n\n`;
+
+  md += `## 1. Live Swarm Telemetry\n\n`;
+  md += `| Attribute | Current Value |\n`;
+  md += `|---|---|\n`;
+  md += `| **Directive ID** | \`${swarm.directiveId}\` |\n`;
+  md += `| **Directive Title** | ${swarm.title} |\n`;
+  md += `| **Active Swarm Agent** | **${swarm.activeAgent}** |\n`;
+  md += `| **Handoff Depth** | \`${swarm.handoffDepth} / ${swarm.maxDepth}\` |\n`;
+  md += `| **Total Steps Executed** | \`${swarm.agentTrace.length}\` |\n`;
+  md += `| **Tool Calls Made** | \`${swarm.toolOutputs.length}\` |\n`;
+  md += `| **Shared Variables Stored** | \`${Object.keys(swarm.variables).length}\` |\n\n`;
+
+  md += `## 2. Peer-to-Peer Handoff & Execution Trace\n\n`;
+  if (swarm.agentTrace.length === 0) {
+    md += `*(No trace steps recorded yet)*\n\n`;
+  } else {
+    md += `| Step | Active Agent | Action / Task | Timestamp |\n`;
+    md += `|---|---|---|---|\n`;
+    for (const t of swarm.agentTrace) {
+      md += `| \`#${t.stepNumber}\` | **${t.agentName}** (\`${t.agentId}\`) | ${t.action} | \`${t.timestamp}\` |\n`;
+    }
+    md += `\n`;
+  }
+
+  if (swarm.history.length > 0) {
+    md += `### Peer Handoff History\n\n`;
+    md += `| From Agent | To Agent | Delegation Reason | Timestamp |\n`;
+    md += `|---|---|---|---|\n`;
+    for (const h of swarm.history) {
+      md += `| **${h.fromAgent}** | **${h.toAgent}** | ${h.reason ?? "Task delegation"} | \`${h.timestamp}\` |\n`;
+    }
+    md += `\n`;
+  }
+
+  if (Object.keys(swarm.variables).length > 0) {
+    md += `## 3. Swarm Shared Variable Space\n\n`;
+    md += `\`\`\`json\n${JSON.stringify(swarm.variables, null, 2)}\n\`\`\`\n\n`;
+  }
+
+  if (swarm.finalPayload) {
+    md += `## 4. Consolidated Swarm Deliverable\n\n`;
+    md += `### Summary\n${swarm.finalPayload.summary}\n\n`;
+    md += `### Deliverable Content\n\n${swarm.finalPayload.deliverable}\n`;
+  }
+
+  return writeToBoth("CURRENT_STATE.md", md);
+}

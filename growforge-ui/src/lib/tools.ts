@@ -6,6 +6,11 @@ import { whisperTool } from "@/lib/tools/whisper";
 import { comfyuiTool } from "@/lib/tools/comfyui";
 import { askOperatorTool, setConsultationHandler } from "@/lib/tools/askOperator";
 import { n8nTool } from "@/lib/tools/n8n";
+import { n8nTemplateTool } from "@/lib/tools/n8nTemplateIngestor";
+import { transferTaskTool } from "@/lib/tools/transferTask";
+import { completeDirectiveTool } from "@/lib/tools/completeDirective";
+
+export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nTemplateTool };
 
 /**
  * The generic agent tool-calling loop — what turns a department agent from
@@ -252,5 +257,5 @@ function connectorTool(): Tool {
 /** The tool set available to an agent right now — rebuilt per call so a
  *  newly added connector shows up without a restart. */
 export function getDefaultTools(): Tool[] {
-  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool];
+  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool, n8nTemplateTool];
 }

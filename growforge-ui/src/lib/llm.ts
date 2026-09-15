@@ -22,6 +22,7 @@
  */
 
 import { getSecretForServerUse } from "@/lib/serverVault";
+import { classifyTask, callOpenRouterWithFallback } from "@/lib/model-router";
 
 /** Reserved pseudo-agent id for system-wide (not per-agent) vault entries —
  *  distinct from any real agent id, which are always kebab-case slugs. */
@@ -59,10 +60,8 @@ export const CLOUD_PROVIDERS: Record<CloudProvider, { label: string; envKey: str
   openai: { label: "OpenAI", envKey: "OPENAI_API_KEY", envModel: "OPENAI_MODEL", defaultModel: "gpt-4o-mini" },
   anthropic: { label: "Anthropic", envKey: "ANTHROPIC_API_KEY", envModel: "ANTHROPIC_MODEL", defaultModel: "claude-sonnet-5" },
   // OpenRouter is a gateway, not one model — it hosts several genuinely free
-  // (rate-limited) models alongside paid ones. Free account, no card needed
-  // for the ":free" models. Check openrouter.ai/models?max_price=0 for the
-  // current list — which exact models are free changes over time.
-  openrouter: { label: "OpenRouter", envKey: "OPENROUTER_API_KEY", envModel: "OPENROUTER_MODEL", defaultModel: "meta-llama/llama-3.1-8b-instruct:free" },
+  // and auto-routed models alongside paid ones.
+  openrouter: { label: "OpenRouter", envKey: "OPENROUTER_API_KEY", envModel: "OPENROUTER_MODEL", defaultModel: "openrouter/auto" },
 };
 
 export class LlmError extends Error {
@@ -307,34 +306,13 @@ interface OpenRouterResponse {
 
 async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
   const apiKey = resolveApiKey("openrouter");
-  const model = resolveModel("openrouter");
+  if (!apiKey) throw new LlmError("No OpenRouter API key configured.", "openrouter");
 
-  let res: Response;
-  try {
-    res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.4,
-        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
-        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
-      }),
-    });
-  } catch (err) {
-    throw new LlmError(`Could not reach OpenRouter API (${err instanceof Error ? err.message : String(err)}).`, "openrouter");
-  }
+  const fullPrompt = systemPrompt + " " + messages.map((m) => m.content).join(" ");
+  const category = classifyTask(fullPrompt);
 
-  const data = (await res.json()) as OpenRouterResponse;
-  if (!res.ok) {
-    throw new LlmError(data.error?.message ?? `OpenRouter request failed (${res.status})`, "openrouter");
-  }
-  const text = data.choices?.[0]?.message?.content ?? "";
-  if (!text.trim()) throw new LlmError("OpenRouter returned an empty response.", "openrouter");
-  return text;
+  const result = await callOpenRouterWithFallback(category, systemPrompt, messages, apiKey, opts);
+  return result.text;
 }
 
 interface OllamaResponse {

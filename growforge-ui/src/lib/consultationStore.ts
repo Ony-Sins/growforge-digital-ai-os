@@ -20,10 +20,17 @@ export interface PendingConsultation {
   stepId: string;
   stepLabel: string;
   departmentId?: string;
+  directiveId?: string;
   question: string;
   options?: string[];
+  /** Optional structured payload the agent wants to act on — operators can inspect and edit before answering */
+  payload?: Record<string, unknown>;
+  /** Operator-edited payload upon approval */
+  editedPayload?: Record<string, unknown>;
   status: ConsultationStatus;
   answer?: string;
+  /** If the operator chose "Redirect", their redirect directive is stored here */
+  redirectDirective?: string;
   createdAt: string;
   answeredAt?: string;
   answeredBy?: string;
@@ -75,6 +82,7 @@ export function createConsultation(input: {
   departmentId?: string;
   question: string;
   options?: string[];
+  payload?: Record<string, unknown>;
 }): PendingConsultation {
   const consultation: PendingConsultation = {
     id: `cst-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
@@ -97,11 +105,19 @@ export function listPendingConsultations(): PendingConsultation[] {
   return getStore().filter((c) => c.status === "pending");
 }
 
-export function answerConsultation(id: string, answer: string, answeredBy: string): boolean {
+export function answerConsultation(
+  id: string,
+  answer: string,
+  answeredBy: string,
+  editedPayload?: Record<string, unknown>
+): boolean {
   const consultation = getConsultation(id);
   if (!consultation || consultation.status !== "pending") return false;
   consultation.status = "answered";
   consultation.answer = answer.trim();
+  if (editedPayload && typeof editedPayload === "object") {
+    consultation.editedPayload = editedPayload;
+  }
   consultation.answeredAt = new Date().toISOString();
   consultation.answeredBy = answeredBy;
   persist();
@@ -114,4 +130,20 @@ export function markConsultationTimedOut(id: string): void {
   consultation.status = "timed_out";
   consultation.answeredAt = new Date().toISOString();
   persist();
+}
+
+/**
+ * Operator chose Redirect — stores a redirect directive and answers the consultation
+ * so the polling agent receives it as a redirect instruction.
+ */
+export function redirectConsultation(id: string, redirectDirective: string, answeredBy: string): boolean {
+  const consultation = getConsultation(id);
+  if (!consultation || consultation.status !== "pending") return false;
+  consultation.status = "answered";
+  consultation.answer = `OPERATOR_REDIRECT: ${redirectDirective.trim()}`;
+  consultation.redirectDirective = redirectDirective.trim();
+  consultation.answeredAt = new Date().toISOString();
+  consultation.answeredBy = answeredBy;
+  persist();
+  return true;
 }

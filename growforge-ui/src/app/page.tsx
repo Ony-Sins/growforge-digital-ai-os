@@ -6,6 +6,7 @@ import { PinPromptModal } from "@/components/workspace/PinPromptModal";
 import { JobNotifier } from "@/components/workspace/JobNotifier";
 import { ApprovalBanner } from "@/components/workspace/ApprovalBanner";
 import { ConsultationBanner } from "@/components/workspace/ConsultationBanner";
+import { HITLDrawer } from "@/components/workspace/HITLDrawer";
 import { AdminDrawer } from "@/components/workspace/AdminDrawer";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
@@ -30,7 +31,9 @@ export default async function Home() {
       <PinPromptModal />
       <JobNotifier />
       <ApprovalBanner />
+      {/* ConsultationBanner kept as lightweight fallback; HITLDrawer is the primary HITL surface */}
       <ConsultationBanner />
+      <HITLDrawer />
       <AdminDrawer />
     </AppStateProvider>
   );

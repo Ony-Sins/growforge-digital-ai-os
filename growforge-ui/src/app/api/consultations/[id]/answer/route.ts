@@ -9,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   if (!getConsultation(id)) return NextResponse.json({ error: "Consultation not found." }, { status: 404 });
 
-  let body: { answer?: string };
+  let body: { answer?: string; editedPayload?: Record<string, unknown> };
   try {
     body = await req.json();
   } catch {
@@ -21,10 +21,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Answer text is required." }, { status: 400 });
   }
 
-  const applied = answerConsultation(id, answer, session.user.email ?? "operator");
+  const applied = answerConsultation(id, answer, session.user.email ?? "operator", body.editedPayload);
   if (!applied) {
     return NextResponse.json({ error: "Already answered or timed out — too late." }, { status: 409 });
   }
 
-  return NextResponse.json({ ok: true, answer });
+  return NextResponse.json({ ok: true, answer, editedPayload: body.editedPayload });
 }
