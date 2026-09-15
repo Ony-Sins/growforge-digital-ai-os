@@ -31,6 +31,11 @@ export interface JobStep {
   sources?: Source[];
   error?: string;
   provider?: string;
+  /** Short hash of the exact constitution+department instructions text this
+   *  step's model call was given — see hashInstructions() in departments.ts.
+   *  Lets a plan answer "which version of the rules produced this" without
+   *  anyone needing to check git log. */
+  instructionsHash?: string;
   startedAt?: string;
   finishedAt?: string;
 }

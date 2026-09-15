@@ -4,6 +4,7 @@ import { Workspace } from "@/components/layout/Workspace";
 import { AgentDetailPanel } from "@/components/workspace/AgentDetailPanel";
 import { PinPromptModal } from "@/components/workspace/PinPromptModal";
 import { JobNotifier } from "@/components/workspace/JobNotifier";
+import { ApprovalBanner } from "@/components/workspace/ApprovalBanner";
 import { AdminDrawer } from "@/components/workspace/AdminDrawer";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
@@ -27,6 +28,7 @@ export default async function Home() {
       <AgentDetailPanel />
       <PinPromptModal />
       <JobNotifier />
+      <ApprovalBanner />
       <AdminDrawer />
     </AppStateProvider>
   );

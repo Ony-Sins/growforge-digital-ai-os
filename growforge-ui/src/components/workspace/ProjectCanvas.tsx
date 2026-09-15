@@ -196,6 +196,11 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
             {step.startedAt && ` · ${formatDuration(step.startedAt, step.finishedAt)}`}
             {step.provider && ` · via ${step.provider}`}
           </p>
+          {step.instructionsHash && (
+            <p className="mt-0.5 font-mono text-[10px] text-muted" title="Hash of the exact constitution + department instructions this step's model call was given">
+              rules v.{step.instructionsHash}
+            </p>
+          )}
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
           <X className="h-4 w-4" />

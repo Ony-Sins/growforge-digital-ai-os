@@ -1,7 +1,8 @@
 import { chatComplete } from "@/lib/llm";
-import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions } from "@/lib/departments";
+import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions, hashInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
 import { runToolLoop, getDefaultTools } from "@/lib/tools";
+import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
 import {
   addLiveNote,
@@ -247,6 +248,7 @@ Rules:
     status: "done",
     percent: 100,
     provider,
+    instructionsHash: hashInstructions(HQ.file),
     activity: `Assigned ${assignments.length} departments`,
     finishedAt: now(),
     output: [
@@ -367,7 +369,26 @@ type Draft = { departmentId: string; name: string; output: string };
  * approval queue for mid-run connector calls is a deliberate next step, not
  * done here.
  */
-async function gatherWithTools(jobId: string, stepId: string, dept: { name: string; file: string }, task: string): Promise<string> {
+const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000;
+const APPROVAL_POLL_INTERVAL_MS = 3_000;
+
+/** Blocks (via polling, since there's no live connection to a specific
+ *  browser tab to push to) until an owner decides via the Approvals UI, or
+ *  APPROVAL_TIMEOUT_MS passes — a job left unattended for 10 minutes auto-
+ *  denies rather than hanging forever, consistent with the tool loop's own
+ *  "no decision means don't" default. */
+async function waitForApproval(approvalId: string): Promise<boolean> {
+  const deadline = Date.now() + APPROVAL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const approval = getApproval(approvalId);
+    if (!approval || approval.status !== "pending") return approval?.status === "approved";
+    await sleep(APPROVAL_POLL_INTERVAL_MS);
+  }
+  markTimedOut(approvalId);
+  return false;
+}
+
+async function gatherWithTools(jobId: string, stepId: string, stepLabel: string, dept: { name: string; file: string }, task: string): Promise<string> {
   const result = await runToolLoop({
     systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.`,
     task: `${task}\n\nOnly call a tool if the research dossier above is genuinely missing something you need to give specific, accurate advice — otherwise finish immediately with action "final" and text "no additional research needed".`,
@@ -375,6 +396,18 @@ async function gatherWithTools(jobId: string, stepId: string, dept: { name: stri
     maxSteps: 3,
     maxTokens: 500,
     onActivity: (text) => updateStep(jobId, stepId, { activity: text }),
+    requestApproval: async (toolName, args) => {
+      const approval = createApproval({
+        jobId,
+        jobTitle: getJob(jobId)?.title ?? jobId,
+        stepId,
+        stepLabel,
+        toolName,
+        args,
+      });
+      updateStep(jobId, stepId, { activity: `Waiting for owner approval: ${toolName}` });
+      return waitForApproval(approval.id);
+    },
   });
 
   if (result.calls.length === 0) return "";
@@ -395,7 +428,7 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
 
     let extraFindings = "";
     try {
-      extraFindings = await gatherWithTools(jobId, stepId, dept, gatherTask);
+      extraFindings = await gatherWithTools(jobId, stepId, dept.name, dept, gatherTask);
     } catch (err) {
       console.error(`[orchestrator] tool-gathering failed for ${stepId}, drafting without it:`, err);
     }
@@ -406,7 +439,7 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
 
     try {
       const { text, provider } = await ask(system, user, 2200);
-      updateStep(jobId, stepId, { status: "done", percent: 100, activity: "Draft complete", output: text, provider, finishedAt: now() });
+      updateStep(jobId, stepId, { status: "done", percent: 100, activity: "Draft complete", output: text, provider, instructionsHash: hashInstructions(dept.file), finishedAt: now() });
       return { departmentId: a.departmentId, name: dept.name, output: text };
     } catch (err) {
       updateStep(jobId, stepId, { status: "error", activity: "Failed", error: err instanceof Error ? err.message : String(err), finishedAt: now() });
@@ -438,7 +471,7 @@ What the brief needs that no department covered, and who should own it.
 5-8 bullet decisions the final plan must follow.`;
 
   const { text, provider } = await ask(system, user, 1800);
-  updateStep(jobId, "reconcile", { status: "done", percent: 100, activity: "Conflicts resolved", output: text, provider, finishedAt: now() });
+  updateStep(jobId, "reconcile", { status: "done", percent: 100, activity: "Conflicts resolved", output: text, provider, instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
   return text;
 }
 
@@ -460,7 +493,7 @@ Numbered, specific instructions for the final plan.`;
 
   const { text, provider } = await ask(system, user, 1500);
   const verdict = /NEEDS WORK/i.test(text) ? "Needs work — fixes required" : /WITH FIXES/i.test(text) ? "Pass with fixes" : "Passed";
-  updateStep(jobId, "qa", { status: "done", percent: 100, activity: verdict, output: text, provider, finishedAt: now() });
+  updateStep(jobId, "qa", { status: "done", percent: 100, activity: verdict, output: text, provider, instructionsHash: hashInstructions(QA.file), finishedAt: now() });
   return text;
 }
 
@@ -483,7 +516,7 @@ Choose sections that fit this brief. For a business launch or growth brief, cove
     : "";
   const finalOutput = `${banner}\n\n${text.trim()}${sourceList}`;
 
-  updateStep(jobId, "final", { status: "done", percent: 100, activity: "Plan ready", output: finalOutput, provider, finishedAt: now() });
+  updateStep(jobId, "final", { status: "done", percent: 100, activity: "Plan ready", output: finalOutput, provider, instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
   return finalOutput;
 }
 

@@ -23,6 +23,7 @@
 /data/connectors.json
 /data/jobs.json
 /data/user_memories.json
+/data/approvals.json
 
 # generated audio/images (Piper/ComfyUI tool output) — runtime artifacts, not source
 /public/generated/

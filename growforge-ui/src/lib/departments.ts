@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 /**
  * GrowForge's real departments, backed by the *_Agent_System.md operating
@@ -102,4 +103,18 @@ export function loadInstructions(file: string): string {
   ]
     .filter(Boolean)
     .join("\n\n---\n\n");
+}
+
+/**
+ * Short hash of exactly what loadInstructions(file) returned — the
+ * constitution and the department file combined. Recorded per job step so
+ * a plan can always answer "which version of the rules produced this,"
+ * without anyone needing to know to check git log. Deliberately one
+ * combined hash rather than separate constitution/department hashes: it
+ * answers "did anything change since" (compare two jobs' hashes) even
+ * though it can't say which of the two files changed on its own — that's
+ * a reasonable v1 scope call, split later if it's ever actually needed.
+ */
+export function hashInstructions(file: string): string {
+  return crypto.createHash("sha256").update(loadInstructions(file)).digest("hex").slice(0, 12);
 }
