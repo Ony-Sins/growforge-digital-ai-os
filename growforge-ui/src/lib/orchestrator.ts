@@ -3,7 +3,9 @@ import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions, hashInstructions 
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
 import { runToolLoop, getDefaultTools } from "@/lib/tools";
 import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
+import { createConsultation, getConsultation, markConsultationTimedOut } from "@/lib/consultationStore";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
+import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
 import {
   addLiveNote,
   addRevisionEntry,
@@ -35,11 +37,12 @@ import {
 
 const WEIGHTS = { plan: 10, research: 15, departments: 40, reconcile: 10, qa: 10, final: 15 };
 
-const EVIDENCE_RULES = `EVIDENCE RULES (non-negotiable):
+const EVIDENCE_RULES = `EVIDENCE RULES & STRATEGIC CHALLENGER DIRECTIVE (non-negotiable):
 1. The RESEARCH DOSSIER is your only source of facts about the market, prices, costs, ad benchmarks, competitors, platforms and regulations. When you use one, cite it inline as [n] using the dossier's source numbers.
 2. Never invent statistics, prices, percentages, market sizes, or named companies. If the plan needs a number that is not in the dossier, either label it "(estimate — verify)" or list it as an open question.
-3. You PROPOSE; you never EXECUTE. Recommend budgets and actions — never imply money has been spent or commitments made.
-4. Be specific to this exact client. Advice that would apply unchanged to any business is not acceptable.`;
+3. STRATEGIC RED-TEAM & CHALLENGER PUSHBACK: If any client requirement, assumption, or user proposal carries realistic deliverability, low-ROI, poor conversion, or execution risks (e.g. unrealistic timelines, bloated/misallocated budgets, low-performing channels, missing tracking), you MUST challenge it constructively. Quote the risk, cite authentic benchmark evidence or research logic, and propose a high-ROI alternative aligned with GrowForge Digital's vision.
+4. You PROPOSE; you never EXECUTE. Recommend budgets and actions — never imply money has been spent or commitments made.
+5. Be specific to this exact client. Advice that would apply unchanged to any business is not acceptable.`;
 
 interface Assignment {
   departmentId: string;
@@ -150,6 +153,7 @@ export function createAndStartJob(brief: string, createdBy?: string): Job {
     ],
   };
   saveJob(job);
+  logJobStateChange(job);
 
   void resumePipeline(job.id).catch((err) => {
     const message = err instanceof Error ? err.message : String(err);
@@ -157,6 +161,7 @@ export function createAndStartJob(brief: string, createdBy?: string): Job {
     const current = getJob(job.id);
     current?.steps.filter((s) => s.status === "active").forEach((s) => updateStep(job.id, s.id, { status: "error", error: message, finishedAt: now() }));
     updateJob(job.id, { status: "error", error: message, finishedAt: now() });
+    if (current) logJobStateChange(getJob(job.id)!);
   });
 
   return job;
@@ -164,6 +169,7 @@ export function createAndStartJob(brief: string, createdBy?: string): Job {
 
 async function runPlan(job: Job): Promise<Plan> {
   updateStep(job.id, "plan", { status: "active", percent: 10, activity: "Reading the brief and assigning departments", startedAt: now() });
+  logJobStateChange(getJob(job.id)!);
 
   const catalog = DEPARTMENTS.map((d) => `- ${d.id}: ${d.name} — ${d.summary}`).join("\n");
   const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ planning a client engagement. Respond with ONLY a JSON object, no prose.`;
@@ -199,12 +205,6 @@ Rules:
     .filter((q): q is string => typeof q === "string" && q.trim().length > 10)
     .slice(0, 6);
 
-  // A model occasionally omits this field despite instructions (seen with
-  // Gemini truncating/reordering JSON keys). Research is core to the
-  // "authentic, verified data" requirement, so it must never be silently
-  // skipped just because one field came back empty — fall back to a fixed
-  // set of generically useful questions, grounded by the brief text
-  // researchQuestion() passes alongside each one.
   if (researchQuestions.length === 0) {
     researchQuestions = [
       "What is current local demand, seasonality and market size for this business and industry, in this specific location?",
@@ -259,6 +259,14 @@ Rules:
       ...(researchQuestions.length ? researchQuestions.map((q) => `- ${q}`) : ["- _(none produced)_"]),
     ].join("\n"),
   });
+
+  logStrategicDecision({
+    title: `HQ Assigned ${assignments.length} Departments for "${plan.title}"`,
+    context: `Job ${job.id}`,
+    decision: assignments.map((a) => `- **${getDepartment(a.departmentId)?.name}**: ${a.task}`).join("\n"),
+    department: "GrowForge HQ",
+  });
+  logJobStateChange(getJob(job.id)!);
 
   return plan;
 }
@@ -372,6 +380,9 @@ type Draft = { departmentId: string; name: string; output: string };
 const APPROVAL_TIMEOUT_MS = 10 * 60 * 1000;
 const APPROVAL_POLL_INTERVAL_MS = 3_000;
 
+const CONSULTATION_TIMEOUT_MS = 10 * 60 * 1000;
+const CONSULTATION_POLL_INTERVAL_MS = 3_000;
+
 /** Blocks (via polling, since there's no live connection to a specific
  *  browser tab to push to) until an owner decides via the Approvals UI, or
  *  APPROVAL_TIMEOUT_MS passes — a job left unattended for 10 minutes auto-
@@ -386,6 +397,21 @@ async function waitForApproval(approvalId: string): Promise<boolean> {
   }
   markTimedOut(approvalId);
   return false;
+}
+
+/** Blocks until an operator answers a consultation question in the UI,
+ *  or CONSULTATION_TIMEOUT_MS expires. */
+async function waitForConsultation(consultationId: string): Promise<string | null> {
+  const deadline = Date.now() + CONSULTATION_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const consultation = getConsultation(consultationId);
+    if (!consultation || consultation.status !== "pending") {
+      return consultation?.status === "answered" ? (consultation.answer ?? null) : null;
+    }
+    await sleep(CONSULTATION_POLL_INTERVAL_MS);
+  }
+  markConsultationTimedOut(consultationId);
+  return null;
 }
 
 async function gatherWithTools(jobId: string, stepId: string, stepLabel: string, dept: { name: string; file: string }, task: string): Promise<string> {
@@ -407,6 +433,19 @@ async function gatherWithTools(jobId: string, stepId: string, stepLabel: string,
       });
       updateStep(jobId, stepId, { activity: `Waiting for owner approval: ${toolName}` });
       return waitForApproval(approval.id);
+    },
+    requestConsultation: async (question, options) => {
+      const consultation = createConsultation({
+        jobId,
+        jobTitle: getJob(jobId)?.title ?? jobId,
+        stepId,
+        stepLabel,
+        departmentId: dept.name,
+        question,
+        options,
+      });
+      updateStep(jobId, stepId, { activity: `Waiting for operator input: ${question.slice(0, 45)}…` });
+      return waitForConsultation(consultation.id);
     },
   });
 
@@ -472,11 +511,19 @@ What the brief needs that no department covered, and who should own it.
 
   const { text, provider } = await ask(system, user, 1800);
   updateStep(jobId, "reconcile", { status: "done", percent: 100, activity: "Conflicts resolved", output: text, provider, instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
+  logStrategicDecision({
+    title: `HQ Reconciled Team Direction for Job ${jobId}`,
+    context: "Cross-Department Review",
+    decision: text.slice(0, 800),
+    department: "GrowForge HQ",
+  });
+  logJobStateChange(getJob(jobId)!);
   return text;
 }
 
 async function runQa(jobId: string, drafts: Draft[], review: string, dossier: Dossier): Promise<string> {
   updateStep(jobId, "qa", { status: "active", percent: 20, activity: "Checking every claim against sources", startedAt: now() });
+  logJobStateChange(getJob(jobId)!);
 
   const system = `${loadInstructions(QA.file)}\n\n---\n\nYou are GrowForge's independent QA reviewer. You do not rewrite the plan; you find what is wrong with it.\n\n${EVIDENCE_RULES}`;
   const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nHQ TEAM REVIEW:\n${review}
@@ -494,11 +541,19 @@ Numbered, specific instructions for the final plan.`;
   const { text, provider } = await ask(system, user, 1500);
   const verdict = /NEEDS WORK/i.test(text) ? "Needs work — fixes required" : /WITH FIXES/i.test(text) ? "Pass with fixes" : "Passed";
   updateStep(jobId, "qa", { status: "done", percent: 100, activity: verdict, output: text, provider, instructionsHash: hashInstructions(QA.file), finishedAt: now() });
+  logStrategicDecision({
+    title: `QA Audit Verdict: ${verdict} for Job ${jobId}`,
+    context: "Quality Assurance",
+    decision: text.slice(0, 800),
+    department: "Quality Assurance",
+  });
+  logJobStateChange(getJob(jobId)!);
   return text;
 }
 
 async function runFinal(jobId: string, drafts: Draft[], review: string, qa: string, dossier: Dossier): Promise<string> {
   updateStep(jobId, "final", { status: "active", percent: 15, activity: "Writing the consolidated plan", startedAt: now() });
+  logJobStateChange(getJob(jobId)!);
 
   const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ consolidating departmental work into one client-ready plan.\n\n${EVIDENCE_RULES}`;
   const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nTEAM REVIEW DECISIONS:\n${review}\n\nQA REVIEW (apply every required fix):\n${qa}
@@ -517,6 +572,7 @@ Choose sections that fit this brief. For a business launch or growth brief, cove
   const finalOutput = `${banner}\n\n${text.trim()}${sourceList}`;
 
   updateStep(jobId, "final", { status: "done", percent: 100, activity: "Plan ready", output: finalOutput, provider, instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
+  logJobStateChange(getJob(jobId)!);
   return finalOutput;
 }
 
@@ -540,6 +596,7 @@ async function resumePipeline(jobId: string): Promise<void> {
 
   const pendingAssignments = plan.assignments.filter((a) => stepStatus(`dept:${a.departmentId}`) === "pending");
   updateStep(jobId, "reconcile", { activity: `Waiting for ${plan.assignments.length} department drafts` });
+  logJobStateChange(getJob(jobId)!);
   const freshDrafts = pendingAssignments.length > 0 ? await runDepartments(jobId, pendingAssignments) : [];
 
   const reusedDrafts: Draft[] = getJob(jobId)!
@@ -554,6 +611,7 @@ async function resumePipeline(jobId: string): Promise<void> {
     stepStatus("final") === "pending" ? await runFinal(jobId, drafts, review, qa, dossier) : getJob(jobId)!.finalOutput!;
 
   updateJob(jobId, { status: "done", finalOutput, finishedAt: now() });
+  logJobStateChange(getJob(jobId)!);
 }
 
 /**

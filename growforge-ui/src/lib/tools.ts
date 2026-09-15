@@ -4,6 +4,8 @@ import { listConnectors, invokeConnector } from "@/lib/connectorStore";
 import { piperTool } from "@/lib/tools/piper";
 import { whisperTool } from "@/lib/tools/whisper";
 import { comfyuiTool } from "@/lib/tools/comfyui";
+import { askOperatorTool, setConsultationHandler } from "@/lib/tools/askOperator";
+import { n8nTool } from "@/lib/tools/n8n";
 
 /**
  * The generic agent tool-calling loop — what turns a department agent from
@@ -61,6 +63,8 @@ export interface ToolLoopOptions {
   /** Must return true for a requiresApproval tool call to actually run.
    *  Omit entirely to hard-block every approval-gated tool for this loop. */
   requestApproval?: (toolName: string, args: Record<string, unknown>) => Promise<boolean>;
+  /** Callback allowing agents to ask the operator interactive questions. */
+  requestConsultation?: (question: string, options?: string[]) => Promise<string | null>;
 }
 
 export interface ToolLoopResult {
@@ -141,61 +145,66 @@ Call at most one tool per turn. After a tool result comes back, either call anot
  * why this doesn't use any provider's native function-calling API.
  */
 export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult> {
-  const { systemPrompt, task, tools, maxSteps = 6, maxTokens = 1200, onActivity, requestApproval } = opts;
+  const { systemPrompt, task, tools, maxSteps = 6, maxTokens = 1200, onActivity, requestApproval, requestConsultation } = opts;
   const system = `${systemPrompt}\n\n---\n\n${loopInstructions(tools)}`;
   const calls: ToolCallLog[] = [];
   let transcript = `TASK:\n${task}`;
   let provider = "none";
 
-  for (let step = 0; step < maxSteps; step++) {
-    const result = await chatComplete(system, [{ role: "user", content: transcript }], { maxTokens, preferCloud: true });
-    provider = result.provider;
+  setConsultationHandler(requestConsultation ?? null);
+  try {
+    for (let step = 0; step < maxSteps; step++) {
+      const result = await chatComplete(system, [{ role: "user", content: transcript }], { maxTokens, preferCloud: true });
+      provider = result.provider;
 
-    const decision = extractJson(result.text) as
-      | { action?: string; tool?: string; args?: Record<string, unknown>; text?: string }
-      | null;
+      const decision = extractJson(result.text) as
+        | { action?: string; tool?: string; args?: Record<string, unknown>; text?: string }
+        | null;
 
-    if (!decision || decision.action !== "tool" || !decision.tool) {
-      return { finalText: (decision?.text || result.text).trim(), calls, provider, hitStepLimit: false };
-    }
-
-    const tool = tools.find((t) => t.name === decision.tool);
-    const args = decision.args ?? {};
-
-    if (!tool) {
-      transcript += `\n\nCALLED "${decision.tool}" — unknown tool. Available tools: ${tools.map((t) => t.name).join(", ")}.`;
-      continue;
-    }
-
-    onActivity?.(`Calling ${tool.name}…`);
-
-    let approved = !tool.requiresApproval;
-    if (tool.requiresApproval) {
-      approved = requestApproval ? await requestApproval(tool.name, args) : false;
-    }
-
-    let resultText: string;
-    if (!approved) {
-      resultText = "Not approved — this action needs owner sign-off and was not approved. Do not retry it.";
-    } else {
-      try {
-        resultText = (await tool.execute(args)).output;
-      } catch (err) {
-        resultText = `Tool failed: ${err instanceof Error ? err.message : String(err)}`;
+      if (!decision || decision.action !== "tool" || !decision.tool) {
+        return { finalText: (decision?.text || result.text).trim(), calls, provider, hitStepLimit: false };
       }
+
+      const tool = tools.find((t) => t.name === decision.tool);
+      const args = decision.args ?? {};
+
+      if (!tool) {
+        transcript += `\n\nCALLED "${decision.tool}" — unknown tool. Available tools: ${tools.map((t) => t.name).join(", ")}.`;
+        continue;
+      }
+
+      onActivity?.(`Calling ${tool.name}…`);
+
+      let approved = !tool.requiresApproval;
+      if (tool.requiresApproval) {
+        approved = requestApproval ? await requestApproval(tool.name, args) : false;
+      }
+
+      let resultText: string;
+      if (!approved) {
+        resultText = "Not approved — this action needs owner sign-off and was not approved. Do not retry it.";
+      } else {
+        try {
+          resultText = (await tool.execute(args)).output;
+        } catch (err) {
+          resultText = `Tool failed: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      }
+
+      onActivity?.(`${tool.name} → ${resultText.slice(0, 80)}${resultText.length > 80 ? "…" : ""}`);
+      calls.push({ tool: tool.name, args, approved, result: resultText });
+      transcript += `\n\nCALLED ${tool.name} WITH ${JSON.stringify(args)}\nRESULT: ${resultText}`;
     }
 
-    onActivity?.(`${tool.name} → ${resultText.slice(0, 80)}${resultText.length > 80 ? "…" : ""}`);
-    calls.push({ tool: tool.name, args, approved, result: resultText });
-    transcript += `\n\nCALLED ${tool.name} WITH ${JSON.stringify(args)}\nRESULT: ${resultText}`;
+    return {
+      finalText: "Reached the tool-call step limit before finishing — see the calls made so far for what it learned.",
+      calls,
+      provider,
+      hitStepLimit: true,
+    };
+  } finally {
+    setConsultationHandler(null);
   }
-
-  return {
-    finalText: "Reached the tool-call step limit before finishing — see the calls made so far for what it learned.",
-    calls,
-    provider,
-    hitStepLimit: true,
-  };
 }
 
 // --- Default tool catalog --------------------------------------------------
@@ -243,5 +252,5 @@ function connectorTool(): Tool {
 /** The tool set available to an agent right now — rebuilt per call so a
  *  newly added connector shows up without a restart. */
 export function getDefaultTools(): Tool[] {
-  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool];
+  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool];
 }

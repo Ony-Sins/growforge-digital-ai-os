@@ -100,9 +100,9 @@ function buildSystemPrompt(pendingBrief: string | null): string {
     "Choose exactly ONE mode per message:",
     '- "chat": greetings, thanks, small talk, or questions about what you can do.',
     '- "dispatch": a small, clear, one-off task that one roster agent can do alone. Set agentId to its exact id and params to {"taskDescription": "..."}.',
-    '- "clarify": the user wants a PROJECT — a business plan, growth strategy, go-to-market, lead generation or marketing plan, or anything needing several departments — but you do not yet know enough. Ask 1 to 3 focused questions in your reply.',
-    '- "confirm": you now know enough for a project. In reply, summarize your understanding in short bullets and ask "Shall I send this to the team?". Put the complete structured brief in the brief field.',
-    '- "launch": ONLY if a brief is pending (see below) and the user clearly agrees to it. Put the final brief in the brief field, updated with any last changes they mentioned.',
+    '- "clarify": the user wants a project but you do not know enough. Ask 1 to 3 focused questions in your reply.',
+    '- "confirm": you know enough for a project. In reply, summarize your understanding in short bullets and ask "Shall I send this to the team?". Put the complete structured brief in the brief field.',
+    '- "launch": choose this whenever: (1) a brief is pending and the user agrees to it, OR (2) the user gives a direct high-level master directive to launch, build, or orchestrate an agency or project (e.g. "I want to launch an AI automation agency named GrowForge Digital"). When launching directly from a master directive, construct the full structured brief in the brief field, summarize the strategic game plan in reply, and set mode: "launch".',
     "",
     "Clarifying a project — you are an experienced agency strategist, not a form. Before confirming you need: the business type and exactly what it sells; location / service area; stage (idea, just launched, established) and current revenue; target customers; current marketing, website and channels; monthly budget available for marketing and ads; goals with a timeframe; and anything that makes this business different. Ask only about what is still missing — never re-ask what the user already told you. Prefer answerable questions with example options. If the user says to proceed with what they have, go to confirm and list the unknowns as assumptions.",
     "",
@@ -116,7 +116,7 @@ function buildSystemPrompt(pendingBrief: string | null): string {
 ${pendingBrief}
 >>>
 If the user agrees (yes, go, looks good, proceed, send it — in any language) choose "launch". If they correct or add details, choose "confirm" again with the updated brief. If they cancel, choose "chat".`
-      : 'No brief is pending. You must NEVER choose "launch" now.',
+      : 'No brief is currently pending. Choose "launch" only if the user explicitly gives a direct command to launch or build a project/agency.',
     "",
     "STRICT RULE FOR reply: plain natural language (Markdown bullets allowed) in the SAME language as the user — never JSON, never curly braces, never a code fence. It is shown in a chat bubble.",
     "",
@@ -276,13 +276,12 @@ export async function POST(req: Request) {
   }
 
   if (decision.mode === "launch") {
-    // Launching requires a brief the user was actually shown; the model
-    // cannot start a job on its own say-so.
-    if (!pendingBrief) {
+    const briefToLaunch = decision.brief || pendingBrief;
+    if (!briefToLaunch) {
       return NextResponse.json({ reply: decision.reply, provider, mode: "chat", dispatch: null });
     }
     const session = await getSession();
-    const job = createAndStartJob(decision.brief || pendingBrief, session?.user?.email ?? undefined);
+    const job = createAndStartJob(briefToLaunch, session?.user?.email ?? undefined);
     return NextResponse.json({
       reply: decision.reply,
       provider,
