@@ -147,6 +147,13 @@ export function getLogs(limit = 50, agentId?: string): LogEntry[] {
   return filtered.slice(-limit).reverse();
 }
 
+/** Total log entry count in the store (not limited/sliced), for summary
+ *  metrics like the Executive Funnel's "Completed Runs" card. */
+export function getLogsCount(agentId?: string): number {
+  const store = getStore();
+  return agentId ? store.logs.filter((l) => l.agentId === agentId).length : store.logs.length;
+}
+
 function setStatus(id: string, status: AgentStatus, lastRun: string) {
   const store = getStore();
   const agent = getAgent(id);

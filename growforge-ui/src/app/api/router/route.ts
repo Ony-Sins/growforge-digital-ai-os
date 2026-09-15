@@ -12,6 +12,8 @@ import {
   type LlmStrategy,
 } from "@/lib/llm";
 import type { Agent } from "@/lib/agents";
+import { createAndStartJob } from "@/lib/orchestrator";
+import { getSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -21,7 +23,12 @@ export async function GET() {
   return NextResponse.json({
     strategy,
     providerOrder: providerOrder(strategy),
-    availableKeys: { gemini: hasKey("gemini"), groq: hasKey("groq") },
+    availableKeys: {
+      gemini: hasKey("gemini"),
+      groq: hasKey("groq"),
+      openai: hasKey("openai"),
+      anthropic: hasKey("anthropic"),
+    },
   });
 }
 
@@ -44,7 +51,12 @@ export async function PATCH(req: Request) {
   return NextResponse.json({
     strategy,
     providerOrder: providerOrder(strategy as LlmStrategy),
-    availableKeys: { gemini: hasKey("gemini"), groq: hasKey("groq") },
+    availableKeys: {
+      gemini: hasKey("gemini"),
+      groq: hasKey("groq"),
+      openai: hasKey("openai"),
+      anthropic: hasKey("anthropic"),
+    },
   });
 }
 
@@ -55,12 +67,20 @@ interface RouterRequestBody {
    *  to the agent runner — see security.ts for why this is a soft gate. */
   role?: "owner" | "employee";
   unlockedAgentIds?: string[];
+  /** The brief from the assistant's most recent "confirm" turn, if the user
+   *  hasn't answered it yet. A project can only launch while one is pending
+   *  — the model alone can never start a job without an explicit go-ahead. */
+  pendingBrief?: string;
 }
 
+type RouteMode = "chat" | "dispatch" | "clarify" | "confirm" | "launch";
+
 interface RouteDecision {
+  mode: RouteMode;
   agentId: string | null;
   params: Record<string, unknown>;
   reply: string;
+  brief: string | null;
 }
 
 function buildCatalog(): string {
@@ -69,31 +89,40 @@ function buildCatalog(): string {
     .join("\n");
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(pendingBrief: string | null): string {
   return [
-    "You are the GrowForge Digital AI Router, a natural-language dispatcher in front of a small internal agent roster.",
+    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Sales & BD, Marketing, Meta Ads, Finance & Ops, Client Success, Web Design, Web Development, AI Automation).",
     "",
     `Universal context rule: ${UNIVERSAL_CONTEXT_POLICY}`,
     "",
-    "Available agents (use the exact id when dispatching):",
+    "Single-agent roster (for small, one-off tasks only):",
     buildCatalog(),
     "",
-    "For every user message, decide:",
-    "1. Whether the user is making a clear, actionable request that matches one of the agents' specialties above.",
-    "2. If, and ONLY if, there is such a clear actionable request, set agentId to that agent's exact id and extract any useful parameters as a flat JSON object (use {} if nothing to extract).",
-    '3. Otherwise — greetings ("hello", "hi"), small talk, thanks, or general questions about what you or the agents can do ("what can you do?", "can you talk?") — set agentId to null and params to {}. Default to null when unsure; only dispatch when the request is unambiguous.',
-    "4. Write a short, natural, conversational reply in the SAME language as the user's message, answering them directly or acknowledging what you're dispatching.",
+    "Choose exactly ONE mode per message:",
+    '- "chat": greetings, thanks, small talk, or questions about what you can do.',
+    '- "dispatch": a small, clear, one-off task that one roster agent can do alone. Set agentId to its exact id and params to {"taskDescription": "..."}.',
+    '- "clarify": the user wants a PROJECT — a business plan, growth strategy, go-to-market, lead generation or marketing plan, or anything needing several departments — but you do not yet know enough. Ask 1 to 3 focused questions in your reply.',
+    '- "confirm": you now know enough for a project. In reply, summarize your understanding in short bullets and ask "Shall I send this to the team?". Put the complete structured brief in the brief field.',
+    '- "launch": ONLY if a brief is pending (see below) and the user clearly agrees to it. Put the final brief in the brief field, updated with any last changes they mentioned.',
     "",
-    "STRICT RULE FOR THE reply FIELD: it must contain ONLY plain natural-language sentences — never JSON, never curly braces, never a code fence, never the words agentId/params. It is shown to the user verbatim in a chat bubble.",
+    "Clarifying a project — you are an experienced agency strategist, not a form. Before confirming you need: the business type and exactly what it sells; location / service area; stage (idea, just launched, established) and current revenue; target customers; current marketing, website and channels; monthly budget available for marketing and ads; goals with a timeframe; and anything that makes this business different. Ask only about what is still missing — never re-ask what the user already told you. Prefer answerable questions with example options. If the user says to proceed with what they have, go to confirm and list the unknowns as assumptions.",
     "",
-    "Examples (format only — always match the user's own language and phrasing in your real reply):",
-    'User: "hello" → {"agentId": null, "params": {}, "reply": "Hi there! What can I help you with?"}',
-    'User: "what can you do?" → {"agentId": null, "params": {}, "reply": "I can route your requests to the right specialist agent — just tell me what you need."}',
-    'User: "can you talk?" → {"agentId": null, "params": {}, "reply": "Yes, I\'m here and ready to help."}',
-    'User: "draft an outbound sequence for mid-market SaaS buyers" → {"agentId": "outbound-strategist", "params": {"taskDescription": "Draft an outbound sequence for mid-market SaaS buyers"}, "reply": "On it — I\'ll have the Outbound Strategist draft that sequence now."}',
+    "Be an advisor, not just an interviewer. If the user doesn't know their budget, doesn't know which ad platform to use, or asks what something should cost or which tool/model is worth paying for — give a real, specific, opinionated answer with a number or a name, the way a senior consultant would (e.g. \"for a business this size, $1,500–2,500/month split roughly 60% Google Ads / 40% Meta Ads is realistic to start\" or \"a paid OpenAI/Anthropic/Gemini key is worth it here — the free local model isn't strong enough for research-backed output\"). Never refuse to give a number by saying it depends — give your best real-world estimate and name the assumption behind it. Do this unprompted whenever it would help the user decide, not only when asked.",
     "",
-    "Respond with ONLY a single JSON object and nothing else — no markdown code fences, no commentary before or after — matching exactly this shape:",
-    '{"agentId": string | null, "params": object, "reply": string}',
+    'The brief (for confirm and launch) is a plain-text document with these headed sections: Client & business, Location, Stage & current situation, Target customers, Offer & pricing, Current marketing & channels, Budget, Goals & timeframe, Constraints & unknowns, Deliverables requested. Write "Unknown" rather than guessing.',
+    "",
+    pendingBrief
+      ? `A BRIEF IS PENDING the user's confirmation:
+<<<
+${pendingBrief}
+>>>
+If the user agrees (yes, go, looks good, proceed, send it — in any language) choose "launch". If they correct or add details, choose "confirm" again with the updated brief. If they cancel, choose "chat".`
+      : 'No brief is pending. You must NEVER choose "launch" now.',
+    "",
+    "STRICT RULE FOR reply: plain natural language (Markdown bullets allowed) in the SAME language as the user — never JSON, never curly braces, never a code fence. It is shown in a chat bubble.",
+    "",
+    "Respond with ONLY one JSON object, no code fences, no text before or after, in exactly this shape:",
+    '{"mode": "chat" | "dispatch" | "clarify" | "confirm" | "launch", "agentId": string | null, "params": object, "reply": string, "brief": string | null}',
   ].join("\n");
 }
 
@@ -143,7 +172,7 @@ function findBalancedJsonSpans(text: string): JsonSpan[] {
  *  as opposed to some unrelated JSON the model legitimately wants to show. */
 function looksLikeDecisionJson(text: string): boolean {
   const t = text.trim();
-  return t.startsWith("{") && /"agentId"\s*:|"params"\s*:|"reply"\s*:/.test(t);
+  return t.startsWith("{") && /"agentId"\s*:|"params"\s*:|"reply"\s*:|"mode"\s*:|"brief"\s*:/.test(t);
 }
 
 /** Defense-in-depth scrub: strips our own decision-JSON shape out of any
@@ -168,6 +197,8 @@ function sanitizeReplyText(text: string): string {
  *  in prose or code fences, omit the reply field, or (with weaker models)
  *  echo the decision JSON itself as the reply text. In every case the
  *  final reply is guaranteed to be scrubbed of JSON/code-fence syntax. */
+const MODES: RouteMode[] = ["chat", "dispatch", "clarify", "confirm", "launch"];
+
 function parseDecision(raw: string): RouteDecision {
   for (const span of findBalancedJsonSpans(raw)) {
     let parsed: unknown;
@@ -178,20 +209,23 @@ function parseDecision(raw: string): RouteDecision {
     }
     if (!parsed || typeof parsed !== "object") continue;
     const obj = parsed as Record<string, unknown>;
-    if (!("agentId" in obj) && !("params" in obj) && !("reply" in obj)) continue;
+    if (!("agentId" in obj) && !("params" in obj) && !("reply" in obj) && !("mode" in obj)) continue;
 
     const agentId = typeof obj.agentId === "string" ? obj.agentId : null;
     const params = obj.params && typeof obj.params === "object" ? (obj.params as Record<string, unknown>) : {};
+    const brief = typeof obj.brief === "string" && obj.brief.trim() ? obj.brief.trim() : null;
+    const declared = typeof obj.mode === "string" && MODES.includes(obj.mode as RouteMode) ? (obj.mode as RouteMode) : null;
+    const mode: RouteMode = declared ?? (agentId ? "dispatch" : "chat");
     const replyField = typeof obj.reply === "string" ? obj.reply : "";
     const leftoverProse = (raw.slice(0, span.start) + raw.slice(span.end)).trim();
 
     const candidateReply = replyField.trim() || leftoverProse || (agentId ? "On it." : "Okay.");
-    return { agentId, params, reply: sanitizeReplyText(candidateReply) };
+    return { mode, agentId, params, brief, reply: sanitizeReplyText(candidateReply) };
   }
 
   // No parsable decision JSON at all — never dispatch on unparseable output,
   // and still scrub the raw text in case it contains stray JSON/fences.
-  return { agentId: null, params: {}, reply: sanitizeReplyText(raw) };
+  return { mode: "chat", agentId: null, params: {}, brief: null, reply: sanitizeReplyText(raw) };
 }
 
 export async function POST(req: Request) {
@@ -212,13 +246,14 @@ export async function POST(req: Request) {
     .filter((m) => m.role === "user" || m.role === "assistant")
     .map((m) => ({ role: m.role, content: m.content }));
 
-  const systemPrompt = buildSystemPrompt();
+  const pendingBrief = body.pendingBrief?.trim().slice(0, 8000) || null;
+  const systemPrompt = buildSystemPrompt(pendingBrief);
   const messages: ChatMessage[] = [...history, { role: "user", content: message }];
 
   let raw: string;
   let provider: string;
   try {
-    const result = await chatComplete(systemPrompt, messages);
+    const result = await chatComplete(systemPrompt, messages, { maxTokens: 2000, preferCloud: true });
     raw = result.text;
     provider = result.provider;
   } catch (err) {
@@ -232,12 +267,37 @@ export async function POST(req: Request) {
   }
 
   const decision = parseDecision(raw);
-  const targetAgent: Agent | undefined = decision.agentId
-    ? agents.find((a) => a.id === decision.agentId)
-    : undefined;
 
-  if (!decision.agentId || !targetAgent) {
-    return NextResponse.json({ reply: decision.reply, provider, dispatch: null });
+  if (decision.mode === "clarify") {
+    return NextResponse.json({ reply: decision.reply, provider, mode: "clarify", dispatch: null });
+  }
+
+  if (decision.mode === "confirm" && decision.brief) {
+    return NextResponse.json({ reply: decision.reply, provider, mode: "confirm", brief: decision.brief, dispatch: null });
+  }
+
+  if (decision.mode === "launch") {
+    // Launching requires a brief the user was actually shown; the model
+    // cannot start a job on its own say-so.
+    if (!pendingBrief) {
+      return NextResponse.json({ reply: decision.reply, provider, mode: "chat", dispatch: null });
+    }
+    const session = await getSession();
+    const job = createAndStartJob(decision.brief || pendingBrief, session?.user?.email ?? undefined);
+    return NextResponse.json({
+      reply: decision.reply,
+      provider,
+      mode: "launch",
+      dispatch: null,
+      job: { id: job.id, title: job.title },
+    });
+  }
+
+  const targetAgent: Agent | undefined =
+    decision.mode === "dispatch" && decision.agentId ? agents.find((a) => a.id === decision.agentId) : undefined;
+
+  if (!targetAgent) {
+    return NextResponse.json({ reply: decision.reply, provider, mode: "chat", dispatch: null });
   }
 
   // Every payload dispatched through the conversational router carries the

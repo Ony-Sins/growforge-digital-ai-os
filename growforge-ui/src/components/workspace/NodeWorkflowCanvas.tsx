@@ -141,7 +141,7 @@ export function NodeWorkflowCanvas() {
 
           {/* Interactive node overlay */}
           <div className="absolute inset-0">
-            {/* Hub node */}
+            {/* Hub node — solid-fill container background */}
             <button
               type="button"
               onClick={() => {
@@ -152,38 +152,44 @@ export function NodeWorkflowCanvas() {
               className={`group absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 outline-none`}
               style={{ left: pct(HUB.x, VIEW_W), top: pct(HUB.y, VIEW_H) }}
             >
-              <span
-                className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-2 bg-navy transition-transform group-hover:scale-105 ${
-                  selected === hub.id ? "border-gold glow-gold" : "border-border-metal-strong"
-                }`}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="GrowForge orchestrator"
-                  fill
-                  className="scale-[1.85] object-cover"
-                  sizes="64px"
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-md border border-slate-100 transition-transform group-hover:scale-105">
+                {/* Selection & status ring */}
+                <span
+                  className={`absolute inset-0 rounded-2xl transition-all ${
+                    selected === hub.id
+                      ? "ring-2 ring-gold/60 shadow-[0_0_24px_rgba(230,175,46,0.35)]"
+                      : "ring-1 ring-border-metal-strong"
+                  }`}
                 />
-                <span className="absolute inset-0 node-pulse rounded-2xl ring-2 ring-electric/60" />
-              </span>
-              <span className="rounded-full bg-navy px-2 py-0.5 font-mono text-[10px] font-medium text-on-navy">
+                <span className="relative h-12 w-12 drop-shadow-sm">
+                  <Image
+                    src="/logo-mark.png"
+                    alt="GrowForge orchestrator"
+                    fill
+                    className="object-contain"
+                    sizes="48px"
+                    priority
+                  />
+                </span>
+              </div>
+              <span className="rounded-full bg-navy px-2.5 py-0.5 font-mono text-[10px] font-semibold text-on-navy shadow-sm">
                 orchestrator
               </span>
             </button>
 
-            {/* Spoke nodes */}
+            {/* Spoke nodes — solid-fill container backgrounds */}
             {spokes.map((agent) => {
               const l = LAYOUT[agent.id];
               const Icon = ICONS[agent.icon] ?? Bot;
               const isSelected = selected === agent.id;
               const ring =
                 agent.status === "active"
-                  ? "border-electric"
+                  ? "border-electric ring-2 ring-electric/20"
                   : agent.status === "success"
-                    ? "border-emerald"
+                    ? "border-emerald ring-1 ring-emerald/20"
                     : agent.status === "error"
-                      ? "border-crimson"
-                      : "border-border-metal-strong";
+                      ? "border-crimson ring-1 ring-crimson/20"
+                      : "border-slate-200";
               return (
                 <button
                   key={agent.id}
@@ -198,8 +204,8 @@ export function NodeWorkflowCanvas() {
                   style={{ left: pct(l.x, VIEW_W), top: pct(l.y, VIEW_H) }}
                 >
                   <span
-                    className={`relative flex h-11 w-11 items-center justify-center rounded-full border-2 bg-white/90 shadow-sm transition-transform group-hover:scale-110 ${ring} ${
-                      isSelected ? "glow-electric" : ""
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-xl border-2 bg-white shadow-sm transition-transform group-hover:scale-110 ${ring} ${
+                      isSelected ? "glow-electric ring-2 ring-electric/40" : ""
                     }`}
                   >
                     <Icon className="h-[18px] w-[18px] text-navy" strokeWidth={2} />
@@ -209,7 +215,7 @@ export function NodeWorkflowCanvas() {
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[92px] truncate rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-medium text-secondary shadow-sm">
+                  <span className="max-w-[96px] truncate rounded-full bg-white shadow-sm border border-slate-100 px-2 py-0.5 text-[10px] font-medium text-navy">
                     {agent.name}
                   </span>
                 </button>

@@ -14,7 +14,6 @@ import { agents } from "@/lib/agents";
 import type { LogEntry } from "@/lib/types";
 import { useAppState } from "@/lib/appState";
 import { isAgentLocked } from "@/lib/security";
-import { listVaultProviders } from "@/lib/apiVault";
 
 type LineKind = "command" | "info" | "success" | "error" | "json" | "system";
 
@@ -161,7 +160,9 @@ export function TerminalConsole() {
     setDispatching(true);
     try {
       const isPlainObject = typeof parsed.value === "object" && parsed.value !== null && !Array.isArray(parsed.value);
-      const accessFields = { role, unlockedAgentIds, usingCustomKeys: listVaultProviders(selectedAgentId) };
+      const vaultRes = await fetch(`/api/vault/${encodeURIComponent(selectedAgentId)}`);
+      const usingCustomKeys: string[] = vaultRes.ok ? ((await vaultRes.json()).providers ?? []) : [];
+      const accessFields = { role, unlockedAgentIds, usingCustomKeys };
       const requestBody = isPlainObject
         ? { ...(parsed.value as Record<string, unknown>), ...accessFields }
         : { payload: parsed.value, ...accessFields };

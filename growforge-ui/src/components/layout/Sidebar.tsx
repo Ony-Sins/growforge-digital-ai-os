@@ -36,23 +36,25 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-border-metal bg-white/70 backdrop-blur-xl">
-      {/* Brand */}
-      <div className="flex h-16 items-center gap-3 border-b border-border-metal px-5">
-        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-navy shadow-sm">
-          <Image
-            src="/logo.png"
-            alt="GrowForge Digital"
-            fill
-            className="scale-[1.85] object-cover"
-            sizes="40px"
-            priority
-          />
-        </span>
-        <div className="leading-tight">
-          <p className="font-heading text-sm font-bold tracking-wide text-navy">GrowForge</p>
-          <p className="text-[11px] font-mono uppercase tracking-widest text-muted">
-            Digital AI OS
-          </p>
+      {/* Brand - Encapsulated in solid-white container */}
+      <div className="flex h-18 items-center border-b border-border-metal px-3 py-3">
+        <div className="flex w-full items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2">
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+            <Image
+              src="/logo-mark.png"
+              alt="GrowForge Digital"
+              fill
+              className="object-contain"
+              sizes="32px"
+              priority
+            />
+          </span>
+          <div className="leading-tight">
+            <p className="font-heading text-sm font-bold tracking-wide text-navy">GrowForge</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted">
+              Digital AI OS
+            </p>
+          </div>
         </div>
       </div>
 
@@ -133,13 +135,26 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-border-metal p-4">
+        <a
+          href="/profile"
+          className="mb-3 flex items-center justify-between rounded-xl bg-white shadow-sm border border-slate-100 px-3 py-2 text-xs font-semibold text-navy transition-colors hover:bg-slate-50"
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-electric/10 text-electric">
+              ⚡
+            </span>
+            <span>Memory Profile</span>
+          </div>
+          <span className="text-[10px] font-mono text-muted">Akinator</span>
+        </a>
+
         <RoleSwitcher />
-        <div className="mt-3 flex items-center gap-3 rounded-xl bg-gradient-to-r from-electric/10 to-gold/10 px-3 py-2.5 ring-1 ring-border-metal">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-mono text-xs font-semibold text-gold">
+        <div className="mt-3 flex items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-mono text-xs font-semibold text-gold shadow-sm">
             GF
           </div>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-medium text-navy">GrowForge Ops</p>
+            <p className="truncate text-sm font-semibold text-navy">GrowForge Ops</p>
             <p className="truncate text-[11px] text-muted">7 agents online</p>
           </div>
         </div>

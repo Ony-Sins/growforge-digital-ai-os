@@ -35,6 +35,16 @@ interface AppStateValue {
   unlockedAgentIds: string[];
   canAccessAgent: (agentId: string) => boolean;
 
+  /** The project job shown on the live canvas. */
+  activeJobId: string | null;
+  openJob: (jobId: string) => void;
+
+  /** Admin Drawer for developer tools, terminal, and execution logs */
+  isAdminDrawerOpen: boolean;
+  adminDrawerTab: "terminal" | "logs" | "diagnostics";
+  openAdminDrawer: (tab?: "terminal" | "logs" | "diagnostics") => void;
+  closeAdminDrawer: () => void;
+
   pinPromptTarget: PinPromptTarget;
   requestAgentUnlock: (agentId: string) => void;
   requestOwnerUnlock: () => void;
@@ -55,6 +65,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>("employee");
   const [unlockedAgentIds, setUnlockedAgentIds] = useState<string[]>([]);
   const [pinPromptTarget, setPinPromptTarget] = useState<PinPromptTarget>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false);
+  const [adminDrawerTab, setAdminDrawerTab] = useState<"terminal" | "logs" | "diagnostics">("terminal");
 
   useEffect(() => {
     try {
@@ -72,10 +85,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setActiveView = useCallback((view: ActiveView) => {
-    setActiveViewState(view);
-    setActiveViewToken((t) => t + 1);
+  const openAdminDrawer = useCallback((tab: "terminal" | "logs" | "diagnostics" = "terminal") => {
+    setAdminDrawerTab(tab);
+    setIsAdminDrawerOpen(true);
   }, []);
+
+  const closeAdminDrawer = useCallback(() => {
+    setIsAdminDrawerOpen(false);
+  }, []);
+
+  const setActiveView = useCallback(
+    (view: ActiveView) => {
+      if (view === "terminal") {
+        openAdminDrawer("terminal");
+        return;
+      }
+      if (view === "logs") {
+        openAdminDrawer("logs");
+        return;
+      }
+      setActiveViewState(view);
+      setActiveViewToken((t) => t + 1);
+    },
+    [openAdminDrawer],
+  );
+
+  const openJob = useCallback(
+    (jobId: string) => {
+      setActiveJobId(jobId);
+      setActiveView("workflows");
+    },
+    [setActiveView],
+  );
 
   const openAgentPanel = useCallback((agentId: string) => setSelectedAgentId(agentId), []);
   const closeAgentPanel = useCallback(() => setSelectedAgentId(null), []);
@@ -123,6 +164,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setRole,
       unlockedAgentIds,
       canAccessAgent,
+      activeJobId,
+      openJob,
+      isAdminDrawerOpen,
+      adminDrawerTab,
+      openAdminDrawer,
+      closeAdminDrawer,
       pinPromptTarget,
       requestAgentUnlock,
       requestOwnerUnlock,
@@ -140,6 +187,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setRole,
       unlockedAgentIds,
       canAccessAgent,
+      activeJobId,
+      openJob,
+      isAdminDrawerOpen,
+      adminDrawerTab,
+      openAdminDrawer,
+      closeAdminDrawer,
       pinPromptTarget,
       requestAgentUnlock,
       requestOwnerUnlock,

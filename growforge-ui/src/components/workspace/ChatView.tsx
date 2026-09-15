@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   AlertTriangle,
   ArrowRightLeft,
   Bot,
+  ClipboardCheck,
   Code2,
   FlaskConical,
   Loader2,
   Lock,
+  Rocket,
   MessageSquare,
   Send,
   ShieldCheck,
@@ -23,11 +23,12 @@ import { StatusDot, statusLabel, statusTextClass } from "@/components/ui/StatusD
 import type { LlmStrategy } from "@/lib/llm";
 import { useAppState } from "@/lib/appState";
 import type { HandoffSuggestion } from "@/lib/handoff";
+import { Markdown } from "@/components/ui/Markdown";
 
 interface RouterStatus {
   strategy: LlmStrategy;
   providerOrder: string[];
-  availableKeys: { gemini: boolean; groq: boolean };
+  availableKeys: Record<string, boolean>;
 }
 
 const STRATEGY_LABEL: Record<LlmStrategy, string> = {
@@ -67,6 +68,8 @@ interface ChatMessageUI {
   locked?: { agentId: string; agentName: string } | null;
   handoff?: ChatHandoff | null;
   handoffResolved?: boolean;
+  confirmBrief?: string | null;
+  job?: { id: string; title: string } | null;
 }
 
 function formatTime(iso: string) {
@@ -109,47 +112,11 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
   );
 }
 
-function Markdown({ content }: { content: string }) {
-  return (
-    <div className="text-sm leading-relaxed text-navy">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          a: (props) => (
-            <a {...props} target="_blank" rel="noreferrer" className="text-electric underline underline-offset-2" />
-          ),
-          code: ({ className, children, ...props }) => {
-            const isBlock = /language-/.test(className ?? "");
-            return isBlock ? (
-              <code className="block overflow-x-auto rounded-lg bg-navy px-3 py-2 font-mono text-xs text-white/90" {...props}>
-                {children}
-              </code>
-            ) : (
-              <code className="rounded bg-sunken px-1 py-0.5 font-mono text-[0.85em] text-navy" {...props}>
-                {children}
-              </code>
-            );
-          },
-          ul: (props) => <ul className="list-disc space-y-1 pl-5" {...props} />,
-          ol: (props) => <ol className="list-decimal space-y-1 pl-5" {...props} />,
-          p: (props) => <p className="mb-2 last:mb-0" {...props} />,
-          strong: (props) => <strong className="font-semibold text-navy" {...props} />,
-          h1: (props) => <h3 className="mb-1 font-heading text-base font-semibold text-navy" {...props} />,
-          h2: (props) => <h3 className="mb-1 font-heading text-base font-semibold text-navy" {...props} />,
-          h3: (props) => <h3 className="mb-1 font-heading text-sm font-semibold text-navy" {...props} />,
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
-
 const WELCOME_CONTENT =
-  "Hi, I'm the GrowForge AI Assistant. Tell me what you need in plain English — or any language — and I'll route it to the right agent. For example: *\"Draft an outbound sequence for mid-market SaaS buyers\"* or *\"¿Puedes revisar la interfaz antes de lanzarla?\"*";
+  "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language — any language — and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
 
 export function ChatView() {
-  const { role, unlockedAgentIds, requestAgentUnlock } = useAppState();
+  const { role, unlockedAgentIds, requestAgentUnlock, openJob } = useAppState();
 
   // Starts empty so the server-rendered and hydrated client markup match
   // exactly; the welcome message (which needs a real Date()) is added in an
@@ -164,6 +131,7 @@ export function ChatView() {
   const [switching, setSwitching] = useState(false);
   const [pendingHandoff, setPendingHandoff] = useState<{ handoff: ChatHandoff; messageId: number } | null>(null);
   const [handoffBusy, setHandoffBusy] = useState(false);
+  const [pendingBrief, setPendingBrief] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -240,9 +208,9 @@ export function ChatView() {
     }
   }
 
-  async function handleSend(e?: React.FormEvent) {
+  async function handleSend(e?: React.FormEvent, override?: string) {
     e?.preventDefault();
-    const text = input.trim();
+    const text = (override ?? input).trim();
     if (!text || sending) return;
 
     const userMessage: ChatMessageUI = {
@@ -264,7 +232,7 @@ export function ChatView() {
       const res = await fetch("/api/router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history, role, unlockedAgentIds }),
+        body: JSON.stringify({ message: text, history, role, unlockedAgentIds, pendingBrief }),
       });
       const data = await res.json();
 
@@ -295,8 +263,22 @@ export function ChatView() {
           dispatchError: data.dispatchError,
           locked: data.locked ?? null,
           handoff: data.handoff ?? null,
+          confirmBrief: data.mode === "confirm" ? data.brief : null,
+          job: data.job ?? null,
         },
       ]);
+
+      if (data.mode === "confirm" && data.brief) {
+        setPendingBrief(data.brief);
+      } else if (data.mode !== "clarify") {
+        setPendingBrief(null);
+      }
+      if (data.job?.id) {
+        if (typeof Notification !== "undefined" && Notification.permission === "default") {
+          Notification.requestPermission().catch(() => {});
+        }
+        openJob(data.job.id);
+      }
 
       if (data.dispatch?.agentId) {
         setTimeout(() => pollDispatchResolution(assistantId, data.dispatch.agentId), 1800);
@@ -453,7 +435,7 @@ export function ChatView() {
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-heading text-base font-semibold text-navy">AI Assistant</h2>
-          <p className="text-xs text-secondary">Plain-English dispatch — any language, no JSON required.</p>
+          <p className="text-xs text-secondary">Describe it in plain language. I ask, confirm, then the team builds it.</p>
         </div>
         {strategy && (
           <label className="flex shrink-0 items-center gap-1.5">
@@ -508,6 +490,53 @@ export function ChatView() {
                   )}
                 </div>
                 {m.dispatch && <ExecutionCard dispatch={m.dispatch} />}
+                {m.confirmBrief && (
+                  <div className="mt-2 rounded-xl border border-gold/40 bg-gold/5 p-3">
+                    <details>
+                      <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-navy">
+                        <ClipboardCheck className="h-4 w-4 text-gold" /> Project brief · tap to review the full version
+                      </summary>
+                      <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white/80 p-3 font-body text-xs text-secondary">
+                        {m.confirmBrief}
+                      </pre>
+                    </details>
+                    {pendingBrief === m.confirmBrief && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={sending}
+                          onClick={() => handleSend(undefined, "Yes, looks right. Send it to the team.")}
+                          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+                        >
+                          <Rocket className="h-3.5 w-3.5" /> Send to the team
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => inputRef.current?.focus()}
+                          className="rounded-lg border border-border-metal bg-white/80 px-3 py-1.5 text-xs font-medium text-secondary hover:text-navy"
+                        >
+                          Make changes
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {m.job && (
+                  <button
+                    type="button"
+                    onClick={() => m.job && openJob(m.job.id)}
+                    className="mt-2 flex w-full items-center gap-3 rounded-xl border border-electric/30 bg-electric/5 px-3 py-2.5 text-left transition-colors hover:bg-electric/10"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-electric/10 text-electric">
+                      <Rocket className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-navy">{m.job.title}</span>
+                      <span className="block text-xs text-secondary">Sent to the team — watch it live</span>
+                    </span>
+                    <span className="shrink-0 text-xs font-semibold text-electric">Open →</span>
+                  </button>
+                )}
                 {m.locked && (
                   <div className="mt-2 flex items-center gap-3 rounded-xl border border-border-metal bg-white/70 px-3 py-2.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sunken text-muted">
@@ -567,7 +596,7 @@ export function ChatView() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Ask in any language… e.g. “review the login screen before we ship”"
+          placeholder={pendingBrief ? "Reply “yes” to send it, or tell me what to change…" : "Describe a project or ask anything, in any language…"}
           className="max-h-32 flex-1 resize-none rounded-xl border border-border-metal bg-white/80 px-3.5 py-2.5 text-sm text-navy outline-none focus:border-electric/50"
         />
         <button

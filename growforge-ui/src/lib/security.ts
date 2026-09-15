@@ -1,13 +1,17 @@
 /**
- * Lightweight, client-side access gate for the GrowForge console.
+ * Department-level agent PIN gate for the GrowForge console.
  *
- * IMPORTANT — this is a soft UX gate, not real security. This app has no
- * backend auth/session system; PINs below live in the client JS bundle and
- * are visible to anyone who opens devtools or inspects network traffic.
- * It's appropriate for "don't let a casual employee poke at agents outside
- * their department" in an internal demo tool — it is NOT a substitute for
- * real server-side authentication/authorization, and must never gate
- * genuinely sensitive systems or data as-is.
+ * This is a secondary, soft UX layer — not the real security boundary.
+ * The real boundary is middleware.ts + src/auth.ts: every request (pages
+ * and API routes alike) is rejected before it reaches any app code unless
+ * it carries a session for a Google account on the AUTHORIZED_EMAILS
+ * allowlist. What's below only decides which *already-authenticated*
+ * GrowForge team member can touch which agent, the same way a shared
+ * office might still keep certain doors keyed even though the building
+ * itself requires a badge. PINs live in the client JS bundle and are
+ * visible in devtools — fine for "don't let a teammate outside this
+ * department poke at this agent," not a substitute for the outer
+ * authentication gate.
  */
 
 export type Role = "owner" | "employee";

@@ -104,7 +104,7 @@ export const navSections = [
     items: [
       { id: "roster", label: "Agent Roster", icon: "Bot" },
       { id: "vault", label: "Vault Library", icon: "Library" },
-      { id: "workflows", label: "Workflows", icon: "Workflow" },
+      { id: "workflows", label: "Live Projects", icon: "Workflow" },
     ],
   },
   {

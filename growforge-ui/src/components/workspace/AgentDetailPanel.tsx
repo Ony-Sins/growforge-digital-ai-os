@@ -20,7 +20,6 @@ import { useAppState } from "@/lib/appState";
 import { agents as seedAgents, type Agent } from "@/lib/agents";
 import { StatusDot, statusLabel, statusTextClass } from "@/components/ui/StatusDot";
 import { isAgentLocked } from "@/lib/security";
-import { listVaultProviders } from "@/lib/apiVault";
 import { ApiKeyVault } from "@/components/workspace/ApiKeyVault";
 import type { HandoffSuggestion } from "@/lib/handoff";
 
@@ -105,6 +104,15 @@ export function AgentDetailPanel() {
     if (!selectedAgentId) return;
     setDispatch({ phase: "dispatching" });
     try {
+      // Provider *names* only — the actual key values live server-side in
+      // the encrypted vault (see src/lib/serverVault.ts) and never reach
+      // this browser. This just tells the (simulated) agent run to prefer
+      // these over default system keys.
+      const vaultRes = await fetch(`/api/vault/${encodeURIComponent(selectedAgentId)}`);
+      const usingCustomKeys: string[] = vaultRes.ok
+        ? ((await vaultRes.json()).providers ?? [])
+        : [];
+
       const res = await fetch(`/api/agents/${encodeURIComponent(selectedAgentId)}/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,10 +120,7 @@ export function AgentDetailPanel() {
           source: "agent-detail-panel",
           role,
           unlockedAgentIds,
-          // Provider *names* only — the actual key values never leave the
-          // browser (see apiVault.ts). This just tells the (simulated)
-          // agent run to prefer these over default system keys.
-          usingCustomKeys: listVaultProviders(selectedAgentId),
+          usingCustomKeys,
         }),
       });
       const data = await res.json();

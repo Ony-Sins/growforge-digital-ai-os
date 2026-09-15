@@ -1,19 +1,31 @@
 /**
  * Lightweight, dependency-free multi-provider LLM transport for the AI
- * intent router. Three interchangeable providers (Gemini, Groq, local
- * Ollama) sit behind one entry point, `chatComplete`, selected by a runtime
- * strategy rather than hardcoded priority:
+ * intent router. Five interchangeable providers (Gemini, Groq, OpenAI,
+ * Anthropic, local Ollama) sit behind one entry point, `chatComplete`,
+ * selected by a runtime strategy rather than hardcoded priority:
  *
  *   - "local"  — Ollama only.
- *   - "cloud"  — Gemini if GEMINI_API_KEY is set, else Groq if GROQ_API_KEY
- *                is set. Errors if neither key is configured.
- *   - "auto"   — try Ollama first, fail over to Gemini, then Groq. Never
+ *   - "cloud"  — first cloud provider with a configured key, in
+ *                cloudProviderOrder()'s order. Errors if none are configured.
+ *   - "auto"   — try Ollama first, fail over through the cloud order. Never
  *                errors as long as at least one is reachable/configured.
  *
- * Adding a fourth provider later means writing one new `call<Provider>`
- * function and adding it to `callProvider` + `providerOrderForStrategy` —
- * nothing else in the app needs to change.
+ * Each cloud provider's API key can come from either the server environment
+ * (GEMINI_API_KEY etc., set once at deploy time) or the system-wide
+ * encrypted vault (src/lib/serverVault.ts, under the reserved SYSTEM_VAULT_ID
+ * pseudo-agent) — settable live from Settings → Integrations by an owner,
+ * no redeploy needed. The vault takes priority when both are set.
+ *
+ * Adding a sixth provider later means writing one new `call<Provider>`
+ * function, adding it to `callProvider` + `cloudProviderOrder`, and adding
+ * its display metadata to `CLOUD_PROVIDERS` — nothing else needs to change.
  */
+
+import { getSecretForServerUse } from "@/lib/serverVault";
+
+/** Reserved pseudo-agent id for system-wide (not per-agent) vault entries —
+ *  distinct from any real agent id, which are always kebab-case slugs. */
+export const SYSTEM_VAULT_ID = "__system__";
 
 export const UNIVERSAL_CONTEXT_POLICY =
   "Detect the language of the user's input and respond seamlessly in the same language. Interpret intent naturally without requiring strict formatting.";
@@ -25,8 +37,28 @@ export interface ChatMessage {
   content: string;
 }
 
-export type LlmProvider = "gemini" | "groq" | "ollama";
+export interface GenerationOptions {
+  maxTokens?: number;
+  /** In "auto" strategy, try cloud providers before local Ollama — for
+   *  long-form work a small local model can't do well. "local"/"cloud"
+   *  strategies are still respected as explicit operator choices. */
+  preferCloud?: boolean;
+}
+
+export type LlmProvider = "gemini" | "groq" | "openai" | "anthropic" | "ollama";
+export type CloudProvider = Exclude<LlmProvider, "ollama">;
 export type LlmStrategy = "auto" | "local" | "cloud";
+
+/** Env var name + sane default model for each cloud provider — the single
+ *  source of truth CLOUD_PROVIDERS, hasKey, and the call<Provider> functions
+ *  all read from, so adding a provider only means adding one row here (plus
+ *  its call function). */
+export const CLOUD_PROVIDERS: Record<CloudProvider, { label: string; envKey: string; envModel: string; defaultModel: string }> = {
+  gemini: { label: "Gemini", envKey: "GEMINI_API_KEY", envModel: "GEMINI_MODEL", defaultModel: "gemini-3.6-flash" },
+  groq: { label: "Groq", envKey: "GROQ_API_KEY", envModel: "GROQ_MODEL", defaultModel: "llama-3.3-70b-versatile" },
+  openai: { label: "OpenAI", envKey: "OPENAI_API_KEY", envModel: "OPENAI_MODEL", defaultModel: "gpt-4o-mini" },
+  anthropic: { label: "Anthropic", envKey: "ANTHROPIC_API_KEY", envModel: "ANTHROPIC_MODEL", defaultModel: "claude-sonnet-5" },
+};
 
 export class LlmError extends Error {
   provider: LlmProvider | "none";
@@ -57,15 +89,35 @@ export function setStrategy(strategy: LlmStrategy): void {
   runtimeStrategy = strategy;
 }
 
-export function hasKey(provider: "gemini" | "groq"): boolean {
-  return Boolean(provider === "gemini" ? process.env.GEMINI_API_KEY : process.env.GROQ_API_KEY);
+/** Vault value wins over env when both are set — lets an owner override a
+ *  deploy-time key live from the UI without touching server env. */
+function resolveApiKey(provider: CloudProvider): string | null {
+  const fromVault = getSecretForServerUse(SYSTEM_VAULT_ID, provider);
+  if (fromVault) return fromVault;
+  return process.env[CLOUD_PROVIDERS[provider].envKey] || null;
+}
+
+function resolveModel(provider: CloudProvider): string {
+  const { envModel, defaultModel } = CLOUD_PROVIDERS[provider];
+  return process.env[envModel] || defaultModel;
+}
+
+/** Server-side only — for modules (e.g. research.ts) that call a provider
+ *  API directly for a capability chatComplete doesn't expose. */
+export function getProviderKey(provider: CloudProvider): string | null {
+  return resolveApiKey(provider);
+}
+
+export function getProviderModel(provider: CloudProvider): string {
+  return resolveModel(provider);
+}
+
+export function hasKey(provider: CloudProvider): boolean {
+  return Boolean(resolveApiKey(provider));
 }
 
 function cloudProviderOrder(): LlmProvider[] {
-  const order: LlmProvider[] = [];
-  if (hasKey("gemini")) order.push("gemini");
-  if (hasKey("groq")) order.push("groq");
-  return order;
+  return (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).filter(hasKey);
 }
 
 /** Which providers to try, in order, for the current strategy. */
@@ -86,9 +138,9 @@ interface GeminiResponse {
   error?: { message?: string };
 }
 
-async function callGemini(systemPrompt: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+async function callGemini(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+  const apiKey = resolveApiKey("gemini");
+  const model = resolveModel("gemini");
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const contents = messages
@@ -106,7 +158,7 @@ async function callGemini(systemPrompt: string, messages: ChatMessage[]): Promis
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents,
-        generationConfig: { temperature: 0.4 },
+        generationConfig: { temperature: 0.4, ...(opts.maxTokens ? { maxOutputTokens: opts.maxTokens } : {}) },
       }),
     });
   } catch (err) {
@@ -130,9 +182,9 @@ interface GroqResponse {
   error?: { message?: string };
 }
 
-async function callGroq(systemPrompt: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY;
-  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+  const apiKey = resolveApiKey("groq");
+  const model = resolveModel("groq");
 
   let res: Response;
   try {
@@ -145,6 +197,7 @@ async function callGroq(systemPrompt: string, messages: ChatMessage[]): Promise<
       body: JSON.stringify({
         model,
         temperature: 0.4,
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
         messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
       }),
     });
@@ -161,12 +214,93 @@ async function callGroq(systemPrompt: string, messages: ChatMessage[]): Promise<
   return text;
 }
 
+interface OpenAIResponse {
+  choices?: { message?: { content?: string } }[];
+  error?: { message?: string };
+}
+
+async function callOpenAI(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+  const apiKey = resolveApiKey("openai");
+  const model = resolveModel("openai");
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.4,
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+      }),
+    });
+  } catch (err) {
+    throw new LlmError(`Could not reach OpenAI API (${err instanceof Error ? err.message : String(err)}).`, "openai");
+  }
+
+  const data = (await res.json()) as OpenAIResponse;
+  if (!res.ok) {
+    throw new LlmError(data.error?.message ?? `OpenAI request failed (${res.status})`, "openai");
+  }
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text.trim()) throw new LlmError("OpenAI returned an empty response.", "openai");
+  return text;
+}
+
+interface AnthropicResponse {
+  content?: { type: string; text?: string }[];
+  error?: { message?: string };
+}
+
+async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+  const apiKey = resolveApiKey("anthropic");
+  const model = resolveModel("anthropic");
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey ?? "",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: opts.maxTokens ?? 1024,
+        temperature: 0.4,
+        system: systemPrompt,
+        messages: messages
+          .filter((m) => m.role !== "system")
+          .map((m) => ({ role: m.role, content: m.content })),
+      }),
+    });
+  } catch (err) {
+    throw new LlmError(
+      `Could not reach Anthropic API (${err instanceof Error ? err.message : String(err)}).`,
+      "anthropic",
+    );
+  }
+
+  const data = (await res.json()) as AnthropicResponse;
+  if (!res.ok) {
+    throw new LlmError(data.error?.message ?? `Anthropic request failed (${res.status})`, "anthropic");
+  }
+  const text = data.content?.map((c) => (c.type === "text" ? c.text ?? "" : "")).join("") ?? "";
+  if (!text.trim()) throw new LlmError("Anthropic returned an empty response.", "anthropic");
+  return text;
+}
+
 interface OllamaResponse {
   message?: { content?: string };
   error?: string;
 }
 
-async function callOllama(systemPrompt: string, messages: ChatMessage[]): Promise<string> {
+async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
   const baseUrl = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
   const model = process.env.OLLAMA_MODEL || "llama3.2:1b";
 
@@ -178,6 +312,7 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[]): Promis
       body: JSON.stringify({
         model,
         stream: false,
+        ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
         messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
       }),
     });
@@ -197,14 +332,39 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[]): Promis
   return text;
 }
 
-function callProvider(provider: LlmProvider, systemPrompt: string, messages: ChatMessage[]): Promise<string> {
+function callProvider(
+  provider: LlmProvider,
+  systemPrompt: string,
+  messages: ChatMessage[],
+  opts: GenerationOptions = {},
+): Promise<string> {
   switch (provider) {
     case "gemini":
-      return callGemini(systemPrompt, messages);
+      return callGemini(systemPrompt, messages, opts);
     case "groq":
-      return callGroq(systemPrompt, messages);
+      return callGroq(systemPrompt, messages, opts);
+    case "openai":
+      return callOpenAI(systemPrompt, messages, opts);
+    case "anthropic":
+      return callAnthropic(systemPrompt, messages, opts);
     case "ollama":
-      return callOllama(systemPrompt, messages);
+      return callOllama(systemPrompt, messages, opts);
+  }
+}
+
+/** Fires one minimal real request at a provider and reports success/failure
+ *  — used by the Integrations "Test connection" button so a bad/expired key
+ *  is caught immediately instead of at the next chat request. */
+export async function testProvider(provider: CloudProvider): Promise<{ ok: boolean; message: string }> {
+  if (!hasKey(provider)) {
+    return { ok: false, message: "No API key configured for this provider." };
+  }
+  const start = Date.now();
+  try {
+    await callProvider(provider, "Reply with only the word: ok", [{ role: "user", content: "ping" }]);
+    return { ok: true, message: `Responded in ${Date.now() - start}ms.` };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -216,14 +376,16 @@ function callProvider(provider: LlmProvider, systemPrompt: string, messages: Cha
 export async function chatComplete(
   systemPrompt: string,
   messages: ChatMessage[],
+  opts: GenerationOptions = {},
 ): Promise<{ text: string; provider: LlmProvider }> {
   const strategy = getStrategy();
-  const order = providerOrder(strategy);
+  const order: LlmProvider[] =
+    opts.preferCloud && strategy === "auto" ? [...cloudProviderOrder(), "ollama"] : providerOrder(strategy);
 
   if (order.length === 0) {
     throw new LlmError(
       strategy === "cloud"
-        ? 'No cloud provider configured. Set GEMINI_API_KEY or GROQ_API_KEY, or switch strategy to "local"/"auto".'
+        ? "No cloud provider configured. Add a key in Settings → Integrations, or switch strategy to \"local\"/\"auto\"."
         : `No LLM provider available for strategy "${strategy}".`,
       "none",
     );
@@ -232,7 +394,7 @@ export async function chatComplete(
   const failures: string[] = [];
   for (const provider of order) {
     try {
-      const text = await callProvider(provider, systemPrompt, messages);
+      const text = await callProvider(provider, systemPrompt, messages, opts);
       return { text, provider };
     } catch (err) {
       failures.push(`${provider}: ${err instanceof Error ? err.message : String(err)}`);

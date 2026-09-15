@@ -6,18 +6,17 @@ import {
   CheckCircle2,
   Library,
   Lock,
-  Settings as SettingsIcon,
   TriangleAlert,
-  Workflow as WorkflowIcon,
   Zap,
   type LucideIcon,
 } from "lucide-react";
 import { agents } from "@/lib/agents";
 import { StatusDot, statusLabel, statusTextClass } from "@/components/ui/StatusDot";
 import { NodeWorkflowCanvas } from "@/components/workspace/NodeWorkflowCanvas";
-import { LogViewer } from "@/components/workspace/LogViewer";
-import { TerminalConsole } from "@/components/workspace/TerminalConsole";
 import { ChatView } from "@/components/workspace/ChatView";
+import { ExecutiveFunnel } from "@/components/workspace/ExecutiveFunnel";
+import { IntegrationsHub } from "@/components/workspace/IntegrationsHub";
+import { ProjectCanvas } from "@/components/workspace/ProjectCanvas";
 import { useAppState, type ActiveView } from "@/lib/appState";
 import { isAgentLocked } from "@/lib/security";
 
@@ -55,16 +54,6 @@ const PLACEHOLDER_CONTENT: Partial<Record<ActiveView, { icon: LucideIcon; title:
     title: "Vault Library",
     body: "279 cataloged agents across 18 divisions, stored in .claude/vault/. A full browsing UI is coming soon — for now, open the files directly.",
   },
-  workflows: {
-    icon: WorkflowIcon,
-    title: "Workflows",
-    body: "Multi-agent playbooks that chain runs across the roster. The workflow builder is coming soon.",
-  },
-  settings: {
-    icon: SettingsIcon,
-    title: "Console Settings",
-    body: "Environment, API base URL, and notification preferences. Settings are coming soon.",
-  },
 };
 
 /** Maps a nav selection to the dashboard section it should scroll to. */
@@ -76,14 +65,12 @@ function sectionIdFor(view: ActiveView): string {
       return "section-canvas";
     case "roster":
       return "section-roster";
-    case "terminal":
-      return "section-terminal";
-    case "logs":
-      return "section-logs";
-    case "vault":
     case "workflows":
-    case "settings":
+      return "section-projects";
+    case "vault":
       return "section-placeholder";
+    case "settings":
+      return "section-settings";
     case "dashboard":
     default:
       return "section-top";
@@ -114,6 +101,11 @@ export function Workspace() {
         {/* AI Assistant — primary conversational entry point */}
         <div id="section-chat" className={`rounded-2xl ${flash("section-chat")}`}>
           <ChatView />
+        </div>
+
+        {/* Live multi-agent projects — the main surface */}
+        <div id="section-projects" className={`rounded-2xl ${flash("section-projects")}`}>
+          <ProjectCanvas />
         </div>
 
         {/* Page heading */}
@@ -170,19 +162,12 @@ export function Workspace() {
           })}
         </div>
 
-        {/* Agent network canvas + live execution logs, side by side */}
-        <div id="section-canvas" className={`grid grid-cols-1 gap-6 rounded-2xl xl:grid-cols-5 ${flash("section-canvas")}`}>
-          <div className="xl:col-span-3">
-            <NodeWorkflowCanvas />
-          </div>
-          <div id="section-logs" className={`xl:col-span-2 rounded-xl ${flash("section-logs")}`}>
-            <LogViewer />
-          </div>
-        </div>
+        {/* Executive funnel — cataloged → provisioned → executing → completed */}
+        <ExecutiveFunnel />
 
-        {/* Interactive command terminal */}
-        <div id="section-terminal" className={`rounded-2xl ${flash("section-terminal")}`}>
-          <TerminalConsole />
+        {/* Agent network overview */}
+        <div id="section-canvas" className={`rounded-2xl ${flash("section-canvas")}`}>
+          <NodeWorkflowCanvas />
         </div>
 
         {/* Agent roster table */}
@@ -219,6 +204,11 @@ export function Workspace() {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* Settings — AI provider keys + custom connectors */}
+        <div id="section-settings" className={`rounded-2xl ${flash("section-settings")}`}>
+          <IntegrationsHub />
         </div>
       </div>
     </main>

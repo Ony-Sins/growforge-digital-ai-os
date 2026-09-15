@@ -19,6 +19,10 @@
 
 # local persisted runtime state
 /data/
+/data/vault.json
+/data/connectors.json
+/data/jobs.json
+/data/user_memories.json
 
 # production
 /build
