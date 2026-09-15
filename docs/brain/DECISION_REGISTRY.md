@@ -1,6 +1,6 @@
 # GrowForge Digital — Architectural Decision Registry (ADR)
 
-> **Auto-Generated:** 2026-09-15T20:24:28.283Z  
+> **Auto-Generated:** 2026-09-15T20:40:07.667Z  
 
 ## ADR Index
 
