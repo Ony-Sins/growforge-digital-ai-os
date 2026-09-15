@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { agents } from "@/lib/agents";
 import {
   chatComplete,
+  CLOUD_PROVIDERS,
   getStrategy,
   hasKey,
   LlmError,
@@ -9,6 +10,7 @@ import {
   setStrategy,
   UNIVERSAL_CONTEXT_POLICY,
   type ChatMessage,
+  type CloudProvider,
   type LlmStrategy,
 } from "@/lib/llm";
 import type { Agent } from "@/lib/agents";
@@ -17,18 +19,20 @@ import { getSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
+function availableKeys(): Record<CloudProvider, boolean> {
+  return Object.fromEntries((Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((p) => [p, hasKey(p)])) as Record<
+    CloudProvider,
+    boolean
+  >;
+}
+
 /** Current strategy + which provider(s) it would try, for the chat UI's switcher. */
 export async function GET() {
   const strategy = getStrategy();
   return NextResponse.json({
     strategy,
     providerOrder: providerOrder(strategy),
-    availableKeys: {
-      gemini: hasKey("gemini"),
-      groq: hasKey("groq"),
-      openai: hasKey("openai"),
-      anthropic: hasKey("anthropic"),
-    },
+    availableKeys: availableKeys(),
   });
 }
 
@@ -51,12 +55,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({
     strategy,
     providerOrder: providerOrder(strategy as LlmStrategy),
-    availableKeys: {
-      gemini: hasKey("gemini"),
-      groq: hasKey("groq"),
-      openai: hasKey("openai"),
-      anthropic: hasKey("anthropic"),
-    },
+    availableKeys: availableKeys(),
   });
 }
 

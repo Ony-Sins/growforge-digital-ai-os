@@ -45,7 +45,7 @@ export interface GenerationOptions {
   preferCloud?: boolean;
 }
 
-export type LlmProvider = "gemini" | "groq" | "openai" | "anthropic" | "ollama";
+export type LlmProvider = "gemini" | "groq" | "openai" | "anthropic" | "openrouter" | "ollama";
 export type CloudProvider = Exclude<LlmProvider, "ollama">;
 export type LlmStrategy = "auto" | "local" | "cloud";
 
@@ -58,6 +58,11 @@ export const CLOUD_PROVIDERS: Record<CloudProvider, { label: string; envKey: str
   groq: { label: "Groq", envKey: "GROQ_API_KEY", envModel: "GROQ_MODEL", defaultModel: "llama-3.3-70b-versatile" },
   openai: { label: "OpenAI", envKey: "OPENAI_API_KEY", envModel: "OPENAI_MODEL", defaultModel: "gpt-4o-mini" },
   anthropic: { label: "Anthropic", envKey: "ANTHROPIC_API_KEY", envModel: "ANTHROPIC_MODEL", defaultModel: "claude-sonnet-5" },
+  // OpenRouter is a gateway, not one model — it hosts several genuinely free
+  // (rate-limited) models alongside paid ones. Free account, no card needed
+  // for the ":free" models. Check openrouter.ai/models?max_price=0 for the
+  // current list — which exact models are free changes over time.
+  openrouter: { label: "OpenRouter", envKey: "OPENROUTER_API_KEY", envModel: "OPENROUTER_MODEL", defaultModel: "meta-llama/llama-3.1-8b-instruct:free" },
 };
 
 export class LlmError extends Error {
@@ -295,6 +300,43 @@ async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts
   return text;
 }
 
+interface OpenRouterResponse {
+  choices?: { message?: { content?: string } }[];
+  error?: { message?: string };
+}
+
+async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+  const apiKey = resolveApiKey("openrouter");
+  const model = resolveModel("openrouter");
+
+  let res: Response;
+  try {
+    res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.4,
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+      }),
+    });
+  } catch (err) {
+    throw new LlmError(`Could not reach OpenRouter API (${err instanceof Error ? err.message : String(err)}).`, "openrouter");
+  }
+
+  const data = (await res.json()) as OpenRouterResponse;
+  if (!res.ok) {
+    throw new LlmError(data.error?.message ?? `OpenRouter request failed (${res.status})`, "openrouter");
+  }
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text.trim()) throw new LlmError("OpenRouter returned an empty response.", "openrouter");
+  return text;
+}
+
 interface OllamaResponse {
   message?: { content?: string };
   error?: string;
@@ -347,6 +389,8 @@ function callProvider(
       return callOpenAI(systemPrompt, messages, opts);
     case "anthropic":
       return callAnthropic(systemPrompt, messages, opts);
+    case "openrouter":
+      return callOpenRouter(systemPrompt, messages, opts);
     case "ollama":
       return callOllama(systemPrompt, messages, opts);
   }

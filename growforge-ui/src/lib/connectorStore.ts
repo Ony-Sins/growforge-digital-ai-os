@@ -193,6 +193,17 @@ export function deleteConnector(id: string): void {
   removeSecret(vaultAgentId(id), "auth");
 }
 
+async function buildAuthHeaders(id: string, def: ConnectorDef): Promise<{ headers: Record<string, string> } | { error: string }> {
+  const headers: Record<string, string> = { ...def.headers };
+  if (def.authMode === "none") return { headers };
+
+  const secret = getSecretForServerUse(vaultAgentId(id), "auth");
+  if (!secret) return { error: "No credential stored for this connector's auth mode." };
+  if (def.authMode === "bearer") headers["Authorization"] = `Bearer ${secret}`;
+  else if (def.authMode === "header" && def.authHeaderName) headers[def.authHeaderName] = secret;
+  return { headers };
+}
+
 /** Fires the connector's configured HTTP request server-side. The secret
  *  (if any) is read from the vault here and injected into the request —
  *  it never appears in the API response, and neither does the response
@@ -210,27 +221,61 @@ export async function testConnector(id: string): Promise<{ ok: boolean; status?:
     return { ok: false, message: err instanceof Error ? err.message : "URL is no longer allowed." };
   }
 
-  const headers: Record<string, string> = { ...def.headers };
-  if (def.authMode !== "none") {
-    const secret = getSecretForServerUse(vaultAgentId(id), "auth");
-    if (!secret) {
-      return { ok: false, message: "No credential stored for this connector's auth mode." };
-    }
-    if (def.authMode === "bearer") {
-      headers["Authorization"] = `Bearer ${secret}`;
-    } else if (def.authMode === "header" && def.authHeaderName) {
-      headers[def.authHeaderName] = secret;
-    }
-  }
+  const auth = await buildAuthHeaders(id, def);
+  if ("error" in auth) return { ok: false, message: auth.error };
 
   try {
     // redirect: "manual" so a 3xx response is reported as-is rather than
     // silently followed to an unvalidated (possibly internal) target.
-    const res = await fetch(def.url, { method: def.method, headers, redirect: "manual" });
+    const res = await fetch(def.url, { method: def.method, headers: auth.headers, redirect: "manual" });
     if (res.status >= 300 && res.status < 400) {
       return { ok: false, status: res.status, message: `${res.status} ${res.statusText} — redirects aren't followed; point the connector at the final URL.` };
     }
     return { ok: res.ok, status: res.status, message: `${res.status} ${res.statusText}` };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Request failed." };
+  }
+}
+
+/**
+ * A real, deliberate invocation of a connector — as opposed to testConnector's
+ * passive ping. Called by an agent tool (see tools.ts), so the response body
+ * IS returned (bounded to 4KB): an agent needs to see what the endpoint said
+ * back to do anything useful with it. Every call site of this function must
+ * sit behind the same PROPOSE-vs-EXECUTE approval gate the tool loop enforces
+ * for any tool marked requiresApproval — this function itself has no gate.
+ */
+export async function invokeConnector(id: string, body?: unknown): Promise<{ ok: boolean; status?: number; message: string }> {
+  const def = getConnector(id);
+  if (!def) return { ok: false, message: "Connector not found." };
+
+  try {
+    await assertPublicHttpsUrl(def.url);
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "URL is no longer allowed." };
+  }
+
+  const auth = await buildAuthHeaders(id, def);
+  if ("error" in auth) return { ok: false, message: auth.error };
+
+  const headers = { ...auth.headers };
+  const hasBody = body !== undefined && def.method !== "GET";
+  if (hasBody && !Object.keys(headers).some((h) => h.toLowerCase() === "content-type")) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  try {
+    const res = await fetch(def.url, {
+      method: def.method,
+      headers,
+      redirect: "manual",
+      body: hasBody ? JSON.stringify(body) : undefined,
+    });
+    if (res.status >= 300 && res.status < 400) {
+      return { ok: false, status: res.status, message: `${res.status} ${res.statusText} — redirects aren't followed; point the connector at the final URL.` };
+    }
+    const text = (await res.text()).slice(0, 4000);
+    return { ok: res.ok, status: res.status, message: `${res.status} ${res.statusText} — ${text || "(empty body)"}` };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Request failed." };
   }
