@@ -33,6 +33,7 @@ export function AdminDrawer() {
   const [activeTab, setActiveTab] = useState<"terminal" | "logs" | "diagnostics">(adminDrawerTab);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the locally-selected tab in response to the adminDrawerTab prop-like value changing, not derived render state
     setActiveTab(adminDrawerTab);
   }, [adminDrawerTab]);
 

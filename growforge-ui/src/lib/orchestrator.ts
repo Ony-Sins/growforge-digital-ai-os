@@ -1,6 +1,7 @@
 import { chatComplete } from "@/lib/llm";
 import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
+import { runToolLoop, getDefaultTools } from "@/lib/tools";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
 import {
   addLiveNote,
@@ -347,6 +348,39 @@ async function runResearch(job: Job, plan: Plan): Promise<Dossier> {
 
 type Draft = { departmentId: string; name: string; output: string };
 
+/**
+ * Before drafting, a department gets up to 3 tool-loop steps to fill gaps
+ * HQ's own research didn't cover (see runToolLoop in tools.ts) — a targeted
+ * follow-up search, or a real connector call. Deliberately kept separate
+ * from the actual draft-writing call below rather than making the draft
+ * itself the tool loop's "final" answer: the loop's final text has to
+ * survive being embedded inside a JSON string, which is a fine constraint
+ * for a short status line but a real reliability risk for a 700-word
+ * markdown essay full of quotes, numbers and line breaks — smaller local
+ * models in particular tend to mangle that escaping. So the loop only ever
+ * gathers; a normal unconstrained text completion writes the draft.
+ *
+ * requestApproval is intentionally omitted: there is no human in the loop
+ * during an automated pipeline run, so call_connector — the one tool
+ * requiring approval — safely no-ops (logged as "not approved") rather than
+ * silently firing a real external request unattended. Wiring a real
+ * approval queue for mid-run connector calls is a deliberate next step, not
+ * done here.
+ */
+async function gatherWithTools(jobId: string, stepId: string, dept: { name: string; file: string }, task: string): Promise<string> {
+  const result = await runToolLoop({
+    systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.`,
+    task: `${task}\n\nOnly call a tool if the research dossier above is genuinely missing something you need to give specific, accurate advice — otherwise finish immediately with action "final" and text "no additional research needed".`,
+    tools: getDefaultTools(),
+    maxSteps: 3,
+    maxTokens: 500,
+    onActivity: (text) => updateStep(jobId, stepId, { activity: text }),
+  });
+
+  if (result.calls.length === 0) return "";
+  return result.calls.map((c) => `- Called ${c.tool}(${JSON.stringify(c.args)}) → ${c.result}`).join("\n");
+}
+
 /** Runs (or re-runs) exactly the given assignments — a resume/revise only
  *  passes the subset that needs redoing; everything else keeps its
  *  existing draft untouched (see resumePipeline). */
@@ -354,11 +388,21 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
   const results = await mapLimit(assignments, 3, async (a) => {
     const dept = getDepartment(a.departmentId)!;
     const stepId = `dept:${a.departmentId}`;
-    updateStep(jobId, stepId, { status: "active", percent: 15, activity: a.activity || "Drafting department section", startedAt: now() });
+    updateStep(jobId, stepId, { status: "active", percent: 10, activity: a.activity || "Drafting department section", startedAt: now() });
 
-    const system = `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${EVIDENCE_RULES}`;
     const dossierText = getJob(jobId)!.dossierSnapshot?.text ?? "(no research dossier available)";
-    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nYOUR ASSIGNMENT FROM HQ:\n${a.task}\n\nRESEARCH DOSSIER:\n${dossierText}\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
+    const gatherTask = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nYOUR ASSIGNMENT FROM HQ:\n${a.task}\n\nRESEARCH DOSSIER:\n${dossierText}`;
+
+    let extraFindings = "";
+    try {
+      extraFindings = await gatherWithTools(jobId, stepId, dept, gatherTask);
+    } catch (err) {
+      console.error(`[orchestrator] tool-gathering failed for ${stepId}, drafting without it:`, err);
+    }
+
+    updateStep(jobId, stepId, { percent: 40, activity: "Drafting department section" });
+    const system = `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${EVIDENCE_RULES}`;
+    const user = `${gatherTask}${extraFindings ? `\n\nADDITIONAL RESEARCH YOU GATHERED:\n${extraFindings}` : ""}\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
 
     try {
       const { text, provider } = await ask(system, user, 2200);

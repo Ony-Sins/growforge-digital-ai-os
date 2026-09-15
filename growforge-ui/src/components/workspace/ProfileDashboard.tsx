@@ -6,19 +6,15 @@ import {
   CheckCircle2,
   Download,
   Flame,
-  KeyRound,
   Loader2,
   Plus,
-  RefreshCw,
   RotateCcw,
   Save,
   Shield,
   Sparkles,
   Target,
   Trash2,
-  UserCheck,
   XCircle,
-  Zap,
 } from "lucide-react";
 import type { UserMemory } from "@/lib/userMemory";
 
@@ -82,6 +78,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
     loadMemory();
   }, []);
 

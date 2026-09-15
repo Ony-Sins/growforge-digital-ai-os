@@ -8,7 +8,7 @@ import { PinPromptModal } from "@/components/workspace/PinPromptModal";
 import { AdminDrawer } from "@/components/workspace/AdminDrawer";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
-import { Lock, Shield, Terminal, ScrollText, KeyRound, Sparkles } from "lucide-react";
+import { Lock, Shield, Terminal, ScrollText, KeyRound } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminPage() {

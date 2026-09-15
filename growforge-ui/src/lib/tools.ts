@@ -1,6 +1,8 @@
 import { chatComplete } from "@/lib/llm";
 import { researchQuestion, isResearchAvailable } from "@/lib/research";
 import { listConnectors, invokeConnector } from "@/lib/connectorStore";
+import { piperTool } from "@/lib/tools/piper";
+import { whisperTool } from "@/lib/tools/whisper";
 
 /**
  * The generic agent tool-calling loop — what turns a department agent from
@@ -240,5 +242,5 @@ function connectorTool(): Tool {
 /** The tool set available to an agent right now — rebuilt per call so a
  *  newly added connector shows up without a restart. */
 export function getDefaultTools(): Tool[] {
-  return [webSearchTool, connectorTool()];
+  return [webSearchTool, connectorTool(), piperTool, whisperTool];
 }

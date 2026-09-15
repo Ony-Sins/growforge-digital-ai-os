@@ -7,7 +7,7 @@ import { JobNotifier } from "@/components/workspace/JobNotifier";
 import { AdminDrawer } from "@/components/workspace/AdminDrawer";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
-import { Brain, ChevronRight, UserCircle } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function ProfilePage() {

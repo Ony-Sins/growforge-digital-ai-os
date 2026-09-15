@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, ChevronRight, CircuitBoard, LogOut, Search, Shield, Terminal } from "lucide-react";
+import { Bell, ChevronRight, CircuitBoard, LogOut, Search, Shield } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { useAppState } from "@/lib/appState";
