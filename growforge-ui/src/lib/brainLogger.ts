@@ -49,8 +49,6 @@ export function flushBrainLogs(): Promise<void> {
  */
 export function logJobStateChange(job: Job): Promise<void> {
   const activeStep = job.steps.find((s) => s.status === "active");
-  const completedSteps = job.steps.filter((s) => s.status === "done");
-  const pendingSteps = job.steps.filter((s) => s.status === "pending");
 
   let md = `# GrowForge Digital — Current Operating State\n\n`;
   md += `> **Last State Sync:** ${new Date().toISOString()}  \n`;

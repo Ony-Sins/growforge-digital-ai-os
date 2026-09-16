@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HelpCircle, Send, MessageSquare } from "lucide-react";
+import { HelpCircle, Send } from "lucide-react";
 import { useAppState } from "@/lib/appState";
 import type { PendingConsultation } from "@/lib/consultationStore";
 

@@ -299,11 +299,6 @@ async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts
   return text;
 }
 
-interface OpenRouterResponse {
-  choices?: { message?: { content?: string } }[];
-  error?: { message?: string };
-}
-
 async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
   const apiKey = resolveApiKey("openrouter");
   if (!apiKey) throw new LlmError("No OpenRouter API key configured.", "openrouter");

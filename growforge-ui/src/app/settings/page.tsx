@@ -378,86 +378,6 @@ function ExternalProviderCard({
 // Custom OpenAI-Compatible API card
 // ---------------------------------------------------------------------------
 
-function CustomApiCard() {
-  const [baseUrl, setBaseUrl] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [err, setErr] = useState("");
-
-  // Allow external providers to pre-fill this card
-  const ref = useRef<{ fill: (url: string) => void }>(null);
-  (ref as React.MutableRefObject<{ fill: (url: string) => void }>).current = {
-    fill: (url: string) => {
-      setBaseUrl(url);
-      document.getElementById("custom-api-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    },
-  };
-
-  async function handleSave() {
-    if (!baseUrl.trim() || !apiKey.trim()) return;
-    setSaving(true);
-    setErr("");
-    try {
-      const res = await fetch("/api/vault/system", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: "openrouter", value: apiKey.trim() }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error ?? "Failed to save.");
-      }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div id="custom-api-card" className="glass-card rounded-2xl border border-dashed border-electric/40 bg-electric/5 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Globe className="h-4 w-4 text-electric" />
-        <span className="font-semibold text-navy text-sm">Custom OpenAI-Compatible API</span>
-        <span className="rounded-full bg-electric/10 px-2 py-0.5 text-[10px] font-semibold text-electric">Proxy</span>
-      </div>
-      <p className="mb-3 text-xs text-secondary">
-        Use any OpenAI-compatible endpoint — Kimi, DeepSeek, Manus, LM Studio, vLLM, or your own proxy.
-        Click <strong>Use →</strong> on a provider card above to pre-fill the Base URL.
-      </p>
-      <div className="space-y-2">
-        <input
-          type="url"
-          value={baseUrl}
-          onChange={(e) => setBaseUrl(e.target.value)}
-          placeholder="https://api.moonshot.cn/v1"
-          className="w-full rounded-lg border border-border-metal-strong bg-white/80 px-3 py-2 text-xs text-navy placeholder-muted outline-none focus:border-electric focus:ring-1 focus:ring-electric/20"
-        />
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="API key for this endpoint"
-          className="w-full rounded-lg border border-border-metal-strong bg-white/80 px-3 py-2 font-mono text-xs text-navy placeholder-muted outline-none focus:border-electric focus:ring-1 focus:ring-electric/20"
-        />
-        {err && <p className="text-xs text-crimson">{err}</p>}
-        <button
-          type="button"
-          disabled={saving || !baseUrl.trim() || !apiKey.trim()}
-          onClick={handleSave}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-electric/80 px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
-        >
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : saved ? <Check className="h-3 w-3" /> : <Key className="h-3 w-3" />}
-          {saved ? "Saved!" : saving ? "Saving…" : "Save Custom API"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // n8n Automation Engine card
 // ---------------------------------------------------------------------------
@@ -499,6 +419,7 @@ function N8nCard() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
     loadConfig();
     checkHealth();
   }, [loadConfig, checkHealth]);
@@ -1045,6 +966,7 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
     loadProviders();
     loadConnectors();
   }, []);
@@ -1234,6 +1156,7 @@ function CustomApiCardWithUrl({ prefillUrl }: { prefillUrl: string }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the local base-URL field in response to the prefillUrl prop changing, not derived render state
     if (prefillUrl) setBaseUrl(prefillUrl);
   }, [prefillUrl]);
 

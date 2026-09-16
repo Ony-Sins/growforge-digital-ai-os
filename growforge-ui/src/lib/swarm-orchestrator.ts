@@ -1,13 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chatComplete } from "@/lib/llm";
-import { getDefaultTools, Tool, ToolResult, ToolCallLog } from "@/lib/tools";
+import { getDefaultTools, Tool } from "@/lib/tools";
 import { transferTaskTool, setTransferTaskHandler, TaskTransferPayload } from "@/lib/tools/transferTask";
 import { completeDirectiveTool, setCompleteDirectiveHandler, DirectiveCompletionPayload } from "@/lib/tools/completeDirective";
-import { askOperatorTool, setConsultationHandler } from "@/lib/tools/askOperator";
-import { logSwarmStateChange, logStrategicDecision, SwarmTelemetryInput } from "@/lib/brainLogger";
-import { DEPARTMENTS, loadInstructions, HQ, QA } from "@/lib/departments";
-import { agents as UI_AGENTS } from "@/lib/agents";
+import { setConsultationHandler } from "@/lib/tools/askOperator";
+import { logSwarmStateChange, logStrategicDecision } from "@/lib/brainLogger";
+import { loadInstructions } from "@/lib/departments";
 
 /**
  * Kimi-Style Peer-to-Peer Agent Swarm Architecture (src/lib/swarm-orchestrator.ts)
@@ -595,6 +594,7 @@ async function runSwarmExecutionLoop(
         }
       } catch (err) {
         // Fallback text if LLM call fails
+        console.error("[swarm-orchestrator] model call failed, using fallback response:", err);
         modelResponse = {
           text: JSON.stringify({
             action: "tool",
