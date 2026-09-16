@@ -21,6 +21,27 @@ import { loadInstructions } from "@/lib/departments";
  * - State Pollution Guard: Validates and sanitizes explicit key/value diff payloads before merging into shared state.
  * - Persistent State Snapshots: Saves state to data/swarm_states/{directiveId}.json and allows seamless resume.
  * - Live Digital Brain Sync: Synchronizes real-time state to /docs/brain/CURRENT_STATE.md.
+ *
+ * STATUS: SET ASIDE, NOT WIRED IN (decided 2026-09-16). Nothing under src/app
+ * or src/components imports this file — it's reachable only from the
+ * standalone test scripts in scripts/. orchestrator.ts (the pipeline:
+ * brief -> HQ plan -> live research -> departments -> team review -> QA ->
+ * final plan) is the one primary orchestration path. Reasons: this engine
+ * has no citation/evidence enforcement (no EVIDENCE_RULES equivalent, no
+ * UNVERIFIED banner, nothing stopping a department from stating an
+ * unsourced number as fact) and its SWARM_ROSTER only covers 7 of the 10
+ * real departments (missing Finance & Operations, Client Success/PM, Web
+ * Design/UX) — both real gaps, not proven bugs, but enough that switching
+ * primary orchestration here would be a regression today.
+ *
+ * Two pieces of this branch of work WERE merged into the pipeline directly
+ * (see orchestrator.ts's gatherWithTools): the n8n tools (n8nTool,
+ * n8nTemplateTool) and the ask_operator consultation flow
+ * (requestConsultation / consultationStore / HITLDrawer) — both live-tested
+ * end-to-end through the real pipeline, not just this file's own test
+ * scripts. Revisit swarm-orchestrator.ts if free-form peer-to-peer handoffs
+ * are wanted later; port the evidence rules and the 3 missing departments
+ * in first.
  */
 
 export interface SwarmTraceEntry {

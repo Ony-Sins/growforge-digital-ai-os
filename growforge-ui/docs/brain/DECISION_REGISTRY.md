@@ -110,3 +110,45 @@
 - **Department/Context:** Swarm Orchestrator · Directive swarm-mu3bs6zc-5w5k
 - **Agreed Resolution & Direction:**
   Multi-agent peer delegation verified end-to-end with state isolation and zero pollution.
+
+### Decision: HQ Assigned 5 Departments for "Summit Ridge Roofing GTM & Lead Automation"
+- **Recorded:** 2026-09-16T00:28:52.974Z
+- **Department/Context:** GrowForge HQ · Job job-mu3d4bno-qslg
+- **Agreed Resolution & Direction:**
+  - **Marketing**: Develop DFW roofing positioning, messaging, and demand-generation strategy for Summit Ridge Roofing
+  - **Meta Ads**: Create Meta ad campaigns targeting DFW homeowners for Summit Ridge Roofing lead generation
+  - **Web Development**: Build a responsive website with integrated lead form for Summit Ridge Roofing
+  - **AI Systems / Automation**: Design n8n workflow for instant lead notification, CRM logging, and sales team alerts for Summit Ridge Roofing
+  - **Sales & BD**: Define ICP and outreach sequence for DFW homeowners targeting Summit Ridge Roofing leads
+
+### Decision: HQ Reconciled Team Direction for Job job-mu3d4bno-qslg
+- **Recorded:** 2026-09-16T00:32:30.609Z
+- **Department/Context:** GrowForge HQ · Cross-Department Review
+- **Agreed Resolution & Direction:**
+  ## Cross‑Department Review – Summit Ridge Roofing (DFW)
+  
+  ### Conflicts  
+  | Conflict | What each department proposes | Resolution & Rationale |
+  |----------|------------------------------|-----------------------|
+  | **Marketing ↔ Meta Ads – Budget Overrun** | Marketing: $3,100/mo total media spend (Meta $800 + $1,300, Google $400 + $600).<br>Meta Ads: Phase‑1 $800, Phase‑2 $1,500, Phase‑3 $2,000 (cumulative $4,300). | **Decision:** Consolidate to a **single $2,500/mo ceiling** across all paid channels. Phase‑1 Meta $800, Google $400 (total $1,200). Remaining $1,300 allocated to **Phase‑2 scaling** (Meta $800, Google $500) **pending CEO sign‑off**. This keeps the plan within the client’s stated budget and aligns with the strict financial boundary. |
+  | **Marketing ↔ Web Development – Unknown We
+
+### Decision: QA Audit Verdict: Needs work — fixes required for Job job-mu3d4bno-qslg
+- **Recorded:** 2026-09-16T00:36:44.805Z
+- **Department/Context:** Quality Assurance · Quality Assurance
+- **Agreed Resolution & Direction:**
+  **Verdict:** NEEDS WORK
+  
+  ### Unsupported claims
+  
+  * "20 qualified leads/month within 6 months" (no citation)
+  * "Meta’s intent-based targeting of DFW homeowners with roof-age signals" (no citation)
+  * "Benchmark estimates for DFW roofing CPL range $15-$35 (industry estimate)" (no citation)
+  * "The proposed plan targets $110-$120 CPL, which is realistic for high-ticket local services" (no citation)
+  * "The remaining 90 days are for scaling and optimization" (no citation)
+  * "The 2-hour SLA for follow-up (industry standard) cannot be met" (no citation)
+  * "The client insists on 20 leads/month, we must either increase budget to $3,000-$3,500 or accept a higher CPL with longer sales cycles" (no citation)
+  
+  ### Contradictions
+  
+  * Marketing proposes a total media spend of $3,100/mo, while Meta Ads propos
