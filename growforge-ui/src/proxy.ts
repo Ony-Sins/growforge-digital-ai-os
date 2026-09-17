@@ -12,8 +12,12 @@ import { auth } from "@/auth";
 export default auth((req) => {
   // Dev-only bypass, hard-gated to NODE_ENV==="development" (see
   // src/lib/session.ts for the matching bypass used by page/route handlers)
-  // — structurally unreachable in a production build.
-  const isLoggedIn = !!req.auth || process.env.NODE_ENV === "development";
+  // — structurally unreachable in a production build. PUBLIC_PREVIEW_MODE
+  // is the separate, deliberate, production-reachable bypass — see
+  // session.ts's publicPreviewSession() comment for what it is and why;
+  // remove both together when it's time to turn this off.
+  const isLoggedIn =
+    !!req.auth || process.env.NODE_ENV === "development" || process.env.PUBLIC_PREVIEW_MODE === "true";
   const { pathname } = req.nextUrl;
 
   const isPublic = pathname === "/login" || pathname.startsWith("/api/auth");
