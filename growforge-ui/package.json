@@ -7,20 +7,27 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "docs:brain": "npx tsx scripts/generate-brain-docs.ts"
+    "docs:brain": "npx tsx scripts/generate-brain-docs.ts",
+    "backtest": "npx tsx scripts/backtest.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@xyflow/react": "^12.11.6",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.45.0",
+    "mammoth": "^1.12.3",
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -74,6 +74,11 @@ export interface Job {
   /** Email of the signed-in user who launched it. Projects are visible to the
    *  whole authorized team, but only the creator or an owner may change one. */
   createdBy?: string;
+  /** Set once an owner clicks Approve on the finished plan (see
+   *  /api/jobs/[id]/approve) — real state backing the "pending CEO
+   *  approval" language in the final plan, not just decorative text. */
+  approvedAt?: string;
+  approvedBy?: string;
   /** Snapshots that let resumePipeline() redo just one stage without
    *  re-deriving everything from scratch — see orchestrator.ts. */
   planSnapshot?: { title: string; assignments: { departmentId: string; task: string; activity: string }[] };
@@ -82,8 +87,8 @@ export interface Job {
 
 export type JobSummary = Pick<
   Job,
-  "id" | "title" | "status" | "percent" | "verified" | "createdAt" | "updatedAt" | "finishedAt"
-> & { activeStep: string | null };
+  "id" | "title" | "status" | "percent" | "verified" | "createdAt" | "updatedAt" | "finishedAt" | "approvedAt"
+> & { activeStep: string | null; hasFinalOutput: boolean };
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "jobs.json");
@@ -156,6 +161,16 @@ export function getJob(id: string): Job | undefined {
   return getStore().find((j) => j.id === id);
 }
 
+/** Removes a job outright — for synthetic/backtest jobs that should never
+ *  show up in the real project list, not for anything a real client saw. */
+export function deleteJob(id: string): void {
+  const store = getStore();
+  const idx = store.findIndex((j) => j.id === id);
+  if (idx === -1) return;
+  store.splice(idx, 1);
+  persist();
+}
+
 export function listJobSummaries(): JobSummary[] {
   return getStore().map((j) => ({
     id: j.id,
@@ -166,6 +181,8 @@ export function listJobSummaries(): JobSummary[] {
     createdAt: j.createdAt,
     updatedAt: j.updatedAt,
     finishedAt: j.finishedAt,
+    approvedAt: j.approvedAt,
+    hasFinalOutput: !!j.finalOutput,
     activeStep: j.steps.find((s) => s.status === "active")?.label ?? null,
   }));
 }

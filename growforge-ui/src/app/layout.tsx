@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${sora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full h-full flex flex-col bg-app text-navy font-body">
+      <body className="min-h-full h-full flex flex-col bg-app text-navy font-body" suppressHydrationWarning>
         {children}
       </body>
     </html>

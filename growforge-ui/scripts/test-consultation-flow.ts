@@ -71,7 +71,7 @@ async function runTests() {
   assert(fallbackRes.output.includes("Operator consultation is currently running in automated mode"), "Fallback notice included");
 
   // Test with active consultation handler
-  setConsultationHandler(async (q, opts) => {
+  setConsultationHandler(async (q) => {
     assert(q.includes("pricing"), "Handler receives the question");
     return "$4,500/month retainer";
   });
@@ -84,7 +84,7 @@ async function runTests() {
   setConsultationHandler(null);
 
   console.log("\n=== Suite 4: Tool Catalog Registration ===");
-  const defaultTools = getDefaultTools();
+  const defaultTools = await getDefaultTools();
   assert(defaultTools.some((t) => t.name === "ask_operator"), "ask_operator tool is registered in getDefaultTools()");
   assert(defaultTools.some((t) => t.name === "manage_n8n_workflow"), "manage_n8n_workflow tool is registered in getDefaultTools()");
 

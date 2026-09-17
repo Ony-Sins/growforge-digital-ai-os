@@ -24,8 +24,9 @@ import type { PendingConsultation } from "@/lib/consultationStore";
 /**
  * HITLDrawer — Human-in-the-Loop slide-over drawer
  *
- * Replaces the minimal ConsultationBanner cards with a full-featured drawer
- * that exposes:
+ * The single surface for pending sub-agent consultations (a simpler
+ * floating-banner duplicate, ConsultationBanner, was removed 2026-09-17 —
+ * this drawer already covered everything it did and more). Exposes:
  *   - Agent identity & step context
  *   - The full question + reasoning context
  *   - Preset answer option pills
@@ -361,6 +362,7 @@ function ConsultationCard({ c, onDismiss }: ConsultationCardProps) {
 // ---------------------------------------------------------------------------
 
 export function HITLDrawer() {
+  const { chatViewMode } = useAppState();
   const [consultations, setConsultations] = useState<PendingConsultation[]>([]);
   const [open, setOpen] = useState(false);
   const prevCountRef = useRef(0);
@@ -415,7 +417,12 @@ export function HITLDrawer() {
         aria-label={`HITL: ${pendingCount} pending operator input${pendingCount !== 1 ? "s" : ""}`}
         onClick={() => setOpen((v) => !v)}
         className={[
-          "fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl transition-all duration-300",
+          "fixed z-50 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl transition-all duration-300",
+          // The docked AI Assistant panel is a full-width 45vh bottom sheet
+          // below lg, and a fixed right column at lg+ — a plain bottom-6
+          // right-6 sits directly underneath either one. Shift out of its
+          // way instead of floating on top of the chat input.
+          chatViewMode === "docked" ? "bottom-[calc(45vh+1rem)] right-6 lg:bottom-6 lg:right-[25rem]" : "bottom-6 right-6",
           pendingCount > 0
             ? "bg-gradient-to-br from-electric to-gold glow-electric animate-pulse"
             : "bg-navy/90 hover:bg-navy",

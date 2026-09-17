@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17T00:00:00Z",
+  "title": "Design System: GrowForge Digital AI OS",
+  "extensions": {
+    "colorMeta": {
+      "electric": { "role": "primary", "displayName": "Instrument Blue", "canonical": "#0078ff", "tonalRamp": ["#001633", "#00306b", "#004aa3", "#0064d9", "#0078ff", "#4da2ff", "#8ec4ff", "#d6ebff"] },
+      "gold": { "role": "secondary", "displayName": "Earned Gold", "canonical": "#ffc432", "tonalRamp": ["#3a2900", "#6b4b00", "#a06f00", "#d69700", "#ffc432", "#ffd970", "#ffe8a8", "#fff6dc"] },
+      "navy": { "role": "neutral", "displayName": "Deep Hull Navy", "canonical": "#0b1220", "tonalRamp": ["#05070c", "#0b1220", "#1a2438", "#2c3b5a", "#475569", "#94a3b8", "#cbd5e1", "#f8fafc"] },
+      "emerald": { "role": "status-success", "displayName": "Emerald", "canonical": "#10b981" },
+      "crimson": { "role": "status-error", "displayName": "Crimson", "canonical": "#e11d48" }
+    },
+    "typographyMeta": {
+      "heading": { "displayName": "Sora Heading", "purpose": "All h1-h6, card titles, section headers. Tracked -0.01em." },
+      "body": { "displayName": "Inter Body", "purpose": "Body copy, UI labels, long-form job/plan output." }
+    },
+    "shadows": [
+      { "name": "glass-card", "value": "0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 32px -20px rgba(11,18,32,0.25)", "purpose": "Standard floating glass panel." },
+      { "name": "glass-card-strong", "value": "0 1px 0 rgba(255,255,255,0.7) inset, 0 16px 40px -22px rgba(11,18,32,0.28)", "purpose": "Modals and elevated overlays." },
+      { "name": "glow-electric", "value": "0 0 0 1px rgba(0,120,255,0.28), 0 0 24px rgba(0,120,255,0.28)", "purpose": "Live/active status halo." },
+      { "name": "glow-gold", "value": "0 0 0 1px rgba(255,196,50,0.35), 0 0 24px rgba(255,196,50,0.32)", "purpose": "Confirmed/premium status halo." },
+      { "name": "glow-crimson", "value": "0 0 0 1px rgba(225,29,72,0.28), 0 0 20px rgba(225,29,72,0.28)", "purpose": "Error status halo." }
+    ],
+    "motion": [
+      { "name": "hover-lift", "value": "hover:scale-[1.02], hover:-translate-y-0.5", "purpose": "Default confident-lift hover on buttons and cards." },
+      { "name": "node-pulse", "value": "2.4s ease-in-out infinite, scale 1 to 1.15, opacity 0.55 to 1", "purpose": "Live status dot pulse." },
+      { "name": "logo-float", "value": "7s ease-in-out infinite, 3D rotateX/Y drift", "purpose": "Idle floating brand mark." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Highest-priority action in a view — approve, send, launch.",
+      "html": "<button class=\"ds-btn-primary\">Approve plan</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(90deg, #0078ff, #ffc432); color: #ffffff; padding: 10px 16px; border-radius: 0.75rem; font-weight: 600; font-size: 0.75rem; border: none; box-shadow: 0 4px 14px -2px rgba(0,120,255,0.35); transition: transform 0.15s ease; } .ds-btn-primary:hover { transform: scale(1.02); } .ds-btn-primary:focus-visible { outline: 2px solid #4da2ff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Lower-priority action — cancel, dismiss, secondary choice.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #475569; padding: 8px 14px; border-radius: 0.75rem; font-weight: 500; font-size: 0.75rem; border: 1px solid rgba(11,18,32,0.08); transition: color 0.15s ease, border-color 0.15s ease; } .ds-btn-secondary:hover { color: #0b1220; border-color: rgba(0,120,255,0.4); }"
+    },
+    {
+      "name": "Glass Card",
+      "kind": "card",
+      "refersTo": "card-glass",
+      "description": "The standard floating panel used across every dashboard section.",
+      "html": "<div class=\"ds-glass-card\"><p class=\"ds-glass-card-title\">Card title</p><p class=\"ds-glass-card-body\">Card content goes here.</p></div>",
+      "css": ".ds-glass-card { background: rgba(255,255,255,0.62); backdrop-filter: blur(20px) saturate(140%); border: 1px solid rgba(11,18,32,0.08); border-radius: 1rem; padding: 20px; box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 32px -20px rgba(11,18,32,0.25); } .ds-glass-card-title { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 0.875rem; color: #0b1220; margin: 0 0 4px; } .ds-glass-card-body { font-size: 0.8125rem; color: #475569; margin: 0; }"
+    },
+    {
+      "name": "Status Dot",
+      "kind": "custom",
+      "refersTo": "status-dot",
+      "description": "Live status indicator — pulses when active.",
+      "html": "<span class=\"ds-status-dot ds-status-dot--active\"></span>",
+      "css": ".ds-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: #0078ff; } .ds-status-dot--active { animation: ds-pulse 2.4s ease-in-out infinite; box-shadow: 0 0 0 1px rgba(0,120,255,0.28), 0 0 24px rgba(0,120,255,0.28); } @keyframes ds-pulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Standard text field used in forms and settings.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Placeholder…\" />",
+      "css": ".ds-input { background: rgba(255,255,255,0.8); border: 1px solid rgba(11,18,32,0.08); border-radius: 0.75rem; padding: 8px 14px; font-size: 0.8125rem; color: #0b1220; transition: border-color 0.15s ease; } .ds-input:focus { outline: none; border-color: rgba(0,120,255,0.5); } .ds-input::placeholder { color: #94a3b8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Command Deck",
+    "overview": "GrowForge Digital AI OS reads as the bridge of a small, high-competence ship — not a marketing SaaS dashboard. A crisp navy-and-white hull carries frosted glass panels that float over it, each with a hairline metallic border and a soft blur. Electric blue is the instrument-panel color for action and data flow; gold is reserved and earned, marking premium or confirmed states only. Status is legible at a glance through small glowing dots and pulse animations rather than large banners.",
+    "keyCharacteristics": [
+      "Frosted glass panels on a light, near-white base — never a dark app shell.",
+      "Electric blue = action/data. Gold = rare, earned confirmation.",
+      "Status conveyed by small glowing/pulsing dots and thin animated flow-lines, not color-blocked banners.",
+      "Motion is subtle and physical — soft lift, gentle scale, slow float — never bouncy or elastic."
+    ],
+    "rules": [
+      { "name": "The Earned Gold Rule", "body": "Gold never appears on an idle or default element. It marks something that has actually completed, been approved, or reached a premium/owner state.", "section": "colors" },
+      { "name": "The Glass-Not-Shadow Rule", "body": "Depth is conveyed by blur and a hairline border first; a heavy drop shadow on a static element is a tell that it's not following this system.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the electric-to-gold gradient only for the single highest-priority action in a given view.",
+      "Do pair every glass panel with a hairline metal border and soft blur.",
+      "Do use small glowing/pulsing status dots for live state instead of large color-blocked banners.",
+      "Do keep Sora for headings and Inter for body."
+    ],
+    "donts": [
+      "Don't use gold as a background or decorative color on an idle/default element.",
+      "Don't add heavy drop shadows for depth.",
+      "Don't use bounce/elastic easing on any transition.",
+      "Don't introduce a second background pattern — the light glass-on-white hull is the one visual language across the whole app."
+    ]
+  }
+}

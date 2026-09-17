@@ -9,6 +9,8 @@ import { n8nTool } from "@/lib/tools/n8n";
 import { n8nTemplateTool } from "@/lib/tools/n8nTemplateIngestor";
 import { transferTaskTool } from "@/lib/tools/transferTask";
 import { completeDirectiveTool } from "@/lib/tools/completeDirective";
+import { mcpServersForDepartment } from "@/lib/mcp/store";
+import { probeMcpServer, callMcpTool } from "@/lib/mcp/client";
 
 export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nTemplateTool };
 
@@ -45,7 +47,11 @@ export interface Tool {
   description: string;
   /** Plain-English argument spec shown to the model, e.g. "query (string)". */
   usage: string;
-  requiresApproval: boolean;
+  /** A plain boolean gates the whole tool. A function gates per-call — for
+   *  a tool like manage_n8n_workflow where "list"/"get" are read-only but
+   *  "create"/"activate"/"execute" are real, external mutations that
+   *  deserve the same PROPOSE-vs-EXECUTE gate call_connector already has. */
+  requiresApproval: boolean | ((args: Record<string, unknown>) => boolean);
   execute(args: Record<string, unknown>): Promise<ToolResult>;
 }
 
@@ -128,7 +134,10 @@ function extractJson(text: string): unknown {
 
 function toolCatalog(tools: Tool[]): string {
   return tools
-    .map((t) => `- ${t.name}${t.requiresApproval ? " (requires owner approval)" : ""}: ${t.description}\n  args: ${t.usage}`)
+    .map((t) => {
+      const gate = typeof t.requiresApproval === "function" ? " (some actions require owner approval)" : t.requiresApproval ? " (requires owner approval)" : "";
+      return `- ${t.name}${gate}: ${t.description}\n  args: ${t.usage}`;
+    })
     .join("\n");
 }
 
@@ -167,6 +176,15 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
         | null;
 
       if (!decision || decision.action !== "tool" || !decision.tool) {
+        // TEMPORARY diagnostic (2026-09-17): departments were writing prose
+        // about calling a tool instead of actually calling it. This logs
+        // exactly what the model returned on the turn it bailed to "final",
+        // so we can tell a genuine non-compliant model apart from a
+        // decision JSON extractJson() failed to parse. Remove once the
+        // n8n tool-calling exit gate is confirmed working reliably.
+        console.warn(
+          `[runToolLoop] step ${step}: no tool call detected (provider=${provider}). Raw model output:\n${result.text.slice(0, 1500)}`,
+        );
         return { finalText: (decision?.text || result.text).trim(), calls, provider, hitStepLimit: false };
       }
 
@@ -180,8 +198,9 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
 
       onActivity?.(`Calling ${tool.name}…`);
 
-      let approved = !tool.requiresApproval;
-      if (tool.requiresApproval) {
+      const needsApproval = typeof tool.requiresApproval === "function" ? tool.requiresApproval(args) : tool.requiresApproval;
+      let approved = !needsApproval;
+      if (needsApproval) {
         approved = requestApproval ? await requestApproval(tool.name, args) : false;
       }
 
@@ -254,8 +273,43 @@ function connectorTool(): Tool {
   };
 }
 
+/** Builds one Tool per tool the given department's allowed MCP servers
+ *  currently expose — a real connect-discover-disconnect probe per server
+ *  (see mcp/client.ts), not a cached list, so a server that's down simply
+ *  contributes no tools rather than serving stale ones. Every MCP call
+ *  requires owner approval, same as call_connector: an agent-invoked call
+ *  to a real external server is exactly the kind of action PROPOSE-vs-EXECUTE
+ *  exists for. */
+async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
+  const servers = mcpServersForDepartment(departmentId);
+  if (servers.length === 0) return [];
+
+  const perServer = await Promise.all(
+    servers.map(async (server): Promise<Tool[]> => {
+      const probe = await probeMcpServer(server.id);
+      if (!probe.ok) {
+        console.warn(`[tools] MCP server "${server.name}" unavailable, skipping its tools: ${probe.error}`);
+        return [];
+      }
+      return probe.tools.map((t) => ({
+        name: `mcp_${server.id}_${t.name}`,
+        description: `[MCP server: ${server.name}] ${t.description || t.name}`,
+        usage: JSON.stringify(t.inputSchema ?? {}),
+        requiresApproval: true,
+        async execute(args: Record<string, unknown>) {
+          return callMcpTool(server.id, t.name, args);
+        },
+      }));
+    }),
+  );
+  return perServer.flat();
+}
+
 /** The tool set available to an agent right now — rebuilt per call so a
- *  newly added connector shows up without a restart. */
-export function getDefaultTools(): Tool[] {
-  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool, n8nTemplateTool];
+ *  newly added connector or MCP server shows up without a restart. Pass
+ *  the department id to also include the real MCP tools that department is
+ *  allowed to use (see mcp/store.ts's per-department allow list). */
+export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
+  const mcpTools = departmentId ? await mcpToolsForDepartment(departmentId) : [];
+  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool, n8nTemplateTool, ...mcpTools];
 }

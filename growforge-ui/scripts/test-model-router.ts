@@ -1,5 +1,5 @@
 import { chatComplete } from "../src/lib/llm";
-import { classifyTask, ROUTE_CHAINS } from "../src/lib/model-router";
+import { classifyTask } from "../src/lib/model-router";
 
 async function main() {
   console.log("=== Testing Dynamic Model Router ===");

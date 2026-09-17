@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Bot, CheckCircle2, Cpu, Library, ShieldAlert, type LucideIcon } from "lucide-react";
-import { agents as seedAgents, type Agent } from "@/lib/agents";
+import type { Agent } from "@/lib/agents";
 import { useAppState } from "@/lib/appState";
+import { useLiveAgents } from "@/lib/useLiveAgents";
 
 /** Files under .claude/vault/ — the master agent catalog. Not exposed via
  *  an API (it's a static repo artifact, not app state), so this mirrors the
@@ -64,10 +65,7 @@ function InterventionBanner({ blocked, onResolve }: { blocked: Agent[]; onResolv
 
 export function ExecutiveFunnel() {
   const { openAgentPanel } = useAppState();
-  // Seeded from the static roster for an instant, hydration-safe first
-  // paint (deterministic on both server and client); replaced with live
-  // data from the API right after mount.
-  const [liveAgents, setLiveAgents] = useState<Agent[]>(seedAgents);
+  const liveAgents = useLiveAgents();
   const [logsTotal, setLogsTotal] = useState(0);
 
   useEffect(() => {
@@ -75,16 +73,9 @@ export function ExecutiveFunnel() {
 
     async function load() {
       try {
-        const [agentsRes, logsRes] = await Promise.all([
-          fetch("/api/agents"),
-          fetch("/api/logs?limit=1"), // only need the `total` field, not the entries
-        ]);
-        if (!cancelled && agentsRes.ok) {
-          const data: { agents: Agent[] } = await agentsRes.json();
-          setLiveAgents(data.agents);
-        }
-        if (!cancelled && logsRes.ok) {
-          const data: { total: number } = await logsRes.json();
+        const res = await fetch("/api/logs?limit=1"); // only need the `total` field, not the entries
+        if (!cancelled && res.ok) {
+          const data: { total: number } = await res.json();
           setLogsTotal(data.total);
         }
       } catch {
@@ -105,7 +96,7 @@ export function ExecutiveFunnel() {
   const blocked = liveAgents.filter((a) => a.status === "error");
 
   const steps: FunnelStep[] = [
-    { label: "Cataloged Agents", value: CATALOGED_AGENTS, icon: Library, tint: "bg-violet-100", iconColor: "text-violet-500" },
+    { label: "Vault Catalog (reference)", value: CATALOGED_AGENTS, icon: Library, tint: "bg-violet-100", iconColor: "text-violet-500" },
     { label: "Provisioned Roster", value: provisionedRoster, icon: Bot, tint: "bg-sky-100", iconColor: "text-sky-500" },
     { label: "Executing Now", value: executingNow, icon: Cpu, tint: "bg-amber-100", iconColor: "text-amber-500" },
     { label: "Completed Runs", value: logsTotal, icon: CheckCircle2, tint: "bg-emerald-100", iconColor: "text-emerald-500" },
@@ -115,15 +106,9 @@ export function ExecutiveFunnel() {
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-heading text-base font-semibold text-navy">Executive Funnel</h2>
-          <p className="text-xs text-secondary">From cataloged capability to completed execution.</p>
+          <h2 className="font-heading text-base font-semibold text-navy">Execution Pipeline</h2>
+          <p className="text-xs text-secondary">From provisioned capability to completed execution.</p>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-emerald/10 px-3 py-1 ring-1 ring-emerald/25">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-wide text-emerald">
-            Autopilot On
-          </span>
-        </span>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

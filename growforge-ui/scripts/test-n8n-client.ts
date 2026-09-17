@@ -1,4 +1,4 @@
-import { checkN8nHealth, listActiveWorkflows, triggerWebhook, executeWorkflow } from "../src/lib/n8n-client";
+import { checkN8nHealth, listActiveWorkflows, triggerWebhook } from "../src/lib/n8n-client";
 
 async function main() {
   console.log("=== Testing n8n-client Module ===");

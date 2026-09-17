@@ -1,4 +1,4 @@
-import { callOpenRouterWithFallback, classifyTask } from "../src/lib/model-router";
+import { callOpenRouterWithFallback } from "../src/lib/model-router";
 import { getSecretForServerUse } from "../src/lib/serverVault";
 import { SYSTEM_VAULT_ID } from "../src/lib/llm";
 

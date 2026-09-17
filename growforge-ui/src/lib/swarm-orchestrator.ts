@@ -572,7 +572,7 @@ async function runSwarmExecutionLoop(
   });
 
   const availableTools: Tool[] = [
-    ...getDefaultTools(),
+    ...(await getDefaultTools()),
     transferTaskTool,
     completeDirectiveTool,
   ];

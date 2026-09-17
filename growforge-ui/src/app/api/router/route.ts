@@ -70,6 +70,10 @@ interface RouterRequestBody {
    *  hasn't answered it yet. A project can only launch while one is pending
    *  — the model alone can never start a job without an explicit go-ahead. */
   pendingBrief?: string;
+  /** Extracted text/vision-description from files the client attached this
+   *  turn (see /api/attachments) — real context, not something to ask the
+   *  client to retype. */
+  attachmentContext?: string;
 }
 
 type RouteMode = "chat" | "dispatch" | "clarify" | "confirm" | "launch";
@@ -88,18 +92,40 @@ function buildCatalog(): string {
     .join("\n");
 }
 
-function buildSystemPrompt(pendingBrief: string | null): string {
+/** Catches the user explicitly handing over the remaining decisions —
+ *  "I don't know, you figure it out", "your call", "just proceed" — in any
+ *  common phrasing. The system prompt already asks the model to treat this
+ *  as a signal to stop clarifying, but that's a soft instruction buried in
+ *  a long multi-branch prompt: a weak or rate-limit-fallback model reliably
+ *  ignores it and loops on "clarify" instead, or worse, invents a stalling
+ *  reply. This is the deterministic backstop — detected in code, not left
+ *  to the model's judgment, so a user is never stuck in a repeat loop. */
+const OVERRIDE_PATTERNS =
+  /\b(i\s*don'?t\s*know\s*(anything\s*else)?|you\s*decide|figure\s*(it|everything)\s*out|up\s*to\s*you|your\s*call|whatever\s*you\s*think|use\s*your\s*(best\s*)?judg?e?ment|just\s*(proceed|go\s*ahead|do\s*it|handle\s*it|start))\b/i;
+
+/** Catches the model narrating real work as happening ("the team will now
+ *  conduct...", "you'll be notified when...") when no job actually got
+ *  created this turn — the exact pattern that produced a fake "post-project
+ *  review... you'll be notified" reply with nothing on the Live Projects
+ *  canvas to back it up. A prompt rule alone doesn't reliably stop a weak
+ *  fallback model from doing this again, so it's also caught here. */
+const FALSE_PROGRESS_PATTERNS =
+  /\b(the\s+(project\s+)?team|our\s+(team|agents|departments)|the\s+department|the\s+(ai\s+)?agents?)\s+(will|is|are)\s+(now\s+)?(conduct|review|work|analyz|optimiz|execut|prepare|finaliz)|you('ll| will)\s+be\s+notified|this\s+will\s+take\s+\d+[\s-]*(day|week|month)/i;
+
+function buildSystemPrompt(pendingBrief: string | null, forceProceed: boolean): string {
   return [
-    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Sales & BD, Marketing, Meta Ads, Finance & Ops, Client Success, Web Design, Web Development, AI Automation).",
+    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Revenue & Business Development, Marketing & Brand Strategy, Paid Media & Performance Advertising, Finance & Operations, Client Success & Program Management, Digital Design & User Experience, Web Development & Engineering, AI Systems & Intelligent Automation).",
     "",
     `Universal context rule: ${UNIVERSAL_CONTEXT_POLICY}`,
     "",
     "Single-agent roster (for small, one-off tasks only):",
     buildCatalog(),
     "",
+    "NEVER narrate real work as happening — no \"the team will now...\", \"departments are reviewing...\", \"you'll be notified when...\", \"this will take N days/weeks\" — UNLESS this exact turn's mode is \"launch\" (which really does start a live multi-department job the user can watch on the Live Projects canvas) or a real dispatch just fired. If no job is running and the user asks what's happening or what's next, say plainly that nothing is currently running and offer to launch something real. Inventing the appearance of ongoing work is a worse failure than admitting nothing is running.",
+    "",
     "Choose exactly ONE mode per message:",
     '- "chat": greetings, thanks, small talk, or questions about what you can do.',
-    '- "dispatch": a small, clear, one-off task that one roster agent can do alone. Set agentId to its exact id and params to {"taskDescription": "..."}.',
+    '- "dispatch": a small, clear, one-off ANALYSIS/TEXT task that one roster agent can do alone with pure reasoning. Set agentId to its exact id and params to {"taskDescription": "..."}. Roster agents have NO tool access at all — never dispatch a request that needs a real action taken (creating/activating an n8n or Zapier workflow, calling a connector, touching any live external system). Anything like that needs "launch" instead, which reaches the department pipeline\'s real tools through the owner-approval gate.',
     '- "clarify": the user wants a project but you do not know enough. Ask 1 to 3 focused questions in your reply.',
     '- "confirm": you know enough for a project. In reply, summarize your understanding in short bullets and ask "Shall I send this to the team?". Put the complete structured brief in the brief field.',
     '- "launch": choose this whenever: (1) a brief is pending and the user agrees to it, OR (2) the user gives a direct high-level master directive to launch, build, or orchestrate an agency or project (e.g. "I want to launch an AI automation agency named GrowForge Digital"). When launching directly from a master directive, construct the full structured brief in the brief field, summarize the strategic game plan in reply, and set mode: "launch".',
@@ -117,6 +143,12 @@ ${pendingBrief}
 >>>
 If the user agrees (yes, go, looks good, proceed, send it — in any language) choose "launch". If they correct or add details, choose "confirm" again with the updated brief. If they cancel, choose "chat".`
       : 'No brief is currently pending. Choose "launch" only if the user explicitly gives a direct command to launch or build a project/agency.',
+    "",
+    forceProceed
+      ? 'HARD OVERRIDE — the user just explicitly said they don\'t know more and want you to proceed with your own judgment. That IS their go-ahead. Choosing "clarify" or "chat" this turn is not allowed, no matter how much is still unknown, and choosing "confirm" to ask yet again is also not allowed — they already told you to stop asking. Fill every remaining gap yourself as an experienced agency strategist would — a real budget number, a real timeframe, a real channel choice — and label each one "(assumed)" in the brief. Go straight to "launch". Never invent a delay, a handoff timeline, or a "you\'ll be notified" promise — nothing in this system works that way; launching starts real work immediately.'
+      : "",
+    "",
+    "VOICE — write reply like a sharp, direct human colleague, not a chatbot. Concretely: no stock AI vocabulary (delve, leverage, robust, pivotal, tapestry, testament, foster, underscore, showcase, meticulous, landscape-as-abstraction); no chatbot filler (\"I hope this helps!\", \"Great question!\", \"Let's dive in\", \"Here's the thing\"); no \"not just X, but Y\" contrast staging; no one-line dramatic closers (\"That's the real win.\"); no forced rule-of-three padding; don't lean on em dashes as the default connector — use a period, comma, or colon instead. Avoid copula avoidance (\"serves as a catalyst for\" instead of just \"is\" or \"speeds up\"). Never cite a vague, unnamed authority (\"experts believe\", \"studies show\") — back a claim with a real specific or don't make it. No sycophantic tone (praising the user's idea before answering it). Don't ask a rhetorical question and immediately answer it yourself. State the point directly instead of dressing an ordinary fact as a deep insight. Vary sentence length like a real person actually would. Every sentence should add something the user doesn't already have — cut anything that only adds weight.",
     "",
     "STRICT RULE FOR reply: plain natural language (Markdown bullets allowed) in the SAME language as the user — never JSON, never curly braces, never a code fence. It is shown in a chat bubble.",
     "",
@@ -219,12 +251,49 @@ function parseDecision(raw: string): RouteDecision {
     const leftoverProse = (raw.slice(0, span.start) + raw.slice(span.end)).trim();
 
     const candidateReply = replyField.trim() || leftoverProse || (agentId ? "On it." : "Okay.");
-    return { mode, agentId, params, brief, reply: sanitizeReplyText(candidateReply) };
+    // sanitizeReplyText strips anything JSON-shaped — a weak model can echo
+    // the whole decision object back as its own `reply` text (see comment
+    // below), which would otherwise sanitize down to an empty string and
+    // ship a blank chat bubble. Re-apply the same fallback after cleaning.
+    const sanitized = sanitizeReplyText(candidateReply) || (agentId ? "On it." : "Okay.");
+    return { mode, agentId, params, brief, reply: sanitized };
   }
 
   // No parsable decision JSON at all — never dispatch on unparseable output,
   // and still scrub the raw text in case it contains stray JSON/fences.
-  return { mode: "chat", agentId: null, params: {}, brief: null, reply: sanitizeReplyText(raw) };
+  return {
+    mode: "chat",
+    agentId: null,
+    params: {},
+    brief: null,
+    reply: sanitizeReplyText(raw) || "Sorry, that came out garbled on my end — could you try sending that again?",
+  };
+}
+
+/** Last-resort brief when the model ignored the override AND never produced
+ *  one of its own — assembles something usable from the raw conversation so
+ *  the pipeline (which reads a brief as free text anyway, see
+ *  orchestrator.ts's currentBrief()) still has something concrete to plan
+ *  against, rather than the user being stuck with nothing to confirm. */
+function synthesizeBriefFromConversation(history: ChatMessage[], message: string): string {
+  const transcript = [...history, { role: "user" as const, content: message }]
+    .map((m) => `${m.role === "user" ? "Client" : "Assistant"}: ${m.content}`)
+    .join("\n");
+  return [
+    "Client & business: (assumed — see conversation below)",
+    "Location: Unknown (assumed)",
+    "Stage & current situation: Unknown (assumed)",
+    "Target customers: Unknown (assumed)",
+    "Offer & pricing: Unknown (assumed)",
+    "Current marketing & channels: Unknown (assumed)",
+    "Budget: Unknown (assumed — use a conservative default and flag for review)",
+    "Goals & timeframe: Unknown (assumed)",
+    "Constraints & unknowns: The client explicitly asked to proceed using best judgment; every field above not otherwise specified is an assumption, not a confirmed fact.",
+    "Deliverables requested: A full go-to-market plan based on the conversation below.",
+    "",
+    "--- Raw conversation for context ---",
+    transcript,
+  ].join("\n");
 }
 
 export async function POST(req: Request) {
@@ -246,8 +315,11 @@ export async function POST(req: Request) {
     .map((m) => ({ role: m.role, content: m.content }));
 
   const pendingBrief = body.pendingBrief?.trim().slice(0, 8000) || null;
-  const systemPrompt = buildSystemPrompt(pendingBrief);
-  const messages: ChatMessage[] = [...history, { role: "user", content: message }];
+  const forceProceed = OVERRIDE_PATTERNS.test(message);
+  const systemPrompt = buildSystemPrompt(pendingBrief, forceProceed);
+  const attachmentContext = body.attachmentContext?.trim().slice(0, 20000);
+  const messageWithAttachments = attachmentContext ? `${message}\n\n${attachmentContext}` : message;
+  const messages: ChatMessage[] = [...history, { role: "user", content: messageWithAttachments }];
 
   let raw: string;
   let provider: string;
@@ -266,6 +338,40 @@ export async function POST(req: Request) {
   }
 
   const decision = parseDecision(raw);
+
+  // Only "launch" actually starts real, trackable work this turn — any
+  // other mode narrating a team/department "now" doing something is a
+  // hallucination with nothing behind it (dispatch is a fake 1.5s no-op,
+  // see agentStore.ts's runAgent). Replace it with the truth rather than
+  // let the user believe something is running when the Live Projects
+  // canvas would show nothing.
+  if (decision.mode !== "launch" && FALSE_PROGRESS_PATTERNS.test(decision.reply)) {
+    decision.reply =
+      "Nothing is currently running — there's no live project in progress for me to report on. Want me to launch one you can actually watch work in real time on the Live Projects panel below?";
+  }
+
+  // Hard backstop: the model was told not to keep clarifying this turn but
+  // did anyway (weak/fallback models under load reliably ignore soft
+  // instructions). "I don't know, figure it out" IS the user's explicit
+  // go-ahead — routing this to one more "shall I send this to the team?"
+  // confirmation instead of actually launching directly contradicts what
+  // they just said and reproduces the exact "nothing happens" complaint
+  // this was meant to fix. So this launches for real, immediately, rather
+  // than asking again — the reply text itself is untrusted at this point
+  // (this is exactly the path a hallucinated "you'll be notified in 1-2
+  // weeks" style stall came from), so it's replaced rather than shown.
+  if (forceProceed && (decision.mode === "clarify" || decision.mode === "chat" || decision.mode === "confirm")) {
+    const brief = decision.brief || pendingBrief || synthesizeBriefFromConversation(history, messageWithAttachments);
+    const session = await getSession();
+    const job = createAndStartJob(brief, session?.user?.email ?? undefined);
+    return NextResponse.json({
+      reply: "On it — sending this to the team now with reasonable assumptions filled in wherever you didn't specify. Watch it work live in the Live Projects panel below.",
+      provider,
+      mode: "launch",
+      dispatch: null,
+      job: { id: job.id, title: job.title },
+    });
+  }
 
   if (decision.mode === "clarify") {
     return NextResponse.json({ reply: decision.reply, provider, mode: "clarify", dispatch: null });

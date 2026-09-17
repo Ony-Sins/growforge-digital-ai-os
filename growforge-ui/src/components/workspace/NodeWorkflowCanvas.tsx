@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Bot,
@@ -13,10 +13,12 @@ import {
   Target,
   type LucideIcon,
 } from "lucide-react";
-import { agents, type Agent } from "@/lib/agents";
+import { agents as seedAgents, type Agent } from "@/lib/agents";
 import { statusLabel, statusTextClass } from "@/components/ui/StatusDot";
 import { useAppState } from "@/lib/appState";
 import { isAgentLocked } from "@/lib/security";
+
+const POLL_INTERVAL_MS = 5000;
 
 const ICONS: Record<string, LucideIcon> = {
   Bot,
@@ -55,7 +57,34 @@ function edgeStrokeColor(agent: Agent) {
 export function NodeWorkflowCanvas() {
   const [selected, setSelected] = useState<string>("agents-orchestrator");
   const { openAgentPanel, canAccessAgent } = useAppState();
-  const hub = agents.find((a) => a.hub)!;
+  // Seeded from the static roster for an instant, hydration-safe first
+  // paint; replaced with live data from /api/agents right after mount and
+  // kept fresh so a real dispatch (see agentStore.ts's runAgent) actually
+  // shows up here instead of this staying frozen at "idle" forever.
+  const [agents, setAgents] = useState<Agent[]>(seedAgents);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/agents");
+        if (res.ok && !cancelled) {
+          const data: { agents: Agent[] } = await res.json();
+          setAgents(data.agents);
+        }
+      } catch {
+        // best-effort refresh — keep whatever was last shown
+      }
+    }
+    load();
+    const interval = setInterval(load, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const hub = agents.find((a) => a.hub) ?? seedAgents.find((a) => a.hub)!;
   const spokes = agents.filter((a) => !a.hub);
   const activeAgent = agents.find((a) => a.id === selected) ?? hub;
 

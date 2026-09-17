@@ -13,3 +13,11 @@ Thumbs.db
 # logs
 *.log
 npm-debug.log*
+
+# Claude Code local overrides and unrelated plugin scratch data — not
+# project source, not meant to be shared across machines/sessions.
+.claude/settings.local.json
+.claude/data/
+
+# Playwright MCP verification screenshots/logs — scratch, not source.
+.playwright-mcp/

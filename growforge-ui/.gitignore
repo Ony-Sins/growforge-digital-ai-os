@@ -29,6 +29,9 @@
 # generated audio/images (Piper/ComfyUI tool output) — runtime artifacts, not source
 /public/generated/
 
+# user-uploaded avatars — runtime artifacts, not source
+/public/uploads/
+
 # production
 /build
 

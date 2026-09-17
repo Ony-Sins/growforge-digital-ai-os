@@ -8,7 +8,6 @@
  * Isolated to data/__test_memory_flow__/ -- cleaned up on exit.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";

@@ -3,43 +3,49 @@
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
+  Bot,
   CheckCircle2,
   Library,
-  Lock,
   TriangleAlert,
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { agents } from "@/lib/agents";
-import { StatusDot, statusLabel, statusTextClass } from "@/components/ui/StatusDot";
-import { NodeWorkflowCanvas } from "@/components/workspace/NodeWorkflowCanvas";
-import { ChatView } from "@/components/workspace/ChatView";
+import type { JobSummary } from "@/lib/jobStore";
+import { AgentRosterOverlay } from "@/components/workspace/AgentRosterOverlay";
 import { ExecutiveFunnel } from "@/components/workspace/ExecutiveFunnel";
-import { IntegrationsHub } from "@/components/workspace/IntegrationsHub";
+import { NeedsAttention } from "@/components/workspace/NeedsAttention";
 import { ProjectCanvas } from "@/components/workspace/ProjectCanvas";
+import { SettingsOverlay } from "@/components/workspace/SettingsOverlay";
+import { SystemHealth } from "@/components/workspace/SystemHealth";
+import { UserProfileOverlay } from "@/components/workspace/UserProfileOverlay";
 import { useAppState, type ActiveView } from "@/lib/appState";
-import { isAgentLocked } from "@/lib/security";
+import { useLiveAgents } from "@/lib/useLiveAgents";
 
-const SUMMARY_CARDS = [
-  {
-    label: "Active Agents",
-    value: agents.filter((a) => a.status === "active").length,
-    icon: Zap,
-    tone: "electric" as const,
-  },
-  {
-    label: "Successful Runs (24h)",
-    value: 128,
-    icon: CheckCircle2,
-    tone: "emerald" as const,
-  },
-  {
-    label: "Errors (24h)",
-    value: agents.filter((a) => a.status === "error").length,
-    icon: TriangleAlert,
-    tone: "crimson" as const,
-  },
-];
+interface WorkspaceUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: "owner" | "employee";
+}
+
+const JOB_POLL_INTERVAL_MS = 5000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** All three cards below used to be sourced from a 7-entry hardcoded agent
+ *  list — "Successful Runs (24h)" was a bare literal `128` that never
+ *  changed, and the other two just counted fake statuses with no real
+ *  24h window at all. These now come from real job records (the same
+ *  pipeline the Live Projects canvas shows), computed fresh from
+ *  /api/jobs on every poll — see the effect below. */
+function computeSummary(jobs: JobSummary[]) {
+  const now = Date.now();
+  const within24h = (iso?: string) => !!iso && now - new Date(iso).getTime() < DAY_MS;
+  return {
+    activeAgents: jobs.filter((j) => j.status === "running" && j.activeStep).length,
+    successfulRuns24h: jobs.filter((j) => j.status === "done" && within24h(j.finishedAt)).length,
+    errors24h: jobs.filter((j) => j.status === "error" && within24h(j.finishedAt ?? j.updatedAt)).length,
+  };
+}
 
 const TONE_CLASSES: Record<"electric" | "emerald" | "crimson", string> = {
   electric: "text-electric bg-electric/10 ring-electric/25",
@@ -52,39 +58,48 @@ const PLACEHOLDER_CONTENT: Partial<Record<ActiveView, { icon: LucideIcon; title:
   vault: {
     icon: Library,
     title: "Vault Library",
-    body: "279 cataloged agents across 18 divisions, stored in .claude/vault/. A full browsing UI is coming soon — for now, open the files directly.",
+    body: "279 cataloged agent persona files, stored in .claude/vault/. This is a general-purpose reference library (academic, engineering, design, and other generic personas), not GrowForge's own departments (see Live Projects for those) — none of it is wired into the app. Browse the .md files directly in the repo; there's no in-app browsing UI planned for this (Phase 2 decision, 2026-09-17).",
   },
 };
 
-/** Maps a nav selection to the dashboard section it should scroll to. */
-function sectionIdFor(view: ActiveView): string {
+/** Maps a nav selection to the dashboard section it should scroll to.
+ *  "chat" has no scroll target — the AI Assistant lives in its own
+ *  always-visible docked/maximized surface (see ChatView.tsx), not a
+ *  section of this scrolling dashboard. */
+function sectionIdFor(view: ActiveView): string | null {
   switch (view) {
     case "chat":
-      return "section-chat";
+      return null;
     case "activity":
-      return "section-canvas";
-    case "roster":
-      return "section-roster";
+      return "section-activity";
     case "workflows":
       return "section-projects";
     case "vault":
       return "section-placeholder";
-    case "settings":
-      return "section-settings";
     case "dashboard":
     default:
       return "section-top";
   }
 }
 
-export function Workspace() {
-  const { activeView, activeViewToken, openAgentPanel, canAccessAgent } = useAppState();
+export function Workspace({ user }: { user: WorkspaceUser | null }) {
+  const {
+    activeView,
+    activeViewToken,
+    setActiveView,
+    openAdminDrawer,
+    openAgentRoster,
+    chatViewMode,
+  } = useAppState();
   const [flashSection, setFlashSection] = useState<string | null>(null);
+  const [summary, setSummary] = useState({ activeAgents: 0, successfulRuns24h: 0, errors24h: 0 });
+  const liveAgents = useLiveAgents();
 
   // activeViewToken bumps on every nav click, even to the same view, so a
   // repeat click still re-scrolls/re-flashes.
   useEffect(() => {
     const id = sectionIdFor(activeView);
+    if (!id) return;
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     // eslint-disable-next-line react-hooks/set-state-in-effect -- drives a CSS highlight in response to nav clicks, not derived render state
     setFlashSection(id);
@@ -92,17 +107,66 @@ export function Workspace() {
     return () => clearTimeout(t);
   }, [activeView, activeViewToken]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadJobs() {
+      try {
+        const res = await fetch("/api/jobs");
+        if (!res.ok || cancelled) return;
+        const data: { jobs: JobSummary[] } = await res.json();
+        if (!cancelled) setSummary(computeSummary(data.jobs ?? []));
+      } catch {
+        // best-effort refresh — keep whatever was last shown
+      }
+    }
+    loadJobs();
+    const interval = setInterval(loadJobs, JOB_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
   const flash = (id: string) => (flashSection === id ? "section-flash" : "");
   const placeholder = PLACEHOLDER_CONTENT[activeView];
+  const summaryCards = [
+    {
+      label: "Active Agents",
+      value: summary.activeAgents,
+      icon: Zap,
+      tone: "electric" as const,
+      onClick: () => setActiveView("roster"),
+      title: "View the agent roster",
+    },
+    {
+      label: "Successful Runs (24h)",
+      value: summary.successfulRuns24h,
+      icon: CheckCircle2,
+      tone: "emerald" as const,
+      onClick: () => openAdminDrawer("logs"),
+      title: "View execution logs",
+    },
+    {
+      label: "Errors (24h)",
+      value: summary.errors24h,
+      icon: TriangleAlert,
+      tone: "crimson" as const,
+      onClick: () => openAdminDrawer("logs"),
+      title: "View execution logs",
+    },
+  ];
 
   return (
-    <main className="flex-1 overflow-y-auto bg-app">
+    <main
+      // The docked AI Assistant panel reserves a right-side column at lg+
+      // and a bottom-sheet strip below that (see ChatView.tsx) — using
+      // Tailwind's responsive prefixes here, not a JS viewport check, so
+      // this stays correct across resizes without a resize listener.
+      className={`flex-1 overflow-y-auto bg-app transition-[margin] duration-200 ${
+        chatViewMode === "docked" ? "pb-[45vh] lg:pb-0 lg:mr-96" : ""
+      }`}
+    >
       <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-        {/* AI Assistant — primary conversational entry point */}
-        <div id="section-chat" className={`rounded-2xl ${flash("section-chat")}`}>
-          <ChatView />
-        </div>
-
         {/* Live multi-agent projects — the main surface */}
         <div id="section-projects" className={`rounded-2xl ${flash("section-projects")}`}>
           <ProjectCanvas />
@@ -118,7 +182,11 @@ export function Workspace() {
               Live status across the GrowForge Digital agent roster.
             </p>
           </div>
-          <button className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white/70 px-3 py-2 text-xs font-medium text-secondary backdrop-blur-xl transition-colors hover:border-electric/40 hover:text-electric">
+          <button
+            type="button"
+            onClick={() => openAdminDrawer("logs")}
+            className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white/70 px-3 py-2 text-xs font-medium text-secondary backdrop-blur-xl transition-colors hover:border-electric/40 hover:text-electric"
+          >
             View all runs
             <ArrowUpRight className="h-3.5 w-3.5" />
           </button>
@@ -140,77 +208,80 @@ export function Workspace() {
           </div>
         )}
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {SUMMARY_CARDS.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div key={card.label} className="glass-card rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                    {card.label}
-                  </p>
-                  <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg ring-1 ${TONE_CLASSES[card.tone]}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                </div>
-                <p className="mt-3 font-heading text-2xl font-bold text-navy">{card.value}</p>
-              </div>
-            );
-          })}
+        {/* Real-time Activity — live counters + the Needs Attention panel.
+         *  This is what the "Real-time Activity" nav item points at. */}
+        <div id="section-activity" className={`grid grid-cols-1 gap-4 lg:grid-cols-4 ${flash("section-activity")}`}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-3">
+            {summaryCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={card.onClick}
+                  title={card.title}
+                  className="glass-card rounded-xl p-4 text-left transition-transform hover:scale-[1.01] hover:ring-1 hover:ring-electric/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                      {card.label}
+                    </p>
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg ring-1 ${TONE_CLASSES[card.tone]}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <p className="mt-3 font-heading text-2xl font-bold text-navy">{card.value}</p>
+                </button>
+              );
+            })}
+          </div>
+          <NeedsAttention />
         </div>
 
-        {/* Executive funnel — cataloged → provisioned → executing → completed */}
+        {/* Execution pipeline — provisioned → executing → completed */}
         <ExecutiveFunnel />
 
-        {/* Agent network overview */}
-        <div id="section-canvas" className={`rounded-2xl ${flash("section-canvas")}`}>
-          <NodeWorkflowCanvas />
-        </div>
-
-        {/* Agent roster table */}
-        <div id="section-roster" className={`glass-card rounded-xl ${flash("section-roster")}`}>
-          <div className="flex items-center justify-between border-b border-border-metal px-4 py-3">
-            <h2 className="font-heading text-sm font-semibold text-navy">Agent Roster</h2>
-            <span className="font-mono text-[11px] text-muted">{agents.length} agents</span>
+        {/* Agent Roster — a single summary card, not a second copy of the
+         *  same list the overlay already shows. The Execution Pipeline
+         *  above already states the provisioned count; this just adds the
+         *  one thing that isn't there yet (how many are active right now)
+         *  and the one real entry point into the full roster. */}
+        <button
+          type="button"
+          id="section-roster"
+          onClick={openAgentRoster}
+          className={`glass-card flex w-full items-center justify-between rounded-xl p-4 text-left transition-transform hover:scale-[1.01] hover:ring-1 hover:ring-electric/30 ${flash("section-roster")}`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-electric/10 text-electric ring-1 ring-border-metal">
+              <Bot className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="font-heading text-sm font-semibold text-navy">Agent Roster</h2>
+              <p className="text-xs text-secondary">
+                {liveAgents.length} agents registered
+                {liveAgents.some((a) => a.status === "active")
+                  ? ` · ${liveAgents.filter((a) => a.status === "active").length} active now`
+                  : ""}
+              </p>
+            </div>
           </div>
-          <ul className="divide-y divide-border-metal">
-            {agents.map((agent) => (
-              <li key={agent.id}>
-                <button
-                  type="button"
-                  onClick={() => openAgentPanel(agent.id)}
-                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-sunken"
-                >
-                  <StatusDot status={agent.status} pulse={agent.status === "active"} />
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 truncate text-sm font-medium text-navy">
-                      {agent.name}
-                      {isAgentLocked(agent.id) && !canAccessAgent(agent.id) && (
-                        <Lock className="h-3 w-3 shrink-0 text-muted" />
-                      )}
-                    </p>
-                    <p className="truncate text-xs text-muted">{agent.division}</p>
-                  </div>
-                  <span className={`shrink-0 text-xs font-medium ${statusTextClass(agent.status)}`}>
-                    {statusLabel(agent.status)}
-                  </span>
-                  <span className="hidden shrink-0 font-mono text-xs text-muted sm:inline">
-                    {agent.lastRun}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <span className="flex items-center gap-1 text-xs font-medium text-electric">
+            View roster
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </span>
+        </button>
 
-        {/* Settings — AI provider keys + custom connectors */}
-        <div id="section-settings" className={`rounded-2xl ${flash("section-settings")}`}>
-          <IntegrationsHub />
-        </div>
+        {/* System Health — real, already-computable connection/reachability
+         *  states, not invented uptime percentages. */}
+        <SystemHealth />
       </div>
+
+      <UserProfileOverlay user={user} />
+      <SettingsOverlay />
+      <AgentRosterOverlay />
     </main>
   );
 }

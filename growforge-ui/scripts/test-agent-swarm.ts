@@ -4,11 +4,9 @@ import {
   createSwarmContext,
   resolveSwarmAgent,
   SWARM_ROSTER,
-  executeSwarmDirective,
-  SwarmContext,
 } from "../src/lib/swarm-orchestrator";
-import { transferTaskTool, setTransferTaskHandler } from "../src/lib/tools/transferTask";
-import { completeDirectiveTool, setCompleteDirectiveHandler } from "../src/lib/tools/completeDirective";
+import { transferTaskTool, setTransferTaskHandler, type TaskTransferPayload } from "../src/lib/tools/transferTask";
+import { completeDirectiveTool, setCompleteDirectiveHandler, type DirectiveCompletionPayload } from "../src/lib/tools/completeDirective";
 import { logSwarmStateChange, logStrategicDecision } from "../src/lib/brainLogger";
 
 let passed = 0;
@@ -55,7 +53,7 @@ async function runSwarmTests() {
   assert(qa.id === "qa", "Resolves alias 'qa review' to Quality Assurance");
 
   console.log("\n=== Suite 2: Peer-to-Peer Task Delegation & State Accumulation ===");
-  let capturedTransfer: any = null;
+  let capturedTransfer: TaskTransferPayload | null = null;
   setTransferTaskHandler(async (payload) => {
     capturedTransfer = payload;
     return { ok: true, message: `Delegated to ${payload.targetAgent}` };
@@ -119,7 +117,7 @@ async function runSwarmTests() {
   }
 
   console.log("\n=== Suite 4: Clean Directive Completion & Synthesis ===");
-  let capturedCompletion: any = null;
+  let capturedCompletion: DirectiveCompletionPayload | null = null;
   setCompleteDirectiveHandler(async (payload) => {
     capturedCompletion = payload;
     return { ok: true, message: "Directive finalized." };

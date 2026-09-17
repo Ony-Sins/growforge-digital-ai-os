@@ -2,14 +2,20 @@ import type { Tool, ToolResult } from "@/lib/tools";
 import { getSecretForServerUse } from "@/lib/serverVault";
 
 /**
- * n8n Autonomous Workflow Tool (src/lib/tools/n8n.ts)
+ * n8n Workflow Tool (src/lib/tools/n8n.ts)
  *
- * Allows sub-agents (especially AI Systems / Automation and Web Dev) to construct,
- * test, execute, and activate n8n workflows autonomously over HTTP.
+ * Lets department agents (especially AI Systems / Automation and Web Dev)
+ * construct, inspect, patch, activate, and execute real n8n automation
+ * workflows over the n8n REST API — genuinely real, not a template proposal.
+ * Read-only lookups ("list", "get") run immediately; anything that changes
+ * or runs a workflow for real goes through the owner-approval gate (see
+ * MUTATING_N8N_ACTIONS below and tools.ts's runToolLoop).
  *
- * Implements a self-healing loop: if an execution or schema error occurs, detailed
- * node/connection error diagnostics are returned back to the model transcript so
- * the agent can patch the workflow JSON and retry.
+ * Implements a self-healing loop: if an approved execution or schema error
+ * occurs, detailed node/connection error diagnostics are returned back to
+ * the model transcript so the agent can patch the workflow JSON and retry
+ * — the retry still needs its own approval, self-healing only means "the
+ * agent can propose a better fix," not "the fix runs unapproved."
  */
 
 function getN8nConfig(): { baseUrl: string; apiKey: string } {
@@ -24,17 +30,31 @@ function getN8nConfig(): { baseUrl: string; apiKey: string } {
   return { baseUrl, apiKey };
 }
 
+/** Actions that actually change something real: create a new workflow,
+ *  rewrite an existing one, flip it live, or run it against real input.
+ *  "list"/"get" are read-only lookups and stay ungated, same as
+ *  web_search — everything that can affect a live automation (which can
+ *  itself send real emails, hit real webhooks, move real money) goes
+ *  through the same owner-approval gate call_connector already has. This
+ *  tool used to be entirely ungated, which contradicted the project's own
+ *  "PROPOSE, never EXECUTE" rule stated in every department's operating
+ *  instructions. */
+const MUTATING_N8N_ACTIONS = new Set(["create", "patch", "activate", "execute"]);
+
 export const n8nTool: Tool = {
   name: "manage_n8n_workflow",
   description:
     "Construct, test, execute, activate, or patch n8n automation workflows over the n8n REST API. " +
+    "'list' and 'get' run immediately; 'create', 'patch', 'activate', and 'execute' require owner approval first — " +
+    "they change or run something real. 'execute' only works on a workflow with a Webhook trigger node — n8n's " +
+    "API has no way to run a Manual/Schedule/other-trigger workflow on demand, only its own trigger can. " +
     "Supports self-healing: if an execution fails or node schemas mismatch, error diagnostics are returned for iterative correction.",
   usage:
     '{ "action": "create" | "get" | "patch" | "activate" | "execute" | "list", ' +
     '"workflowId": "string (optional for create/list)", ' +
     '"workflow": { "name": "string", "nodes": [...], "connections": {...}, "settings": {...} } (for create/patch), ' +
     '"inputData": object (payload for execute) }',
-  requiresApproval: false,
+  requiresApproval: (args) => MUTATING_N8N_ACTIONS.has(String(args.action ?? "").toLowerCase().trim()),
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
     const { baseUrl, apiKey } = getN8nConfig();
     const action = typeof args.action === "string" ? args.action.toLowerCase().trim() : "list";
@@ -180,30 +200,62 @@ export const n8nTool: Tool = {
 
       if (action === "execute") {
         if (!workflowId) return { ok: false, output: "workflowId is required for 'execute' action." };
-        // Trigger manual execution via n8n API
-        const res = await fetch(`${baseUrl}/api/v1/workflows/${encodeURIComponent(workflowId)}/run`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ data: inputData }),
+
+        // n8n's public REST API has no "run this workflow now" endpoint —
+        // confirmed against its own OpenAPI spec (/api/v1/openapi.yml):
+        // /executions supports listing/retrying/stopping runs, but nothing
+        // starts one on demand. A workflow is only ever actually run by its
+        // own trigger. So "execute" means: find the workflow's webhook
+        // trigger and call that real webhook URL, which is the genuine,
+        // API-reachable way to run an n8n workflow externally. Workflows
+        // with only a Manual/Schedule/other non-webhook trigger have no
+        // externally reachable way to run them at all — that's an n8n
+        // platform limitation, not something this tool can work around.
+        const wfRes = await fetch(`${baseUrl}/api/v1/workflows/${encodeURIComponent(workflowId)}`, { headers });
+        if (!wfRes.ok) {
+          const err = await wfRes.text();
+          return { ok: false, output: `Could not look up workflow ${workflowId} before executing it (HTTP ${wfRes.status}): ${err}` };
+        }
+        const wfData = await wfRes.json();
+        const nodes = Array.isArray(wfData?.nodes) ? wfData.nodes : [];
+        const webhookNode = nodes.find((n: Record<string, unknown>) => n.type === "n8n-nodes-base.webhook");
+
+        if (!webhookNode) {
+          return {
+            ok: false,
+            output:
+              `Workflow ${workflowId} has no webhook trigger node, so there is no externally reachable way to run it — ` +
+              `n8n's API only supports listing/retrying past executions, not starting a new one on demand. ` +
+              `Manual/Schedule/other trigger types can only be run from inside the n8n editor or by their own trigger firing. ` +
+              `Self-Healing Note: if this workflow needs to be triggerable from here, patch it to add a Webhook trigger node, then retry 'execute'.`,
+          };
+        }
+        if (!wfData.active) {
+          return { ok: false, output: `Workflow ${workflowId} has a webhook trigger but is not active — activate it first, then retry 'execute'.` };
+        }
+
+        const params = (webhookNode.parameters ?? {}) as Record<string, unknown>;
+        const path = typeof params.path === "string" ? params.path : webhookNode.webhookId;
+        const httpMethod = typeof params.httpMethod === "string" ? params.httpMethod.toUpperCase() : "GET";
+        const webhookUrl = `${baseUrl}/webhook/${path}`;
+
+        const res = await fetch(webhookUrl, {
+          method: httpMethod,
+          headers: httpMethod === "GET" ? undefined : { "Content-Type": "application/json" },
+          body: httpMethod === "GET" ? undefined : JSON.stringify(inputData),
         });
         const respText = await res.text();
-        let resultJson: Record<string, unknown> | null = null;
-        try {
-          resultJson = JSON.parse(respText);
-        } catch {
-          // raw text
-        }
 
         if (!res.ok) {
           return {
             ok: false,
-            output: `n8n Execution Failed (HTTP ${res.status}): ${respText}. Self-Healing Diagnostic: The execution encountered an error. You can inspect the error, patch the workflow using action 'patch', and retry.`,
+            output: `n8n Execution Failed calling webhook ${webhookUrl} (HTTP ${res.status}): ${respText}. Self-Healing Diagnostic: inspect the error, patch the workflow using action 'patch', and retry.`,
           };
         }
 
         return {
           ok: true,
-          output: `n8n Workflow ${workflowId} Execution Succeeded:\n${JSON.stringify(resultJson ?? respText, null, 2)}`,
+          output: `n8n Workflow ${workflowId} Execution Succeeded (via webhook ${webhookUrl}):\n${respText}`,
         };
       }
 

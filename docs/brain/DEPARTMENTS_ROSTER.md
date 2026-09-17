@@ -1,6 +1,6 @@
 # GrowForge Digital — Operating Departments & System Roster
 
-> **Auto-Generated:** 2026-09-15T21:52:41.825Z  
+> **Auto-Generated:** 2026-09-16T16:07:37.063Z  
 > **Instruction Engine:** `src/lib/departments.ts` & Root Operating System Markdown Files  
 
 ## 1. Department Catalog

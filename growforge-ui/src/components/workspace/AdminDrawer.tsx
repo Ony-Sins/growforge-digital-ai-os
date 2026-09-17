@@ -4,13 +4,10 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   CheckCircle2,
-  ExternalLink,
   KeyRound,
   Lock,
-  Plug,
   ScrollText,
   Shield,
-  Sparkles,
   Terminal,
   X,
   Zap,
@@ -81,14 +78,6 @@ export function AdminDrawer() {
           </div>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/admin"
-              className="flex items-center gap-1 rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:border-electric/40 hover:text-navy"
-              title="Open full-screen Admin page"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">/admin</span>
-            </a>
             <button
               type="button"
               onClick={closeAdminDrawer}
@@ -276,32 +265,6 @@ function DiagnosticsPanel() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm border border-slate-100">
-        <div className="flex items-center gap-2">
-          <Plug className="h-4 w-4 text-electric" />
-          <h3 className="font-heading text-sm font-semibold text-navy">Quick Admin Actions</h3>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <a
-            href="/api/jobs"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-sunken px-3 py-1.5 text-xs font-medium text-secondary hover:bg-white hover:text-navy"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-electric" />
-            Inspect Jobs JSON API
-          </a>
-          <a
-            href="/api/connectors"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-sunken px-3 py-1.5 text-xs font-medium text-secondary hover:bg-white hover:text-navy"
-          >
-            <Plug className="h-3.5 w-3.5 text-electric" />
-            Inspect Connectors API
-          </a>
-        </div>
-      </div>
     </div>
   );
 }

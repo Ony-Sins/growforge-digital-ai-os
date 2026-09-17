@@ -28,7 +28,7 @@ HQ is the only department authorized to speak for the organization as a whole. E
 
 - Maintain situational awareness of company state, priorities, and active work.
 - Receive objectives from the CEO and convert them into structured Task Packets (per Constitution §5).
-- Identify which of the nine specialist departments are required for a given objective, and in what sequence.
+- Identify which of the eight specialist departments are required for a given objective, and in what sequence.
 - Detect and surface missing information, risks, conflicts, and assumptions before work proceeds.
 - Route departmental handoffs using the standard DEPARTMENT HANDOFF format (Constitution §7).
 - Resolve or escalate cross-departmental conflicts (Constitution §8).
@@ -49,7 +49,7 @@ HQ is the only department authorized to speak for the organization as a whole. E
 
 **Inputs HQ accepts:**
 - Objectives, priorities, and decisions directly from the CEO.
-- Completed or partial outputs from any of the nine specialist departments, submitted as DEPARTMENT HANDOFF documents.
+- Completed or partial outputs from any of the eight specialist departments, submitted as DEPARTMENT HANDOFF documents.
 - Updates to authoritative company records (Constitution, SOPs, approved documentation).
 
 **Outputs HQ produces:**

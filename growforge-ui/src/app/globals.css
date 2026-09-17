@@ -126,13 +126,6 @@ kbd,
   box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.28), 0 0 20px rgba(225, 29, 72, 0.28);
 }
 
-.text-gradient-brand {
-  background: linear-gradient(90deg, var(--color-accent-electric), var(--color-accent-gold));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* Thin scrollbars */
 * {
   scrollbar-width: thin;

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { agents as seedAgents, type Agent, type AgentStatus } from "@/lib/agents";
 import type { LogEntry } from "@/lib/types";
+import { chatComplete, LlmError } from "@/lib/llm";
 
 export type { LogEntry };
 
@@ -165,9 +166,14 @@ function setStatus(id: string, status: AgentStatus, lastRun: string) {
 }
 
 /**
- * Simulates dispatching an agent run: flips it to "active" immediately, logs
- * the dispatch, then resolves to "success" (or "error" for reality-checker,
- * to keep the dashboard's one error state visible) after a short delay.
+ * Dispatches a real agent run: flips it to "active" immediately and returns
+ * fast (the caller doesn't wait for completion), then actually calls the
+ * configured LLM with the agent's role and the requested task as its
+ * prompt, and records whatever it genuinely produced — or genuinely failed
+ * with — once that call resolves. There is no per-agent instructions file
+ * (unlike the 8 real departments in departments.ts), so the agent's own
+ * `description` stands in as its system prompt; this is a lighter-weight
+ * single-task agent, not a full department pipeline.
  */
 export async function runAgent(
   id: string,
@@ -185,20 +191,33 @@ export async function runAgent(
     `[${id}] dispatched${params && Object.keys(params).length ? ` with params ${JSON.stringify(params)}` : ""}`,
   );
 
-  // Resolve asynchronously so the tool call itself returns fast; the log
-  // stream / status endpoint reflects the outcome moments later, mirroring
-  // a real orchestrator dispatch.
-  setTimeout(() => {
-    const willError = id === "reality-checker";
-    setStatus(id, willError ? "error" : "success", "just now");
-    appendLog(
-      id,
-      willError ? "error" : "success",
-      willError
-        ? `[${id}] ✗ run failed — see execution logs`
-        : `[${id}] ✓ run completed successfully`,
-    );
-  }, 1500);
+  const task =
+    typeof params?.taskDescription === "string" && params.taskDescription.trim()
+      ? params.taskDescription.trim()
+      : "Perform your role once and report a concise, concrete result.";
+
+  const systemPrompt = [
+    `You are ${agent.name}, an agent at GrowForge Digital.`,
+    `Your role: ${agent.description}`,
+    "",
+    "Complete the task below and report a concise, concrete result (2-6 sentences). " +
+      "If you genuinely cannot complete it — missing information, or it requires an action this system doesn't expose " +
+      "(e.g. deploying code, sending a real email) — say so plainly rather than pretending success.",
+  ].join("\n");
+
+  // Fire-and-forget from the caller's perspective — the dispatch endpoint
+  // returns immediately; the log stream / status endpoint reflects the
+  // real outcome once the model call actually finishes.
+  void chatComplete(systemPrompt, [{ role: "user", content: task }], { maxTokens: 600 })
+    .then(({ text }) => {
+      setStatus(id, "success", "just now");
+      appendLog(id, "success", `[${id}] ${text.trim().slice(0, 800)}`);
+    })
+    .catch((err) => {
+      const message = err instanceof LlmError ? err.message : err instanceof Error ? err.message : String(err);
+      setStatus(id, "error", "just now");
+      appendLog(id, "error", `[${id}] ✗ ${message}`);
+    });
 
   return { agent, log: dispatchLog };
 }

@@ -5,10 +5,9 @@ import {
   resolveSwarmAgent,
   applyStateDiff,
   SwarmState,
-  AgentDirective,
 } from "../src/lib/swarm-orchestrator";
-import { transferTaskTool, setTransferTaskHandler } from "../src/lib/tools/transferTask";
-import { completeDirectiveTool, setCompleteDirectiveHandler } from "../src/lib/tools/completeDirective";
+import { transferTaskTool, setTransferTaskHandler, type TaskTransferPayload } from "../src/lib/tools/transferTask";
+import { completeDirectiveTool, setCompleteDirectiveHandler, type DirectiveCompletionPayload } from "../src/lib/tools/completeDirective";
 import { logSwarmStateChange, logStrategicDecision } from "../src/lib/brainLogger";
 
 let passed = 0;
@@ -61,10 +60,10 @@ async function runSafeHandoffChainTest() {
   const diffResult1 = applyStateDiff(state.variables, dirtyDiff);
   assert(diffResult1.rejectedKeys.includes("__proto__") && diffResult1.rejectedKeys.includes("constructor"), "State Pollution Guard blocked prototype pollution keys '__proto__' & 'constructor'");
   assert(state.variables.retainerOffer === 3500, "Clean variables safely merged into shared state");
-  assert((state.variables as any).polluted === undefined, "Target state remains completely unpolluted");
+  assert((state.variables as Record<string, unknown>).polluted === undefined, "Target state remains completely unpolluted");
 
   // Supervisor delegates to Lead Gen
-  let activeTransferPayload: any = null;
+  let activeTransferPayload: TaskTransferPayload | null = null;
   setTransferTaskHandler(async (p) => {
     activeTransferPayload = p;
     return { ok: true, message: `Handoff to ${p.targetAgent} accepted` };
@@ -157,7 +156,7 @@ async function runSafeHandoffChainTest() {
     cta: "Book 15-Min Strategy Session on $3,500/mo Retainer",
   };
   applyStateDiff(state.variables, copyDiff);
-  assert((state.variables.emailSequence as any[]).length === 3, "Copywriter state diff merged with 3 email templates");
+  assert((state.variables.emailSequence as { subject: string }[]).length === 3, "Copywriter state diff merged with 3 email templates");
 
   // Copywriter delegates to QA
   await transferTaskTool.execute({
@@ -194,7 +193,7 @@ async function runSafeHandoffChainTest() {
     timestamp: new Date().toISOString(),
   });
 
-  let activeCompletionPayload: any = null;
+  let activeCompletionPayload: DirectiveCompletionPayload | null = null;
   setCompleteDirectiveHandler(async (payload) => {
     activeCompletionPayload = payload;
     return { ok: true, message: "Directive successfully completed." };
@@ -212,9 +211,9 @@ async function runSafeHandoffChainTest() {
     `- ${state.variables.leadMagnet}`,
     "",
     "## 3. High-Converting Email Sequences",
-    "1. **Email #1**: " + (state.variables.emailSequence as any[])[0].subject,
-    "2. **Email #2**: " + (state.variables.emailSequence as any[])[1].subject,
-    "3. **Email #3**: " + (state.variables.emailSequence as any[])[2].subject,
+    "1. **Email #1**: " + (state.variables.emailSequence as { subject: string }[])[0].subject,
+    "2. **Email #2**: " + (state.variables.emailSequence as { subject: string }[])[1].subject,
+    "3. **Email #3**: " + (state.variables.emailSequence as { subject: string }[])[2].subject,
     "",
     "## 4. QA Reality Check Certification",
     "- ✅ Value proposition and pricing aligned ($3,500/mo)",

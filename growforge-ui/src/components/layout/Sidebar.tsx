@@ -4,41 +4,49 @@ import Image from "next/image";
 import {
   Activity,
   Bot,
+  Brain,
   LayoutDashboard,
   Library,
-  Lock,
   MessageSquare,
   ScrollText,
   Settings,
   Terminal,
   Workflow,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
-import { agents, navSections } from "@/lib/agents";
-import { StatusDot } from "@/components/ui/StatusDot";
+import { navSections } from "@/lib/agents";
 import { useAppState, type ActiveView } from "@/lib/appState";
-import { isAgentLocked } from "@/lib/security";
+import { useLiveAgents } from "@/lib/useLiveAgents";
 
 const ICONS: Record<string, LucideIcon> = {
   MessageSquare,
   LayoutDashboard,
   Activity,
   Bot,
+  Brain,
   Library,
   Workflow,
   Terminal,
   ScrollText,
   Settings,
+  Zap,
 };
 
 export function Sidebar() {
-  const { activeView, setActiveView, selectedAgentId, openAgentPanel, canAccessAgent } = useAppState();
+  const { activeView, setActiveView } = useAppState();
+  const agents = useLiveAgents();
 
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-border-metal bg-white/70 backdrop-blur-xl">
-      {/* Brand - Encapsulated in solid-white container */}
+      {/* Brand — also the way home, same as the header's console crumb */}
       <div className="flex h-18 items-center border-b border-border-metal px-3 py-3">
-        <div className="flex w-full items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setActiveView("dashboard")}
+          title="Back to dashboard home"
+          className="flex w-full items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
+        >
           <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
             <Image
               src="/logo-mark.png"
@@ -55,7 +63,7 @@ export function Sidebar() {
               Digital AI OS
             </p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Nav */}
@@ -98,64 +106,36 @@ export function Sidebar() {
           </div>
         ))}
 
-        {/* Active agents roster */}
-        <div>
-          <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
-            Agent Roster
-          </p>
-          <ul className="space-y-0.5">
-            {agents.map((agent) => {
-              const isSelected = selectedAgentId === agent.id;
-              const locked = isAgentLocked(agent.id) && !canAccessAgent(agent.id);
-              return (
-                <li key={agent.id}>
-                  <button
-                    type="button"
-                    onClick={() => openAgentPanel(agent.id)}
-                    aria-current={isSelected ? "true" : undefined}
-                    className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
-                      isSelected
-                        ? "bg-sunken text-navy ring-1 ring-border-metal-strong"
-                        : "text-secondary hover:bg-sunken hover:text-navy"
-                    }`}
-                  >
-                    <StatusDot status={agent.status} pulse={agent.status === "active"} />
-                    <span className="min-w-0 flex-1 truncate">{agent.name}</span>
-                    {locked && <Lock className="h-3 w-3 shrink-0 text-muted" />}
-                    <span className="shrink-0 font-mono text-[10px] text-muted">
-                      {agent.lastRun}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        {/* The full per-agent list used to render here permanently,
+         *  competing with primary navigation for attention on every screen
+         *  regardless of what the user was doing. Removed — "Agent Roster"
+         *  in the Overview section above already links to the Roster page
+         *  for anyone who wants that detail. */}
       </nav>
 
       {/* Footer */}
       <div className="border-t border-border-metal p-4">
-        <a
-          href="/profile"
-          className="mb-3 flex items-center justify-between rounded-xl bg-white shadow-sm border border-slate-100 px-3 py-2 text-xs font-semibold text-navy transition-colors hover:bg-slate-50"
-        >
-          <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-electric/10 text-electric">
-              ⚡
-            </span>
-            <span>Memory Profile</span>
-          </div>
-          <span className="text-[10px] font-mono text-muted">Akinator</span>
-        </a>
+        {/* The old "User Profile / AI Brain" button here duplicated the
+         *  header's own avatar button (same overlay, same "profile" tab) —
+         *  removed rather than kept as a second entry point to the same
+         *  place. */}
 
-        <RoleSwitcher />
-        <div className="mt-3 flex items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2.5">
+        {/* Mode (Simple/Advanced) and role (Employee/Owner) switchers moved
+         *  into Settings — configuration decisions, not everyday actions,
+         *  so they don't need permanent sidebar real estate. See the
+         *  "Interface & Access" card at the top of the Settings section. */}
+        <div className="flex items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-mono text-xs font-semibold text-gold shadow-sm">
             GF
           </div>
           <div className="min-w-0 leading-tight">
             <p className="truncate text-sm font-semibold text-navy">GrowForge Ops</p>
-            <p className="truncate text-[11px] text-muted">7 agents online</p>
+            <p className="truncate text-[11px] text-muted">
+              {agents.length} agents
+              {agents.some((a) => a.status === "active")
+                ? ` · ${agents.filter((a) => a.status === "active").length} active`
+                : " registered"}
+            </p>
           </div>
         </div>
       </div>
@@ -163,35 +143,3 @@ export function Sidebar() {
   );
 }
 
-/** Demo role switcher — there's no backend auth/session in this app, so
- *  stepping down to Employee is instant while stepping up to Owner requires
- *  the owner PIN (see src/lib/security.ts). */
-function RoleSwitcher() {
-  const { role, setRole, requestOwnerUnlock } = useAppState();
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border-metal bg-sunken px-2.5 py-1.5">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-muted">Viewing as</span>
-      <div className="flex overflow-hidden rounded-md border border-border-metal-strong">
-        <button
-          type="button"
-          onClick={() => setRole("employee")}
-          className={`px-2 py-1 text-[11px] font-medium transition-colors ${
-            role === "employee" ? "bg-white text-navy" : "bg-transparent text-muted hover:text-navy"
-          }`}
-        >
-          Employee
-        </button>
-        <button
-          type="button"
-          onClick={() => (role === "owner" ? undefined : requestOwnerUnlock())}
-          className={`px-2 py-1 text-[11px] font-medium transition-colors ${
-            role === "owner" ? "bg-navy text-gold" : "bg-transparent text-muted hover:text-navy"
-          }`}
-        >
-          Owner
-        </button>
-      </div>
-    </div>
-  );
-}

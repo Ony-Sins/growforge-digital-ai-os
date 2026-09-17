@@ -20,17 +20,16 @@ if (fs.existsSync(envPath)) {
 
 import {
   createSwarmContext,
-  resolveSwarmAgent,
   applyStateDiff,
   saveSwarmState,
   loadSwarmState,
   resumeSwarmDirective,
   SwarmState,
 } from "../src/lib/swarm-orchestrator";
-import { transferTaskTool, setTransferTaskHandler } from "../src/lib/tools/transferTask";
-import { completeDirectiveTool, setCompleteDirectiveHandler } from "../src/lib/tools/completeDirective";
-import { askOperatorTool, setConsultationHandler } from "../src/lib/tools/askOperator";
-import { logSwarmStateChange, logStrategicDecision } from "../src/lib/brainLogger";
+import { transferTaskTool, setTransferTaskHandler, type TaskTransferPayload } from "../src/lib/tools/transferTask";
+import { setCompleteDirectiveHandler } from "../src/lib/tools/completeDirective";
+import { setConsultationHandler } from "../src/lib/tools/askOperator";
+import { logSwarmStateChange } from "../src/lib/brainLogger";
 
 let passed = 0;
 let failed = 0;
@@ -62,7 +61,7 @@ async function runLoopGuardrailStressTest() {
   assert(state.maxDepth === 5, "Initial max recursion depth set to 5");
   assert(state.handoffDepth === 0, "Initial handoff depth starts at 0");
 
-  let lastTransferPayload: any = null;
+  let lastTransferPayload: TaskTransferPayload | null = null;
   setTransferTaskHandler(async (payload) => {
     lastTransferPayload = payload;
     return { ok: true, message: `Delegated to ${payload.targetAgent}` };
@@ -158,9 +157,7 @@ async function runLoopGuardrailStressTest() {
 
   console.log("\n--- [Phase 3: HITL Operator Intervention & Seamless State Resume] ---");
   // Operator opens HITL drawer, edits payload variables, and authorizes +3 extra handoffs
-  let consultationFired = false;
-  setConsultationHandler(async (q, opts) => {
-    consultationFired = true;
+  setConsultationHandler(async (q) => {
     assert(q.includes("depth reached maximum") || q.includes("5"), "HITL drawer question warns of depth limit");
     return "Authorize +3 Additional Handoffs";
   });
@@ -177,7 +174,7 @@ async function runLoopGuardrailStressTest() {
     state.directiveId,
     overridePayload,
     {
-      chatCompleteOverride: async (_sys, _msgs) => {
+      chatCompleteOverride: async () => {
         return {
           text: JSON.stringify({
             action: "tool",

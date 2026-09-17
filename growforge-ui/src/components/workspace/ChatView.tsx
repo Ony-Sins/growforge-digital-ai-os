@@ -7,15 +7,20 @@ import {
   Bot,
   ClipboardCheck,
   Code2,
+  FileText,
   FlaskConical,
   Loader2,
   Lock,
+  Maximize2,
+  Minimize2,
+  Paperclip,
   Rocket,
   MessageSquare,
   Send,
   ShieldCheck,
   Sparkles,
   Target,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { agents, type AgentStatus } from "@/lib/agents";
@@ -56,6 +61,13 @@ interface DispatchInfo {
 }
 
 type ChatHandoff = HandoffSuggestion & { params: Record<string, unknown> };
+
+interface AttachmentUI {
+  name: string;
+  kind: string;
+  extractedText: string;
+  status: "uploading" | "done" | "error";
+}
 
 interface ChatMessageUI {
   id: number;
@@ -116,7 +128,8 @@ const WELCOME_CONTENT =
   "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language — any language — and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
 
 export function ChatView() {
-  const { role, unlockedAgentIds, requestAgentUnlock, openJob } = useAppState();
+  const { role, unlockedAgentIds, requestAgentUnlock, openJob, chatViewMode, setChatViewMode, activeView, activeViewToken } =
+    useAppState();
 
   // Starts empty so the server-rendered and hydrated client markup match
   // exactly; the welcome message (which needs a real Date()) is added in an
@@ -132,9 +145,11 @@ export function ChatView() {
   const [pendingHandoff, setPendingHandoff] = useState<{ handoff: ChatHandoff; messageId: number } | null>(null);
   const [handoffBusy, setHandoffBusy] = useState(false);
   const [pendingBrief, setPendingBrief] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<AttachmentUI[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMessages([
@@ -181,6 +196,13 @@ export function ChatView() {
     el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length, sending]);
 
+  // Clicking "AI Assistant" in the sidebar no longer scrolls to a section —
+  // the chat is always visible (docked) or already full-screen (maximized).
+  // Instead it just moves focus into the input, same result a user wants.
+  useEffect(() => {
+    if (activeView === "chat") inputRef.current?.focus();
+  }, [activeView, activeViewToken]);
+
   useEffect(() => {
     if (!pendingHandoff) return;
     function onKey(e: KeyboardEvent) {
@@ -190,6 +212,48 @@ export function ChatView() {
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingHandoff, handoffBusy]);
+
+  async function handleFilesSelected(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList).slice(0, 10);
+    const names = files.map((f) => f.name);
+    setAttachments((prev) => [...prev, ...files.map((f) => ({ name: f.name, kind: "…", extractedText: "", status: "uploading" as const }))]);
+
+    const formData = new FormData();
+    files.forEach((f) => formData.append("file", f));
+
+    try {
+      const res = await fetch("/api/attachments", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setAttachments((prev) =>
+          prev.map((a) => (names.includes(a.name) && a.status === "uploading" ? { ...a, status: "error", extractedText: data.error ?? "Upload failed." } : a)),
+        );
+        return;
+      }
+      const results: { name: string; kind: string; extractedText: string }[] = data.results ?? [];
+      setAttachments((prev) => {
+        const withoutUploading = prev.filter((a) => !(names.includes(a.name) && a.status === "uploading"));
+        return [...withoutUploading, ...results.map((r) => ({ ...r, status: "done" as const }))];
+      });
+    } catch {
+      setAttachments((prev) =>
+        prev.map((a) => (names.includes(a.name) && a.status === "uploading" ? { ...a, status: "error", extractedText: "Network error uploading file." } : a)),
+      );
+    }
+  }
+
+  function removeAttachment(name: string) {
+    setAttachments((prev) => prev.filter((a) => a.name !== name));
+  }
+
+  function buildAttachmentContext(): string | undefined {
+    const ready = attachments.filter((a) => a.status === "done");
+    if (ready.length === 0) return undefined;
+    return `The client attached ${ready.length} file${ready.length === 1 ? "" : "s"} — use this as real context, not as something to ask the client to re-explain:\n\n${ready
+      .map((a) => `--- Attached file: ${a.name} (${a.kind}) ---\n${a.extractedText}`)
+      .join("\n\n")}`;
+  }
 
   async function pollDispatchResolution(messageId: number, agentId: string) {
     try {
@@ -224,15 +288,18 @@ export function ChatView() {
       .slice(-10)
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
+    const attachmentContext = buildAttachmentContext();
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
+    setAttachments([]);
     setSending(true);
 
     try {
       const res = await fetch("/api/router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history, role, unlockedAgentIds, pendingBrief }),
+        body: JSON.stringify({ message: text, history, role, unlockedAgentIds, pendingBrief, attachmentContext }),
       });
       const data = await res.json();
 
@@ -427,17 +494,35 @@ export function ChatView() {
     setPendingHandoff(null);
   }
 
+  const maximized = chatViewMode === "maximized";
+
   return (
-    <section className="glass-card flex flex-col overflow-hidden rounded-2xl">
-      <div className="flex items-center gap-3 border-b border-border-metal px-5 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-border-metal">
-          <MessageSquare className="h-[18px] w-[18px]" />
+    <section
+      className={
+        maximized
+          ? "fixed inset-0 z-50 flex flex-col bg-app"
+          : // Docked: a bottom sheet (under half the viewport height, so the
+            // dashboard above stays usable) below lg, becoming the
+            // persistent right-side panel — like the sidebar — at lg and
+            // up. Switching at lg rather than md is deliberate: the left
+            // Sidebar already claims up to 288px from md, and adding a
+            // 384px-wide right dock on top of that crushed the middle
+            // content on real tablet widths (~768-1024px) when this was
+            // tried at md — verified live, not a guess.
+            "fixed inset-x-0 bottom-0 top-auto z-30 flex h-[45vh] flex-col border-t border-border-metal bg-white shadow-2xl lg:inset-x-auto lg:inset-y-auto lg:right-0 lg:top-16 lg:bottom-0 lg:h-auto lg:w-full lg:max-w-sm lg:border-l lg:border-t-0"
+      }
+    >
+      <div className="flex items-center gap-2.5 border-b border-border-metal px-4 py-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-border-metal">
+          <MessageSquare className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-heading text-base font-semibold text-navy">AI Assistant</h2>
-          <p className="text-xs text-secondary">Describe it in plain language. I ask, confirm, then the team builds it.</p>
+          <h2 className="truncate font-heading text-sm font-semibold text-navy">AI Assistant</h2>
+          {maximized && (
+            <p className="truncate text-xs text-secondary">Describe it in plain language. I ask, confirm, then the team builds it.</p>
+          )}
         </div>
-        {strategy && (
+        {strategy && maximized && (
           <label className="flex shrink-0 items-center gap-1.5">
             <span className="sr-only">LLM strategy</span>
             <select
@@ -456,9 +541,20 @@ export function ChatView() {
             </select>
           </label>
         )}
+        <button
+          type="button"
+          onClick={() => setChatViewMode(maximized ? "docked" : "maximized")}
+          title={maximized ? "Dock to the right side" : "Maximize to full screen"}
+          className="flex shrink-0 items-center justify-center rounded-lg border border-border-metal bg-white/80 p-1.5 text-secondary hover:border-electric/40 hover:text-electric"
+        >
+          {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </button>
       </div>
 
-      <div ref={scrollRef} className="max-h-[32rem] min-h-[20rem] flex-1 space-y-4 overflow-y-auto p-5">
+      <div
+        ref={scrollRef}
+        className={`flex-1 space-y-4 overflow-y-auto p-5 ${maximized ? "mx-auto w-full max-w-3xl" : ""}`}
+      >
         {messages.map((m) => {
           if (m.role === "error") {
             return (
@@ -588,25 +684,73 @@ export function ChatView() {
         )}
       </div>
 
-      <form onSubmit={handleSend} className="flex items-end gap-2 border-t border-border-metal p-4">
-        <textarea
-          ref={inputRef}
-          name="chat-message"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          placeholder={pendingBrief ? "Reply “yes” to send it, or tell me what to change…" : "Describe a project or ask anything, in any language…"}
-          className="max-h-32 flex-1 resize-none rounded-xl border border-border-metal bg-white/80 px-3.5 py-2.5 text-sm text-navy outline-none focus:border-electric/50"
-        />
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-electric to-gold px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </form>
+      <div className={`border-t border-border-metal ${maximized ? "mx-auto w-full max-w-3xl" : ""}`}>
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 pt-3">
+            {attachments.map((a) => (
+              <div
+                key={a.name}
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
+                  a.status === "error" ? "border-crimson/30 bg-crimson/5 text-crimson" : "border-border-metal bg-white/80 text-secondary"
+                }`}
+                title={a.status === "error" ? a.extractedText : a.status === "done" ? a.extractedText.slice(0, 200) : undefined}
+              >
+                {a.status === "uploading" ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <FileText className="h-3.5 w-3.5 shrink-0" />}
+                <span className="max-w-[10rem] truncate">{a.name}</span>
+                <button type="button" onClick={() => removeAttachment(a.name)} aria-label={`Remove ${a.name}`} className="text-muted hover:text-navy">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <form onSubmit={handleSend} className="flex items-end gap-2 p-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx,.txt,.md,.csv,image/*"
+            // sr-only, not `hidden` — see ProfileDashboard.tsx's avatar
+            // input for why: display:none breaks programmatic .click() in
+            // some browsers, silently, with no dialog and no error.
+            className="sr-only"
+            onChange={(e) => {
+              handleFilesSelected(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach files (PDF, Word doc, image, text)"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl border border-border-metal bg-white/80 text-secondary hover:border-electric/40 hover:text-electric"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+          <textarea
+            ref={inputRef}
+            name="chat-message"
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              const el = e.target;
+              el.style.height = "auto";
+              el.style.height = `${Math.min(el.scrollHeight, 192)}px`;
+            }}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={pendingBrief ? "Reply “yes” or tell me what to change…" : "Describe a project…"}
+            className="max-h-48 min-h-[52px] flex-1 resize-none overflow-y-auto rounded-xl border border-border-metal bg-white/80 px-3.5 py-4 text-sm leading-5 text-navy outline-none focus:border-electric/50"
+          />
+          <button
+            type="submit"
+            disabled={sending || !input.trim() || attachments.some((a) => a.status === "uploading")}
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-electric to-gold text-white shadow-sm transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </form>
+      </div>
 
       {pendingHandoff && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

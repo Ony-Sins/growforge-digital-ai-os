@@ -106,8 +106,8 @@ export function AgentDetailPanel() {
     try {
       // Provider *names* only — the actual key values live server-side in
       // the encrypted vault (see src/lib/serverVault.ts) and never reach
-      // this browser. This just tells the (simulated) agent run to prefer
-      // these over default system keys.
+      // this browser. This just tells the agent run which providers to
+      // prefer over the default system keys.
       const vaultRes = await fetch(`/api/vault/${encodeURIComponent(selectedAgentId)}`);
       const usingCustomKeys: string[] = vaultRes.ok
         ? ((await vaultRes.json()).providers ?? [])

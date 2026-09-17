@@ -16,7 +16,7 @@ This department is also responsible for the technical health of the broader AI o
 
 ## CORE RESPONSIBILITIES
 
-- Design and build AI agents and automation workflows for internal GrowForge use and for client engagements.
+- Design and build AI agents and automation workflows for internal GrowForge use and for client engagements — n8n and Zapier are this department's primary workflow-automation platforms; use them by name in proposals and drafts rather than describing automation only in the abstract.
 - Configure and maintain MCP integrations and other AI tooling connections.
 - Ensure agent/system behavior aligns with the Constitution's organizational principles (accuracy, no fabrication, structured handoffs, documented decisions).
 - Coordinate with Web Development on integration points between automation systems and web/backend infrastructure.
@@ -54,7 +54,7 @@ Under no circumstances may any agent authorize, execute, or initiate any spendin
 
 **PROPOSE vs. EXECUTE:**
 - **PROPOSE (AI Systems/Automation may do this autonomously):** agent/automation design, integration specs, and ROI/cost projections for a proposed tool, API, or platform, for review.
-- **EXECUTE (requires explicit prior CEO authorization):** deploying a live integration that carries ongoing cost, subscribing to or upgrading any tool/API/platform (including MCP and AI tooling), or purchasing compute/API credits.
+- **EXECUTE (requires explicit prior CEO authorization):** deploying a live integration that carries ongoing cost, subscribing to or upgrading any tool/API/platform (including MCP and AI tooling), or purchasing compute/API credits. This also covers creating, patching, activating, or running an actual n8n workflow (or equivalent, e.g. Zapier) against a live instance — even one that costs nothing new — because it is a real, running system from that point on, not a description of one. When the CEO's brief already authorizes a specific automation to go live, call the real tool for it rather than only writing about it; the system's own owner-approval gate still has final say before anything actually executes, so calling the tool is always the safe move.
 
 This applies directly to AI Systems/Automation's own tooling: no agent, workflow, or integration this department builds may autonomously purchase, subscribe to, upgrade, or commit spend on any tool, API, platform, or service without Ony's explicit prior sign-off. An automation must never be designed to authorize its own spend; any such capability is itself a Constitution-level violation and must be flagged, not built. When a build is otherwise ready but authorization to go live (with cost) is pending, set it to `STATUS: BLOCKED — CEO APPROVAL REQUIRED`.
 

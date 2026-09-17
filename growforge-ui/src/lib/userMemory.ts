@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * User Learning Memory ("Akinator" Shadow Memory) Engine.
+ * User Learning Memory (Shadow Memory) Engine.
  *
  * Persists operator-specific brand guidelines, writing style, strategic
  * preferences, learned nuances from past revisions, and explicit rejections.
@@ -12,8 +12,55 @@ import path from "node:path";
  * so projects adapt to each operator's established voice and rules.
  */
 
+export const SOCIAL_PLATFORMS = [
+  "linkedin",
+  "instagram",
+  "facebook",
+  "x",
+  "tiktok",
+  "youtube",
+  "threads",
+  "telegram",
+  "whatsapp",
+  "whatsappBusiness",
+] as const;
+
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+
+/** Identity fields the operator fills in about themselves — distinct from
+ *  the strategic/learned fields below (writing style, brand rules, etc.),
+ *  which the system infers. This is what the user tells us directly. */
+/** A pinned location — coordinates plus the human-readable label a reverse
+ *  geocode returned for them (see POST /api/geo/reverse). */
+export interface ProfileLocation {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface UserProfileIdentity {
+  fullName: string;
+  designation: string;
+  companyName: string;
+  about: string;
+  socials: Partial<Record<SocialPlatform, string>>;
+  /** Local static path (e.g. "/uploads/avatars/avatar-<hash>.png") to an
+   *  uploaded profile picture — set by POST /api/profile/avatar, cleared by
+   *  DELETE on the same route. Absent means no avatar uploaded yet. */
+  avatarUrl?: string;
+  /** Same pattern as avatarUrl, backed by POST/DELETE /api/profile/cover. */
+  coverPhotoUrl?: string;
+  location?: ProfileLocation;
+  phone?: string;
+}
+
+function emptyIdentity(): UserProfileIdentity {
+  return { fullName: "", designation: "", companyName: "", about: "", socials: {} };
+}
+
 export interface UserMemory {
   email: string;
+  profile: UserProfileIdentity;
   writingStyle: string;
   brandRules: string[];
   preferences: Record<string, string>;
@@ -102,6 +149,7 @@ function normalizeEmail(email: string): string {
 function createDefaultMemory(email: string): UserMemory {
   return {
     email: normalizeEmail(email),
+    profile: emptyIdentity(),
     writingStyle: DEFAULT_WRITING_STYLE,
     brandRules: [...DEFAULT_BRAND_RULES],
     preferences: { ...DEFAULT_PREFERENCES },
@@ -113,12 +161,16 @@ function createDefaultMemory(email: string): UserMemory {
   };
 }
 
-/** Retrieves or initializes user memory for the given email address. */
+/** Retrieves or initializes user memory for the given email address.
+ *  Backfills `profile` for records written before that field existed. */
 export function getUserMemory(email: string): UserMemory {
   const norm = normalizeEmail(email);
   const store = getStore();
   if (!store[norm]) {
     store[norm] = createDefaultMemory(norm);
+    persist(store);
+  } else if (!store[norm].profile) {
+    store[norm] = { ...store[norm], profile: emptyIdentity() };
     persist(store);
   }
   return store[norm];
@@ -133,6 +185,14 @@ export function updateUserMemory(email: string, patch: Partial<Omit<UserMemory, 
   const updated: UserMemory = {
     ...existing,
     ...patch,
+    // `socials` is replaced wholesale, not merged key-by-key: the identity
+    // save flow always sends the client's complete, authoritative socials
+    // object, already filtered down to non-empty values (see the route).
+    // An additive merge here meant a cleared field could never actually be
+    // deleted — the old value just survived under a key the patch omitted.
+    profile: patch.profile
+      ? { ...existing.profile, ...patch.profile, socials: patch.profile.socials ?? existing.profile?.socials ?? {} }
+      : (existing.profile ?? emptyIdentity()),
     preferences: patch.preferences ? { ...patch.preferences } : existing.preferences,
     brandRules: patch.brandRules ? [...patch.brandRules] : existing.brandRules,
     pastOverrides: patch.pastOverrides ? [...patch.pastOverrides] : existing.pastOverrides,
@@ -239,6 +299,14 @@ export function formatUserMemoryPrompt(email: string | null | undefined): string
   const mem = getUserMemory(email);
 
   const sections: string[] = [];
+
+  const p = mem.profile;
+  if (p?.fullName?.trim() || p?.designation?.trim() || p?.companyName?.trim()) {
+    const who = [p.fullName?.trim(), p.designation?.trim(), p.companyName?.trim() ? `at ${p.companyName.trim()}` : ""]
+      .filter(Boolean)
+      .join(", ");
+    sections.push(`- **Operator Identity**: ${who}`);
+  }
 
   if (mem.writingStyle?.trim()) {
     sections.push(`- **Preferred Writing Style & Voice**: ${mem.writingStyle.trim()}`);

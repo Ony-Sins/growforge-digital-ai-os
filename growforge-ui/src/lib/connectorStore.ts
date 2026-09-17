@@ -53,7 +53,7 @@ function isPrivateOrReservedIPv6(ip: string): boolean {
  * Re-checked at fetch time too, not just at creation, since DNS can change
  * between the two (a DNS-rebinding attack would otherwise slip through).
  */
-async function assertPublicHttpsUrl(rawUrl: string): Promise<void> {
+export async function assertPublicHttpsUrl(rawUrl: string): Promise<void> {
   let url: URL;
   try {
     url = new URL(rawUrl);

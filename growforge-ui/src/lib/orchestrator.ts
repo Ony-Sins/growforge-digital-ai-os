@@ -183,7 +183,7 @@ async function runPlan(job: Job): Promise<Plan> {
 }
 Rules:
 - researchQuestions is REQUIRED: write exactly 5 specific, Google-searchable questions, each naming the client's location and industry, covering: local demand/seasonality, the competitor landscape, typical customer pricing, advertising cost benchmarks (cost per lead/click) for this industry and location, and where customers search or licensing/regulatory requirements. Never return an empty array.
-- Assign 3 to 6 departments — only those the brief genuinely needs.`;
+- Assign only the departments this brief genuinely needs — judge it case by case, it could be as few as 2 or as many as all 8. Do not default to a habitual subset or leave a department out just because it's less commonly needed; if the brief has a real automation, workflow, or systems-integration need, assign AI Systems & Intelligent Automation; if it has real delivery/timeline/coordination complexity, assign Client Success & Program Management. Never pad with a department the brief doesn't need just to hit a number.`;
 
   const { text, provider } = await ask(system, user, 2200);
   const parsed = extractJson(text) as Partial<Plan> | null;
@@ -192,7 +192,7 @@ Rules:
   let assignments = (Array.isArray(parsed?.assignments) ? parsed.assignments : [])
     .filter((a): a is Assignment => !!a && typeof a.departmentId === "string" && !!getDepartment(a.departmentId))
     .filter((a) => (seen.has(a.departmentId) ? false : (seen.add(a.departmentId), true)))
-    .slice(0, 6);
+    .slice(0, DEPARTMENTS.length);
   if (assignments.length === 0) {
     assignments = ["marketing", "sales-bd", "meta-ads", "finance-ops"].map((id) => ({
       departmentId: id,
@@ -278,14 +278,15 @@ interface Dossier {
 }
 
 async function runResearch(job: Job, plan: Plan): Promise<Dossier> {
+  // isResearchAvailable() is now always true — DuckDuckGo needs no key at
+  // all, so it runs as a fallback even with zero providers configured; the
+  // only real reason to skip entirely is HQ producing no questions to ask.
   if (!isResearchAvailable() || plan.researchQuestions.length === 0) {
-    const reason = !isResearchAvailable()
-      ? "No Gemini API key is configured, so live Google research could not run."
-      : "HQ produced no research questions.";
+    const reason = "HQ produced no research questions.";
     updateStep(job.id, "research", {
       status: "skipped",
       activity: "Skipped — output will be marked UNVERIFIED",
-      output: `${reason}\n\nAdd a Gemini key in **Settings → Integrations** to enable search-grounded research with real source links.`,
+      output: reason,
       finishedAt: now(),
     });
     const dossier: Dossier = {
@@ -414,13 +415,13 @@ async function waitForConsultation(consultationId: string): Promise<string | nul
   return null;
 }
 
-async function gatherWithTools(jobId: string, stepId: string, stepLabel: string, dept: { name: string; file: string }, task: string): Promise<string> {
+async function gatherWithTools(jobId: string, stepId: string, stepLabel: string, dept: { id: string; name: string; file: string }, task: string): Promise<string> {
   const result = await runToolLoop({
     systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.`,
-    task: `${task}\n\nOnly call a tool if the research dossier above is genuinely missing something you need to give specific, accurate advice — otherwise finish immediately with action "final" and text "no additional research needed".`,
-    tools: getDefaultTools(),
-    maxSteps: 3,
-    maxTokens: 500,
+    task: `${task}\n\nIf this assignment explicitly asks you to actually create, activate, run, or otherwise operate a real system (an n8n/Zapier workflow, a connector) — call that exact tool now, with real arguments. Do not write a proposal or description instead of calling it. If the research dossier above is missing something you need, call a research tool instead. Otherwise finish immediately with action "final" and text "no additional research needed".`,
+    tools: await getDefaultTools(dept.id),
+    maxSteps: 4,
+    maxTokens: 900,
     onActivity: (text) => updateStep(jobId, stepId, { activity: text }),
     requestApproval: async (toolName, args) => {
       const approval = createApproval({
@@ -564,8 +565,8 @@ Choose sections that fit this brief. For a business launch or growth brief, cove
   const { text, provider } = await ask(system, user, 6000);
 
   const banner = dossier.verified
-    ? `> **Status:** PROPOSAL — pending CEO approval · Research: ${dossier.sources.length} live sources`
-    : `> **UNVERIFIED** — no live research ran for this plan. Every figure below is an estimate and must be checked before it is used. Add a Gemini key in Settings → Integrations and re-run for a sourced version.\n>\n> **Status:** PROPOSAL — pending CEO approval`;
+    ? `> **Research:** ${dossier.sources.length} live sources`
+    : `> **UNVERIFIED** — no live research ran for this plan. Every figure below is an estimate and must be checked before it is used. Add a research-capable API key (Gemini, OpenAI, Anthropic, OpenRouter, etc.) in Settings → Integrations, or wait if DuckDuckGo's no-key fallback is temporarily blocked, and re-run for a sourced version.`;
   const sourceList = dossier.sources.length
     ? `\n\n---\n\n## Sources\n${dossier.sources.map((s, i) => `${i + 1}. [${s.title}](${s.uri})`).join("\n")}`
     : "";
@@ -646,9 +647,9 @@ export async function reviseJob(jobId: string, message: string): Promise<Job> {
   const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ deciding the blast radius of a client-requested change to an already-completed plan. Respond with ONLY a JSON object, no prose.`;
   const user = `ORIGINAL BRIEF:\n${job.brief}\n\nCLIENT'S REQUESTED CHANGE:\n${message}\n\nEXISTING DEPARTMENT WORK:\n${catalog}\n\nDecide which existing department drafts this change actually invalidates versus which stay valid as-is. Keep the blast radius as SMALL as possible — every redo costs time and money:
 - Redo a department only if its concrete recommendations would materially change. Read its current draft to judge.
-- Budget changes usually affect Finance & Ops and the paid-advertising departments only.
-- Ad-channel or targeting changes usually affect Meta Ads and Marketing only.
-- Web Design, Web Development and AI Automation rarely change for budget, channel or messaging changes.
+- Budget changes usually affect Finance & Operations and the paid-advertising departments only.
+- Ad-channel or targeting changes usually affect Paid Media & Performance Advertising and Marketing & Brand Strategy only.
+- Digital Design & User Experience, Web Development & Engineering, and AI Systems & Intelligent Automation rarely change for budget, channel or messaging changes.
 - The team review, QA and final plan are always regenerated automatically — do not list them.
 Redo research only if the change shifts location, industry, or target market — never for budget, tone or channel tweaks.
 Return JSON exactly in this shape:

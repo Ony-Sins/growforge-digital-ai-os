@@ -12,7 +12,8 @@ let pass = 0;
 let fail = 0;
 function check(label: string, ok: boolean) {
   console.log(`  ${ok ? "✓" : "✗"} ${label}`);
-  ok ? pass++ : fail++;
+  if (ok) pass++;
+  else fail++;
 }
 
 const calls: string[] = [];
@@ -76,6 +77,7 @@ async function main() {
     requestApproval: async () => true,
   });
   check("gated tool's execute() ran once approved", calls.some((c) => c.startsWith("send_real_email")));
+  void r3;
 
   console.log("\n-- Suite 4: No approval callback configured at all --");
   calls.length = 0;

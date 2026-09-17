@@ -20,9 +20,11 @@ import {
   CheckCircle2,
   ClipboardList,
   Code2,
+  Cog,
   Copy,
   Download,
   FileText,
+  FolderOpen,
   Globe,
   History,
   Loader2,
@@ -95,10 +97,20 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
 
   return (
     <div
-      className={`w-[230px] cursor-pointer rounded-2xl border-2 bg-white p-3 shadow-[0_8px_24px_-14px_rgba(11,18,32,0.35)] transition-all ${style.ring} ${
+      className={`relative w-[230px] cursor-pointer rounded-2xl border-2 bg-white p-3 shadow-[0_8px_24px_-14px_rgba(11,18,32,0.35)] transition-all ${style.ring} ${
         selected ? "scale-[1.03] shadow-[0_14px_32px_-12px_rgba(0,120,255,0.45)]" : "hover:-translate-y-0.5"
       } ${isFinal && step.status === "done" ? "bg-gradient-to-br from-white to-emerald/10" : ""}`}
     >
+      {/* Floating "working" badge — a slowly spinning gear that hovers just
+       *  above the node while its status is active, instead of swapping out
+       *  the department's own icon. Keeps "what this is" and "is it working
+       *  right now" visually separate. */}
+      {step.status === "active" && (
+        <span className="absolute -top-3 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-electric to-gold text-white shadow-[0_4px_14px_-2px_rgba(0,120,255,0.55)] ring-4 ring-white">
+          <Cog className="h-3.5 w-3.5 animate-[spin_2.5s_linear_infinite]" />
+        </span>
+      )}
+
       {step.kind !== "brief" && <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-2 !border-white !bg-muted" />}
       {step.kind !== "final" && <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5 !border-2 !border-white !bg-muted" />}
 
@@ -108,7 +120,7 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
             step.status === "active" ? "bg-electric/10 text-electric" : step.status === "done" ? "bg-emerald/10 text-emerald" : "bg-sunken text-secondary"
           }`}
         >
-          {step.status === "active" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+          <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{KIND_TAG[step.kind]}</p>
@@ -336,9 +348,18 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
   );
 }
 
-function FinalPlanModal({ job, onClose }: { job: Job; onClose: () => void }) {
+function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => void; onUpdated: (job: Job) => void }) {
+  const { role } = useAppState();
   const [copied, setCopied] = useState(false);
-  const content = job.finalOutput ?? "";
+  const [approving, setApproving] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  // Older plans (generated before real approval tracking existed) had a
+  // static "Status: PROPOSAL — pending CEO approval" line baked into the
+  // stored markdown itself. That line now contradicts the live, dynamic
+  // approval badge in the header the moment a plan is actually approved —
+  // strip it at render time rather than leaving two disagreeing sources of
+  // truth on screen. New plans no longer write this line at all.
+  const content = (job.finalOutput ?? "").replace(/^>?\s*\*\*Status:\*\*\s*PROPOSAL.*$/gim, "").replace(/\n{3,}/g, "\n\n").trim();
 
   function handleDownload() {
     const blob = new Blob([`# ${job.title}\n\n${content}`], { type: "text/markdown" });
@@ -350,22 +371,52 @@ function FinalPlanModal({ job, onClose }: { job: Job; onClose: () => void }) {
     URL.revokeObjectURL(url);
   }
 
+  async function handleApprove() {
+    setApproving(true);
+    setApproveError(null);
+    try {
+      const res = await fetch(`/api/jobs/${encodeURIComponent(job.id)}/approve`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setApproveError(data.error ?? "Couldn't approve this plan.");
+        return;
+      }
+      onUpdated(data.job);
+    } catch {
+      setApproveError("Network error reaching the server.");
+    } finally {
+      setApproving(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-navy/50 backdrop-blur-sm" />
-      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center gap-3 border-b border-border-metal px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald/10 text-emerald">
-            <Trophy className="h-4 w-4" />
+      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-navy/60 backdrop-blur-sm" />
+      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-border-metal">
+        <div className="flex items-center gap-3 border-b border-border-metal bg-gradient-to-r from-navy to-navy/90 px-6 py-5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold ring-1 ring-gold/30">
+            <Trophy className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate font-heading text-base font-semibold text-navy">{job.title}</h2>
-            <p className="text-xs text-secondary">Final plan · {job.verified ? "research-backed" : "unverified"}</p>
+            <h2 className="truncate font-heading text-lg font-semibold text-white">{job.title}</h2>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/70">
+              <span>Final plan</span>
+              <span className="text-white/30">·</span>
+              <span className={job.verified ? "text-emerald" : "text-gold"}>{job.verified ? "Research-backed" : "Unverified"}</span>
+              {job.approvedAt && (
+                <>
+                  <span className="text-white/30">·</span>
+                  <span className="flex items-center gap-1 text-emerald">
+                    <ShieldCheck className="h-3 w-3" /> Approved{job.approvedBy ? ` by ${job.approvedBy}` : ""}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
           <button
             type="button"
             onClick={() => navigator.clipboard.writeText(content).then(() => setCopied(true))}
-            className="flex items-center gap-1.5 rounded-lg border border-border-metal px-3 py-1.5 text-xs font-medium text-secondary hover:text-navy"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/90 hover:bg-white/10"
           >
             {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? "Copied" : "Copy"}
@@ -373,16 +424,51 @@ function FinalPlanModal({ job, onClose }: { job: Job; onClose: () => void }) {
           <button
             type="button"
             onClick={handleDownload}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
           >
             <Download className="h-3.5 w-3.5" /> Download
           </button>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} aria-label="Close" className="shrink-0 rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto px-6 py-5">
-          <Markdown content={content} size="base" />
+        <div className="overflow-y-auto bg-app px-6 py-6">
+          <div className="mx-auto max-w-3xl rounded-2xl bg-white px-6 py-6 shadow-sm ring-1 ring-border-metal">
+            <Markdown content={content} size="base" />
+          </div>
+        </div>
+        <div className="border-t border-border-metal bg-sunken/60 px-6 py-4">
+          {role === "owner" ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <RevisePanel job={job} onRevised={onUpdated} />
+              </div>
+              {job.approvedAt ? (
+                <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald/10 px-3 py-2 text-xs font-semibold text-emerald">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Approved {new Date(job.approvedAt).toLocaleString()}
+                </span>
+              ) : (
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={handleApprove}
+                    disabled={approving}
+                    className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald to-electric px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {approving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                    Approve plan
+                  </button>
+                  {approveError && <p className="text-[11px] text-crimson">{approveError}</p>}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-secondary">
+              {job.approvedAt
+                ? `Approved by ${job.approvedBy ?? "an owner"} on ${new Date(job.approvedAt).toLocaleString()}.`
+                : "Pending owner approval — switch to Owner view to approve or request changes."}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -395,6 +481,7 @@ export function ProjectCanvas() {
   const [job, setJob] = useState<Job | null>(null);
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [showFinal, setShowFinal] = useState(false);
+  const [jobsMenuOpen, setJobsMenuOpen] = useState(false);
 
   const currentId = activeJobId ?? jobs[0]?.id ?? null;
 
@@ -440,6 +527,9 @@ export function ProjectCanvas() {
     };
   }, [currentId]);
 
+  const currentSummary = jobs.find((j) => j.id === currentId) ?? null;
+  const runningJobs = jobs.filter((j) => j.status === "running");
+  const archivedJobs = jobs.filter((j) => j.status !== "running");
   const visibleJob = job && job.id === currentId ? job : null;
   const graph = useMemo(() => (visibleJob ? buildGraph(visibleJob, selectedStepId) : { nodes: [], edges: [] }), [visibleJob, selectedStepId]);
   const selectedStep = visibleJob?.steps.find((s) => s.id === selectedStepId) ?? null;
@@ -470,31 +560,99 @@ export function ProjectCanvas() {
       </div>
 
       {jobs.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto border-b border-border-metal px-5 py-3">
-          {jobs.map((j) => {
-            const active = j.id === currentId;
-            return (
-              <button
-                key={j.id}
-                type="button"
-                onClick={() => {
-                  setSelectedStepId(null);
-                  openJob(j.id);
-                }}
-                className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-                  active ? "border-electric/40 bg-electric/5" : "border-border-metal bg-white/70 hover:border-electric/30"
-                }`}
-              >
+        <div className="relative border-b border-border-metal px-5 py-3">
+          <button
+            type="button"
+            onClick={() => setJobsMenuOpen((v) => !v)}
+            className="flex w-full items-center gap-2 rounded-xl border border-border-metal bg-white/70 px-3 py-2 text-left transition-colors hover:border-electric/30 sm:w-auto sm:min-w-[20rem]"
+          >
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted" />
+            {currentSummary ? (
+              <>
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    j.status === "running" ? "animate-pulse bg-electric" : j.status === "done" ? "bg-emerald" : "bg-crimson"
+                  className={`h-2 w-2 shrink-0 rounded-full ${
+                    currentSummary.status === "running"
+                      ? "animate-pulse bg-electric"
+                      : currentSummary.status === "done"
+                        ? "bg-emerald"
+                        : "bg-crimson"
                   }`}
                 />
-                <span className="max-w-[14rem] truncate text-xs font-medium text-navy">{j.title}</span>
-                <span className="font-mono text-[11px] text-muted">{j.percent}%</span>
-              </button>
-            );
-          })}
+                <span className="min-w-0 flex-1 truncate text-xs font-medium text-navy">{currentSummary.title}</span>
+                <span className="shrink-0 font-mono text-[11px] text-muted">{currentSummary.percent}%</span>
+              </>
+            ) : (
+              <span className="flex-1 text-xs text-muted">Select a project…</span>
+            )}
+            <span className="shrink-0 font-mono text-[11px] text-muted">{jobs.length}</span>
+          </button>
+
+          {jobsMenuOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="Close project list"
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setJobsMenuOpen(false)}
+              />
+              <div className="absolute left-5 right-5 top-full z-50 mt-1.5 max-h-96 overflow-y-auto rounded-xl border border-border-metal bg-white p-2 shadow-2xl sm:right-auto sm:w-[26rem]">
+                {runningJobs.length > 0 && (
+                  <div className="mb-1">
+                    <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Running now</p>
+                    <ul className="space-y-0.5">
+                      {runningJobs.map((j) => (
+                        <li key={j.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStepId(null);
+                              openJob(j.id);
+                              setJobsMenuOpen(false);
+                            }}
+                            className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors ${
+                              j.id === currentId ? "bg-electric/5 text-navy" : "text-secondary hover:bg-sunken hover:text-navy"
+                            }`}
+                          >
+                            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-electric" />
+                            <span className="min-w-0 flex-1 truncate text-xs font-medium">{j.title}</span>
+                            <span className="shrink-0 font-mono text-[11px] text-muted">{j.percent}%</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {archivedJobs.length > 0 && (
+                  <div>
+                    <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                      Archive · {archivedJobs.length} project{archivedJobs.length === 1 ? "" : "s"}
+                    </p>
+                    <ul className="space-y-0.5">
+                      {archivedJobs.map((j) => (
+                        <li key={j.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStepId(null);
+                              openJob(j.id);
+                              setJobsMenuOpen(false);
+                            }}
+                            className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors ${
+                              j.id === currentId ? "bg-electric/5 text-navy" : "text-secondary hover:bg-sunken hover:text-navy"
+                            }`}
+                          >
+                            <span className={`h-2 w-2 shrink-0 rounded-full ${j.status === "done" ? "bg-emerald" : "bg-crimson"}`} />
+                            <span className="min-w-0 flex-1 truncate text-xs font-medium">{j.title}</span>
+                            <span className="shrink-0 font-mono text-[11px] text-muted">{j.percent}%</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -579,7 +737,7 @@ export function ProjectCanvas() {
         </>
       )}
 
-      {showFinal && visibleJob?.finalOutput && <FinalPlanModal job={visibleJob} onClose={() => setShowFinal(false)} />}
+      {showFinal && visibleJob?.finalOutput && <FinalPlanModal job={visibleJob} onClose={() => setShowFinal(false)} onUpdated={setJob} />}
     </section>
   );
 }
