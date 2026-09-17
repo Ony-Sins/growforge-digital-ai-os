@@ -97,10 +97,11 @@ export const agents: Agent[] = [
 // section in Workspace.tsx, update this list (and sectionIdFor) to match.
 export const navSections = [
   {
-    label: "Assistant",
-    items: [{ id: "chat", label: "AI Assistant", icon: "MessageSquare" }],
-  },
-  {
+    // "AI Assistant" deliberately removed as a sidebar nav item — chat is
+    // always visible (docked right panel or maximized), never a scrollable
+    // dashboard section, so clicking it did nothing but re-select the
+    // already-active default view. The logo/header "back to dashboard"
+    // buttons remain the way home; the chat panel itself is the way to chat.
     // "AI Brain" and "Profile" deliberately removed as separate nav items —
     // both open the exact same User Profile overlay the header's avatar
     // button already opens (with its own in-overlay Brain/Profile tabs), so
