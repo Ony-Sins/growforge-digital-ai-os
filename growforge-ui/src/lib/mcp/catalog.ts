@@ -18,15 +18,22 @@
  *              master API key via the `X-Api-Key` header (not Bearer —
  *              see McpServerDef.authHeader in store.ts).
  *
- * Entries marked "oauth" (Google Drive, Slack, etc.) have no token-based
- * path in their official MCP offering as of this writing — their hosted
- * MCP servers are OAuth-only. Rather than fake a one-click "connect" for
- * those, the picker marks them "Requires OAuth — coming soon": that's a
- * distinct, larger feature (per-provider app registration, token refresh),
- * not something to fake a green checkmark for.
+ * Entries marked "manual" (Vercel, Google Drive, Slack, etc.) don't have a
+ * single verified plug-in-a-token recipe the way the "token" entries above
+ * do — either their official MCP server is OAuth-only (Vercel's hosted
+ * mcp.vercel.com, Google's Workspace APIs), or the real working path varies
+ * by which self-hosted server the user picks (Slack/Figma both have
+ * several community servers with different env var names). Rather than
+ * guess a specific recipe that might silently fail for a given user, these
+ * cards open the same freeform stdio/http form as "Add a custom MCP
+ * server" — pre-labeled with the vendor and a help link to where they'd
+ * generate a token/URL — so the user wires up whatever real server and
+ * credential they actually have. This is a deliberate choice per the
+ * project owner: don't build per-vendor one-click OAuth integrations
+ * ourselves; let the user self-serve with their own credentials instead.
  */
 
-export type CatalogAuthKind = "token" | "oauth";
+export type CatalogAuthKind = "token" | "manual";
 
 export interface CatalogEntry {
   id: string;
@@ -45,6 +52,12 @@ export interface CatalogEntry {
   recipe?:
     | { transport: "http"; url: string; authHeader?: string }
     | { transport: "stdio"; command: string; args: string[]; envVar: string };
+  /**
+   * Where to go generate a credential for this vendor — shown as help text
+   * on the freeform "manual" connect form. Only present for "manual"
+   * entries (no verified single recipe, see file header).
+   */
+  manualHelpUrl?: string;
 }
 
 export const MCP_CATALOG: CatalogEntry[] = [
@@ -120,7 +133,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Deployments, logs, and project management",
     icon: "Triangle",
     tint: "bg-black",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://vercel.com/docs/agent-resources/vercel-mcp",
   },
   {
     id: "google-drive",
@@ -128,7 +142,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Search, read, and upload files instantly",
     icon: "HardDrive",
     tint: "bg-[#4285F4]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://developers.google.com/workspace/drive/api/guides/about-auth",
   },
   {
     id: "gmail",
@@ -136,7 +151,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Draft replies, summarize threads, and search your inbox",
     icon: "Mail",
     tint: "bg-[#EA4335]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://developers.google.com/workspace/gmail/api/auth/about-auth",
   },
   {
     id: "google-calendar",
@@ -144,7 +160,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Manage your schedule and coordinate meetings",
     icon: "Calendar",
     tint: "bg-[#4285F4]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://developers.google.com/workspace/calendar/api/guides/auth",
   },
   {
     id: "slack",
@@ -152,7 +169,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Send messages, create canvases, and fetch Slack data",
     icon: "MessagesSquare",
     tint: "bg-[#4A154B]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://api.slack.com/authentication/token-types",
   },
   {
     id: "microsoft-365",
@@ -160,7 +178,8 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Access SharePoint, OneDrive, Outlook, and Teams",
     icon: "Grid2x2",
     tint: "bg-[#00A4EF]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://learn.microsoft.com/en-us/graph/auth/",
   },
   {
     id: "figma",
@@ -168,6 +187,7 @@ export const MCP_CATALOG: CatalogEntry[] = [
     description: "Generate diagrams and better code from Figma context",
     icon: "Frame",
     tint: "bg-[#1E1E1E]",
-    authKind: "oauth",
+    authKind: "manual",
+    manualHelpUrl: "https://www.figma.com/developers/api#access-tokens",
   },
 ];

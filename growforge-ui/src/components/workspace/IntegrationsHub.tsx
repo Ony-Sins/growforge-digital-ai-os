@@ -784,6 +784,19 @@ function CatalogCard({
   const brandIcon = CONNECTOR_BRAND_ICONS[entry.id];
   const Icon = CATALOG_ICONS[entry.icon] ?? Server;
 
+  // Manual-connect form state (entries with no single verified recipe —
+  // see catalog.ts's file header). Mirrors the freeform "Add a custom MCP
+  // server" fields, just scoped to one card and pre-labeled with the vendor.
+  const [manualTransport, setManualTransport] = useState<"http" | "stdio">("http");
+  const [manualUrl, setManualUrl] = useState("");
+  const [manualAuthMode, setManualAuthMode] = useState<"none" | "bearer" | "header">("bearer");
+  const [manualAuthHeaderName, setManualAuthHeaderName] = useState("");
+  const [manualSecret, setManualSecret] = useState("");
+  const [manualCommand, setManualCommand] = useState("");
+  const [manualArgs, setManualArgs] = useState("");
+  const [manualEnvVar, setManualEnvVar] = useState("");
+  const [manualEnvValue, setManualEnvValue] = useState("");
+
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
     if (!entry.recipe || !token.trim()) return;
@@ -826,6 +839,52 @@ function CatalogCard({
     }
   }
 
+  async function handleManualConnect(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const body =
+        manualTransport === "http"
+          ? {
+              name: entry.name,
+              transport: "http",
+              url: manualUrl.trim(),
+              bearerToken: manualAuthMode !== "none" ? manualSecret.trim() : undefined,
+              authHeader: manualAuthMode === "header" ? manualAuthHeaderName.trim() : undefined,
+              catalogId: entry.id,
+            }
+          : {
+              name: entry.name,
+              transport: "stdio",
+              command: manualCommand.trim(),
+              args: manualArgs.split(/\s+/).filter(Boolean),
+              env: manualEnvVar.trim() ? { [manualEnvVar.trim()]: manualEnvValue.trim() } : undefined,
+              catalogId: entry.id,
+            };
+      const res = await fetch("/api/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Couldn't connect.");
+      } else {
+        setManualUrl("");
+        setManualSecret("");
+        setManualCommand("");
+        setManualArgs("");
+        setManualEnvVar("");
+        setManualEnvValue("");
+        setOpen(false);
+        onConnected();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border-metal bg-white/70 p-3">
       <div className="flex items-center gap-2.5">
@@ -845,13 +904,6 @@ function CatalogCard({
         {connected ? (
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald/15 text-emerald">
             <CheckCircle2 className="h-3.5 w-3.5" />
-          </span>
-        ) : entry.authKind === "oauth" ? (
-          <span
-            title="Real OAuth login (per-provider app registration, token refresh) — not built yet. Not faking a connect button for this."
-            className="flex shrink-0 items-center gap-1 rounded-full bg-sunken px-2 py-1 text-[10px] font-medium text-muted"
-          >
-            <Lock className="h-3 w-3" /> Soon
           </span>
         ) : (
           <button
@@ -889,6 +941,115 @@ function CatalogCard({
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
             </button>
           </div>
+          {error && <p className="text-xs text-crimson">{error}</p>}
+        </form>
+      )}
+
+      {open && entry.authKind === "manual" && (
+        <form onSubmit={handleManualConnect} className="mt-3 space-y-1.5 border-t border-border-metal pt-3">
+          <p className="flex items-start gap-1.5 text-[11px] text-muted">
+            <Lock className="mt-0.5 h-3 w-3 shrink-0" />
+            No single official recipe for {entry.name} — wire up your own server URL/command and credential below.
+            {entry.manualHelpUrl && (
+              <a href={entry.manualHelpUrl} target="_blank" rel="noreferrer" className="shrink-0 text-electric underline underline-offset-2">
+                Where do I get this?
+              </a>
+            )}
+          </p>
+          <select
+            value={manualTransport}
+            onChange={(e) => setManualTransport(e.target.value as "http" | "stdio")}
+            className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+          >
+            <option value="http">Remote (http) — MCP server URL</option>
+            <option value="stdio">Local (stdio) — command run via npx/etc.</option>
+          </select>
+
+          {manualTransport === "http" ? (
+            <>
+              <input
+                type="url"
+                value={manualUrl}
+                onChange={(e) => setManualUrl(e.target.value)}
+                placeholder={`${entry.name} MCP server URL (https only, localhost exempted)`}
+                autoFocus
+                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              />
+              <div className="grid grid-cols-2 gap-1.5">
+                <select
+                  value={manualAuthMode}
+                  onChange={(e) => setManualAuthMode(e.target.value as typeof manualAuthMode)}
+                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+                >
+                  <option value="bearer">Bearer token</option>
+                  <option value="header">Custom header</option>
+                  <option value="none">No auth</option>
+                </select>
+                {manualAuthMode === "header" ? (
+                  <input
+                    type="text"
+                    value={manualAuthHeaderName}
+                    onChange={(e) => setManualAuthHeaderName(e.target.value)}
+                    placeholder="Header name (e.g. X-Api-Key)"
+                    className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+                  />
+                ) : (
+                  <div />
+                )}
+              </div>
+              {manualAuthMode !== "none" && (
+                <input
+                  type="password"
+                  value={manualSecret}
+                  onChange={(e) => setManualSecret(e.target.value)}
+                  placeholder="Token / key value"
+                  className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                />
+              )}
+            </>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={manualCommand}
+                onChange={(e) => setManualCommand(e.target.value)}
+                placeholder="Command, e.g. npx"
+                autoFocus
+                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              />
+              <input
+                type="text"
+                value={manualArgs}
+                onChange={(e) => setManualArgs(e.target.value)}
+                placeholder="Args, e.g. -y @vendor/mcp-server"
+                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              />
+              <div className="grid grid-cols-2 gap-1.5">
+                <input
+                  type="text"
+                  value={manualEnvVar}
+                  onChange={(e) => setManualEnvVar(e.target.value)}
+                  placeholder="Env var name"
+                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                />
+                <input
+                  type="password"
+                  value={manualEnvValue}
+                  onChange={(e) => setManualEnvValue(e.target.value)}
+                  placeholder="Value"
+                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                />
+              </div>
+            </>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy || (manualTransport === "http" ? !manualUrl.trim() : !manualCommand.trim())}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+          </button>
           {error && <p className="text-xs text-crimson">{error}</p>}
         </form>
       )}
