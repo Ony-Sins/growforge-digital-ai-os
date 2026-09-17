@@ -35,6 +35,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { MCP_CATALOG, type CatalogEntry } from "@/lib/mcp/catalog";
+import { CONNECTOR_BRAND_ICONS } from "@/lib/connectorIcons";
 import { useAppState } from "@/lib/appState";
 
 interface N8nConfig {
@@ -780,6 +781,7 @@ function CatalogCard({
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const brandIcon = CONNECTOR_BRAND_ICONS[entry.id];
   const Icon = CATALOG_ICONS[entry.icon] ?? Server;
 
   async function handleConnect(e: React.FormEvent) {
@@ -828,7 +830,13 @@ function CatalogCard({
     <div className="rounded-xl border border-border-metal bg-white/70 p-3">
       <div className="flex items-center gap-2.5">
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${entry.tint}`}>
-          <Icon className="h-4 w-4" />
+          {brandIcon ? (
+            <svg role="img" viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-label={brandIcon.title}>
+              <path d={brandIcon.path} />
+            </svg>
+          ) : (
+            <Icon className="h-4 w-4" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-navy">{entry.name}</p>
