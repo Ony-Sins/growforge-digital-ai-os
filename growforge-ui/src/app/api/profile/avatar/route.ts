@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { matchesImageSignature } from "@/lib/imageUpload";
 import { getUserMemory, updateUserMemory } from "@/lib/userMemory";
 
 export const runtime = "nodejs";
@@ -77,12 +78,19 @@ export async function POST(req: Request) {
     );
   }
 
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (!matchesImageSignature(buffer, ext)) {
+    return NextResponse.json(
+      { error: "File content doesn't match its declared image type." },
+      { status: 400 },
+    );
+  }
+
   const hash = hashForEmail(session.user.email);
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   removeExistingAvatarFiles(hash);
 
   const filename = `avatar-${hash}-${Date.now()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
   fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
 
   const avatarUrl = `/uploads/avatars/${filename}`;

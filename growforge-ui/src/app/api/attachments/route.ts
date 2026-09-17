@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { processAttachment, formatAttachmentsForPrompt, type AttachmentResult } from "@/lib/attachments";
+import { processAttachment, formatAttachmentsForPrompt, MAX_ATTACHMENT_BYTES, type AttachmentResult } from "@/lib/attachments";
 import { getStrategy } from "@/lib/llm";
 import { getSession } from "@/lib/session";
 
@@ -30,6 +30,18 @@ export async function POST(req: Request) {
   }
   if (files.length > 10) {
     return NextResponse.json({ error: "Too many files — 10 max per upload." }, { status: 400 });
+  }
+  // Reject oversized files by their reported size (free — File.size is
+  // metadata, no read required) before ever buffering any of them. The
+  // byteLength check inside processAttachment runs too late to help here:
+  // by then every file in this batch has already been fully read into
+  // memory concurrently, which is itself the resource-exhaustion risk.
+  const oversized = files.find((f) => f.size > MAX_ATTACHMENT_BYTES);
+  if (oversized) {
+    return NextResponse.json(
+      { error: `"${oversized.name}" is too large (${Math.round(oversized.size / 1024 / 1024)}MB) — ${MAX_ATTACHMENT_BYTES / 1024 / 1024}MB max per file.` },
+      { status: 400 },
+    );
   }
 
   const visionStrategy = getStrategy();

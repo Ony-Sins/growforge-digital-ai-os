@@ -31,6 +31,24 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
   }
 }
 
+/** Env vars a child process needs merely to *run* (resolve `npx`/`node`,
+ *  find a temp dir, etc.) — never secrets. Everything else this server
+ *  process holds (LLM provider keys, NEXTAUTH_SECRET, other servers'
+ *  credentials...) must never reach a spawned MCP command: stdio servers
+ *  are arbitrary shell commands the user configures (including third-party
+ *  `npx` packages), so spreading the full parent `process.env` into them
+ *  would hand every one of this app's secrets to any of those commands. */
+const CHILD_PROCESS_ENV_ALLOWLIST = ["PATH", "SystemRoot", "TEMP", "TMP", "APPDATA", "HOME", "USERPROFILE"];
+
+function baseChildEnv(): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const key of CHILD_PROCESS_ENV_ALLOWLIST) {
+    const value = process.env[key];
+    if (value) env[key] = value;
+  }
+  return env;
+}
+
 async function buildTransport(def: McpServerDef) {
   if (def.transport === "stdio") {
     if (!def.command) throw new Error("Server has no command configured.");
@@ -38,7 +56,7 @@ async function buildTransport(def: McpServerDef) {
     return new StdioClientTransport({
       command: def.command,
       args: def.args ?? [],
-      env: { ...(process.env as Record<string, string>), ...env },
+      env: { ...baseChildEnv(), ...env },
     });
   }
 

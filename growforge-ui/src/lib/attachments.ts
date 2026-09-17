@@ -22,7 +22,7 @@ export interface AttachmentResult {
   modelUsed?: string;
 }
 
-const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB — generous for a brief's supporting docs, small enough to stay in-memory safely
+export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB — generous for a brief's supporting docs, small enough to stay in-memory safely
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   const parser = new PDFParse({ data: buffer });
