@@ -134,9 +134,13 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 - The `/settings` page's "GUIDE_TABS" setup-guide tabs (n8n API Keys / MCP Servers / REST-Webhooks walkthroughs) were **not** ported into `IntegrationsHub.tsx` — deliberately: they were documentation about functionality that already exists there (custom connectors, MCP catalog help links), not unique capability. Worth a look if a user ever asks for more in-app setup guidance, but not treated as a gap.
 - **Impeccable's hooks now run automatically** on every UI Edit/Write and at end of turn — expect `PostToolUse` hook messages with design findings; triage each per its own instructions (fix, suppress with disclosed reason, or ask) rather than ignoring them.
 
-## 5. Working tree state (uncommitted)
+## 5. Working tree state
 
-Nothing has been committed this session. Substantial changes across `src/lib/`, `src/components/`, `src/app/`, the root `*_Agent_System.md` files, `docs/ROADMAP.md`, plus new root files `PRODUCT.md`, `DESIGN.md`, `.impeccable/` (config + sidecar), and `.claude/skills/impeccable/` + `.claude/agents/` (the installed skill itself — a real, sizeable addition, not app code). Ask the user before committing/pushing — hasn't been requested yet.
+**Committed and pushed to `origin/master` (2026-09-18).** Per explicit user direction ("update state.md and the GitHub repo after every successfully completed task"), this is now the standing workflow going forward — commit + push after each completed task, not held until asked. Two real commits landed this session:
+- `fbfa74e` — the entire session's accumulated work up to that point (dashboard IA reorg, Settings/Roster overlays, MCP connector support, Profile redesign, AI voice guardrails, Impeccable skill install, PRODUCT.md/DESIGN.md/docs/ROADMAP.md). Before committing, added `.claude/settings.local.json`, `.claude/data/` (unrelated plugin scratch data), and `.playwright-mcp/` (verification screenshots) to `.gitignore` — none of those are project source or meant to be shared.
+- `31128bd` — real security fixes (see §7 below), from an automated review of the first commit.
+
+Working tree is clean as of the last commit above; nothing pending.
 
 ## 6. Immediate next steps for whoever picks this up
 
@@ -149,3 +153,19 @@ Nothing has been committed this session. Substantial changes across `src/lib/`, 
 5. Expect Impeccable's PostToolUse/Stop hooks to fire on UI work — triage findings per `.claude/skills/impeccable/reference/hooks.md`, don't silently ignore them.
 6. Any hidden file input triggered via `ref.click()` must use `sr-only`, never `hidden`/display:none — see memory `feedback_hidden_file_input_click.md`.
 7. **Do the LinkedIn-style Profile header/Personal-Details redesign first** (see §3 item 23) — the user explicitly asked for this before resuming the Phase 4 roadmap.
+
+## 7. Vercel deployment (2026-09-18)
+
+The user had already pushed to GitHub and connected the repo to Vercel (project `growforge-digital-ai-os`, team `arif-md-anjum-onys-projects`), but couldn't open the deployed site. Diagnosed directly via the Vercel MCP tools rather than guessing:
+
+- **Fixed directly, via the Vercel API:** Vercel Authentication (SSO protection) was enabled for all deployments except custom domains — every `*.vercel.app` URL hit Vercel's own login wall before reaching the app at all. Disabled (`update_project_deployment_protection`, `ssoProtection: { enabled: false }`).
+- **Real remaining blocker, needs one manual dashboard step — could not be fixed via any available API tool:** every request to the deployment, including plain static files (`/favicon.ico`), returns Vercel's own platform-level `NOT_FOUND` — confirmed on the deployment's own direct URL, not just the alias, ruling out a domain/protection issue. The build itself succeeds and produces correct routes (verified via `get_deployment_build_logs` — `npm run build` runs correctly inside `growforge-ui`, real routes for `/`, `/login`, every API route). The most likely cause, by elimination: **Project Settings → Root Directory is not actually set to `growforge-ui`** in the Vercel dashboard (there's an unrelated root-level `package.json` for a local MCP server script at the true repo root — a different project entirely — which a manual Build Command override may be `cd`-ing past rather than a real Root Directory setting, so Vercel's build succeeds but its own output-location lookup still points at the repo root and finds nothing there to deploy). **Action needed from the user:** Project Settings → General → Root Directory → set to `growforge-ui`, clear any custom Build/Output Command override, redeploy.
+- Also checked and ruled out: project pause state (`unpause_project` — was already unpaused), a stale alias (same 404 on the deployment's own unique URL).
+
+## 8. Security fixes from an automated commit review (2026-09-18)
+
+A background security review of commit `fbfa74e` found four real issues, all fixed same session in commit `31128bd`:
+- **Credential exposure** — `src/lib/mcp/client.ts` spread the entire parent `process.env` into every stdio MCP child process (arbitrary user-configured commands, including third-party `npx` packages) — every secret this server holds (LLM provider keys, `NEXTAUTH_SECRET`, other servers' credentials) was reachable by any configured MCP server. Replaced with an explicit minimal allowlist (`PATH`/`SystemRoot`/`TEMP`/etc.) plus only that specific server's own stored credential env.
+- **Content-type spoofing** — `/api/profile/avatar` and `/api/profile/cover` trusted the client-supplied multipart `Content-Type` header alone (trivially spoofable) to decide a file was really an image, then served the saved buffer back as a same-origin static asset. New `src/lib/imageUpload.ts` checks real magic bytes (PNG/JPEG/GIF/WEBP signatures) against the declared type before writing.
+- **Resource exhaustion** — `/api/attachments` read every file in a batch into memory via `Promise.all` before any size check ran (the existing 15MB cap lived inside `processAttachment`, checked only *after* buffering). Added an early reject on `File.size` — free metadata, no read required — before ever buffering, and exported `MAX_ATTACHMENT_BYTES` from `attachments.ts` so both places share one constant.
+- Verified `tsc`/`eslint` clean after all four fixes.
