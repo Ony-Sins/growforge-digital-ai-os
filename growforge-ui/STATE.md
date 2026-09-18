@@ -200,8 +200,10 @@ User caught a real UI-theater leftover: with chat always docked in the right pan
 
 ## 13. Dynamic AI Model Connector Builder & Routing Telemetry (2026-09-19)
 
-Refactored the AI Providers settings section in GrowForge AI OS from a static vertical key list to an interactive, dynamic AI Model Connector Builder (`AiModelManager.tsx`):
-- **Dynamic 'Add AI Model' Builder:** Users can configure any AI model by specifying Display Name, Custom Base URL (with direct support for local/private subnets like `http://localhost:11434/v1`, `http://127.0.0.1:8000/v1`, LM Studio, vLLM, DeepSeek, Mistral, etc.), Model Name, and API Key (encrypted in server vault).
-- **Authentic Brand Logos & Live Latency Pings:** Added `aiBrandIcons.ts` with brand SVG paths (OpenAI, Anthropic, Gemini, Groq, OpenRouter, Ollama, DeepSeek, Mistral, Meta/Llama, and generic AI chips) and an automatic resolver. Added real-time "Test Connection" latency benchmarks (`testCustomModel` in `llm.ts`) with live timing feedback.
-- **Advanced Mode Telemetry & Fallback Chains:** Added an collapsible inspector in `AiModelManager.tsx` revealing active fallback routing chains across Strategic Planning, Code Generation, and Fast Utility, task classification details, and real-time strategy toggling.
-- **System Health & Persistence:** Created `aiModelStore.ts` storing model records in `data/ai_models.json` while keeping secrets encrypted under `SYSTEM_VAULT_ID`. Updated `/api/vault/system`, `/api/vault/system/test`, and `SystemHealth.tsx`. Fully `tsc`, `eslint`, and `npm run build` verified.
+Refactored the AI Providers settings section in GrowForge AI OS into a minimalist, ultra-clean AI Model Connector Experience (`AiModelManager.tsx`):
+- **Minimalist Single-Action & Modal Drawer:** Replaced inline clutter with a clean prominent "Add AI Model" header action opening a focused modal with 1-click presets (OpenAI, Claude, Gemini, Groq, Ollama, DeepSeek, Mistral, LM Studio).
+- **Unrestricted Custom Endpoint URLs:** Custom URL inputs fully permit local/private subnets (`http://localhost:11434/v1`, `http://127.0.0.1:8000/v1`, LAN, private VPCs) without HTML5/browser validation blocks.
+- **Authentic Brand Logos & Live Latency Pings:** Retained `aiBrandIcons.ts` auto-resolver and real-time "Test Connection" latency benchmarks (`testCustomModel` in `llm.ts`) next to each configured model.
+- **Strictly Collapsible Advanced Diagnostics:** Routing chains, task classification tiers, and execution telemetry remain strictly tucked inside a collapsible "Advanced Routing Telemetry" toggle, keeping the default UI clean and uncluttered.
+- Fully verified clean with `tsc`, `eslint`, and `npm run build`.
+

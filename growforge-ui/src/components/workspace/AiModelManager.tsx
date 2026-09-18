@@ -9,15 +9,13 @@ import {
   Loader2,
   Trash2,
   Cpu,
-  Layers,
-  Activity,
   ChevronDown,
   ChevronUp,
   ShieldAlert,
   Globe,
-  Lock,
-  RefreshCw,
   Zap,
+  X,
+  SlidersHorizontal,
 } from "lucide-react";
 import { getAiBrandIcon } from "@/lib/aiBrandIcons";
 import type { ClientAiModel, TaskRole, ProviderType } from "@/lib/aiModelStore";
@@ -29,7 +27,6 @@ interface Preset {
   modelName: string;
   providerType: ProviderType;
   taskRole: TaskRole;
-  requiresKey: boolean;
 }
 
 const PRESETS: Preset[] = [
@@ -40,34 +37,30 @@ const PRESETS: Preset[] = [
     modelName: "gpt-4o-mini",
     providerType: "openai-compatible",
     taskRole: "planning",
-    requiresKey: true,
   },
   {
-    label: "Anthropic (Claude 3.5 Sonnet)",
-    name: "Anthropic Claude 3.5",
+    label: "Anthropic (Claude 3.5)",
+    name: "Anthropic Claude 3.5 Sonnet",
     baseUrl: "https://api.anthropic.com/v1",
     modelName: "claude-3-5-sonnet-latest",
     providerType: "anthropic",
     taskRole: "coding",
-    requiresKey: true,
   },
   {
-    label: "Google Gemini (Flash)",
+    label: "Google Gemini",
     name: "Google Gemini 3.6 Flash",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",
     modelName: "gemini-3.6-flash",
     providerType: "gemini",
     taskRole: "general",
-    requiresKey: true,
   },
   {
-    label: "Groq (Llama 3.3 70B)",
+    label: "Groq (Llama 3.3)",
     name: "Groq Llama 3.3 70B",
     baseUrl: "https://api.groq.com/openai/v1",
     modelName: "llama-3.3-70b-versatile",
     providerType: "groq",
     taskRole: "utility",
-    requiresKey: true,
   },
   {
     label: "Local Ollama (Private)",
@@ -76,16 +69,14 @@ const PRESETS: Preset[] = [
     modelName: "llama3.2:1b",
     providerType: "ollama",
     taskRole: "utility",
-    requiresKey: false,
   },
   {
-    label: "DeepSeek (Reasoner / Chat)",
-    name: "DeepSeek API",
+    label: "DeepSeek API",
+    name: "DeepSeek Chat",
     baseUrl: "https://api.deepseek.com/v1",
     modelName: "deepseek-chat",
     providerType: "openai-compatible",
     taskRole: "coding",
-    requiresKey: true,
   },
   {
     label: "Mistral AI",
@@ -94,16 +85,14 @@ const PRESETS: Preset[] = [
     modelName: "mistral-large-latest",
     providerType: "openai-compatible",
     taskRole: "general",
-    requiresKey: true,
   },
   {
-    label: "LM Studio / Local vLLM",
-    name: "Local Private Endpoint",
+    label: "LM Studio / vLLM",
+    name: "Local Private Model",
     baseUrl: "http://localhost:1234/v1",
     modelName: "local-model",
     providerType: "openai-compatible",
     taskRole: "general",
-    requiresKey: false,
   },
   {
     label: "OpenRouter Gateway",
@@ -112,15 +101,14 @@ const PRESETS: Preset[] = [
     modelName: "openrouter/auto",
     providerType: "openrouter",
     taskRole: "general",
-    requiresKey: true,
   },
 ];
 
 const TASK_ROLE_LABELS: Record<TaskRole, { label: string; color: string }> = {
   general: { label: "General", color: "bg-electric/10 text-electric border-electric/25" },
-  planning: { label: "Planning & Strategy", color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25" },
-  coding: { label: "Coding & Automations", color: "bg-emerald/10 text-emerald border-emerald/25" },
-  utility: { label: "Fast Utility", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25" },
+  planning: { label: "Planning", color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25" },
+  coding: { label: "Coding", color: "bg-emerald/10 text-emerald border-emerald/25" },
+  utility: { label: "Utility", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25" },
 };
 
 export function AiModelManager() {
@@ -130,8 +118,8 @@ export function AiModelManager() {
   const [loaded, setLoaded] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
-  // Form builder state
-  const [showBuilder, setShowBuilder] = useState(false);
+  // Modal drawer state
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [modelName, setModelName] = useState("");
@@ -140,7 +128,7 @@ export function AiModelManager() {
   const [providerType, setProviderType] = useState<ProviderType>("openai-compatible");
   const [isPrimary, setIsPrimary] = useState(false);
 
-  // Action states
+  // Action feedback states
   const [saving, setSaving] = useState(false);
   const [builderError, setBuilderError] = useState<string | null>(null);
   const [builderTestResult, setBuilderTestResult] = useState<{ ok: boolean; message: string; latencyMs?: number } | null>(null);
@@ -148,7 +136,7 @@ export function AiModelManager() {
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; message: string; latencyMs?: number }>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Advanced Mode state (internal inspector)
+  // Advanced Mode (Diagnostics & Routing hidden by default)
   const [advancedMode, setAdvancedMode] = useState(false);
 
   async function loadData() {
@@ -175,14 +163,25 @@ export function AiModelManager() {
     loadData();
   }, []);
 
-  function applyPreset(preset: Preset) {
-    setName(preset.name);
-    setBaseUrl(preset.baseUrl);
-    setModelName(preset.modelName);
-    setProviderType(preset.providerType);
-    setTaskRole(preset.taskRole);
+  function openBuilderWithPreset(preset?: Preset) {
+    if (preset) {
+      setName(preset.name);
+      setBaseUrl(preset.baseUrl);
+      setModelName(preset.modelName);
+      setProviderType(preset.providerType);
+      setTaskRole(preset.taskRole);
+    } else {
+      setName("");
+      setBaseUrl("");
+      setModelName("");
+      setApiKey("");
+      setTaskRole("general");
+      setProviderType("openai-compatible");
+      setIsPrimary(false);
+    }
     setBuilderError(null);
     setBuilderTestResult(null);
+    setIsModalOpen(true);
   }
 
   async function handleTestBuilder() {
@@ -246,12 +245,7 @@ export function AiModelManager() {
       if (!res.ok) {
         setBuilderError(data.error || "Failed to save AI model.");
       } else {
-        setName("");
-        setBaseUrl("");
-        setModelName("");
-        setApiKey("");
-        setIsPrimary(false);
-        setShowBuilder(false);
+        setIsModalOpen(false);
         setBuilderTestResult(null);
         await loadData();
       }
@@ -326,194 +320,46 @@ export function AiModelManager() {
   }
 
   const isPrivateUrl = (url: string) =>
-    url.includes("localhost") || url.includes("127.0.0.1") || url.includes("192.168.") || url.includes("10.") || url.includes("172.");
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("192.168.") ||
+    url.includes("10.") ||
+    url.includes("172.");
 
   return (
-    <div className="space-y-5">
-      {/* Header & Main Card */}
-      <div className="glass-card rounded-xl p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="space-y-4">
+      {/* Top Header & Prominent Add AI Model Action Card */}
+      <div className="glass-card rounded-xl p-5 border border-border-metal">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <Cpu className="h-4 w-4 text-electric" />
-              <h2 className="font-heading text-base font-semibold text-navy">AI Providers & Dynamic Model Connectors</h2>
+              <h2 className="font-heading text-sm font-semibold text-navy">AI Model Connectors</h2>
             </div>
             <p className="mt-1 text-xs text-secondary">
-              Connect cloud or self-hosted AI models. Support for custom endpoints, private instances (Ollama, vLLM, LM Studio), and commercial APIs with zero server redeployment.
+              Connect and orchestrate cloud APIs and private local LLM endpoints (Ollama, vLLM, LM Studio) seamlessly.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setShowBuilder((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95"
+            onClick={() => openBuilderWithPreset()}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
           >
-            {showBuilder ? (
-              <>
-                <ChevronUp className="h-3.5 w-3.5" /> Close Builder
-              </>
-            ) : (
-              <>
-                <Plus className="h-3.5 w-3.5" /> Add AI Model
-              </>
-            )}
+            <Plus className="h-3.5 w-3.5" />
+            <span>Add AI Model</span>
           </button>
         </div>
 
-        {/* Dynamic 'Add AI Model' Connector Builder */}
-        {showBuilder && (
-          <form onSubmit={handleSaveModel} className="mt-4 rounded-xl border border-electric/30 bg-electric/5 p-4 space-y-4 animate-in fade-in duration-200">
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">Quick Presets</span>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => applyPreset(p)}
-                    className="rounded-md border border-border-metal bg-white/90 px-2.5 py-1 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-medium text-navy">Display Label</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. My Local vLLM, DeepSeek API"
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-navy">
-                  Custom Base URL <span className="text-[10px] text-emerald font-semibold">(Private endpoints permitted)</span>
-                </label>
-                <input
-                  type="text"
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434/v1 or https://api.openai.com/v1"
-                  required
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-navy">Model Name / Slug</label>
-                <input
-                  type="text"
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value)}
-                  placeholder="e.g. llama3.2:1b, gpt-4o-mini, deepseek-chat"
-                  required
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-navy">API Key / Bearer Token</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Optional for local Ollama/LM Studio"
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-navy">Assigned Task Role</label>
-                <select
-                  value={taskRole}
-                  onChange={(e) => setTaskRole(e.target.value as TaskRole)}
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
-                >
-                  <option value="general">General Purpose & Briefs</option>
-                  <option value="planning">Strategic Planning & Executive Review</option>
-                  <option value="coding">Code Generation & Automations</option>
-                  <option value="utility">Fast Utility, Triage & Summaries</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 pt-5">
-                <input
-                  type="checkbox"
-                  id="isPrimaryModel"
-                  checked={isPrimary}
-                  onChange={(e) => setIsPrimary(e.target.checked)}
-                  className="h-4 w-4 rounded border-border-metal text-electric focus:ring-electric"
-                />
-                <label htmlFor="isPrimaryModel" className="text-xs font-medium text-navy cursor-pointer">
-                  Set as Primary Default Model
-                </label>
-              </div>
-            </div>
-
-            {/* Private Endpoint Note */}
-            <div className="flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/20 px-3 py-2 text-[11px] text-emerald">
-              <Globe className="h-3.5 w-3.5 shrink-0" />
-              <span>
-                Local and private subnet endpoints (<code className="font-mono">localhost</code>, <code className="font-mono">127.0.0.1</code>, <code className="font-mono">192.168.*</code>) are fully supported with direct server-side bridge.
-              </span>
-            </div>
-
-            {/* Error or Test Result */}
-            {builderError && (
-              <div className="flex items-center gap-2 rounded-lg bg-crimson/10 border border-crimson/20 p-2.5 text-xs text-crimson">
-                <XCircle className="h-4 w-4 shrink-0" />
-                <span>{builderError}</span>
-              </div>
-            )}
-            {builderTestResult?.ok && (
-              <div className="flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/20 p-2.5 text-xs text-emerald">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>
-                  Connection Verified! Responded in {builderTestResult.latencyMs ?? 0}ms.
-                </span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleTestBuilder}
-                disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white/90 px-3.5 py-2 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/5 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-electric" />}
-                Test Endpoint
-              </button>
-
-              <button
-                type="submit"
-                disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                Save AI Model
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Model List */}
-        <div className="mt-5 space-y-2.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted">Active Model Connectors ({models.length})</span>
-            <span className="text-[11px] text-muted">Encrypted in Server Vault</span>
-          </div>
-
+        {/* Minimalist, Clean Model List */}
+        <div className="mt-5 space-y-2">
           {models.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border-metal p-6 text-center">
-              <Server className="mx-auto h-6 w-6 text-muted" />
-              <p className="mt-2 text-xs text-secondary">No AI models configured yet. Click &quot;Add AI Model&quot; above to connect one.</p>
+            <div className="rounded-xl border border-dashed border-border-metal p-8 text-center bg-sunken/40">
+              <Server className="mx-auto h-7 w-7 text-muted" />
+              <p className="mt-2 text-xs font-medium text-navy">No AI models connected yet</p>
+              <p className="mt-1 text-[11px] text-secondary">
+                Click &quot;Add AI Model&quot; to connect your first cloud or local endpoint.
+              </p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -528,85 +374,87 @@ export function AiModelManager() {
                 return (
                   <li
                     key={m.id}
-                    className="group flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-metal bg-white/80 p-3.5 transition-all hover:border-electric/40 hover:bg-white"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-metal bg-white/90 px-3.5 py-3 transition-all hover:border-electric/40 hover:bg-white"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Brand Logo Badge */}
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}>
-                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                      {/* Authentic Brand Logo */}
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}
+                      >
+                        <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
                           <path d={brand.path} />
                         </svg>
                       </div>
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold text-navy truncate">{m.name}</span>
+                          <span className="text-xs font-semibold text-navy truncate">{m.name}</span>
                           {m.isPrimary && (
-                            <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold border border-gold/30">
+                            <span className="rounded bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold text-gold border border-gold/30">
                               PRIMARY
                             </span>
                           )}
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${roleConfig.color}`}>
+                          <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium border ${roleConfig.color}`}>
                             {roleConfig.label}
                           </span>
-                        </div>
-
-                        <div className="mt-1 flex items-center gap-2 text-xs text-muted flex-wrap">
-                          <code className="font-mono text-[11px] text-navy font-medium bg-sunken px-1.5 py-0.5 rounded">
-                            {m.modelName}
-                          </code>
-                          <span>•</span>
-                          <span className="truncate max-w-[220px] font-mono text-[11px] text-secondary" title={m.baseUrl}>
-                            {m.baseUrl}
-                          </span>
                           {isPrivate && (
-                            <span className="rounded bg-emerald/10 px-1.5 py-0.2 text-[9px] font-semibold text-emerald">
+                            <span className="rounded bg-emerald/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald">
                               LOCAL
                             </span>
                           )}
                         </div>
+
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted flex-wrap">
+                          <code className="font-mono text-navy font-medium">{m.modelName}</code>
+                          <span>•</span>
+                          <span className="truncate max-w-[240px] font-mono text-secondary" title={m.baseUrl}>
+                            {m.baseUrl}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Actions & Live Status */}
+                    {/* Right-aligned Test Button & Controls */}
                     <div className="flex items-center gap-2 ml-auto">
-                      {/* Test feedback */}
+                      {/* Live Test Latency Feedback */}
                       {test && (
                         <div
-                          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md border ${
-                            test.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"
+                          className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded border ${
+                            test.ok
+                              ? "bg-emerald/10 text-emerald border-emerald/20"
+                              : "bg-crimson/10 text-crimson border-crimson/20"
                           }`}
                         >
-                          {test.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                          {test.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                           <span>{test.ok ? `${test.latencyMs ?? 0}ms` : "Error"}</span>
                         </div>
                       )}
 
-                      {/* Real-Time Test Connection Button */}
+                      {/* Real-time Test Button */}
                       <button
                         type="button"
                         onClick={() => handleTestModel(m)}
                         disabled={isTesting || isDeleting}
-                        title="Live real-time latency benchmark"
-                        className="flex items-center gap-1 rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:border-electric/50 hover:text-electric disabled:opacity-50"
+                        title="Ping endpoint to measure real-time latency"
+                        className="flex items-center gap-1 rounded-md border border-border-metal bg-white px-2.5 py-1 text-xs font-medium text-secondary transition-colors hover:border-electric/50 hover:text-electric disabled:opacity-50"
                       >
                         {isTesting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
-                          <RefreshCw className="h-3 w-3 text-electric" />
+                          <Zap className="h-3 w-3 text-electric" />
                         )}
-                        <span>{isTesting ? "Pinging…" : "Test Connection"}</span>
+                        <span>{isTesting ? "Testing…" : "Test Connection"}</span>
                       </button>
 
-                      {/* Delete */}
+                      {/* Remove Model */}
                       <button
                         type="button"
                         onClick={() => handleDeleteModel(m.id)}
                         disabled={isDeleting || isTesting}
                         aria-label={`Remove ${m.name}`}
-                        className="rounded-lg p-1.5 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson disabled:opacity-50"
+                        className="rounded-md p-1.5 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson disabled:opacity-50"
                       >
-                        {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                       </button>
                     </div>
                   </li>
@@ -617,33 +465,32 @@ export function AiModelManager() {
         </div>
       </div>
 
-      {/* Advanced Mode Toggle & Inspector */}
-      <div className="glass-card rounded-xl p-5 border border-border-metal">
-        <div className="flex items-center justify-between">
+      {/* Advanced Mode Toggle & Inspector (Strictly Hidden by Default) */}
+      <div className="glass-card rounded-xl p-4 border border-border-metal">
+        <button
+          type="button"
+          onClick={() => setAdvancedMode((v) => !v)}
+          className="flex w-full items-center justify-between text-left"
+        >
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-electric" />
-            <h3 className="font-heading text-sm font-semibold text-navy">
-              Model Mapping & Routing Telemetry (Advanced Mode)
-            </h3>
+            <SlidersHorizontal className="h-3.5 w-3.5 text-secondary" />
+            <span className="font-heading text-xs font-medium text-secondary">
+              Advanced Routing Telemetry & Diagnostic Chains
+            </span>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setAdvancedMode((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white/80 px-3 py-1.5 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/5"
-          >
+          <div className="flex items-center gap-1 text-xs text-muted">
+            <span>{advancedMode ? "Hide Details" : "Show Details"}</span>
             {advancedMode ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            {advancedMode ? "Hide Details" : "Inspect Routing & Health"}
-          </button>
-        </div>
+          </div>
+        </button>
 
         {advancedMode && (
-          <div className="mt-4 space-y-4 pt-4 border-t border-border-metal animate-in fade-in duration-200">
-            {/* Global Dispatch Strategy */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sunken p-3">
+          <div className="mt-4 space-y-4 pt-4 border-t border-border-metal animate-in fade-in duration-150">
+            {/* Strategy Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sunken/60 p-3">
               <div>
-                <span className="text-xs font-semibold text-navy">Global Dispatch Routing Strategy</span>
-                <p className="text-[11px] text-muted">Controls how requests cascade across local and cloud connectors.</p>
+                <span className="text-xs font-semibold text-navy">Global Dispatch Strategy</span>
+                <p className="text-[11px] text-muted">Defines execution cascade across local and cloud models.</p>
               </div>
               <div className="flex items-center gap-1.5">
                 {(["auto", "cloud", "local"] as const).map((s) => (
@@ -663,83 +510,227 @@ export function AiModelManager() {
               </div>
             </div>
 
-            {/* Active Categorized Routing Paths */}
-            <div>
-              <div className="flex items-center gap-1.5 mb-2">
-                <Layers className="h-3.5 w-3.5 text-electric" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-navy">Active Fallback Routing Chains</span>
+            {/* Active Categorized Fallback Chains */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {/* Planning */}
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Strategic Planning</span>
+                  <span className="text-[10px] text-purple-600 font-mono">HQ & PM</span>
+                </div>
+                <ol className="space-y-1 text-xs">
+                  {(routingChains.planning || ["openrouter/free", "meta-llama/llama-3.1-8b-instruct", "local/ollama"]).map((slug, idx) => (
+                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
+                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-[9px] font-bold text-purple-700">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate">{slug}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                {/* Planning */}
-                <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Strategic Planning</span>
-                    <span className="text-[10px] text-purple-600 font-mono">HQ & PM</span>
-                  </div>
-                  <ol className="mt-2.5 space-y-1.5 text-xs">
-                    {(routingChains.planning || ["openrouter/free", "meta-llama/llama-3.1-8b-instruct", "local/ollama"]).map((slug, idx) => (
-                      <li key={slug} className="flex items-center gap-2 font-mono text-[11px] text-navy">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-[9px] font-bold text-purple-700">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate">{slug}</span>
-                      </li>
-                    ))}
-                  </ol>
+              {/* Coding */}
+              <div className="rounded-lg border border-emerald/20 bg-emerald/5 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-emerald">Coding & Automations</span>
+                  <span className="text-[10px] text-emerald font-mono">AI Systems</span>
                 </div>
-
-                {/* Coding */}
-                <div className="rounded-xl border border-emerald/20 bg-emerald/5 p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald">Coding & Automation</span>
-                    <span className="text-[10px] text-emerald font-mono">AI Systems</span>
-                  </div>
-                  <ol className="mt-2.5 space-y-1.5 text-xs">
-                    {(routingChains.coding || ["cohere/north-mini-code:free", "openrouter/free", "local/ollama"]).map((slug, idx) => (
-                      <li key={slug} className="flex items-center gap-2 font-mono text-[11px] text-navy">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald/20 text-[9px] font-bold text-emerald">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate">{slug}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-
-                {/* Utility */}
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Fast Utility & Triage</span>
-                    <span className="text-[10px] text-amber-600 font-mono">Router & QA</span>
-                  </div>
-                  <ol className="mt-2.5 space-y-1.5 text-xs">
-                    {(routingChains.utility || ["openrouter/free", "nvidia/nemotron-3.5-lightning:free", "local/ollama"]).map((slug, idx) => (
-                      <li key={slug} className="flex items-center gap-2 font-mono text-[11px] text-navy">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-700">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate">{slug}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                <ol className="space-y-1 text-xs">
+                  {(routingChains.coding || ["cohere/north-mini-code:free", "openrouter/free", "local/ollama"]).map((slug, idx) => (
+                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
+                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald/20 text-[9px] font-bold text-emerald">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate">{slug}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
-            </div>
 
-            {/* Architecture Details & Endpoint Security */}
-            <div className="rounded-lg border border-border-metal bg-white/60 p-3 text-xs text-secondary space-y-1.5">
-              <div className="flex items-center gap-1.5 text-navy font-semibold text-xs">
-                <Lock className="h-3.5 w-3.5 text-electric" />
-                <span>Vault Encryption & Transport Specs</span>
+              {/* Utility */}
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Fast Utility</span>
+                  <span className="text-[10px] text-amber-600 font-mono">Router & QA</span>
+                </div>
+                <ol className="space-y-1 text-xs">
+                  {(routingChains.utility || ["openrouter/free", "nvidia/nemotron-3.5-lightning:free", "local/ollama"]).map((slug, idx) => (
+                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
+                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-700">
+                        {idx + 1}
+                      </span>
+                      <span className="truncate">{slug}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                All API keys are encrypted via AES-256-GCM under <code className="font-mono text-navy">SYSTEM_VAULT_ID</code>. Decryption occurs only in Node.js server context during outbound completion calls. Private IP ranges bypass CORS restrictions seamlessly.
-              </p>
             </div>
           </div>
         )}
       </div>
+
+      {/* Clean 'Add AI Model' Modal / Drawer Overlay */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-xl rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-electric" />
+                <h3 className="font-heading text-base font-semibold text-navy">Add AI Model Connector</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Quick 1-Click Preset Tags */}
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">1-Click Presets</span>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => openBuilderWithPreset(p)}
+                    className="rounded-md border border-border-metal bg-sunken/50 px-2.5 py-1 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveModel} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-medium text-navy">Display Label</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. My Local vLLM, DeepSeek API"
+                  className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-navy">Custom Base URL</label>
+                  <span className="text-[10px] text-emerald font-semibold flex items-center gap-1">
+                    <Globe className="h-3 w-3" /> Local & private endpoints supported
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  placeholder="http://localhost:11434/v1 or https://api.openai.com/v1"
+                  required
+                  className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-navy">Model Name / Slug</label>
+                  <input
+                    type="text"
+                    value={modelName}
+                    onChange={(e) => setModelName(e.target.value)}
+                    placeholder="e.g. llama3.2:1b, gpt-4o-mini"
+                    required
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-navy">API Key / Token (Optional for Local)</label>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Leave blank for local Ollama"
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-medium text-navy">Assigned Task Role</label>
+                  <select
+                    value={taskRole}
+                    onChange={(e) => setTaskRole(e.target.value as TaskRole)}
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                  >
+                    <option value="general">General Purpose & Briefs</option>
+                    <option value="planning">Strategic Planning (HQ & PM)</option>
+                    <option value="coding">Code Generation (AI Systems)</option>
+                    <option value="utility">Fast Utility & Triage (Router & QA)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    id="isPrimaryModelModal"
+                    checked={isPrimary}
+                    onChange={(e) => setIsPrimary(e.target.checked)}
+                    className="h-4 w-4 rounded border-border-metal text-electric focus:ring-electric"
+                  />
+                  <label htmlFor="isPrimaryModelModal" className="text-xs font-medium text-navy cursor-pointer">
+                    Set as Primary Default Model
+                  </label>
+                </div>
+              </div>
+
+              {/* Error or Test Result in Modal */}
+              {builderError && (
+                <div className="flex items-center gap-2 rounded-lg bg-crimson/10 border border-crimson/20 p-2.5 text-xs text-crimson">
+                  <XCircle className="h-4 w-4 shrink-0" />
+                  <span>{builderError}</span>
+                </div>
+              )}
+              {builderTestResult?.ok && (
+                <div className="flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/20 p-2.5 text-xs text-emerald">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>
+                    Connection Verified! Responded in {builderTestResult.latencyMs ?? 0}ms.
+                  </span>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border-metal">
+                <button
+                  type="button"
+                  onClick={handleTestBuilder}
+                  disabled={saving || !baseUrl.trim() || !modelName.trim()}
+                  className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3.5 py-2 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
+                  Test Endpoint
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving || !baseUrl.trim() || !modelName.trim()}
+                  className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  Connect AI Model
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
