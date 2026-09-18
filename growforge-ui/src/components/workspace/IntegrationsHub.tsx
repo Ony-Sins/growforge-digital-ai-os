@@ -37,6 +37,7 @@ import {
 import { MCP_CATALOG, type CatalogEntry } from "@/lib/mcp/catalog";
 import { CONNECTOR_BRAND_ICONS } from "@/lib/connectorIcons";
 import { useAppState } from "@/lib/appState";
+import { AiModelManager } from "./AiModelManager";
 
 interface N8nConfig {
   host: { value: string; source: "vault" | "env" | "default" };
@@ -242,13 +243,6 @@ function N8nCard() {
   );
 }
 
-interface ProviderStatus {
-  id: string;
-  label: string;
-  source: "vault" | "env" | "none";
-  configured: boolean;
-}
-
 interface ConnectorRow {
   id: string;
   name: string;
@@ -261,135 +255,6 @@ interface ConnectorRow {
 }
 
 type TestResult = { ok: boolean; message: string } | null;
-
-const SOURCE_LABEL: Record<ProviderStatus["source"], string> = {
-  vault: "set here",
-  env: "from server env",
-  none: "not configured",
-};
-
-const SOURCE_CLASS: Record<ProviderStatus["source"], string> = {
-  vault: "bg-emerald/10 text-emerald ring-emerald/25",
-  env: "bg-electric/10 text-electric ring-electric/25",
-  none: "bg-sunken text-muted ring-border-metal",
-};
-
-function ProviderRow({
-  provider,
-  onChanged,
-}: {
-  provider: ProviderStatus;
-  onChanged: () => void;
-}) {
-  const [value, setValue] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [test, setTest] = useState<TestResult>(null);
-
-  async function handleSave() {
-    if (!value.trim()) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/vault/system", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: provider.id, value: value.trim() }),
-      });
-      if (res.ok) {
-        setValue("");
-        setTest(null);
-        onChanged();
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleTest() {
-    setBusy(true);
-    setTest(null);
-    try {
-      const res = await fetch("/api/vault/system/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: provider.id }),
-      });
-      const data = await res.json();
-      setTest(data);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleRemove() {
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/vault/system/${encodeURIComponent(provider.id)}`, { method: "DELETE" });
-      if (res.ok) {
-        setTest(null);
-        onChanged();
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <li className="rounded-lg border border-border-metal bg-white/70 px-3 py-2.5">
-      <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-navy">{provider.label}</span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${SOURCE_CLASS[provider.source]}`}>
-          {SOURCE_LABEL[provider.source]}
-        </span>
-        {provider.configured && (
-          <button
-            type="button"
-            onClick={handleTest}
-            disabled={busy}
-            className="shrink-0 rounded-md border border-border-metal px-2 py-1 text-[11px] font-medium text-secondary transition-colors hover:border-electric/40 hover:text-electric disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Test"}
-          </button>
-        )}
-        {provider.source === "vault" && (
-          <button
-            type="button"
-            onClick={handleRemove}
-            disabled={busy}
-            aria-label={`Remove ${provider.label} key`}
-            className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-
-      <div className="mt-2 flex gap-2">
-        <input
-          type="password"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={provider.configured ? "Replace key…" : "Paste API key…"}
-          className="min-w-0 flex-1 rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-        />
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!value.trim() || busy}
-          className="shrink-0 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Save
-        </button>
-      </div>
-
-      {test && (
-        <p className={`mt-2 flex items-center gap-1.5 text-xs ${test.ok ? "text-emerald" : "text-crimson"}`}>
-          {test.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-          {test.message}
-        </p>
-      )}
-    </li>
-  );
-}
 
 function ConnectorsSection() {
   const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
@@ -1232,63 +1097,11 @@ function McpServersSection() {
   );
 }
 
-/** Language-model provider keys — moved next to AI Brain / Memory Profile
- *  (see Workspace.tsx) rather than living in the Connectors/Plugins section:
- *  these configure what every department reasons with, which is a
- *  different concern from a connector/MCP tool an agent calls to act on
- *  the world. Self-contained (own fetch + owner gate) so it can render
- *  anywhere in the tree independent of IntegrationsHub. */
+/** Language-model provider & custom model connectors — self-contained
+ *  dynamic model manager with custom Base URLs, private endpoints,
+ *  real-time test buttons, and Advanced routing telemetry. */
 export function AiProvidersCard() {
-  const [providers, setProviders] = useState<ProviderStatus[]>([]);
-  const [forbidden, setForbidden] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  async function refresh() {
-    const res = await fetch("/api/vault/system");
-    if (res.status === 403) {
-      setForbidden(true);
-      setLoaded(true);
-      return;
-    }
-    setForbidden(false);
-    const data = await res.json().catch(() => ({}));
-    setProviders(Array.isArray(data.providers) ? data.providers : []);
-    setLoaded(true);
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
-    refresh();
-  }, []);
-
-  if (!loaded) return null;
-
-  if (forbidden) {
-    return (
-      <div className="glass-card flex items-start gap-3 rounded-xl p-5">
-        <ShieldAlert className="h-5 w-5 shrink-0 text-crimson" />
-        <div>
-          <h2 className="font-heading text-sm font-semibold text-navy">AI Providers</h2>
-          <p className="mt-1 text-sm text-secondary">Only owners can view or manage AI provider keys.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="glass-card rounded-xl p-5">
-      <h2 className="font-heading text-sm font-semibold text-navy">AI Providers</h2>
-      <p className="mt-1 text-xs text-secondary">
-        Bring your own key for any provider. Keys saved here live in the encrypted server vault and override the
-        server&apos;s deploy-time environment variable — no redeploy needed to swap one out.
-      </p>
-      <ul className="mt-3 space-y-2">
-        {providers.map((p) => (
-          <ProviderRow key={p.id} provider={p} onChanged={refresh} />
-        ))}
-      </ul>
-    </div>
-  );
+  return <AiModelManager />;
 }
 
 export function IntegrationsHub() {

@@ -53,9 +53,11 @@ export function SystemHealth() {
         if (res.status === 401 || res.status === 403) {
           next[1] = { label: "AI Providers", detail: "Owner only", status: "owner-only" };
         } else if (res.ok) {
-          const data: { providers: { configured: boolean }[] } = await res.json();
-          const configured = data.providers?.filter((p) => p.configured).length ?? 0;
-          const total = data.providers?.length ?? 0;
+          const data: { providers?: { configured: boolean }[]; models?: { isConfigured: boolean }[] } = await res.json();
+          const configured = data.models
+            ? data.models.filter((m) => m.isConfigured).length
+            : (data.providers?.filter((p) => p.configured).length ?? 0);
+          const total = data.models ? data.models.length : (data.providers?.length ?? 0);
           next[1] = {
             label: "AI Providers",
             detail: `${configured}/${total} configured`,

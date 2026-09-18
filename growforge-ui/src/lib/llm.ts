@@ -372,18 +372,141 @@ function callProvider(
 /** Fires one minimal real request at a provider and reports success/failure
  *  — used by the Integrations "Test connection" button so a bad/expired key
  *  is caught immediately instead of at the next chat request. */
-export async function testProvider(provider: CloudProvider): Promise<{ ok: boolean; message: string }> {
+export async function testProvider(provider: CloudProvider): Promise<{ ok: boolean; message: string; latencyMs?: number }> {
   if (!hasKey(provider)) {
     return { ok: false, message: "No API key configured for this provider." };
   }
   const start = Date.now();
   try {
     await callProvider(provider, "Reply with only the word: ok", [{ role: "user", content: "ping" }]);
-    return { ok: true, message: `Responded in ${Date.now() - start}ms.` };
+    const latency = Date.now() - start;
+    return { ok: true, message: `Responded in ${latency}ms.`, latencyMs: latency };
   } catch (err) {
-    return { ok: false, message: err instanceof Error ? err.message : String(err) };
+    return { ok: false, message: err instanceof Error ? err.message : String(err), latencyMs: Date.now() - start };
   }
 }
+
+/**
+ * Universal real-time test for any custom Base URL, model name, and API key.
+ * Fully supports private endpoints (http://localhost:11434/v1, http://127.0.0.1:8000/v1,
+ * LM Studio, vLLM, DeepSeek, Mistral, OpenAI, Gemini, Anthropic, etc.).
+ */
+export async function testCustomModel(config: {
+  baseUrl: string;
+  modelName: string;
+  apiKey?: string | null;
+  providerType?: string;
+}): Promise<{ ok: boolean; message: string; latencyMs: number }> {
+  const start = Date.now();
+  const cleanUrl = (config.baseUrl || "").trim().replace(/\/+$/, "");
+  const model = (config.modelName || "").trim();
+
+  if (!cleanUrl) {
+    return { ok: false, message: "Base URL cannot be empty.", latencyMs: 0 };
+  }
+  if (!model) {
+    return { ok: false, message: "Model name cannot be empty.", latencyMs: 0 };
+  }
+
+  try {
+    // Anthropic API format
+    if (config.providerType === "anthropic" || cleanUrl.includes("anthropic.com")) {
+      const res = await fetch(`${cleanUrl}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": config.apiKey || "",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 16,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false, message: `Anthropic error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
+    // Google Gemini API format
+    if (config.providerType === "gemini" || cleanUrl.includes("generativelanguage.googleapis.com")) {
+      const url = `${cleanUrl}/models/${model}:generateContent?key=${config.apiKey || ""}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "ping" }] }],
+          generationConfig: { maxOutputTokens: 16 },
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false, message: `Gemini error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
+    // Ollama native API format (/api)
+    if (config.providerType === "ollama" && cleanUrl.endsWith("/api")) {
+      const res = await fetch(`${cleanUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false, message: `Ollama error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
+    // Standard OpenAI-compatible format (OpenAI, Groq, OpenRouter, DeepSeek, Mistral, Ollama /v1, LM Studio, vLLM, etc.)
+    const endpoint = cleanUrl.endsWith("/chat/completions") ? cleanUrl : `${cleanUrl}/chat/completions`;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (config.apiKey) {
+      headers["Authorization"] = `Bearer ${config.apiKey}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        max_tokens: 16,
+        messages: [{ role: "user", content: "ping" }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const latency = Date.now() - start;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      return { ok: false, message: `HTTP ${res.status}: ${errText.slice(0, 160)}`, latencyMs: latency };
+    }
+    return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+  } catch (err) {
+    const latency = Date.now() - start;
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, message: `Connection failed: ${msg}`, latencyMs: latency };
+  }
+}
+
 
 /**
  * Runs the current strategy's provider order in sequence, returning the

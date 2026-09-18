@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { CLOUD_PROVIDERS, SYSTEM_VAULT_ID, hasKey, type CloudProvider } from "@/lib/llm";
+import {
+  CLOUD_PROVIDERS,
+  SYSTEM_VAULT_ID,
+  hasKey,
+  getStrategy,
+  type CloudProvider,
+} from "@/lib/llm";
 import { hasSecret, setSecret } from "@/lib/serverVault";
+import { listAiModels, saveAiModel, type TaskRole, type ProviderType } from "@/lib/aiModelStore";
+import { ROUTE_CHAINS } from "@/lib/model-router";
 
-/** System-wide (not per-agent) provider key management — powers the
- *  Settings -> Integrations "AI Providers" section. Reuses the same
- *  encrypted vault as per-agent keys, under the reserved SYSTEM_VAULT_ID
- *  pseudo-agent, so a key set here overrides the deploy-time env var live,
- *  with zero key material ever returned to the browser. */
+export const runtime = "nodejs";
+
+/** System-wide provider and dynamic AI model management.
+ *  Powers the Settings -> AI Providers connector builder and inspector.
+ *  All secrets remain safely encrypted in the server vault. */
 async function requireOwner() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
@@ -21,6 +29,7 @@ export async function GET() {
   const gate = await requireOwner();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
+  // Standard legacy providers for compatibility
   const providers = (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((id) => {
     const inVault = hasSecret(SYSTEM_VAULT_ID, id);
     const configured = hasKey(id);
@@ -32,10 +41,29 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ providers });
+  const models = listAiModels();
+  const strategy = getStrategy();
+
+  return NextResponse.json({
+    providers,
+    models,
+    strategy,
+    routingChains: ROUTE_CHAINS,
+  });
 }
 
-interface SetSecretBody {
+interface SaveModelRequestBody {
+  // Direct model save structure
+  id?: string;
+  name?: string;
+  providerType?: ProviderType;
+  baseUrl?: string;
+  modelName?: string;
+  apiKey?: string;
+  taskRole?: TaskRole;
+  isPrimary?: boolean;
+
+  // Legacy provider key update structure
   provider?: string;
   value?: string;
 }
@@ -44,30 +72,57 @@ export async function POST(req: Request) {
   const gate = await requireOwner();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
-  let body: SetSecretBody;
+  let body: SaveModelRequestBody;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
+  // Handle dynamic model connector builder submission
+  if (body.baseUrl && body.modelName) {
+    try {
+      const saved = saveAiModel(
+        {
+          id: body.id,
+          name: body.name || body.modelName,
+          providerType: body.providerType || "openai-compatible",
+          baseUrl: body.baseUrl,
+          modelName: body.modelName,
+          taskRole: body.taskRole || "general",
+          isPrimary: body.isPrimary,
+        },
+        body.apiKey
+      );
+      return NextResponse.json({ ok: true, model: saved });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Failed to save AI model connector." },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Handle legacy provider key update
   const provider = body.provider?.trim();
   const value = body.value?.trim();
-  if (!provider || !(provider in CLOUD_PROVIDERS)) {
-    return NextResponse.json({ error: "Unknown provider." }, { status: 400 });
-  }
-  if (!value) {
-    return NextResponse.json({ error: "value is required." }, { status: 400 });
+  if (provider && provider in CLOUD_PROVIDERS) {
+    if (!value) {
+      return NextResponse.json({ error: "value is required." }, { status: 400 });
+    }
+    try {
+      setSecret(SYSTEM_VAULT_ID, provider, value);
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Failed to store the key." },
+        { status: 500 }
+      );
+    }
   }
 
-  try {
-    setSecret(SYSTEM_VAULT_ID, provider, value);
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to store the key." },
-      { status: 500 },
-    );
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(
+    { error: "Invalid request payload. Please specify Base URL and Model Name." },
+    { status: 400 }
+  );
 }

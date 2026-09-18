@@ -197,3 +197,11 @@ Explicit user direction: **stop building per-vendor one-click integrations ourse
 ## 12. "AI Assistant" removed from the left sidebar nav (2026-09-18)
 
 User caught a real UI-theater leftover: with chat always docked in the right panel (or maximized), the left sidebar's "AI Assistant" nav button did nothing when clicked — `"chat"` has no scroll target in `Workspace.tsx` (`sectionIdFor` returns `null` for it, documented there since the item 28 chat-relocation work), so it was just re-selecting the already-active default view. Same category of fix as item 28's "three redundant entry points into one overlay." Removed the whole one-item "Assistant" section from `navSections` in `agents.ts`; sidebar nav now starts with "Agents → Live Projects." `tsc`/`eslint` clean, verified live.
+
+## 13. Dynamic AI Model Connector Builder & Routing Telemetry (2026-09-19)
+
+Refactored the AI Providers settings section in GrowForge AI OS from a static vertical key list to an interactive, dynamic AI Model Connector Builder (`AiModelManager.tsx`):
+- **Dynamic 'Add AI Model' Builder:** Users can configure any AI model by specifying Display Name, Custom Base URL (with direct support for local/private subnets like `http://localhost:11434/v1`, `http://127.0.0.1:8000/v1`, LM Studio, vLLM, DeepSeek, Mistral, etc.), Model Name, and API Key (encrypted in server vault).
+- **Authentic Brand Logos & Live Latency Pings:** Added `aiBrandIcons.ts` with brand SVG paths (OpenAI, Anthropic, Gemini, Groq, OpenRouter, Ollama, DeepSeek, Mistral, Meta/Llama, and generic AI chips) and an automatic resolver. Added real-time "Test Connection" latency benchmarks (`testCustomModel` in `llm.ts`) with live timing feedback.
+- **Advanced Mode Telemetry & Fallback Chains:** Added an collapsible inspector in `AiModelManager.tsx` revealing active fallback routing chains across Strategic Planning, Code Generation, and Fast Utility, task classification details, and real-time strategy toggling.
+- **System Health & Persistence:** Created `aiModelStore.ts` storing model records in `data/ai_models.json` while keeping secrets encrypted under `SYSTEM_VAULT_ID`. Updated `/api/vault/system`, `/api/vault/system/test`, and `SystemHealth.tsx`. Fully `tsc`, `eslint`, and `npm run build` verified.

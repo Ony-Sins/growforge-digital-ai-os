@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { CLOUD_PROVIDERS, testProvider, type CloudProvider } from "@/lib/llm";
+import { CLOUD_PROVIDERS, testProvider, testCustomModel, type CloudProvider } from "@/lib/llm";
+import { getAiModel, getAiModelApiKey, updateAiModelTestStatus } from "@/lib/aiModelStore";
 
 export const runtime = "nodejs";
 
@@ -11,18 +12,57 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Only owners can test integrations." }, { status: 403 });
   }
 
-  let body: { provider?: string };
+  let body: {
+    provider?: string;
+    modelId?: string;
+    baseUrl?: string;
+    modelName?: string;
+    apiKey?: string;
+    providerType?: string;
+  };
+
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
-  const provider = body.provider;
-  if (!provider || !(provider in CLOUD_PROVIDERS)) {
-    return NextResponse.json({ error: "Unknown provider." }, { status: 400 });
+  // 1. Test by modelId (existing saved model)
+  if (body.modelId) {
+    const model = getAiModel(body.modelId);
+    if (!model) {
+      return NextResponse.json({ ok: false, message: "Model not found." }, { status: 404 });
+    }
+
+    const apiKey = getAiModelApiKey(model);
+    const result = await testCustomModel({
+      baseUrl: model.baseUrl,
+      modelName: model.modelName,
+      apiKey,
+      providerType: model.providerType,
+    });
+
+    updateAiModelTestStatus(model.id, result);
+    return NextResponse.json(result);
   }
 
-  const result = await testProvider(provider as CloudProvider);
-  return NextResponse.json(result);
+  // 2. Test inline custom configuration before saving
+  if (body.baseUrl && body.modelName) {
+    const result = await testCustomModel({
+      baseUrl: body.baseUrl,
+      modelName: body.modelName,
+      apiKey: body.apiKey,
+      providerType: body.providerType,
+    });
+    return NextResponse.json(result);
+  }
+
+  // 3. Test standard legacy provider
+  const provider = body.provider;
+  if (provider && provider in CLOUD_PROVIDERS) {
+    const result = await testProvider(provider as CloudProvider);
+    return NextResponse.json(result);
+  }
+
+  return NextResponse.json({ error: "Specify modelId, provider, or baseUrl + modelName." }, { status: 400 });
 }
