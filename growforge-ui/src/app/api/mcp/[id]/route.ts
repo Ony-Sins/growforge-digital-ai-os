@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { deleteMcpServer, updateMcpServerDepartments, getMcpServer } from "@/lib/mcp/store";
+import { deleteMcpServer, updateMcpServerDetails, getMcpServer } from "@/lib/mcp/store";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   return NextResponse.json({ ok: true });
 }
 
-/** Updates which departments a server is wired to — the allow/deny surface. */
+/** Updates an MCP server's configuration, credentials, or allowed departments. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireOwner();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
@@ -30,16 +30,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   if (!getMcpServer(id)) return NextResponse.json({ error: "Server not found." }, { status: 404 });
 
-  let body: { allowedDepartments?: string[] };
+  let body: {
+    name?: string;
+    url?: string;
+    command?: string;
+    args?: string[];
+    bearerToken?: string;
+    authHeader?: string;
+    allowedDepartments?: string[];
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
-  if (!Array.isArray(body.allowedDepartments)) {
-    return NextResponse.json({ error: "allowedDepartments must be an array of department ids." }, { status: 400 });
-  }
 
-  const server = updateMcpServerDepartments(id, body.allowedDepartments);
+  const server = updateMcpServerDetails(id, body);
   return NextResponse.json({ server });
 }

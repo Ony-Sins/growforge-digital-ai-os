@@ -8,6 +8,7 @@ import {
   XCircle,
   Loader2,
   Trash2,
+  Pencil,
   Cpu,
   ChevronDown,
   ChevronUp,
@@ -120,6 +121,7 @@ export function AiModelManager() {
 
   // Modal drawer state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [modelName, setModelName] = useState("");
@@ -164,6 +166,7 @@ export function AiModelManager() {
   }, []);
 
   function openBuilderWithPreset(preset?: Preset) {
+    setEditingId(null);
     if (preset) {
       setName(preset.name);
       setBaseUrl(preset.baseUrl);
@@ -179,6 +182,20 @@ export function AiModelManager() {
       setProviderType("openai-compatible");
       setIsPrimary(false);
     }
+    setBuilderError(null);
+    setBuilderTestResult(null);
+    setIsModalOpen(true);
+  }
+
+  function handleEditModel(model: ClientAiModel) {
+    setEditingId(model.id);
+    setName(model.name);
+    setBaseUrl(model.baseUrl);
+    setModelName(model.modelName);
+    setApiKey("");
+    setTaskRole(model.taskRole);
+    setProviderType(model.providerType);
+    setIsPrimary(Boolean(model.isPrimary));
     setBuilderError(null);
     setBuilderTestResult(null);
     setIsModalOpen(true);
@@ -231,6 +248,7 @@ export function AiModelManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: editingId || undefined,
           name: name.trim() || modelName.trim(),
           baseUrl: baseUrl.trim(),
           modelName: modelName.trim(),
@@ -246,6 +264,7 @@ export function AiModelManager() {
         setBuilderError(data.error || "Failed to save AI model.");
       } else {
         setIsModalOpen(false);
+        setEditingId(null);
         setBuilderTestResult(null);
         await loadData();
       }
@@ -446,6 +465,18 @@ export function AiModelManager() {
                         <span>{isTesting ? "Testing…" : "Test Connection"}</span>
                       </button>
 
+                      {/* Edit Model */}
+                      <button
+                        type="button"
+                        onClick={() => handleEditModel(m)}
+                        disabled={isTesting || isDeleting}
+                        title={`Edit ${m.name}`}
+                        aria-label={`Edit ${m.name}`}
+                        className="rounded-md p-1.5 text-muted transition-colors hover:bg-sunken hover:text-electric disabled:opacity-50"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+
                       {/* Remove Model */}
                       <button
                         type="button"
@@ -570,7 +601,7 @@ export function AiModelManager() {
         )}
       </div>
 
-      {/* Clean 'Add AI Model' Modal / Drawer Overlay */}
+      {/* Clean 'Add/Edit AI Model' Modal / Drawer Overlay */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="relative w-full max-w-xl rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
@@ -578,33 +609,45 @@ export function AiModelManager() {
             <div className="flex items-center justify-between pb-3 border-b border-border-metal">
               <div className="flex items-center gap-2">
                 <Cpu className="h-5 w-5 text-electric" />
-                <h3 className="font-heading text-base font-semibold text-navy">Add AI Model Connector</h3>
+                <div>
+                  <h3 className="font-heading text-base font-semibold text-navy">
+                    {editingId ? "Edit AI Model Connector" : "Add AI Model Connector"}
+                  </h3>
+                  {editingId && (
+                    <p className="text-[11px] text-muted">Update configuration, endpoint URL, or authentication key.</p>
+                  )}
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingId(null);
+                }}
                 className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Quick 1-Click Preset Tags */}
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">1-Click Presets</span>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => openBuilderWithPreset(p)}
-                    className="rounded-md border border-border-metal bg-sunken/50 px-2.5 py-1 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
-                  >
-                    {p.label}
-                  </button>
-                ))}
+            {/* Quick 1-Click Preset Tags (Only when adding new model) */}
+            {!editingId && (
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">1-Click Presets</span>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {PRESETS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => openBuilderWithPreset(p)}
+                      className="rounded-md border border-border-metal bg-sunken/50 px-2.5 py-1 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSaveModel} className="space-y-3.5">
@@ -650,12 +693,12 @@ export function AiModelManager() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-navy">API Key / Token (Optional for Local)</label>
+                  <label className="block text-xs font-medium text-navy">API Key / Token</label>
                   <input
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Leave blank for local Ollama"
+                    placeholder={editingId ? "•••••••• (enter new key to replace, or blank to keep)" : "Leave blank for local Ollama"}
                     className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
                   />
                 </div>
@@ -723,8 +766,14 @@ export function AiModelManager() {
                   disabled={saving || !baseUrl.trim() || !modelName.trim()}
                   className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
                 >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                  Connect AI Model
+                  {saving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : editingId ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <Plus className="h-3.5 w-3.5" />
+                  )}
+                  <span>{editingId ? "Save Changes" : "Connect AI Model"}</span>
                 </button>
               </div>
             </form>

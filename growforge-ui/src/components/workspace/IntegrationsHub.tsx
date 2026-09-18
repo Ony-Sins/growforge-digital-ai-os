@@ -20,6 +20,7 @@ import {
   Lock,
   Mail,
   MessagesSquare,
+  Pencil,
   Plug,
   Plus,
   RefreshCw,
@@ -30,6 +31,7 @@ import {
   Trash2,
   Triangle,
   Users,
+  X,
   XCircle,
   Zap,
   type LucideIcon,
@@ -258,6 +260,7 @@ type TestResult = { ok: boolean; message: string } | null;
 
 function ConnectorsSection() {
   const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [method, setMethod] = useState("GET");
   const [url, setUrl] = useState("");
@@ -280,33 +283,72 @@ function ConnectorsSection() {
     refresh();
   }, []);
 
-  async function handleCreate(e: React.FormEvent) {
+  function handleEdit(c: ConnectorRow) {
+    setEditingId(c.id);
+    setName(c.name);
+    setMethod(c.method);
+    setUrl(c.url);
+    setAuthMode(c.authMode);
+    setAuthHeaderName(c.authHeaderName || "");
+    setSecretValue("");
+    setError(null);
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+    setName("");
+    setUrl("");
+    setAuthHeaderName("");
+    setSecretValue("");
+    setAuthMode("none");
+    setError(null);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/connectors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          method,
-          url,
-          authMode,
-          authHeaderName: authMode === "header" ? authHeaderName : undefined,
-          secretValue: authMode !== "none" ? secretValue : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't create the connector.");
+      if (editingId) {
+        const res = await fetch(`/api/connectors/${encodeURIComponent(editingId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            method,
+            url,
+            authMode,
+            authHeaderName: authMode === "header" ? authHeaderName : undefined,
+            secretValue: authMode !== "none" && secretValue ? secretValue : undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Couldn't update the connector.");
+        } else {
+          handleCancelEdit();
+          await refresh();
+        }
       } else {
-        setName("");
-        setUrl("");
-        setAuthHeaderName("");
-        setSecretValue("");
-        setAuthMode("none");
-        await refresh();
+        const res = await fetch("/api/connectors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            method,
+            url,
+            authMode,
+            authHeaderName: authMode === "header" ? authHeaderName : undefined,
+            secretValue: authMode !== "none" ? secretValue : undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Couldn't create the connector.");
+        } else {
+          handleCancelEdit();
+          await refresh();
+        }
       }
     } finally {
       setBusy(false);
@@ -322,7 +364,10 @@ function ConnectorsSection() {
 
   async function handleDelete(id: string) {
     const res = await fetch(`/api/connectors/${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (res.ok) await refresh();
+    if (res.ok) {
+      if (editingId === id) handleCancelEdit();
+      await refresh();
+    }
   }
 
   return (
@@ -359,6 +404,15 @@ function ConnectorsSection() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleEdit(c)}
+                  title={`Edit ${c.name}`}
+                  aria-label={`Edit ${c.name}`}
+                  className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-sunken hover:text-electric"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleDelete(c.id)}
                   aria-label={`Remove ${c.name}`}
                   className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson"
@@ -382,7 +436,22 @@ function ConnectorsSection() {
         </ul>
       )}
 
-      <form onSubmit={handleCreate} className="mt-3 space-y-2 rounded-lg border border-dashed border-border-metal p-3">
+      <form onSubmit={handleSave} className="mt-3 space-y-2 rounded-lg border border-dashed border-border-metal p-3">
+        <div className="flex items-center justify-between pb-1">
+          <span className="text-xs font-semibold text-navy">
+            {editingId ? "Edit Custom Connector" : "Add Custom Connector"}
+          </span>
+          {editingId && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="flex items-center gap-1 text-[11px] text-muted hover:text-navy"
+            >
+              <X className="h-3 w-3" /> Cancel Edit
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-[5rem_1fr] gap-2">
           <select
             value={method}
@@ -437,7 +506,7 @@ function ConnectorsSection() {
             type="password"
             value={secretValue}
             onChange={(e) => setSecretValue(e.target.value)}
-            placeholder="Token / key value"
+            placeholder={editingId ? "•••••••• (enter new secret to replace, or blank to keep)" : "Token / key value"}
             className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
           />
         )}
@@ -446,7 +515,14 @@ function ConnectorsSection() {
           disabled={!name.trim() || !url.trim() || busy}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Sparkles className="h-3.5 w-3.5" /> Add Connector
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : editingId ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5" />
+          )}
+          <span>{editingId ? "Save Connector" : "Add Connector"}</span>
         </button>
         {error && <p className="text-xs text-crimson">{error}</p>}
       </form>
@@ -464,6 +540,7 @@ interface McpServerRow {
   allowedDepartments: string[];
   hasCredential: boolean;
   catalogId?: string;
+  authHeader?: string;
 }
 
 interface DepartmentOption {
@@ -488,6 +565,59 @@ function McpServerRowItem({
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // In-place edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(server.name);
+  const [editUrl, setEditUrl] = useState(server.url || "");
+  const [editCommand, setEditCommand] = useState(server.command || "");
+  const [editArgs, setEditArgs] = useState((server.args ?? []).join(" "));
+  const [editBearerToken, setEditBearerToken] = useState("");
+  const [editAuthHeader, setEditAuthHeader] = useState(server.authHeader || "");
+  const [editError, setEditError] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  function startEdit() {
+    setEditName(server.name);
+    setEditUrl(server.url || "");
+    setEditCommand(server.command || "");
+    setEditArgs((server.args ?? []).join(" "));
+    setEditBearerToken("");
+    setEditAuthHeader(server.authHeader || "");
+    setEditError(null);
+    setIsEditing(true);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setEditError(null);
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editName.trim(),
+          url: server.transport === "http" ? editUrl.trim() : undefined,
+          command: server.transport === "stdio" ? editCommand.trim() : undefined,
+          args: server.transport === "stdio" ? editArgs.split(/\s+/).filter(Boolean) : undefined,
+          bearerToken: server.transport === "http" && editBearerToken ? editBearerToken.trim() : undefined,
+          authHeader: server.transport === "http" ? editAuthHeader.trim() || undefined : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEditError(data.error ?? "Failed to update MCP server.");
+      } else {
+        setIsEditing(false);
+        onChanged();
+      }
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Error saving changes.");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   async function handleTest() {
     setTesting(true);
     setTest(null);
@@ -495,7 +625,8 @@ function McpServerRowItem({
       const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}/test`, { method: "POST" });
       const data = await res.json();
       setTest(data);
-      if (data.ok) setExpanded(true);
+      // Keep collapsed by default to avoid layout shifts
+      setExpanded(false);
     } finally {
       setTesting(false);
     }
@@ -549,6 +680,16 @@ function McpServerRowItem({
         </button>
         <button
           type="button"
+          onClick={startEdit}
+          disabled={busy}
+          title={`Edit ${server.name}`}
+          aria-label={`Edit ${server.name}`}
+          className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-sunken hover:text-electric disabled:opacity-50"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
           onClick={handleDelete}
           disabled={busy}
           aria-label={`Remove ${server.name}`}
@@ -561,6 +702,108 @@ function McpServerRowItem({
         {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
       </p>
 
+      {/* In-place Edit Form */}
+      {isEditing && (
+        <form onSubmit={handleSaveEdit} className="mt-2.5 space-y-2 rounded-lg border border-dashed border-border-metal bg-sunken/40 p-3">
+          <div className="flex items-center justify-between pb-1">
+            <span className="text-xs font-semibold text-navy">Edit MCP Server</span>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-1 text-[11px] text-muted hover:text-navy"
+            >
+              <X className="h-3 w-3" /> Cancel
+            </button>
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-navy">Server Name</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+              required
+            />
+          </div>
+          {server.transport === "http" ? (
+            <>
+              <div>
+                <label className="block text-[11px] font-medium text-navy">MCP Server URL</label>
+                <input
+                  type="url"
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-medium text-navy">Auth Header (Optional)</label>
+                  <input
+                    type="text"
+                    value={editAuthHeader}
+                    onChange={(e) => setEditAuthHeader(e.target.value)}
+                    placeholder="e.g. X-Api-Key"
+                    className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-navy">Bearer Token / Credential</label>
+                  <input
+                    type="password"
+                    value={editBearerToken}
+                    onChange={(e) => setEditBearerToken(e.target.value)}
+                    placeholder="•••••••• (leave blank to keep)"
+                    className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-medium text-navy">Command</label>
+                <input
+                  type="text"
+                  value={editCommand}
+                  onChange={(e) => setEditCommand(e.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-navy">Args</label>
+                <input
+                  type="text"
+                  value={editArgs}
+                  onChange={(e) => setEditArgs(e.target.value)}
+                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                />
+              </div>
+            </div>
+          )}
+          {editError && <p className="text-xs text-crimson">{editError}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="rounded-md border border-border-metal px-3 py-1 text-xs text-muted hover:text-navy"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={savingEdit || !editName.trim()}
+              className="flex items-center gap-1 rounded-md bg-gradient-to-r from-electric to-gold px-3 py-1 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+            >
+              {savingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              Save Changes
+            </button>
+          </div>
+        </form>
+      )}
+
       {test && (
         <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${test.ok ? "text-emerald" : "text-crimson"}`}>
           {test.ok ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
@@ -571,14 +814,14 @@ function McpServerRowItem({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 flex items-center gap-1 text-[11px] text-muted hover:text-secondary"
+          className="mt-1 flex items-center gap-1 text-[11px] text-muted hover:text-secondary font-medium"
         >
           {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {expanded ? "Hide tools" : "Show tools"}
+          {expanded ? "Hide tools" : `Show ${test.tools.length} tool${test.tools.length === 1 ? "" : "s"}`}
         </button>
       )}
       {test?.ok && expanded && (
-        <ul className="mt-1.5 space-y-1 rounded-lg bg-sunken px-2.5 py-2">
+        <ul className="mt-1.5 space-y-1 rounded-lg bg-sunken px-2.5 py-2 max-h-36 overflow-y-auto border border-border-metal/50">
           {test.tools.map((t) => (
             <li key={t.name} className="text-[11px] text-secondary">
               <span className="font-mono font-medium text-navy">{t.name}</span>
@@ -1136,6 +1379,9 @@ export function IntegrationsHub() {
 
   return (
     <div className="space-y-4">
+      <div id="settings-ai-providers">
+        <AiProvidersCard />
+      </div>
       <div id="settings-connectors" className="glass-card rounded-xl p-5">
         <McpServersSection />
       </div>
@@ -1148,13 +1394,10 @@ export function IntegrationsHub() {
           <div id="settings-custom" className="glass-card rounded-xl p-5">
             <ConnectorsSection />
           </div>
-          <div id="settings-ai-providers">
-            <AiProvidersCard />
-          </div>
         </>
       ) : (
         <p className="px-1 text-xs text-muted">
-          Raw automation config (n8n, custom REST connectors, per-department access, AI provider keys) lives in{" "}
+          Raw automation config (n8n, custom REST connectors, per-department access) lives in{" "}
           <span className="font-semibold text-secondary">Advanced mode</span> — switch it on above to see it.
         </p>
       )}

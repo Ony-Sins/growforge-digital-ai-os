@@ -232,7 +232,7 @@ export function saveAiModel(
     modelName: cleanModelName,
     taskRole: modelInput.taskRole || "general",
     isPrimary: Boolean(modelInput.isPrimary),
-    source: apiKey ? "vault" : modelInput.source || "custom",
+    source: apiKey ? "vault" : (existingIdx >= 0 ? models[existingIdx].source : modelInput.source || "custom"),
     createdAt: existingIdx >= 0 ? models[existingIdx].createdAt : new Date().toISOString(),
     lastTestedAt: existingIdx >= 0 ? models[existingIdx].lastTestedAt : undefined,
     lastLatencyMs: existingIdx >= 0 ? models[existingIdx].lastLatencyMs : undefined,

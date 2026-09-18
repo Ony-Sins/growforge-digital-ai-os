@@ -193,6 +193,39 @@ export function deleteConnector(id: string): void {
   removeSecret(vaultAgentId(id), "auth");
 }
 
+export async function updateConnector(
+  id: string,
+  patch: Partial<CreateConnectorInput>
+): Promise<ConnectorDef | undefined> {
+  const store = getStore();
+  const def = store.find((c) => c.id === id);
+  if (!def) return undefined;
+
+  if (patch.url !== undefined && patch.url !== def.url) {
+    await assertPublicHttpsUrl(patch.url);
+    def.url = patch.url;
+  }
+  if (patch.name !== undefined && patch.name.trim()) def.name = patch.name.trim();
+  if (patch.method !== undefined) def.method = patch.method;
+  if (patch.headers !== undefined) def.headers = patch.headers;
+  if (patch.authMode !== undefined) def.authMode = patch.authMode;
+  if (patch.authHeaderName !== undefined) def.authHeaderName = patch.authHeaderName;
+
+  persist(store);
+
+  if (patch.authMode === "none") {
+    removeSecret(vaultAgentId(id), "auth");
+  } else if (patch.secretValue !== undefined) {
+    if (patch.secretValue.trim()) {
+      setSecret(vaultAgentId(id), "auth", patch.secretValue.trim());
+    } else if (patch.secretValue === "") {
+      removeSecret(vaultAgentId(id), "auth");
+    }
+  }
+
+  return def;
+}
+
 async function buildAuthHeaders(id: string, def: ConnectorDef): Promise<{ headers: Record<string, string> } | { error: string }> {
   const headers: Record<string, string> = { ...def.headers };
   if (def.authMode === "none") return { headers };

@@ -185,6 +185,45 @@ export function updateMcpServerDepartments(id: string, allowedDepartments: strin
   return def;
 }
 
+export function updateMcpServerDetails(
+  id: string,
+  patch: Partial<McpServerDef> & { bearerToken?: string; env?: Record<string, string> }
+): McpServerDef | undefined {
+  const store = getStore();
+  const def = store.find((s) => s.id === id);
+  if (!def) return undefined;
+
+  if (patch.name !== undefined && patch.name.trim()) def.name = patch.name.trim();
+  if (patch.url !== undefined) def.url = patch.url.trim() || undefined;
+  if (patch.command !== undefined) def.command = patch.command.trim() || undefined;
+  if (patch.args !== undefined) def.args = patch.args;
+  if (patch.authHeader !== undefined) def.authHeader = patch.authHeader.trim() || undefined;
+  if (Array.isArray(patch.allowedDepartments)) {
+    def.allowedDepartments = patch.allowedDepartments.filter((d) => KNOWN_DEPARTMENT_IDS.has(d));
+  }
+
+  persist(store);
+
+  if (patch.bearerToken !== undefined) {
+    if (patch.bearerToken.trim()) {
+      setSecret(vaultAgentId(id), "auth", patch.bearerToken.trim());
+    } else if (patch.bearerToken === "") {
+      removeSecret(vaultAgentId(id), "auth");
+    }
+  }
+
+  if (patch.env !== undefined) {
+    if (Object.keys(patch.env).length > 0) {
+      setSecret(vaultAgentId(id), "env", JSON.stringify(patch.env));
+    } else {
+      removeSecret(vaultAgentId(id), "env");
+    }
+  }
+
+  return def;
+}
+
+
 /** Resolves the bearer token (http) or extra env vars (stdio) for a server —
  *  server-side only, never returned to the browser. */
 export function getMcpCredential(id: string): { bearerToken: string | null; env: Record<string, string> } {

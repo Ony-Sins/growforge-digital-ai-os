@@ -34,11 +34,13 @@ export function SettingsOverlay() {
 
   if (!isSettingsOpen) return null;
 
-  // n8n/Custom Connectors/AI Providers only render in Advanced mode
+  // n8n and Custom Connectors only render in Advanced mode
   // (IntegrationsHub's own gate) — the rail should only list categories
   // that actually exist in the pane, or a click would scroll to nothing.
   const visibleCategories =
-    uiMode === "advanced" ? CATEGORIES : CATEGORIES.filter((c) => c.id === "settings-access" || c.id === "settings-connectors");
+    uiMode === "advanced"
+      ? CATEGORIES
+      : CATEGORIES.filter((c) => c.id === "settings-access" || c.id === "settings-ai-providers" || c.id === "settings-connectors");
 
   function goTo(id: string) {
     setActiveCategory(id);
