@@ -1,3 +1,6 @@
+try {
+  process.loadEnvFile(".env.local");
+} catch {}
 import { chatComplete } from "../src/lib/llm";
 import { classifyTask } from "../src/lib/model-router";
 

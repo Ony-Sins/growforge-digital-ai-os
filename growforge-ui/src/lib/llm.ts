@@ -310,40 +310,121 @@ async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opt
   return result.text;
 }
 
+export function resolveOllamaConfig(): { baseUrl: string; model: string } {
+  const envUrl = process.env.OLLAMA_BASE_URL;
+  const envModel = process.env.OLLAMA_MODEL;
+
+  try {
+    // Dynamic import pattern to prevent top-level module resolution cycle
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const modelsPath = path.join(process.cwd(), "data", "ai_models.json");
+    if (fs.existsSync(modelsPath)) {
+      const raw = fs.readFileSync(modelsPath, "utf8");
+      const models = JSON.parse(raw);
+      if (Array.isArray(models)) {
+        const primaryModel = models.find((m: { isPrimary?: boolean; providerType?: string; id?: string }) => m.isPrimary);
+        if (primaryModel && (primaryModel.providerType === "ollama" || primaryModel.id?.includes("ollama"))) {
+          return {
+            baseUrl: envUrl || primaryModel.baseUrl || "http://localhost:11434/v1",
+            model: envModel || primaryModel.modelName || "qwen2.5:7b-instruct",
+          };
+        }
+        const ollamaModel = models.find(
+          (m: { providerType?: string; id?: string; modelName?: string; baseUrl?: string }) =>
+            (m.providerType === "ollama" || m.id === "ollama-local") && m.modelName,
+        );
+        if (ollamaModel) {
+          return {
+            baseUrl: envUrl || ollamaModel.baseUrl || "http://localhost:11434/v1",
+            model: envModel || ollamaModel.modelName || "qwen2.5:7b-instruct",
+          };
+        }
+      }
+    }
+  } catch {}
+
+  return {
+    baseUrl: envUrl || "http://localhost:11434/v1",
+    model: envModel || "qwen2.5:7b-instruct",
+  };
+}
+
 interface OllamaResponse {
   message?: { content?: string };
   error?: string;
+  choices?: { message?: { content?: string } }[];
 }
 
 async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
-  const baseUrl = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
-  const model = process.env.OLLAMA_MODEL || "llama3.2:1b";
+  const { baseUrl: rawBaseUrl, model } = resolveOllamaConfig();
+  const cleanUrl = (rawBaseUrl || "http://localhost:11434/v1").trim().replace(/\/+$/, "");
+  const baseWithoutV1 = cleanUrl.replace(/\/v1$/, "");
+  const isV1 = cleanUrl.endsWith("/v1") || cleanUrl.includes("/v1");
+  const v1Endpoint = isV1 ? `${cleanUrl}/chat/completions` : `${cleanUrl}/v1/chat/completions`;
 
-  let res: Response;
+  const formattedMessages = [
+    { role: "system", content: systemPrompt },
+    ...messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role, content: m.content })),
+  ];
+
+  let text = "";
+
+  // Attempt 1: Standard OpenAI-compatible format (/v1/chat/completions)
   try {
-    res = await fetch(`${baseUrl}/api/chat`, {
+    const res = await fetch(v1Endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
+        messages: formattedMessages,
         stream: false,
-        ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
-        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
       }),
     });
-  } catch (err) {
-    throw new LlmError(
-      `Could not reach local Ollama at ${baseUrl} (${err instanceof Error ? err.message : String(err)}).`,
-      "ollama",
-    );
+
+    if (res.ok) {
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      text = data.choices?.[0]?.message?.content ?? "";
+    }
+  } catch {
+    // Fall back to native /api/chat
   }
 
-  const data = (await res.json()) as OllamaResponse;
-  if (!res.ok) {
-    throw new LlmError(data.error ?? `Ollama request failed (${res.status})`, "ollama");
+  // Attempt 2: Native Ollama /api/chat fallback
+  if (!text) {
+    try {
+      const nativeEndpoint = `${baseWithoutV1}/api/chat`;
+      const res = await fetch(nativeEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: false,
+          ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
+          messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+        }),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as OllamaResponse;
+        text = data.message?.content ?? "";
+      } else {
+        const errText = await res.text().catch(() => "");
+        throw new LlmError(`Ollama request failed (${res.status}): ${errText.slice(0, 160)}`, "ollama");
+      }
+    } catch (err) {
+      if (err instanceof LlmError) throw err;
+      throw new LlmError(
+        `Could not reach local Ollama at ${cleanUrl} (${err instanceof Error ? err.message : String(err)}). Make sure Ollama is running and "${model}" is pulled (\`ollama run ${model}\`).`,
+        "ollama",
+      );
+    }
   }
-  const text = data.message?.content ?? "";
-  if (!text.trim()) throw new LlmError("Ollama returned an empty response.", "ollama");
+
+  if (!text.trim()) throw new LlmError(`Ollama returned an empty response for model "${model}".`, "ollama");
   return text;
 }
 
@@ -471,7 +552,10 @@ export async function testCustomModel(config: {
     }
 
     // Standard OpenAI-compatible format (OpenAI, Groq, OpenRouter, DeepSeek, Mistral, Ollama /v1, LM Studio, vLLM, etc.)
-    const endpoint = cleanUrl.endsWith("/chat/completions") ? cleanUrl : `${cleanUrl}/chat/completions`;
+    let endpoint = cleanUrl.endsWith("/chat/completions") ? cleanUrl : `${cleanUrl}/chat/completions`;
+    if (!cleanUrl.endsWith("/v1") && !cleanUrl.endsWith("/api") && (cleanUrl.includes("11434") || config.providerType === "ollama")) {
+      endpoint = `${cleanUrl}/v1/chat/completions`;
+    }
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };

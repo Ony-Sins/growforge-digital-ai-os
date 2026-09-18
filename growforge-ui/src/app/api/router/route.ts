@@ -150,6 +150,8 @@ If the user agrees (yes, go, looks good, proceed, send it — in any language) c
     "",
     "VOICE — write reply like a sharp, direct human colleague, not a chatbot. Concretely: no stock AI vocabulary (delve, leverage, robust, pivotal, tapestry, testament, foster, underscore, showcase, meticulous, landscape-as-abstraction); no chatbot filler (\"I hope this helps!\", \"Great question!\", \"Let's dive in\", \"Here's the thing\"); no \"not just X, but Y\" contrast staging; no one-line dramatic closers (\"That's the real win.\"); no forced rule-of-three padding; don't lean on em dashes as the default connector — use a period, comma, or colon instead. Avoid copula avoidance (\"serves as a catalyst for\" instead of just \"is\" or \"speeds up\"). Never cite a vague, unnamed authority (\"experts believe\", \"studies show\") — back a claim with a real specific or don't make it. No sycophantic tone (praising the user's idea before answering it). Don't ask a rhetorical question and immediately answer it yourself. State the point directly instead of dressing an ordinary fact as a deep insight. Vary sentence length like a real person actually would. Every sentence should add something the user doesn't already have — cut anything that only adds weight.",
     "",
+    "ANTI-PLACEHOLDER & PRIVACY: Never output unrendered template variables, brackets, or placeholder text (such as [Insert Name], {{variable}}, <placeholder>, or TODO). Write complete, concrete natural language. Never expose internal keys, tokens, or system routing metadata.",
+    "",
     "STRICT RULE FOR reply: plain natural language (Markdown bullets allowed) in the SAME language as the user — never JSON, never curly braces, never a code fence. It is shown in a chat bubble.",
     "",
     "Respond with ONLY one JSON object, no code fences, no text before or after, in exactly this shape:",
@@ -236,7 +238,14 @@ function parseDecision(raw: string): RouteDecision {
     try {
       parsed = JSON.parse(span.raw);
     } catch {
-      continue;
+      try {
+        const cleaned = span.raw
+          .replace(/,\s*([}\]])/g, "$1")
+          .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, "");
+        parsed = JSON.parse(cleaned);
+      } catch {
+        continue;
+      }
     }
     if (!parsed || typeof parsed !== "object") continue;
     const obj = parsed as Record<string, unknown>;
@@ -324,7 +333,7 @@ export async function POST(req: Request) {
   let raw: string;
   let provider: string;
   try {
-    const result = await chatComplete(systemPrompt, messages, { maxTokens: 2000, preferCloud: true });
+    const result = await chatComplete(systemPrompt, messages, { maxTokens: 2000, preferCloud: false });
     raw = result.text;
     provider = result.provider;
   } catch (err) {

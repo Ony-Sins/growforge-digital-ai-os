@@ -263,25 +263,39 @@ export async function callOpenRouterWithFallback(
 
   // If all OpenRouter models in the chain failed, attempt local Ollama fallback
   try {
-    const baseUrl = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
-    const localModel = process.env.OLLAMA_MODEL || "llama3.2:1b";
+    const rawBaseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1";
+    const localModel = process.env.OLLAMA_MODEL || "qwen2.5:7b-instruct";
+    const cleanUrl = rawBaseUrl.replace(/\/+$/, "");
+    const isV1 = cleanUrl.endsWith("/v1");
+    const endpoint = isV1 ? `${cleanUrl}/chat/completions` : `${cleanUrl}/api/chat`;
 
-    const res = await fetch(`${baseUrl}/api/chat`, {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: localModel,
-        stream: false,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages.filter((m) => m.role !== "system"),
-        ],
-      }),
+      body: JSON.stringify(
+        isV1
+          ? {
+              model: localModel,
+              stream: false,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messages.filter((m) => m.role !== "system"),
+              ],
+            }
+          : {
+              model: localModel,
+              stream: false,
+              messages: [
+                { role: "system", content: systemPrompt },
+                ...messages.filter((m) => m.role !== "system"),
+              ],
+            }
+      ),
     });
 
     if (res.ok) {
-      const localData = (await res.json()) as { message?: { content?: string } };
-      const localText = localData.message?.content ?? "";
+      const data = await res.json();
+      const localText = isV1 ? (data.choices?.[0]?.message?.content ?? "") : (data.message?.content ?? "");
       if (localText.trim()) {
         return { text: localText, modelUsed: `ollama/${localModel} (local fallback)` };
       }
