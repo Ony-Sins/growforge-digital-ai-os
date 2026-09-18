@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Calendar,
@@ -16,6 +16,7 @@ import {
   Grid2x2,
   HardDrive,
   Key,
+  Layers,
   Loader2,
   Lock,
   Mail,
@@ -23,7 +24,9 @@ import {
   Pencil,
   Plug,
   Plus,
+  Radio,
   RefreshCw,
+  Search,
   Server,
   ShieldAlert,
   Sparkles,
@@ -41,211 +44,18 @@ import { CONNECTOR_BRAND_ICONS } from "@/lib/connectorIcons";
 import { useAppState } from "@/lib/appState";
 import { AiModelManager } from "./AiModelManager";
 
-interface N8nConfig {
+export interface N8nConfig {
   host: { value: string; source: "vault" | "env" | "default" };
   apiKey: { configured: boolean; source: "vault" | "env" | "none" };
 }
 
-interface N8nHealth {
+export interface N8nHealth {
   status: "connected" | "offline" | "checking";
   latencyMs?: number;
   detail?: string;
 }
 
-function ConfiguredBadge({ source }: { source: "vault" | "env" | "none" }) {
-  if (source === "none") return <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-medium text-muted">Not set</span>;
-  return (
-    <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${source === "vault" ? "bg-emerald/10 text-emerald" : "bg-electric/10 text-electric"}`}>
-      <Check className="h-2.5 w-2.5" />
-      {source === "vault" ? "Vault" : "Env"}
-    </span>
-  );
-}
-
-/** n8n connection card — ported from the orphaned, unreachable /settings
- *  page (2026-09-17 Settings consolidation): that page had zero links to it
- *  anywhere in the app, but was the only place a user could configure
- *  N8N_HOST/N8N_API_KEY through the UI at all. This is real, working
- *  functionality that belongs on the one reachable Settings surface. */
-function N8nCard() {
-  const [config, setConfig] = useState<N8nConfig | null>(null);
-  const [health, setHealth] = useState<N8nHealth>({ status: "checking" });
-  const [host, setHost] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [err, setErr] = useState("");
-  const [polling, setPolling] = useState(true);
-
-  const loadConfig = useCallback(async () => {
-    try {
-      const res = await fetch("/api/vault/system/n8n");
-      if (res.ok) {
-        const data: N8nConfig = await res.json();
-        setConfig(data);
-        if (!host) setHost(data.host.value);
-      }
-    } catch {
-      // retry on next poll
-    }
-  }, [host]);
-
-  const checkHealth = useCallback(async () => {
-    try {
-      setHealth((h) => ({ ...h, status: "checking" }));
-      const res = await fetch("/api/vault/system/n8n/health");
-      if (res.ok) {
-        const data = await res.json();
-        setHealth(data as N8nHealth);
-      } else {
-        setHealth({ status: "offline", detail: `HTTP ${res.status}` });
-      }
-    } catch {
-      setHealth({ status: "offline", detail: "Network error" });
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
-    loadConfig();
-    checkHealth();
-  }, [loadConfig, checkHealth]);
-
-  useEffect(() => {
-    if (!polling) return;
-    const interval = setInterval(checkHealth, 15000);
-    return () => clearInterval(interval);
-  }, [polling, checkHealth]);
-
-  async function handleSave() {
-    const hostVal = host.trim();
-    const keyVal = apiKey.trim();
-    if (!hostVal && !keyVal) return;
-    setSaving(true);
-    setErr("");
-    try {
-      const res = await fetch("/api/vault/system/n8n", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host: hostVal || undefined, apiKey: keyVal || undefined }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error ?? "Save failed.");
-      setSaved(true);
-      setApiKey("");
-      await loadConfig();
-      await checkHealth();
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const statusColors = {
-    connected: "bg-emerald text-white",
-    offline: "bg-crimson/10 text-crimson",
-    checking: "bg-muted/20 text-muted",
-  };
-  const statusLabels = {
-    connected: `● Connected${health.latencyMs !== undefined ? ` · ${health.latencyMs}ms` : ""}`,
-    offline: "○ Offline",
-    checking: "◌ Checking…",
-  };
-
-  return (
-    <div className="glass-card rounded-2xl border border-border-metal p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-electric to-gold text-white shadow-sm">
-            <Zap className="h-5 w-5" />
-          </span>
-          <div>
-            <span className="font-semibold text-navy text-sm">n8n Self-Hosted</span>
-            <p className="text-[11px] text-muted">Automation workflow engine</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setPolling((v) => !v);
-              checkHealth();
-            }}
-            className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-electric transition-colors"
-            title="Refresh health"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${health.status === "checking" ? "animate-spin" : ""}`} />
-          </button>
-          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${statusColors[health.status]}`}>
-            {statusLabels[health.status]}
-          </span>
-        </div>
-      </div>
-
-      {health.status === "offline" && health.detail && (
-        <div className="mb-3 flex items-start gap-2 rounded-xl bg-crimson/5 p-3 text-xs text-crimson">
-          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <span>{health.detail}. Start your local n8n instance, then refresh.</span>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <div>
-          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">N8N_HOST</label>
-          <input
-            type="url"
-            value={host}
-            onChange={(e) => setHost(e.target.value)}
-            placeholder="http://localhost:5678"
-            className="w-full rounded-lg border border-border-metal-strong bg-sunken px-3 py-2 text-xs text-navy placeholder-muted outline-none focus:border-electric focus:ring-1 focus:ring-electric/20"
-          />
-          {config && (
-            <p className="mt-0.5 text-[10px] text-muted">
-              Current: <code className="font-mono">{config.host.value}</code> · source: {config.host.source}
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">
-            N8N_API_KEY
-            {config?.apiKey.configured && <ConfiguredBadge source={config.apiKey.source} />}
-          </label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder={config?.apiKey.configured ? "••••••••••• (already set — enter to replace)" : "Paste API key from n8n Settings → API"}
-            className="w-full rounded-lg border border-border-metal-strong bg-sunken px-3 py-2 font-mono text-xs text-navy placeholder-muted outline-none focus:border-electric focus:ring-1 focus:ring-electric/20"
-          />
-        </div>
-        {err && <p className="text-xs text-crimson">{err}</p>}
-        <div className="flex items-center gap-2 pt-1">
-          <button
-            type="button"
-            disabled={saving || (!host.trim() && !apiKey.trim())}
-            onClick={handleSave}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : saved ? <Check className="h-3 w-3" /> : <Key className="h-3 w-3" />}
-            {saved ? "Saved!" : saving ? "Saving…" : "Save n8n Config"}
-          </button>
-          <a
-            href="http://localhost:5678"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-electric hover:underline"
-          >
-            Open n8n <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface ConnectorRow {
+export interface ConnectorRow {
   id: string;
   name: string;
   method: string;
@@ -256,281 +66,7 @@ interface ConnectorRow {
   createdAt: string;
 }
 
-type TestResult = { ok: boolean; message: string } | null;
-
-function ConnectorsSection() {
-  const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [method, setMethod] = useState("GET");
-  const [url, setUrl] = useState("");
-  const [authMode, setAuthMode] = useState<"none" | "bearer" | "header">("none");
-  const [authHeaderName, setAuthHeaderName] = useState("");
-  const [secretValue, setSecretValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
-
-  async function refresh() {
-    const res = await fetch("/api/connectors");
-    if (!res.ok) return;
-    const data = await res.json();
-    setConnectors(Array.isArray(data.connectors) ? data.connectors : []);
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
-    refresh();
-  }, []);
-
-  function handleEdit(c: ConnectorRow) {
-    setEditingId(c.id);
-    setName(c.name);
-    setMethod(c.method);
-    setUrl(c.url);
-    setAuthMode(c.authMode);
-    setAuthHeaderName(c.authHeaderName || "");
-    setSecretValue("");
-    setError(null);
-  }
-
-  function handleCancelEdit() {
-    setEditingId(null);
-    setName("");
-    setUrl("");
-    setAuthHeaderName("");
-    setSecretValue("");
-    setAuthMode("none");
-    setError(null);
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      if (editingId) {
-        const res = await fetch(`/api/connectors/${encodeURIComponent(editingId)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            method,
-            url,
-            authMode,
-            authHeaderName: authMode === "header" ? authHeaderName : undefined,
-            secretValue: authMode !== "none" && secretValue ? secretValue : undefined,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error ?? "Couldn't update the connector.");
-        } else {
-          handleCancelEdit();
-          await refresh();
-        }
-      } else {
-        const res = await fetch("/api/connectors", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            method,
-            url,
-            authMode,
-            authHeaderName: authMode === "header" ? authHeaderName : undefined,
-            secretValue: authMode !== "none" ? secretValue : undefined,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error ?? "Couldn't create the connector.");
-        } else {
-          handleCancelEdit();
-          await refresh();
-        }
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleTest(id: string) {
-    setTestResults((prev) => ({ ...prev, [id]: null }));
-    const res = await fetch(`/api/connectors/${encodeURIComponent(id)}/test`, { method: "POST" });
-    const data = await res.json();
-    setTestResults((prev) => ({ ...prev, [id]: data }));
-  }
-
-  async function handleDelete(id: string) {
-    const res = await fetch(`/api/connectors/${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (res.ok) {
-      if (editingId === id) handleCancelEdit();
-      await refresh();
-    }
-  }
-
-  return (
-    <div className="mt-6 border-t border-border-metal pt-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Plug className="h-4 w-4 text-electric" />
-        <h3 className="font-heading text-sm font-semibold text-navy">Custom Connectors</h3>
-      </div>
-      <p className="text-xs text-secondary">
-        Wire in any REST endpoint — a webhook, an internal tool, a third-party API HubSpot doesn&apos;t cover. Credentials
-        are encrypted server-side the same way as provider keys, never returned to the browser.
-      </p>
-
-      {connectors.length > 0 && (
-        <ul className="mt-3 space-y-1.5">
-          {connectors.map((c) => (
-            <li key={c.id} className="rounded-lg border border-border-metal bg-white/70 px-3 py-2.5">
-              <div className="flex items-center gap-2">
-                <span className="shrink-0 rounded bg-navy px-1.5 py-0.5 font-mono text-[10px] font-semibold text-on-navy">
-                  {c.method}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-navy">{c.name}</span>
-                {c.hasSecret && (
-                  <span className="shrink-0 rounded-full bg-emerald/10 px-2 py-0.5 text-[10px] font-medium text-emerald ring-1 ring-emerald/25">
-                    auth set
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleTest(c.id)}
-                  className="shrink-0 rounded-md border border-border-metal px-2 py-1 text-[11px] font-medium text-secondary transition-colors hover:border-electric/40 hover:text-electric"
-                >
-                  Test
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleEdit(c)}
-                  title={`Edit ${c.name}`}
-                  aria-label={`Edit ${c.name}`}
-                  className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-sunken hover:text-electric"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(c.id)}
-                  aria-label={`Remove ${c.name}`}
-                  className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <p className="mt-1 truncate font-mono text-[11px] text-muted">{c.url}</p>
-              {testResults[c.id] && (
-                <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${testResults[c.id]!.ok ? "text-emerald" : "text-crimson"}`}>
-                  {testResults[c.id]!.ok ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5" />
-                  )}
-                  {testResults[c.id]!.message}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form onSubmit={handleSave} className="mt-3 space-y-2 rounded-lg border border-dashed border-border-metal p-3">
-        <div className="flex items-center justify-between pb-1">
-          <span className="text-xs font-semibold text-navy">
-            {editingId ? "Edit Custom Connector" : "Add Custom Connector"}
-          </span>
-          {editingId && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="flex items-center gap-1 text-[11px] text-muted hover:text-navy"
-            >
-              <X className="h-3 w-3" /> Cancel Edit
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-[5rem_1fr] gap-2">
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            className="rounded-lg border border-border-metal bg-white/80 px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
-          >
-            {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Connector name"
-            className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
-          />
-        </div>
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://api.example.com/endpoint (https only, no internal/private hosts)"
-          className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            value={authMode}
-            onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
-            className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
-          >
-            <option value="none">No auth</option>
-            <option value="bearer">Bearer token</option>
-            <option value="header">Custom header</option>
-          </select>
-          {authMode === "header" ? (
-            <input
-              type="text"
-              value={authHeaderName}
-              onChange={(e) => setAuthHeaderName(e.target.value)}
-              placeholder="Header name (e.g. X-Api-Key)"
-              className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
-            />
-          ) : (
-            <div />
-          )}
-        </div>
-        {authMode !== "none" && (
-          <input
-            type="password"
-            value={secretValue}
-            onChange={(e) => setSecretValue(e.target.value)}
-            placeholder={editingId ? "•••••••• (enter new secret to replace, or blank to keep)" : "Token / key value"}
-            className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
-          />
-        )}
-        <button
-          type="submit"
-          disabled={!name.trim() || !url.trim() || busy}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : editingId ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <Sparkles className="h-3.5 w-3.5" />
-          )}
-          <span>{editingId ? "Save Connector" : "Add Connector"}</span>
-        </button>
-        {error && <p className="text-xs text-crimson">{error}</p>}
-      </form>
-    </div>
-  );
-}
-
-interface McpServerRow {
+export interface McpServerRow {
   id: string;
   name: string;
   transport: "stdio" | "http";
@@ -543,80 +79,619 @@ interface McpServerRow {
   authHeader?: string;
 }
 
-interface DepartmentOption {
+export interface DepartmentOption {
   id: string;
   name: string;
 }
 
 type McpTestResult = { ok: true; tools: { name: string; description: string }[] } | { ok: false; error: string } | null;
+type ConnectorTestResult = { ok: boolean; message: string } | null;
 
-function McpServerRowItem({
+const CATALOG_ICONS: Record<string, LucideIcon> = {
+  CircleDot,
+  CheckCircle2,
+  FileText,
+  Users,
+  HardDrive,
+  Mail,
+  Calendar,
+  MessagesSquare,
+  Grid2x2,
+  Frame,
+  GitBranch,
+  Target,
+  Triangle,
+};
+
+type ActiveTab = "installed" | "discover";
+type FilterType = "all" | "mcp" | "rest" | "automation";
+
+/** Unified Connectors & Plugins Directory with Click-to-Inspect Pattern */
+export function IntegrationsHub() {
+  const { uiMode } = useAppState();
+  const [servers, setServers] = useState<McpServerRow[]>([]);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
+  const [n8nConfig, setN8nConfig] = useState<N8nConfig | null>(null);
+  const [n8nHealth, setN8nHealth] = useState<N8nHealth>({ status: "checking" });
+  const [forbidden, setForbidden] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  // Directory UI states
+  const [activeTab, setActiveTab] = useState<ActiveTab>("installed");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<FilterType>("all");
+
+  // Inspect Modal States
+  const [inspectedMcp, setInspectedMcp] = useState<McpServerRow | null>(null);
+  const [inspectedCatalog, setInspectedCatalog] = useState<CatalogEntry | null>(null);
+  const [inspectedCustom, setInspectedCustom] = useState<ConnectorRow | null>(null);
+  const [isN8nInspectOpen, setIsN8nInspectOpen] = useState(false);
+  const [isNewCustomModalOpen, setIsNewCustomModalOpen] = useState(false);
+  const [isNewMcpModalOpen, setIsNewMcpModalOpen] = useState(false);
+
+  // Load Data
+  const loadAll = useCallback(async () => {
+    try {
+      const [mcpRes, connRes, n8nRes, vaultRes] = await Promise.all([
+        fetch("/api/mcp").catch(() => null),
+        fetch("/api/connectors").catch(() => null),
+        fetch("/api/vault/system/n8n").catch(() => null),
+        fetch("/api/vault/system").catch(() => null),
+      ]);
+
+      if (vaultRes?.status === 403) {
+        setForbidden(true);
+        setLoaded(true);
+        return;
+      }
+
+      if (mcpRes?.ok) {
+        const d = await mcpRes.json();
+        setServers(Array.isArray(d.servers) ? d.servers : []);
+        setDepartments(Array.isArray(d.departments) ? d.departments : []);
+      }
+      if (connRes?.ok) {
+        const d = await connRes.json();
+        setConnectors(Array.isArray(d.connectors) ? d.connectors : []);
+      }
+      if (n8nRes?.ok) {
+        const d = await n8nRes.json();
+        setN8nConfig(d);
+      }
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  const checkN8nHealth = useCallback(async () => {
+    try {
+      setN8nHealth((h) => ({ ...h, status: "checking" }));
+      const res = await fetch("/api/vault/system/n8n/health");
+      if (res.ok) {
+        const d = await res.json();
+        setN8nHealth(d as N8nHealth);
+      } else {
+        setN8nHealth({ status: "offline", detail: `HTTP ${res.status}` });
+      }
+    } catch {
+      setN8nHealth({ status: "offline", detail: "Network error" });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAll();
+    checkN8nHealth();
+  }, [loadAll, checkN8nHealth]);
+
+  const connectedCatalogIds = useMemo(
+    () => new Set(servers.map((s) => s.catalogId).filter(Boolean)),
+    [servers]
+  );
+
+  const installedCount = servers.length + connectors.length + (n8nConfig?.apiKey.configured ? 1 : 0);
+
+  // Filtered lists
+  const filteredCatalog = useMemo(() => {
+    return MCP_CATALOG.filter((entry) => {
+      if (filterType !== "all" && filterType !== "mcp") return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return entry.name.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q);
+    });
+  }, [filterType, searchQuery]);
+
+  const filteredServers = useMemo(() => {
+    return servers.filter((s) => {
+      if (filterType !== "all" && filterType !== "mcp") return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return s.name.toLowerCase().includes(q) || s.transport.includes(q) || (s.url && s.url.toLowerCase().includes(q));
+    });
+  }, [servers, filterType, searchQuery]);
+
+  const filteredConnectors = useMemo(() => {
+    return connectors.filter((c) => {
+      if (filterType !== "all" && filterType !== "rest") return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return c.name.toLowerCase().includes(q) || c.url.toLowerCase().includes(q) || c.method.toLowerCase().includes(q);
+    });
+  }, [connectors, filterType, searchQuery]);
+
+  const isN8nVisible = filterType === "all" || filterType === "automation";
+
+  if (!loaded) return null;
+
+  if (forbidden) {
+    return (
+      <div className="glass-card flex items-start gap-3 rounded-xl p-5">
+        <ShieldAlert className="h-5 w-5 shrink-0 text-crimson" />
+        <div>
+          <h2 className="font-heading text-sm font-semibold text-navy">Connectors & Plugins</h2>
+          <p className="mt-1 text-sm text-secondary">Only workspace owners can configure system integrations.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header & Search */}
+      <div className="glass-card rounded-2xl border border-border-metal p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Plug className="h-4 w-4 text-electric" />
+              <h2 className="font-heading text-sm font-semibold text-navy">Connectors & Plugins Hub</h2>
+            </div>
+            <p className="mt-1 text-xs text-secondary">
+              Unified control center for MCP tools, custom REST endpoints, and automation engines.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsNewCustomModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 transition-all shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5 text-electric" />
+              <span>Custom REST</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsNewMcpModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add MCP Server</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Directory Controls: Search, Tabs & Filter Pills */}
+        <div className="mt-5 flex flex-col md:flex-row md:items-center justify-between gap-3 pt-4 border-t border-border-metal">
+          {/* Main Tabs */}
+          <div className="flex rounded-lg border border-border-metal bg-sunken/60 p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("installed")}
+              className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                activeTab === "installed"
+                  ? "bg-white text-navy shadow-sm"
+                  : "text-secondary hover:text-navy"
+              }`}
+            >
+              <span>Your Connectors</span>
+              <span className="rounded-full bg-electric/15 text-electric px-1.5 py-0.2 text-[10px]">
+                {installedCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("discover")}
+              className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                activeTab === "discover"
+                  ? "bg-white text-navy shadow-sm"
+                  : "text-secondary hover:text-navy"
+              }`}
+            >
+              <span>Discover Directory</span>
+              <span className="rounded-full bg-sunken text-muted px-1.5 py-0.2 text-[10px]">
+                {MCP_CATALOG.length + 2}
+              </span>
+            </button>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tools, protocols, or vendors…"
+              className="w-full rounded-lg border border-border-metal bg-white pl-8 pr-3 py-1.5 text-xs text-navy outline-none focus:border-electric/60"
+            />
+          </div>
+        </div>
+
+        {/* Filter Badges */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {(
+            [
+              { id: "all", label: "All Types" },
+              { id: "mcp", label: "MCP Protocol" },
+              { id: "rest", label: "Custom REST" },
+              { id: "automation", label: "Automations" },
+            ] as const
+          ).map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFilterType(f.id)}
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
+                filterType === f.id
+                  ? "bg-electric/10 text-electric border-electric/30 font-semibold"
+                  : "bg-white text-muted border-border-metal hover:text-navy"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Directory Grid View */}
+      {activeTab === "installed" ? (
+        <div className="space-y-4">
+          {installedCount === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border-metal p-12 text-center bg-white/40">
+              <Plug className="mx-auto h-8 w-8 text-muted" />
+              <p className="mt-2 text-sm font-semibold text-navy">No connectors active yet</p>
+              <p className="mt-1 text-xs text-secondary max-w-sm mx-auto">
+                Explore the Discover Directory to connect Linear, Notion, HubSpot, GitHub, or add a custom REST webhook.
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("discover")}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-electric px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Browse Directory
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Connected MCP Servers */}
+              {filteredServers.map((server) => {
+                const brand = server.catalogId ? CONNECTOR_BRAND_ICONS[server.catalogId] : null;
+                return (
+                  <div
+                    key={server.id}
+                    onClick={() => setInspectedMcp(server)}
+                    className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navy text-white">
+                          {brand ? (
+                            <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
+                              <path d={brand.path} />
+                            </svg>
+                          ) : (
+                            <Server className="h-5 w-5 text-electric" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
+                            {server.name}
+                          </h3>
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className="rounded bg-navy/5 px-1.5 py-0.2 font-mono text-[9px] font-bold text-navy uppercase">
+                              MCP {server.transport}
+                            </span>
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" />
+                              Active
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="mt-3 truncate font-mono text-[11px] text-muted">
+                      {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
+                      <span>Click to inspect & test</span>
+                      <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Connected Custom REST Connectors */}
+              {filteredConnectors.map((connector) => (
+                <div
+                  key={connector.id}
+                  onClick={() => setInspectedCustom(connector)}
+                  className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/20 to-gold/20 text-electric border border-electric/30">
+                        <Plug className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
+                          {connector.name}
+                        </h3>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                          <span className="rounded bg-navy px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
+                            {connector.method}
+                          </span>
+                          <span className="rounded bg-emerald/10 text-emerald px-1.5 py-0.2 text-[9px] font-medium">
+                            REST
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 truncate font-mono text-[11px] text-muted">{connector.url}</p>
+
+                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
+                    <span>Inspect payload & auth</span>
+                    <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* n8n Automation Card (if configured or searched) */}
+              {isN8nVisible && n8nConfig?.apiKey.configured && (
+                <div
+                  onClick={() => setIsN8nInspectOpen(true)}
+                  className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white">
+                        <Zap className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
+                          n8n Automation Engine
+                        </h3>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                          <span className="rounded bg-[#EA4B71]/10 text-[#EA4B71] px-1.5 py-0.2 font-mono text-[9px] font-bold">
+                            WORKFLOW ENGINE
+                          </span>
+                          <span
+                            className={`flex items-center gap-1 text-[10px] font-medium ${
+                              n8nHealth.status === "connected" ? "text-emerald" : "text-crimson"
+                            }`}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {n8nHealth.status === "connected" ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-3 truncate font-mono text-[11px] text-muted">
+                    {n8nConfig.host.value || "http://localhost:5678"}
+                  </p>
+
+                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
+                    <span>Inspect engine health & keys</span>
+                    <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Discover Directory Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* n8n Automation Engine Card */}
+          {isN8nVisible && (
+            <div
+              onClick={() => setIsN8nInspectOpen(true)}
+              className="group cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  {n8nConfig?.apiKey.configured ? (
+                    <span className="flex items-center gap-1 rounded-full bg-emerald/10 px-2 py-0.5 text-[10px] font-semibold text-emerald">
+                      <Check className="h-3 w-3" /> Connected
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-medium text-secondary">
+                      Self-Hosted
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-3 text-xs font-semibold text-navy group-hover:text-electric transition-colors">
+                  n8n Automation Engine
+                </h3>
+                <p className="mt-1 text-[11px] text-muted line-clamp-2">
+                  Multi-step autonomous workflow automation engine and trigger webhooks.
+                </p>
+              </div>
+              <div className="mt-4 pt-2.5 border-t border-border-metal flex items-center justify-between text-[11px] text-secondary">
+                <span>Configure Engine</span>
+                <span className="font-semibold text-electric">→</span>
+              </div>
+            </div>
+          )}
+
+          {/* MCP Catalog Entries */}
+          {filteredCatalog.map((entry) => {
+            const isConnected = connectedCatalogIds.has(entry.id);
+            const brand = CONNECTOR_BRAND_ICONS[entry.id];
+            const Icon = CATALOG_ICONS[entry.icon] ?? Server;
+
+            return (
+              <div
+                key={entry.id}
+                onClick={() => setInspectedCatalog(entry)}
+                className="group cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${entry.tint}`}>
+                      {brand ? (
+                        <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
+                          <path d={brand.path} />
+                        </svg>
+                      ) : (
+                        <Icon className="h-5 w-5" />
+                      )}
+                    </div>
+                    {isConnected ? (
+                      <span className="flex items-center gap-1 rounded-full bg-emerald/10 px-2 py-0.5 text-[10px] font-semibold text-emerald">
+                        <Check className="h-3 w-3" /> Connected
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-navy/5 px-2 py-0.5 text-[10px] font-bold text-navy uppercase">
+                        MCP
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="mt-3 text-xs font-semibold text-navy group-hover:text-electric transition-colors">
+                    {entry.name}
+                  </h3>
+                  <p className="mt-1 text-[11px] text-muted line-clamp-2">{entry.description}</p>
+                </div>
+                <div className="mt-4 pt-2.5 border-t border-border-metal flex items-center justify-between text-[11px] text-secondary">
+                  <span>{isConnected ? "Inspect & Manage" : "Connect Tool"}</span>
+                  <span className="font-semibold text-electric">→</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* INSPECTOR MODAL: Connected MCP Server */}
+      {inspectedMcp && (
+        <McpInspectorModal
+          server={inspectedMcp}
+          departments={departments}
+          uiMode={uiMode}
+          onClose={() => setInspectedMcp(null)}
+          onChanged={() => {
+            setInspectedMcp(null);
+            loadAll();
+          }}
+        />
+      )}
+
+      {/* INSPECTOR MODAL: Catalog Setup / Connect */}
+      {inspectedCatalog && (
+        <CatalogInspectorModal
+          entry={inspectedCatalog}
+          connectedServer={servers.find((s) => s.catalogId === inspectedCatalog.id)}
+          departments={departments}
+          uiMode={uiMode}
+          onClose={() => setInspectedCatalog(null)}
+          onChanged={() => {
+            setInspectedCatalog(null);
+            loadAll();
+          }}
+        />
+      )}
+
+      {/* INSPECTOR MODAL: Custom REST Connector */}
+      {inspectedCustom && (
+        <CustomConnectorInspectorModal
+          connector={inspectedCustom}
+          onClose={() => setInspectedCustom(null)}
+          onChanged={() => {
+            setInspectedCustom(null);
+            loadAll();
+          }}
+        />
+      )}
+
+      {/* INSPECTOR MODAL: n8n Configuration */}
+      {isN8nInspectOpen && (
+        <N8nInspectorModal
+          config={n8nConfig}
+          health={n8nHealth}
+          onClose={() => setIsN8nInspectOpen(false)}
+          onChanged={() => {
+            loadAll();
+            checkN8nHealth();
+          }}
+        />
+      )}
+
+      {/* MODAL: New Custom REST Connector */}
+      {isNewCustomModalOpen && (
+        <NewCustomConnectorModal
+          onClose={() => setIsNewCustomModalOpen(false)}
+          onCreated={() => {
+            setIsNewCustomModalOpen(false);
+            loadAll();
+          }}
+        />
+      )}
+
+      {/* MODAL: New Custom MCP Server */}
+      {isNewMcpModalOpen && (
+        <NewMcpServerModal
+          onClose={() => setIsNewMcpModalOpen(false)}
+          onCreated={() => {
+            setIsNewMcpModalOpen(false);
+            loadAll();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// MODALS / INSPECTORS
+// -------------------------------------------------------------
+
+function McpInspectorModal({
   server,
   departments,
+  uiMode,
+  onClose,
   onChanged,
 }: {
   server: McpServerRow;
   departments: DepartmentOption[];
+  uiMode: "simple" | "advanced";
+  onClose: () => void;
   onChanged: () => void;
 }) {
-  const { uiMode } = useAppState();
+  const brand = server.catalogId ? CONNECTOR_BRAND_ICONS[server.catalogId] : null;
   const [test, setTest] = useState<McpTestResult>(null);
   const [testing, setTesting] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // In-place edit state
+  // Edit Mode
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(server.name);
-  const [editUrl, setEditUrl] = useState(server.url || "");
-  const [editCommand, setEditCommand] = useState(server.command || "");
-  const [editArgs, setEditArgs] = useState((server.args ?? []).join(" "));
-  const [editBearerToken, setEditBearerToken] = useState("");
-  const [editAuthHeader, setEditAuthHeader] = useState(server.authHeader || "");
-  const [editError, setEditError] = useState<string | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-
-  function startEdit() {
-    setEditName(server.name);
-    setEditUrl(server.url || "");
-    setEditCommand(server.command || "");
-    setEditArgs((server.args ?? []).join(" "));
-    setEditBearerToken("");
-    setEditAuthHeader(server.authHeader || "");
-    setEditError(null);
-    setIsEditing(true);
-  }
-
-  async function handleSaveEdit(e: React.FormEvent) {
-    e.preventDefault();
-    setEditError(null);
-    setSavingEdit(true);
-    try {
-      const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editName.trim(),
-          url: server.transport === "http" ? editUrl.trim() : undefined,
-          command: server.transport === "stdio" ? editCommand.trim() : undefined,
-          args: server.transport === "stdio" ? editArgs.split(/\s+/).filter(Boolean) : undefined,
-          bearerToken: server.transport === "http" && editBearerToken ? editBearerToken.trim() : undefined,
-          authHeader: server.transport === "http" ? editAuthHeader.trim() || undefined : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setEditError(data.error ?? "Failed to update MCP server.");
-      } else {
-        setIsEditing(false);
-        onChanged();
-      }
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Error saving changes.");
-    } finally {
-      setSavingEdit(false);
-    }
-  }
+  const [name, setName] = useState(server.name);
+  const [url, setUrl] = useState(server.url || "");
+  const [command, setCommand] = useState(server.command || "");
+  const [args, setArgs] = useState((server.args ?? []).join(" "));
+  const [authHeader, setAuthHeader] = useState(server.authHeader || "");
+  const [bearerToken, setBearerToken] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleTest() {
     setTesting(true);
@@ -625,10 +700,39 @@ function McpServerRowItem({
       const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}/test`, { method: "POST" });
       const data = await res.json();
       setTest(data);
-      // Keep collapsed by default to avoid layout shifts
-      setExpanded(false);
     } finally {
       setTesting(false);
+    }
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          url: server.transport === "http" ? url.trim() : undefined,
+          command: server.transport === "stdio" ? command.trim() : undefined,
+          args: server.transport === "stdio" ? args.split(/\s+/).filter(Boolean) : undefined,
+          bearerToken: server.transport === "http" && bearerToken ? bearerToken.trim() : undefined,
+          authHeader: server.transport === "http" ? authHeader.trim() || undefined : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to update MCP server.");
+      } else {
+        setIsEditing(false);
+        onChanged();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error saving changes.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -649,6 +753,7 @@ function McpServerRowItem({
   }
 
   async function handleDelete() {
+    if (!confirm(`Are you sure you want to disconnect ${server.name}?`)) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, { method: "DELETE" });
@@ -659,242 +764,265 @@ function McpServerRowItem({
   }
 
   return (
-    <li className="rounded-lg border border-border-metal bg-white/70 px-3 py-2.5">
-      <div className="flex items-center gap-2">
-        <span className="shrink-0 rounded bg-navy px-1.5 py-0.5 font-mono text-[10px] font-semibold text-on-navy">
-          {server.transport}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-navy">{server.name}</span>
-        {server.hasCredential && (
-          <span className="shrink-0 rounded-full bg-emerald/10 px-2 py-0.5 text-[10px] font-medium text-emerald ring-1 ring-emerald/25">
-            credential set
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={handleTest}
-          disabled={testing || busy}
-          className="shrink-0 rounded-md border border-border-metal px-2 py-1 text-[11px] font-medium text-secondary transition-colors hover:border-electric/40 hover:text-electric disabled:opacity-50"
-        >
-          {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : "Test"}
-        </button>
-        <button
-          type="button"
-          onClick={startEdit}
-          disabled={busy}
-          title={`Edit ${server.name}`}
-          aria-label={`Edit ${server.name}`}
-          className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-sunken hover:text-electric disabled:opacity-50"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={busy}
-          aria-label={`Remove ${server.name}`}
-          className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-crimson/10 hover:text-crimson disabled:opacity-50"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </div>
-      <p className="mt-1 truncate font-mono text-[11px] text-muted">
-        {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
-      </p>
-
-      {/* In-place Edit Form */}
-      {isEditing && (
-        <form onSubmit={handleSaveEdit} className="mt-2.5 space-y-2 rounded-lg border border-dashed border-border-metal bg-sunken/40 p-3">
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-xs font-semibold text-navy">Edit MCP Server</span>
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="flex items-center gap-1 text-[11px] text-muted hover:text-navy"
-            >
-              <X className="h-3 w-3" /> Cancel
-            </button>
-          </div>
-          <div>
-            <label className="block text-[11px] font-medium text-navy">Server Name</label>
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
-              required
-            />
-          </div>
-          {server.transport === "http" ? (
-            <>
-              <div>
-                <label className="block text-[11px] font-medium text-navy">MCP Server URL</label>
-                <input
-                  type="url"
-                  value={editUrl}
-                  onChange={(e) => setEditUrl(e.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] font-medium text-navy">Auth Header (Optional)</label>
-                  <input
-                    type="text"
-                    value={editAuthHeader}
-                    onChange={(e) => setEditAuthHeader(e.target.value)}
-                    placeholder="e.g. X-Api-Key"
-                    className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-navy">Bearer Token / Credential</label>
-                  <input
-                    type="password"
-                    value={editBearerToken}
-                    onChange={(e) => setEditBearerToken(e.target.value)}
-                    placeholder="•••••••• (leave blank to keep)"
-                    className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[11px] font-medium text-navy">Command</label>
-                <input
-                  type="text"
-                  value={editCommand}
-                  onChange={(e) => setEditCommand(e.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-medium text-navy">Args</label>
-                <input
-                  type="text"
-                  value={editArgs}
-                  onChange={(e) => setEditArgs(e.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-                />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-white shadow-sm">
+              {brand ? (
+                <svg role="img" viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-label={brand.title}>
+                  <path d={brand.path} />
+                </svg>
+              ) : (
+                <Server className="h-6 w-6 text-electric" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-navy">{server.name}</h3>
+              <div className="mt-0.5 flex items-center gap-2">
+                <span className="rounded bg-navy/5 px-1.5 py-0.2 font-mono text-[10px] font-bold text-navy uppercase">
+                  MCP {server.transport}
+                </span>
+                {server.hasCredential && (
+                  <span className="rounded-full bg-emerald/10 text-emerald px-2 py-0.2 text-[10px] font-semibold">
+                    Vault Authenticated
+                  </span>
+                )}
               </div>
             </div>
-          )}
-          {editError && <p className="text-xs text-crimson">{editError}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="rounded-md border border-border-metal px-3 py-1 text-xs text-muted hover:text-navy"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={savingEdit || !editName.trim()}
-              className="flex items-center gap-1 rounded-md bg-gradient-to-r from-electric to-gold px-3 py-1 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
-            >
-              {savingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-              Save Changes
-            </button>
           </div>
-        </form>
-      )}
-
-      {test && (
-        <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${test.ok ? "text-emerald" : "text-crimson"}`}>
-          {test.ok ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
-          <span>{test.ok ? `Connected — ${test.tools.length} tool${test.tools.length === 1 ? "" : "s"} available` : test.error}</span>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      )}
-      {test?.ok && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-1 flex items-center gap-1 text-[11px] text-muted hover:text-secondary font-medium"
-        >
-          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {expanded ? "Hide tools" : `Show ${test.tools.length} tool${test.tools.length === 1 ? "" : "s"}`}
-        </button>
-      )}
-      {test?.ok && expanded && (
-        <ul className="mt-1.5 space-y-1 rounded-lg bg-sunken px-2.5 py-2 max-h-36 overflow-y-auto border border-border-metal/50">
-          {test.tools.map((t) => (
-            <li key={t.name} className="text-[11px] text-secondary">
-              <span className="font-mono font-medium text-navy">{t.name}</span>
-              {t.description ? ` — ${t.description}` : ""}
-            </li>
-          ))}
-        </ul>
-      )}
 
-      {uiMode === "advanced" && (
-        <>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {departments.map((d) => {
-              const active = server.allowedDepartments.includes(d.id);
-              return (
+        {/* Configuration Details or Edit Form */}
+        {isEditing ? (
+          <form onSubmit={handleSaveEdit} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-navy">Server Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                required
+              />
+            </div>
+            {server.transport === "http" ? (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-navy">MCP Server URL</label>
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-navy">Auth Header Name</label>
+                    <input
+                      type="text"
+                      value={authHeader}
+                      onChange={(e) => setAuthHeader(e.target.value)}
+                      placeholder="e.g. X-Api-Key"
+                      className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-navy">Bearer Token</label>
+                    <input
+                      type="password"
+                      value={bearerToken}
+                      onChange={(e) => setBearerToken(e.target.value)}
+                      placeholder="•••••••• (leave blank to keep)"
+                      className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-navy">Command</label>
+                  <input
+                    type="text"
+                    value={command}
+                    onChange={(e) => setCommand(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-navy">Args</label>
+                  <input
+                    type="text"
+                    value={args}
+                    onChange={(e) => setArgs(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  />
+                </div>
+              </div>
+            )}
+            {error && <p className="text-xs text-crimson">{error}</p>}
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-lg border border-border-metal px-3 py-1.5 text-xs text-muted hover:text-navy"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border-metal bg-sunken/60 p-3 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint Target</span>
+              <p className="font-mono text-xs text-navy break-all">
+                {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
+              </p>
+            </div>
+
+            {/* Live Test & Tool Count */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleTest}
+                disabled={testing}
+                className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/60 hover:text-electric transition-colors"
+              >
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
+                <span>{testing ? "Testing Ping…" : "Test Connection"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1 text-xs text-secondary hover:text-electric transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit Details
+              </button>
+            </div>
+
+            {test && (
+              <div className={`flex items-start gap-2 rounded-lg p-2.5 text-xs border ${test.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"}`}>
+                {test.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
+                <div>
+                  <span className="font-medium">{test.ok ? `Connected — ${test.tools.length} tools discovered.` : test.error}</span>
+                </div>
+              </div>
+            )}
+
+            {test?.ok && (
+              <div>
                 <button
-                  key={d.id}
                   type="button"
-                  disabled={busy}
-                  onClick={() => toggleDepartment(d.id)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-50 ${
-                    active ? "bg-electric text-white ring-electric/40" : "bg-white/70 text-secondary ring-border-metal hover:ring-electric/30"
-                  }`}
+                  onClick={() => setToolsExpanded((v) => !v)}
+                  className="flex items-center gap-1 text-[11px] font-medium text-electric hover:underline"
                 >
-                  {d.name}
+                  {toolsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {toolsExpanded ? "Hide Discovered Tools" : `View ${test.tools.length} Tools`}
                 </button>
-              );
-            })}
+                {toolsExpanded && (
+                  <ul className="mt-2 space-y-1.5 rounded-lg bg-sunken p-3 max-h-48 overflow-y-auto border border-border-metal">
+                    {test.tools.map((t) => (
+                      <li key={t.name} className="text-xs text-secondary">
+                        <span className="font-mono font-semibold text-navy">{t.name}</span>
+                        {t.description && <p className="text-[11px] text-muted">{t.description}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Department Access in Advanced Mode */}
+            {uiMode === "advanced" && (
+              <div className="pt-2 border-t border-border-metal">
+                <span className="text-[11px] font-semibold text-navy">Department Access Permissions</span>
+                <p className="text-[10px] text-muted">Toggle which specialist departments can invoke this server.</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {departments.map((d) => {
+                    const active = server.allowedDepartments.includes(d.id);
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => toggleDepartment(d.id)}
+                        disabled={busy}
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
+                          active
+                            ? "bg-electric text-white border-electric"
+                            : "bg-white text-secondary border-border-metal hover:border-electric/40"
+                        }`}
+                      >
+                        {d.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-          <p className="mt-1 text-[10px] text-muted">
-            {server.allowedDepartments.length === 0 ? "Every department can use this server." : "Highlighted departments can use this server."}
-          </p>
-        </>
-      )}
-    </li>
+        )}
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-border-metal">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={busy}
+            className="flex items-center gap-1.5 text-xs text-crimson hover:underline"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Disconnect Server
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border-metal bg-sunken px-4 py-1.5 text-xs font-semibold text-navy hover:bg-white"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
-const CATALOG_ICONS: Record<string, LucideIcon> = {
-  CircleDot,
-  CheckCircle2,
-  FileText,
-  Users,
-  HardDrive,
-  Mail,
-  Calendar,
-  MessagesSquare,
-  Grid2x2,
-  Frame,
-  GitBranch,
-  Target,
-  Triangle,
-};
-
-function CatalogCard({
+function CatalogInspectorModal({
   entry,
-  connected,
-  onConnected,
+  connectedServer,
+  departments,
+  uiMode,
+  onClose,
+  onChanged,
 }: {
   entry: CatalogEntry;
-  connected: boolean;
-  onConnected: () => void;
+  connectedServer?: McpServerRow;
+  departments: DepartmentOption[];
+  uiMode: "simple" | "advanced";
+  onClose: () => void;
+  onChanged: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const brand = CONNECTOR_BRAND_ICONS[entry.id];
+  const Icon = CATALOG_ICONS[entry.icon] ?? Server;
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const brandIcon = CONNECTOR_BRAND_ICONS[entry.id];
-  const Icon = CATALOG_ICONS[entry.icon] ?? Server;
 
-  // Manual-connect form state (entries with no single verified recipe —
-  // see catalog.ts's file header). Mirrors the freeform "Add a custom MCP
-  // server" fields, just scoped to one card and pre-labeled with the vendor.
+  // Manual configuration inputs
   const [manualTransport, setManualTransport] = useState<"http" | "stdio">("http");
   const [manualUrl, setManualUrl] = useState("");
   const [manualAuthMode, setManualAuthMode] = useState<"none" | "bearer" | "header">("bearer");
@@ -905,7 +1033,19 @@ function CatalogCard({
   const [manualEnvVar, setManualEnvVar] = useState("");
   const [manualEnvValue, setManualEnvValue] = useState("");
 
-  async function handleConnect(e: React.FormEvent) {
+  if (connectedServer) {
+    return (
+      <McpInspectorModal
+        server={connectedServer}
+        departments={departments}
+        uiMode={uiMode}
+        onClose={onClose}
+        onChanged={onChanged}
+      />
+    );
+  }
+
+  async function handleConnectToken(e: React.FormEvent) {
     e.preventDefault();
     if (!entry.recipe || !token.trim()) return;
     setBusy(true);
@@ -936,11 +1076,9 @@ function CatalogCard({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't connect.");
+        setError(data.error ?? "Failed to connect.");
       } else {
-        setToken("");
-        setOpen(false);
-        onConnected();
+        onChanged();
       }
     } finally {
       setBusy(false);
@@ -977,16 +1115,9 @@ function CatalogCard({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't connect.");
+        setError(data.error ?? "Failed to connect.");
       } else {
-        setManualUrl("");
-        setManualSecret("");
-        setManualCommand("");
-        setManualArgs("");
-        setManualEnvVar("");
-        setManualEnvValue("");
-        setOpen(false);
-        onConnected();
+        onChanged();
       }
     } finally {
       setBusy(false);
@@ -994,211 +1125,629 @@ function CatalogCard({
   }
 
   return (
-    <div className="rounded-xl border border-border-metal bg-white/70 p-3">
-      <div className="flex items-center gap-2.5">
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${entry.tint}`}>
-          {brandIcon ? (
-            <svg role="img" viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-label={brandIcon.title}>
-              <path d={brandIcon.path} />
-            </svg>
-          ) : (
-            <Icon className="h-4 w-4" />
-          )}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-navy">{entry.name}</p>
-          <p className="truncate text-[11px] text-muted">{entry.description}</p>
-        </div>
-        {connected ? (
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald/15 text-emerald">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label={`Connect ${entry.name}`}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border-metal text-secondary transition-colors hover:border-electric/40 hover:text-electric"
-          >
-            <Plus className="h-3.5 w-3.5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${entry.tint}`}>
+              {brand ? (
+                <svg role="img" viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-label={brand.title}>
+                  <path d={brand.path} />
+                </svg>
+              ) : (
+                <Icon className="h-6 w-6" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-navy">Connect {entry.name}</h3>
+              <p className="text-xs text-secondary">{entry.description}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
           </button>
-        )}
-      </div>
+        </div>
 
-      {open && entry.authKind === "token" && (
-        <form onSubmit={handleConnect} className="mt-3 space-y-1.5 border-t border-border-metal pt-3">
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder={entry.tokenLabel}
-            autoFocus
-            className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-          />
-          <div className="flex items-center justify-between gap-2">
-            {entry.tokenHelpUrl && (
-              <a href={entry.tokenHelpUrl} target="_blank" rel="noreferrer" className="text-[11px] text-electric underline underline-offset-2">
-                Get your token
-              </a>
-            )}
+        {entry.authKind === "token" ? (
+          <form onSubmit={handleConnectToken} className="space-y-3.5">
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-navy">{entry.tokenLabel || "API / Access Token"}</label>
+                {entry.tokenHelpUrl && (
+                  <a
+                    href={entry.tokenHelpUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 text-[11px] text-electric hover:underline"
+                  >
+                    <span>Get token</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+              <input
+                type="password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="Paste token or key..."
+                autoFocus
+                required
+                className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+              />
+            </div>
+            {error && <p className="text-xs text-crimson">{error}</p>}
             <button
               type="submit"
               disabled={!token.trim() || busy}
-              className="ml-auto flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Connect {entry.name}
             </button>
-          </div>
-          {error && <p className="text-xs text-crimson">{error}</p>}
-        </form>
-      )}
-
-      {open && entry.authKind === "manual" && (
-        <form onSubmit={handleManualConnect} className="mt-3 space-y-1.5 border-t border-border-metal pt-3">
-          <p className="flex items-start gap-1.5 text-[11px] text-muted">
-            <Lock className="mt-0.5 h-3 w-3 shrink-0" />
-            No single official recipe for {entry.name} — wire up your own server URL/command and credential below.
-            {entry.manualHelpUrl && (
-              <a href={entry.manualHelpUrl} target="_blank" rel="noreferrer" className="shrink-0 text-electric underline underline-offset-2">
-                Where do I get this?
-              </a>
-            )}
-          </p>
-          <select
-            value={manualTransport}
-            onChange={(e) => setManualTransport(e.target.value as "http" | "stdio")}
-            className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
-          >
-            <option value="http">Remote (http) — MCP server URL</option>
-            <option value="stdio">Local (stdio) — command run via npx/etc.</option>
-          </select>
-
-          {manualTransport === "http" ? (
-            <>
-              <input
-                type="url"
-                value={manualUrl}
-                onChange={(e) => setManualUrl(e.target.value)}
-                placeholder={`${entry.name} MCP server URL (https only, localhost exempted)`}
-                autoFocus
-                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-              />
-              <div className="grid grid-cols-2 gap-1.5">
-                <select
-                  value={manualAuthMode}
-                  onChange={(e) => setManualAuthMode(e.target.value as typeof manualAuthMode)}
-                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
-                >
-                  <option value="bearer">Bearer token</option>
-                  <option value="header">Custom header</option>
-                  <option value="none">No auth</option>
-                </select>
-                {manualAuthMode === "header" ? (
-                  <input
-                    type="text"
-                    value={manualAuthHeaderName}
-                    onChange={(e) => setManualAuthHeaderName(e.target.value)}
-                    placeholder="Header name (e.g. X-Api-Key)"
-                    className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
-                  />
-                ) : (
-                  <div />
-                )}
-              </div>
-              {manualAuthMode !== "none" && (
+          </form>
+        ) : (
+          <form onSubmit={handleManualConnect} className="space-y-3">
+            <select
+              value={manualTransport}
+              onChange={(e) => setManualTransport(e.target.value as "http" | "stdio")}
+              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+            >
+              <option value="http">Remote (HTTP MCP Server)</option>
+              <option value="stdio">Local Process (command via npx/etc)</option>
+            </select>
+            {manualTransport === "http" ? (
+              <>
+                <input
+                  type="url"
+                  value={manualUrl}
+                  onChange={(e) => setManualUrl(e.target.value)}
+                  placeholder="MCP server URL (https://...)"
+                  required
+                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                />
                 <input
                   type="password"
                   value={manualSecret}
                   onChange={(e) => setManualSecret(e.target.value)}
-                  placeholder="Token / key value"
-                  className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  placeholder="Bearer token or API key"
+                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
                 />
-              )}
-            </>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={manualCommand}
-                onChange={(e) => setManualCommand(e.target.value)}
-                placeholder="Command, e.g. npx"
-                autoFocus
-                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-              />
-              <input
-                type="text"
-                value={manualArgs}
-                onChange={(e) => setManualArgs(e.target.value)}
-                placeholder="Args, e.g. -y @vendor/mcp-server"
-                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
-              />
-              <div className="grid grid-cols-2 gap-1.5">
+              </>
+            ) : (
+              <>
                 <input
                   type="text"
-                  value={manualEnvVar}
-                  onChange={(e) => setManualEnvVar(e.target.value)}
-                  placeholder="Env var name"
-                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  value={manualCommand}
+                  onChange={(e) => setManualCommand(e.target.value)}
+                  placeholder="Command, e.g. npx"
+                  required
+                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
                 />
                 <input
-                  type="password"
-                  value={manualEnvValue}
-                  onChange={(e) => setManualEnvValue(e.target.value)}
-                  placeholder="Value"
-                  className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-1.5 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                  type="text"
+                  value={manualArgs}
+                  onChange={(e) => setManualArgs(e.target.value)}
+                  placeholder="Args, e.g. -y @vendor/mcp-server"
+                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
                 />
-              </div>
-            </>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy || (manualTransport === "http" ? !manualUrl.trim() : !manualCommand.trim())}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
-          </button>
-          {error && <p className="text-xs text-crimson">{error}</p>}
-        </form>
-      )}
+              </>
+            )}
+            {error && <p className="text-xs text-crimson">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Connect {entry.name}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
 
-function McpServersSection() {
-  const { uiMode } = useAppState();
-  const [servers, setServers] = useState<McpServerRow[]>([]);
-  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [transport, setTransport] = useState<"stdio" | "http">("stdio");
+function CustomConnectorInspectorModal({
+  connector,
+  onClose,
+  onChanged,
+}: {
+  connector: ConnectorRow;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [testResult, setTestResult] = useState<ConnectorTestResult>(null);
+  const [testing, setTesting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(connector.name);
+  const [method, setMethod] = useState(connector.method);
+  const [url, setUrl] = useState(connector.url);
+  const [authMode, setAuthMode] = useState(connector.authMode);
+  const [authHeaderName, setAuthHeaderName] = useState(connector.authHeaderName || "");
+  const [secretValue, setSecretValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/connectors/${encodeURIComponent(connector.id)}/test`, { method: "POST" });
+      const data = await res.json();
+      setTestResult(data);
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/connectors/${encodeURIComponent(connector.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          method,
+          url,
+          authMode,
+          authHeaderName: authMode === "header" ? authHeaderName : undefined,
+          secretValue: authMode !== "none" && secretValue ? secretValue : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to update connector.");
+      } else {
+        setIsEditing(false);
+        onChanged();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Remove connector "${connector.name}"?`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/connectors/${encodeURIComponent(connector.id)}`, { method: "DELETE" });
+      if (res.ok) onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/20 to-gold/20 text-electric border border-electric/30">
+              <Plug className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-navy">{connector.name}</h3>
+              <span className="rounded bg-navy px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
+                {connector.method} REST Endpoint
+              </span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {isEditing ? (
+          <form onSubmit={handleSaveEdit} className="space-y-3">
+            <div className="grid grid-cols-[5rem_1fr] gap-2">
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value)}
+                className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              >
+                {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                required
+              />
+            </div>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              required
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={authMode}
+                onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
+                className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              >
+                <option value="none">No auth</option>
+                <option value="bearer">Bearer token</option>
+                <option value="header">Custom header</option>
+              </select>
+              {authMode === "header" && (
+                <input
+                  type="text"
+                  value={authHeaderName}
+                  onChange={(e) => setAuthHeaderName(e.target.value)}
+                  placeholder="Header name (e.g. X-Api-Key)"
+                  className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                />
+              )}
+            </div>
+            {authMode !== "none" && (
+              <input
+                type="password"
+                value={secretValue}
+                onChange={(e) => setSecretValue(e.target.value)}
+                placeholder="•••••••• (leave blank to keep current secret)"
+                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              />
+            )}
+            {error && <p className="text-xs text-crimson">{error}</p>}
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="rounded-lg border border-border-metal px-3 py-1.5 text-xs text-muted hover:text-navy"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border-metal bg-sunken/60 p-3 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint URL</span>
+              <p className="font-mono text-xs text-navy break-all">{connector.url}</p>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleTest}
+                disabled={testing}
+                className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/60 hover:text-electric transition-colors"
+              >
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
+                <span>{testing ? "Testing Ping…" : "Test Endpoint"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1 text-xs text-secondary hover:text-electric transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit Configuration
+              </button>
+            </div>
+
+            {testResult && (
+              <div className={`flex items-start gap-2 rounded-lg p-2.5 text-xs border ${testResult.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"}`}>
+                {testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
+                <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-3 border-t border-border-metal">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={busy}
+            className="flex items-center gap-1.5 text-xs text-crimson hover:underline"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete Connector
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-border-metal bg-sunken px-4 py-1.5 text-xs font-semibold text-navy hover:bg-white"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function N8nInspectorModal({
+  config,
+  health,
+  onClose,
+  onChanged,
+}: {
+  config: N8nConfig | null;
+  health: N8nHealth;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [host, setHost] = useState(config?.host.value || "");
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/vault/system/n8n", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host: host.trim() || undefined, apiKey: apiKey.trim() || undefined }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error ?? "Failed to save n8n config.");
+      setSaved(true);
+      setApiKey("");
+      onChanged();
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white shadow-sm">
+              <Zap className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-navy">n8n Automation Engine</h3>
+              <div className="mt-0.5 flex items-center gap-2">
+                <span
+                  className={`flex items-center gap-1 text-[10px] font-semibold ${
+                    health.status === "connected" ? "text-emerald" : "text-crimson"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-current animate-pulse" />
+                  {health.status === "connected" ? `Online (${health.latencyMs ?? 0}ms)` : "Offline / Unreachable"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-3.5">
+          <div>
+            <label className="block text-xs font-medium text-navy">N8N_HOST URL</label>
+            <input
+              type="url"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="http://localhost:5678"
+              className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-navy">N8N_API_KEY</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={config?.apiKey.configured ? "•••••••• (enter to replace existing key)" : "Paste API key from n8n Settings"}
+              className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+            />
+          </div>
+          {err && <p className="text-xs text-crimson">{err}</p>}
+          <div className="flex items-center justify-between pt-2">
+            <a
+              href={host || "http://localhost:5678"}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-xs text-electric hover:underline"
+            >
+              <span>Open Local n8n Dashboard</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+            <button
+              type="submit"
+              disabled={saving || (!host.trim() && !apiKey.trim())}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Key className="h-3.5 w-3.5" />}
+              <span>{saved ? "Saved!" : saving ? "Saving…" : "Save n8n Config"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NewCustomConnectorModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
   const [name, setName] = useState("");
+  const [method, setMethod] = useState("GET");
+  const [url, setUrl] = useState("");
+  const [authMode, setAuthMode] = useState<"none" | "bearer" | "header">("none");
+  const [authHeaderName, setAuthHeaderName] = useState("");
+  const [secretValue, setSecretValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/connectors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          method,
+          url,
+          authMode,
+          authHeaderName: authMode === "header" ? authHeaderName : undefined,
+          secretValue: authMode !== "none" ? secretValue : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Failed to create custom connector.");
+      } else {
+        onCreated();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-2">
+            <Plug className="h-5 w-5 text-electric" />
+            <h3 className="font-heading text-base font-semibold text-navy">Add Custom REST Connector</h3>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleCreate} className="space-y-3.5">
+          <div className="grid grid-cols-[5rem_1fr] gap-2">
+            <select
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+              className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+            >
+              {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Connector display label"
+              className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              required
+            />
+          </div>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://api.example.com/endpoint"
+            className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+            required
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={authMode}
+              onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
+              className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+            >
+              <option value="none">No Auth</option>
+              <option value="bearer">Bearer Token</option>
+              <option value="header">Custom Header</option>
+            </select>
+            {authMode === "header" && (
+              <input
+                type="text"
+                value={authHeaderName}
+                onChange={(e) => setAuthHeaderName(e.target.value)}
+                placeholder="Header (e.g. X-Api-Key)"
+                className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              />
+            )}
+          </div>
+          {authMode !== "none" && (
+            <input
+              type="password"
+              value={secretValue}
+              onChange={(e) => setSecretValue(e.target.value)}
+              placeholder="Secret / Key value"
+              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+            />
+          )}
+          {error && <p className="text-xs text-crimson">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-metal">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border-metal px-4 py-2 text-xs text-muted hover:text-navy"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !name.trim() || !url.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              <span>Create Connector</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NewMcpServerModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [transport, setTransport] = useState<"stdio" | "http">("stdio");
   const [command, setCommand] = useState("");
   const [args, setArgs] = useState("");
   const [url, setUrl] = useState("");
   const [bearerToken, setBearerToken] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  async function refresh() {
-    const res = await fetch("/api/mcp");
-    if (!res.ok) return;
-    const data = await res.json();
-    setServers(Array.isArray(data.servers) ? data.servers : []);
-    setDepartments(Array.isArray(data.departments) ? data.departments : []);
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
-    refresh();
-  }, []);
-
-  const connectedCatalogIds = new Set(servers.map((s) => s.catalogId).filter((id): id is string => Boolean(id)));
-  const customServers = servers.filter((s) => !s.catalogId);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch("/api/mcp", {
         method: "POST",
@@ -1214,14 +1763,9 @@ function McpServersSection() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't create this server.");
+        setError(data.error ?? "Failed to create MCP server.");
       } else {
-        setName("");
-        setCommand("");
-        setArgs("");
-        setUrl("");
-        setBearerToken("");
-        await refresh();
+        onCreated();
       }
     } finally {
       setBusy(false);
@@ -1229,53 +1773,24 @@ function McpServersSection() {
   }
 
   return (
-    <div className="mt-6 border-t border-border-metal pt-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Server className="h-4 w-4 text-electric" />
-        <h3 className="font-heading text-sm font-semibold text-navy">Connectors (MCP)</h3>
-      </div>
-      <p className="text-xs text-secondary">
-        Real MCP (Model Context Protocol) connectors — the same protocol Claude Desktop and ChatGPT use. Just click
-        connect below{uiMode === "advanced" ? ", then toggle which departments can use each one." : "."}
-      </p>
-
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {MCP_CATALOG.map((entry) => (
-          <CatalogCard key={entry.id} entry={entry} connected={connectedCatalogIds.has(entry.id)} onConnected={refresh} />
-        ))}
-      </div>
-
-      {servers.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
-            {uiMode === "advanced" ? "Connected — department access" : "Connected"}
-          </p>
-          <ul className="space-y-1.5">
-            {servers.map((s) => (
-              <McpServerRowItem key={s.id} server={s} departments={departments} onChanged={refresh} />
-            ))}
-          </ul>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+          <div className="flex items-center gap-2">
+            <Server className="h-5 w-5 text-electric" />
+            <h3 className="font-heading text-base font-semibold text-navy">Add MCP Server (Custom)</h3>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+            <X className="h-4 w-4" />
+          </button>
         </div>
-      )}
 
-      {uiMode === "advanced" && (
-        <button
-          type="button"
-          onClick={() => setShowAdvanced((v) => !v)}
-          className="mt-3 flex items-center gap-1 text-xs text-muted hover:text-secondary"
-        >
-          {showAdvanced ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {showAdvanced ? "Hide custom server setup" : "Add a custom MCP server (not in the list above)"}
-        </button>
-      )}
-
-      {uiMode === "advanced" && showAdvanced && (
-        <form onSubmit={handleCreate} className="mt-2 space-y-2 rounded-lg border border-dashed border-border-metal p-3">
+        <form onSubmit={handleCreate} className="space-y-3.5">
           <div className="grid grid-cols-[7rem_1fr] gap-2">
             <select
               value={transport}
               onChange={(e) => setTransport(e.target.value as "stdio" | "http")}
-              className="rounded-lg border border-border-metal bg-white/80 px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
             >
               <option value="stdio">Local (stdio)</option>
               <option value="http">Remote (http)</option>
@@ -1284,8 +1799,9 @@ function McpServersSection() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Server name"
-              className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              placeholder="Server display label"
+              className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              required
             />
           </div>
           {transport === "stdio" ? (
@@ -1295,14 +1811,15 @@ function McpServersSection() {
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder="Command, e.g. npx"
-                className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                required
               />
               <input
                 type="text"
                 value={args}
                 onChange={(e) => setArgs(e.target.value)}
-                placeholder="Args, e.g. -y @modelcontextprotocol/server-filesystem /path"
-                className="rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                placeholder="Args, e.g. -y @vendor/mcp-server"
+                className="rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
               />
             </div>
           ) : (
@@ -1311,96 +1828,44 @@ function McpServersSection() {
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://... MCP server URL (https only, localhost exempted)"
-                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                placeholder="https://... (MCP server URL)"
+                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                required
               />
               <input
                 type="password"
                 value={bearerToken}
                 onChange={(e) => setBearerToken(e.target.value)}
                 placeholder="Bearer token (optional)"
-                className="w-full rounded-lg border border-border-metal bg-white/80 px-2.5 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
               />
             </>
           )}
-          <button
-            type="submit"
-            disabled={!name.trim() || busy || (transport === "stdio" ? !command.trim() : !url.trim())}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Sparkles className="h-3.5 w-3.5" /> Add MCP Server
-          </button>
           {error && <p className="text-xs text-crimson">{error}</p>}
+          <div className="flex justify-end gap-2 pt-2 border-t border-border-metal">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-border-metal px-4 py-2 text-xs text-muted hover:text-navy"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !name.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              <span>Add Server</span>
+            </button>
+          </div>
         </form>
-      )}
-      {customServers.length === 0 && servers.length === 0 && (
-        <p className="mt-3 text-[11px] text-muted">No connectors yet — pick one above to get started.</p>
-      )}
+      </div>
     </div>
   );
 }
 
-/** Language-model provider & custom model connectors — self-contained
- *  dynamic model manager with custom Base URLs, private endpoints,
- *  real-time test buttons, and Advanced routing telemetry. */
+/** Language-model provider & custom model connectors wrapper */
 export function AiProvidersCard() {
   return <AiModelManager />;
-}
-
-export function IntegrationsHub() {
-  const { uiMode } = useAppState();
-  const [forbidden, setForbidden] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    async function check() {
-      const res = await fetch("/api/vault/system");
-      if (res.status === 403) {
-        setForbidden(true);
-      }
-      setLoaded(true);
-    }
-    check();
-  }, []);
-
-  if (!loaded) return null;
-
-  if (forbidden) {
-    return (
-      <div className="glass-card flex items-start gap-3 rounded-xl p-5">
-        <ShieldAlert className="h-5 w-5 shrink-0 text-crimson" />
-        <div>
-          <h2 className="font-heading text-sm font-semibold text-navy">Integrations</h2>
-          <p className="mt-1 text-sm text-secondary">Only owners can view or manage connectors.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div id="settings-ai-providers">
-        <AiProvidersCard />
-      </div>
-      <div id="settings-connectors" className="glass-card rounded-xl p-5">
-        <McpServersSection />
-      </div>
-      {uiMode === "advanced" ? (
-        <>
-          <div id="settings-n8n" className="glass-card rounded-xl p-5">
-            <h2 className="mb-4 font-heading text-sm font-semibold text-navy">n8n Automation</h2>
-            <N8nCard />
-          </div>
-          <div id="settings-custom" className="glass-card rounded-xl p-5">
-            <ConnectorsSection />
-          </div>
-        </>
-      ) : (
-        <p className="px-1 text-xs text-muted">
-          Raw automation config (n8n, custom REST connectors, per-department access) lives in{" "}
-          <span className="font-semibold text-secondary">Advanced mode</span> — switch it on above to see it.
-        </p>
-      )}
-    </div>
-  );
 }
