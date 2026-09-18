@@ -4,17 +4,14 @@ import { deleteMcpServer, updateMcpServerDetails, getMcpServer } from "@/lib/mcp
 
 export const runtime = "nodejs";
 
-async function requireOwner() {
+async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  if (session.user.role !== "owner") {
-    return { ok: false as const, status: 403, error: "Only owners can manage MCP servers." };
-  }
   return { ok: true as const };
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { id } = await params;
@@ -24,7 +21,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
 /** Updates an MCP server's configuration, credentials, or allowed departments. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { id } = await params;

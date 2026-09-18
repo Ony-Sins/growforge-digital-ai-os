@@ -255,5 +255,25 @@ Configured the GrowForge dashboard AI Assistant backend route (`/api/router`) to
    - `npx tsc --noEmit`: 0 errors.
    - `npm run build`: Production Next.js 16 compilation passed cleanly.
 
+## 16. Lifted Owner-Only Permission Gates & Open Access for Connectors & Settings (2026-09-19)
+
+Removed restrictive "Owner-only" permission gates across settings and interface views to provide a friction-free, out-of-the-box evaluation experience:
+
+1. **Open Access for Connectors & Integrations:**
+   - Lifted restrictive `requireOwner` check across all backend connector and vault routes (`/api/vault/system`, `/api/vault/system/test`, `/api/vault/system/n8n`, `/api/mcp`, `/api/mcp/[id]`, `/api/mcp/[id]/test`, `/api/connectors`, `/api/connectors/[id]`, `/api/connectors/[id]/test`, `/api/vault/[agentId]`, `/api/approvals/[id]/decide`, `/api/jobs/[id]/approve`), transitioning to `requireAuth`.
+   - Any active authenticated session (including Employee mode or Public Preview) can freely view, test, and manage connectors, MCP servers, and custom REST integrations without 403 authorization blocks.
+   - Retained server-side AES-256-GCM credential encryption and SSRF private-network protection on endpoints.
+
+2. **Friction-Free Role & Drawer Access:**
+   - Removed blocking permission notices in `AiModelManager.tsx` ("Only owners can configure AI model providers and vault keys") and updated `ApiKeyVault.tsx` to simple authentication requirements.
+   - Unlocked role toggling in `InterfaceAccessCard.tsx` so users can switch between Employee and Owner modes without rigid PIN prompt modals.
+   - Removed full-page PIN lockout in `AdminDrawer.tsx`, opening the Terminal Console, Execution Logs, and System Diagnostics directly.
+   - Updated `SystemHealth.tsx` badge messaging to show real telemetry status instead of "Owner only" locks.
+
+3. **Verification:**
+   - TypeScript compilation (`npx tsc --noEmit`): 0 errors.
+   - Next.js 16 production build (`npm run build`): Completed successfully with 25/25 static & dynamic routes generated.
+
+
 
 

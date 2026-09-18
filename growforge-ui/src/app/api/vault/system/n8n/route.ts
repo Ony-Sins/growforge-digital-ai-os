@@ -18,18 +18,15 @@ const N8N_APIKEY_KEY = "integrations:n8n:apikey";
 
 const DEFAULT_HOST = process.env.N8N_HOST || "http://localhost:5678";
 
-async function requireOwner() {
+async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  if (session.user.role !== "owner") {
-    return { ok: false as const, status: 403, error: "Only owners can manage system integrations." };
-  }
   return { ok: true as const };
 }
 
 /** Returns which credentials are configured (never the values themselves). */
 export async function GET() {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const hostConfigured = hasSecret(SYSTEM_VAULT_ID, N8N_HOST_KEY);
@@ -62,7 +59,7 @@ interface N8nConfigBody {
 
 /** Saves N8N_HOST and/or N8N_API_KEY into the encrypted vault. */
 export async function POST(req: Request) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   let body: N8nConfigBody;
@@ -114,7 +111,7 @@ export async function POST(req: Request) {
 
 /** Clears the stored n8n credentials from the vault. */
 export async function DELETE() {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   removeSecret(SYSTEM_VAULT_ID, N8N_HOST_KEY);

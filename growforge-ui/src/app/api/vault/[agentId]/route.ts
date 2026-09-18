@@ -8,18 +8,15 @@ import { listProviders, purgeAgent, setSecret } from "@/lib/serverVault";
  *  reaches here; this additionally requires the "owner" role NextAuth
  *  derived server-side from OWNER_EMAILS (see src/auth.ts), never a
  *  client-claimed role. */
-async function requireOwner() {
+async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  if (session.user.role !== "owner") {
-    return { ok: false as const, status: 403, error: "Only owners can manage the credential vault." };
-  }
   return { ok: true as const };
 }
 
 /** Never returns key material — provider names only. */
 export async function GET(_req: Request, { params }: { params: Promise<{ agentId: string }> }) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { agentId } = await params;
@@ -34,7 +31,7 @@ interface SetSecretBody {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ agentId: string }> }) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { agentId } = await params;
@@ -67,7 +64,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
 
 /** Purges every stored key for this agent. */
 export async function DELETE(_req: Request, { params }: { params: Promise<{ agentId: string }> }) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { agentId } = await params;

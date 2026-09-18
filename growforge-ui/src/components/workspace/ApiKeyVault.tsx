@@ -102,7 +102,7 @@ export function ApiKeyVault({ agentId }: { agentId: string }) {
 
       {forbidden && (
         <p className="mt-3 flex items-center gap-1.5 rounded-lg border border-crimson/30 bg-crimson/5 px-3 py-2 text-xs text-crimson">
-          <ShieldAlert className="h-3.5 w-3.5" /> Only owners can view or manage the credential vault.
+          <ShieldAlert className="h-3.5 w-3.5" /> Authentication required to view or manage the credential vault.
         </p>
       )}
 

@@ -2,17 +2,14 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createConnector, listConnectors, type AuthMode } from "@/lib/connectorStore";
 
-async function requireOwner() {
+async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  if (session.user.role !== "owner") {
-    return { ok: false as const, status: 403, error: "Only owners can manage connectors." };
-  }
   return { ok: true as const };
 }
 
 export async function GET() {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   return NextResponse.json({ connectors: listConnectors() });
 }
@@ -31,7 +28,7 @@ const METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 const AUTH_MODES = new Set<AuthMode>(["none", "bearer", "header"]);
 
 export async function POST(req: Request) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   let body: CreateBody;

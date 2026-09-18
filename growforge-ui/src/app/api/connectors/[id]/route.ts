@@ -5,9 +5,6 @@ import { deleteConnector, getConnector, updateConnector, type CreateConnectorInp
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (session.user.role !== "owner") {
-    return NextResponse.json({ error: "Only owners can manage connectors." }, { status: 403 });
-  }
 
   const { id } = await params;
   deleteConnector(id);
@@ -17,9 +14,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (session.user.role !== "owner") {
-    return NextResponse.json({ error: "Only owners can manage connectors." }, { status: 403 });
-  }
 
   const { id } = await params;
   if (!getConnector(id)) return NextResponse.json({ error: "Connector not found." }, { status: 404 });

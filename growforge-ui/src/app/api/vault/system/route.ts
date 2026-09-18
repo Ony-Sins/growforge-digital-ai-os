@@ -16,17 +16,14 @@ export const runtime = "nodejs";
 /** System-wide provider and dynamic AI model management.
  *  Powers the Settings -> AI Providers connector builder and inspector.
  *  All secrets remain safely encrypted in the server vault. */
-async function requireOwner() {
+async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  if (session.user.role !== "owner") {
-    return { ok: false as const, status: 403, error: "Only owners can manage system integrations." };
-  }
   return { ok: true as const };
 }
 
 export async function GET() {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   // Standard legacy providers for compatibility
@@ -69,7 +66,7 @@ interface SaveModelRequestBody {
 }
 
 export async function POST(req: Request) {
-  const gate = await requireOwner();
+  const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   let body: SaveModelRequestBody;

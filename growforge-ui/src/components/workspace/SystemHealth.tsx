@@ -36,7 +36,7 @@ export function SystemHealth() {
       try {
         const res = await fetch("/api/mcp");
         if (res.status === 401 || res.status === 403) {
-          next[0] = { label: "MCP Connections", detail: "Owner only", status: "owner-only" };
+          next[0] = { label: "MCP Connections", detail: "Unavailable", status: "warn" };
         } else if (res.ok) {
           const data: { servers: unknown[] } = await res.json();
           const count = data.servers?.length ?? 0;
@@ -51,7 +51,7 @@ export function SystemHealth() {
       try {
         const res = await fetch("/api/vault/system");
         if (res.status === 401 || res.status === 403) {
-          next[1] = { label: "AI Providers", detail: "Owner only", status: "owner-only" };
+          next[1] = { label: "AI Providers", detail: "Unavailable", status: "warn" };
         } else if (res.ok) {
           const data: { providers?: { configured: boolean }[]; models?: { isConfigured: boolean }[] } = await res.json();
           const configured = data.models

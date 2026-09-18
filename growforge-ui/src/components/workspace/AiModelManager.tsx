@@ -326,18 +326,6 @@ export function AiModelManager() {
 
   if (!loaded) return null;
 
-  if (forbidden) {
-    return (
-      <div className="glass-card flex items-start gap-3 rounded-xl p-5">
-        <ShieldAlert className="h-5 w-5 shrink-0 text-crimson" />
-        <div>
-          <h2 className="font-heading text-sm font-semibold text-navy">AI Providers & Models</h2>
-          <p className="mt-1 text-sm text-secondary">Only owners can configure AI model providers and vault keys.</p>
-        </div>
-      </div>
-    );
-  }
-
   const isPrivateUrl = (url: string) =>
     url.includes("localhost") ||
     url.includes("127.0.0.1") ||

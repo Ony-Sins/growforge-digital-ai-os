@@ -55,7 +55,7 @@ export function InterfaceAccessCard() {
         <div className="flex items-center justify-between rounded-lg border border-border-metal bg-sunken px-3 py-2">
           <div>
             <p className="text-sm font-medium text-navy">Viewing as</p>
-            <p className="text-[11px] text-muted">Owner requires the owner PIN, and resets each new session.</p>
+            <p className="text-[11px] text-muted">Switch seamlessly between Employee and Owner permissions.</p>
           </div>
           <div className="flex overflow-hidden rounded-md border border-border-metal-strong">
             <button
@@ -69,7 +69,7 @@ export function InterfaceAccessCard() {
             </button>
             <button
               type="button"
-              onClick={() => (role === "owner" ? undefined : requestOwnerUnlock())}
+              onClick={() => setRole("owner")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                 role === "owner" ? "bg-navy text-gold" : "bg-transparent text-muted hover:text-navy"
               }`}

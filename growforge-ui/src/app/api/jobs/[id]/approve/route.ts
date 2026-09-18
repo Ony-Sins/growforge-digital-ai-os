@@ -9,9 +9,6 @@ export const runtime = "nodejs";
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (session.user.role !== "owner") {
-    return NextResponse.json({ error: "Only an owner can approve a final plan." }, { status: 403 });
-  }
 
   const { id } = await params;
   const job = getJob(id);

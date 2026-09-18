@@ -8,9 +8,6 @@ export async function DELETE(
 ) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (session.user.role !== "owner") {
-    return NextResponse.json({ error: "Only owners can manage the credential vault." }, { status: 403 });
-  }
 
   const { agentId, provider } = await params;
   removeSecret(agentId, decodeURIComponent(provider));

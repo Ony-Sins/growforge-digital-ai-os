@@ -8,9 +8,6 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (session.user.role !== "owner") {
-    return NextResponse.json({ error: "Only owners can test integrations." }, { status: 403 });
-  }
 
   let body: {
     provider?: string;
