@@ -15,6 +15,7 @@ import {
   Layers,
   Activity,
   Zap,
+  X,
 } from "lucide-react";
 
 export interface BrainNode {
@@ -296,6 +297,23 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const meshesRef = useRef<Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>>(new Map());
   const particleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
 
+  // Persistent interaction & state refs to avoid tearing down the WebGL scene on state changes
+  const isAutoRotatingRef = useRef(isAutoRotating);
+  const selectedNodeRef = useRef<BrainNode | null>(selectedNode);
+  const hoveredNodeRef = useRef<BrainNode | null>(hoveredNode);
+  const telemetryRef = useRef(telemetry);
+  const filterLobeRef = useRef<BrainLobe | "all">(filterLobe);
+  const rotationAngleRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    isAutoRotatingRef.current = isAutoRotating;
+    selectedNodeRef.current = selectedNode;
+    hoveredNodeRef.current = hoveredNode;
+    telemetryRef.current = telemetry;
+    filterLobeRef.current = filterLobe;
+  }, [isAutoRotating, selectedNode, hoveredNode, telemetry, filterLobe]);
+
   // Create radial glow halo canvas texture
   const createHaloTexture = useCallback((colorHex: string) => {
     const canvas = document.createElement("canvas");
@@ -350,6 +368,15 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     controls.maxDistance = 450;
     controls.minDistance = 30;
     controlsRef.current = controls;
+
+    const handleControlsStart = () => {
+      isDraggingRef.current = true;
+    };
+    const handleControlsEnd = () => {
+      isDraggingRef.current = false;
+    };
+    controls.addEventListener("start", handleControlsStart);
+    controls.addEventListener("end", handleControlsEnd);
 
     // 5. Ambient & Point Lighting
     const ambientLight = new THREE.AmbientLight(0x223355, 1.8);
@@ -460,8 +487,8 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     const mouse = new THREE.Vector2();
 
     const handlePointerMove = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
@@ -473,11 +500,13 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       if (intersects.length > 0) {
         const id = intersects[0].object.userData.nodeId;
         const found = nodeMap.get(id) || null;
+        hoveredNodeRef.current = found;
         setHoveredNode(found);
-        containerRef.current.style.cursor = "pointer";
+        container.style.cursor = "pointer";
       } else {
+        hoveredNodeRef.current = null;
         setHoveredNode(null);
-        containerRef.current.style.cursor = "default";
+        container.style.cursor = "default";
       }
     };
 
@@ -490,6 +519,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       if (intersects.length > 0) {
         const id = intersects[0].object.userData.nodeId;
         const found = nodeMap.get(id) || null;
+        selectedNodeRef.current = found;
         setSelectedNode(found);
         if (found) {
           // Smooth zoom to node
@@ -498,9 +528,19 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       }
     };
 
+    const handlePointerDown = () => {
+      isDraggingRef.current = true;
+    };
+
+    const handlePointerUp = () => {
+      isDraggingRef.current = false;
+    };
+
     const dom = renderer.domElement;
     dom.addEventListener("mousemove", handlePointerMove);
     dom.addEventListener("click", handleClick);
+    dom.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointerup", handlePointerUp);
 
     // 9. Animation Loop
     let animationFrameId: number;
@@ -511,10 +551,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Idle biological yaw & sinusoidal breathing float
-      if (isAutoRotating) {
-        scene.rotation.y += 0.0012;
+      // Continuous rotation around Y axis
+      // Only pause while actively dragging camera or when a node is explicitly pinned
+      if (isAutoRotatingRef.current && !isDraggingRef.current && !selectedNodeRef.current) {
+        rotationAngleRef.current += 0.0012;
       }
+      scene.rotation.y = rotationAngleRef.current;
       scene.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
 
       // Update action potential traveling particles
@@ -531,17 +573,34 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         posAttr.needsUpdate = true;
       });
 
-      // Pulse bioluminescent halos
-      meshesMap.forEach(({ halo, baseSize }, id) => {
+      // Pulse bioluminescent halos & handle lobe filtering / telemetry highlights
+      const currentHoveredId = hoveredNodeRef.current?.id;
+      const currentSelectedId = selectedNodeRef.current?.id;
+      const currentFilter = filterLobeRef.current;
+      const currentTelemetry = telemetryRef.current;
+
+      meshesMap.forEach(({ mesh, halo, baseSize }, id) => {
         const nodeObj = nodeMap.get(id);
-        const isHovered = hoveredNode?.id === id;
-        const isSelected = selectedNode?.id === id;
+        const isHovered = currentHoveredId === id;
+        const isSelected = currentSelectedId === id;
+        const isFiltered = currentFilter !== "all" && nodeObj?.lobe !== currentFilter;
+
+        // Dim nodes if filtered
+        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+          mesh.material.opacity = isFiltered ? 0.2 : 1;
+          mesh.material.transparent = isFiltered;
+        }
+
         const pulse = Math.sin(elapsedTime * 2 + baseSize) * 0.15 + 1;
-        const scale = baseSize * (isHovered || isSelected ? 4.8 : 3.8) * pulse;
+        const scale = baseSize * (isHovered || isSelected ? 4.8 : 3.8) * pulse * (isFiltered ? 0.4 : 1);
         halo.scale.set(scale, scale, 1);
 
         // Telemetry state reaction
-        if (nodeObj && telemetry.activeLobe === nodeObj.lobe && telemetry.executionState === "processing") {
+        if (
+          nodeObj &&
+          currentTelemetry.activeLobe === nodeObj.lobe &&
+          currentTelemetry.executionState === "processing"
+        ) {
           halo.scale.multiplyScalar(1.25);
         }
       });
@@ -567,14 +626,19 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("pointerup", handlePointerUp);
       dom.removeEventListener("mousemove", handlePointerMove);
       dom.removeEventListener("click", handleClick);
+      dom.removeEventListener("pointerdown", handlePointerDown);
+      controls.removeEventListener("start", handleControlsStart);
+      controls.removeEventListener("end", handleControlsEnd);
+      controls.dispose();
       renderer.dispose();
       if (container && dom) {
         container.removeChild(dom);
       }
     };
-  }, [nodes, axons, isAutoRotating, createHaloTexture, hoveredNode?.id, selectedNode?.id, telemetry]);
+  }, [nodes, axons, createHaloTexture]);
 
   // Reset Camera View
   const handleResetView = () => {
@@ -583,6 +647,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
       setSelectedNode(null);
+      selectedNodeRef.current = null;
     }
   };
 
@@ -709,9 +774,24 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
                     </div>
                     <p className="text-[11px] text-slate-400 mt-0.5">{active.role} · {lobeInfo.label}</p>
                   </div>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-300">
-                    {active.hemisphere}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-300">
+                      {active.hemisphere}
+                    </span>
+                    {selectedNode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedNode(null);
+                          selectedNodeRef.current = null;
+                        }}
+                        className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                        title="Unpin / resume rotation"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-slate-300 text-[11px] leading-relaxed">{active.description}</p>

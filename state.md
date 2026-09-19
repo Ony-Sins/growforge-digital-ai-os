@@ -10,8 +10,9 @@
 ## 0. Latest confirmed checkpoint (2026-09-20)
 
 - **Phase 5 — The 3D Microscopic Neural Brain Canvas (2026-09-20):** Passed 100% green under local execution.
+  - **Continuous Rotation & Interaction Decoupling (`NeuralBrainCanvas.tsx`):** Decoupled WebGL scene lifecycle from React state updates using persistent refs (`rotationAngleRef`, `isDraggingRef`, `hoveredNodeRef`, `selectedNodeRef`). Rotation runs continuously without restarting on hover, re-renders, or telemetry polling. Rotation pauses only during active camera dragging or node pinning, resuming seamlessly from the exact angle on release.
   - **Dynamic WebGL Canvas & Next.js 16 Client Mounting:** Implemented `NeuralBrainCanvas.tsx` mounted via `next/dynamic({ ssr: false })` in `UserProfileOverlay.tsx` (with 3D Neural View vs 2D Flow Map switcher) and `Workspace.tsx` (`#section-brain`), ensuring zero SSR hydration mismatch.
-  - **Biological Dual-Hemisphere Architecture:** Positioned somas across anatomical coordinates (Left Hemisphere: Strategy, Analytics, Research, QA; Right Hemisphere: Creative, Growth, Paid Media, Delivery; Center: GrowForge HQ Orchestrator) with slow idle yaw and sinusoidal breathing float.
+  - **Biological Dual-Hemisphere Architecture:** Positioned somas across anatomical coordinates (Left Hemisphere: Strategy, Analytics, Research, QA; Right Hemisphere: Creative, Growth, Paid Media, Delivery; Center: GrowForge HQ Orchestrator) with continuous idle yaw and sinusoidal breathing float.
   - **Microscopic Axon Splines & Action Potentials:** Curved 3D `CatmullRomCurve3` axon splines with traveling particle bursts simulating synaptic action potential transmissions.
   - **Bioluminescent Halos & Telemetry Binding:** Custom radial canvas gradient texture halos on somas with pulsating scale and color modulation dynamically driven by live `useTelemetry()` state (`idle`, `processing`, `blocked_approval`, `error`).
   - **Interaction & Obsidian Hover Badges:** Full OrbitControls (damping, pan, zoom, rotate limits) and Three.js Raycaster hover/select badges displaying real department roles, connected tools, and latency metrics.
