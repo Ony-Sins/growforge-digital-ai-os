@@ -304,7 +304,6 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const telemetryRef = useRef(telemetry);
   const filterLobeRef = useRef<BrainLobe | "all">(filterLobe);
   const rotationAngleRef = useRef(0);
-  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     isAutoRotatingRef.current = isAutoRotating;
@@ -361,24 +360,23 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. OrbitControls setup
+    // 4. OrbitControls setup — polar angles constrained to 60°-120° so brain silhouette never tumbles
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxDistance = 450;
-    controls.minDistance = 30;
+    controls.maxDistance = 420;
+    controls.minDistance = 60;
+    controls.minPolarAngle = Math.PI / 3; // ~60° (prevents top flipping)
+    controls.maxPolarAngle = (2 * Math.PI) / 3; // ~120° (prevents bottom flipping)
+    controls.enablePan = false;
+    controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    const handleControlsStart = () => {
-      isDraggingRef.current = true;
-    };
-    const handleControlsEnd = () => {
-      isDraggingRef.current = false;
-    };
-    controls.addEventListener("start", handleControlsStart);
-    controls.addEventListener("end", handleControlsEnd);
+    // 5. Brain Group Hierarchy (turntable container strictly rotating on Y-axis)
+    const brainGroup = new THREE.Group();
+    scene.add(brainGroup);
 
-    // 5. Ambient & Point Lighting
+    // 6. Ambient & Point Lighting
     const ambientLight = new THREE.AmbientLight(0x223355, 1.8);
     scene.add(ambientLight);
 
@@ -394,7 +392,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     rightLight.position.set(60, 20, 20);
     scene.add(rightLight);
 
-    // 6. Build Neural Somas (Spheres + Halo Sprites)
+    // 7. Build Neural Somas (Spheres + Halo Sprites)
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const meshesMap = new Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>();
 
@@ -411,7 +409,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(...node.position);
       mesh.userData = { nodeId: node.id };
-      scene.add(mesh);
+      brainGroup.add(mesh);
 
       // Radial bioluminescent halo sprite
       const haloTex = createHaloTexture(node.emissive);
@@ -425,13 +423,13 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const haloScale = node.size * 3.8;
       halo.scale.set(haloScale, haloScale, 1);
       halo.position.set(...node.position);
-      scene.add(halo);
+      brainGroup.add(halo);
 
       meshesMap.set(node.id, { mesh, halo, baseSize: node.size });
     });
     meshesRef.current = meshesMap;
 
-    // 7. Build Organic Axon Splines (Curved Bezier Tubes) & Action Potential Particles
+    // 8. Build Organic Axon Splines (Curved Bezier Tubes) & Action Potential Particles
     const particleSystems: { curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[] = [];
 
     axons.forEach((axon) => {
@@ -454,7 +452,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       });
 
       const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
-      scene.add(tubeMesh);
+      brainGroup.add(tubeMesh);
 
       // Action potential traveling particles
       const particleCount = 3;
@@ -471,7 +469,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       });
 
       const points = new THREE.Points(particleGeo, particleMat);
-      scene.add(points);
+      brainGroup.add(points);
 
       particleSystems.push({
         curve,
@@ -482,7 +480,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     particleSystemsRef.current = particleSystems;
 
-    // 8. Raycasting for Interaction
+    // 9. Raycasting for Interaction
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -521,28 +519,14 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         const found = nodeMap.get(id) || null;
         selectedNodeRef.current = found;
         setSelectedNode(found);
-        if (found) {
-          // Smooth zoom to node
-          controls.target.lerp(new THREE.Vector3(...found.position), 0.6);
-        }
       }
-    };
-
-    const handlePointerDown = () => {
-      isDraggingRef.current = true;
-    };
-
-    const handlePointerUp = () => {
-      isDraggingRef.current = false;
     };
 
     const dom = renderer.domElement;
     dom.addEventListener("mousemove", handlePointerMove);
     dom.addEventListener("click", handleClick);
-    dom.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("pointerup", handlePointerUp);
 
-    // 9. Animation Loop
+    // 10. Animation Loop
     let animationFrameId: number;
     const clock = new THREE.Clock();
 
@@ -551,13 +535,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Continuous rotation around Y axis
-      // Only pause while actively dragging camera or when a node is explicitly pinned
-      if (isAutoRotatingRef.current && !isDraggingRef.current && !selectedNodeRef.current) {
+      // Continuous unbroken turntable yaw rotation strictly around the vertical Y-axis
+      if (isAutoRotatingRef.current) {
         rotationAngleRef.current += 0.0012;
       }
-      scene.rotation.y = rotationAngleRef.current;
-      scene.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
+      brainGroup.rotation.y = rotationAngleRef.current;
+      brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
 
       // Update action potential traveling particles
       particleSystems.forEach((ps) => {
@@ -611,7 +594,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
     animate();
 
-    // 10. Resize handler
+    // 11. Resize handler
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -626,12 +609,8 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("pointerup", handlePointerUp);
       dom.removeEventListener("mousemove", handlePointerMove);
       dom.removeEventListener("click", handleClick);
-      dom.removeEventListener("pointerdown", handlePointerDown);
-      controls.removeEventListener("start", handleControlsStart);
-      controls.removeEventListener("end", handleControlsEnd);
       controls.dispose();
       renderer.dispose();
       if (container && dom) {
