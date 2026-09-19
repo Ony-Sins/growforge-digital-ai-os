@@ -77,15 +77,16 @@ async function runSafeHandoffChainTest() {
   });
 
   assert(activeTransferPayload !== null, "Supervisor emitted valid transfer_task payload");
-  assert(activeTransferPayload.targetAgent === "lead-gen", "Target agent correctly set to 'lead-gen'");
+  const transfer1 = activeTransferPayload as unknown as TaskTransferPayload;
+  assert(transfer1.targetAgent === "lead-gen", "Target agent correctly set to 'lead-gen'");
 
   state.handoffDepth += 1;
-  state.activeAgent = resolveSwarmAgent(activeTransferPayload.targetAgent).id;
+  state.activeAgent = resolveSwarmAgent(transfer1.targetAgent).id;
   state.history.push({
     fromAgent: supervisor.name,
-    toAgent: resolveSwarmAgent(activeTransferPayload.targetAgent).name,
-    task: activeTransferPayload.task,
-    reason: activeTransferPayload.reason,
+    toAgent: resolveSwarmAgent(transfer1.targetAgent).name,
+    task: transfer1.task,
+    reason: transfer1.reason,
     timestamp: new Date().toISOString(),
   });
 
@@ -120,15 +121,16 @@ async function runSafeHandoffChainTest() {
     reason: "Copywriting specialization required for persuasive cold email sequence",
   });
 
-  assert(activeTransferPayload.targetAgent === "copywriter", "Target agent correctly set to 'copywriter'");
+  const transfer2 = activeTransferPayload as unknown as TaskTransferPayload;
+  assert(transfer2.targetAgent === "copywriter", "Target agent correctly set to 'copywriter'");
 
   state.handoffDepth += 1;
-  state.activeAgent = resolveSwarmAgent(activeTransferPayload.targetAgent).id;
+  state.activeAgent = resolveSwarmAgent(transfer2.targetAgent).id;
   state.history.push({
     fromAgent: leadGen.name,
-    toAgent: resolveSwarmAgent(activeTransferPayload.targetAgent).name,
-    task: activeTransferPayload.task,
-    reason: activeTransferPayload.reason,
+    toAgent: resolveSwarmAgent(transfer2.targetAgent).name,
+    task: transfer2.task,
+    reason: transfer2.reason,
     timestamp: new Date().toISOString(),
   });
 
@@ -166,15 +168,16 @@ async function runSafeHandoffChainTest() {
     reason: "Quality Assurance verification required before deliverable synthesis",
   });
 
-  assert(activeTransferPayload.targetAgent === "qa", "Target agent correctly set to 'qa'");
+  const transfer3 = activeTransferPayload as unknown as TaskTransferPayload;
+  assert(transfer3.targetAgent === "qa", "Target agent correctly set to 'qa'");
 
   state.handoffDepth += 1;
-  state.activeAgent = resolveSwarmAgent(activeTransferPayload.targetAgent).id;
+  state.activeAgent = resolveSwarmAgent(transfer3.targetAgent).id;
   state.history.push({
     fromAgent: copywriter.name,
-    toAgent: resolveSwarmAgent(activeTransferPayload.targetAgent).name,
-    task: activeTransferPayload.task,
-    reason: activeTransferPayload.reason,
+    toAgent: resolveSwarmAgent(transfer3.targetAgent).name,
+    task: transfer3.task,
+    reason: transfer3.reason,
     timestamp: new Date().toISOString(),
   });
 
@@ -228,10 +231,11 @@ async function runSafeHandoffChainTest() {
   });
 
   assert(activeCompletionPayload !== null, "QA Agent invoked complete_directive tool");
-  assert(activeCompletionPayload.deliverable.includes("QA Reality Check Certification"), "Final deliverable synthesized with QA stamp");
+  const completion = activeCompletionPayload as unknown as DirectiveCompletionPayload;
+  assert(completion.deliverable.includes("QA Reality Check Certification"), "Final deliverable synthesized with QA stamp");
 
   state.status = "completed";
-  state.finalPayload = activeCompletionPayload;
+  state.finalPayload = completion || undefined;
 
   console.log("\n--- [Step 5: Telemetry & State Verification] ---");
   await logSwarmStateChange(state);

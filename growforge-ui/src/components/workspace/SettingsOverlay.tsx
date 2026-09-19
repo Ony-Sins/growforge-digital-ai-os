@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useAppState } from "@/lib/appState";
 import { InterfaceAccessCard } from "@/components/workspace/InterfaceAccessCard";
-import { IntegrationsHub } from "@/components/workspace/IntegrationsHub";
+import { Integrations } from "@/components/workspace/Integrations";
 import { AiModelManager } from "@/components/workspace/AiModelManager";
 
 interface SettingsCategory {
@@ -147,23 +147,23 @@ export function SettingsOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 sm:p-5 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-5 backdrop-blur-md animate-in fade-in duration-200"
       onClick={closeSettings}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border-metal bg-white/95 shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-200"
+        className="flex h-[88vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-cyan-500/20 bg-[#030712] text-slate-100 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl animate-in zoom-in-95 duration-200"
       >
         {/* Left Multi-Tier Sidebar Rail */}
-        <div className="hidden w-64 shrink-0 flex-col border-r border-border-metal bg-sunken/40 p-3.5 sm:flex overflow-y-auto">
+        <div className="hidden w-64 shrink-0 flex-col border-r border-slate-800 bg-[#070b14]/90 p-3.5 sm:flex overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center gap-2 px-2 pb-3 pt-1 border-b border-border-metal">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy text-white shadow-sm">
-              <Bot className="h-4 w-4 text-electric" />
+          <div className="flex items-center gap-2 px-2 pb-3 pt-1 border-b border-slate-800">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 shadow-sm">
+              <Bot className="h-4 w-4 text-cyan-400" />
             </div>
             <div>
-              <p className="font-heading text-xs font-semibold text-navy">Preferences & Hub</p>
-              <p className="text-[10px] text-muted">GrowForge AI OS</p>
+              <p className="font-heading text-xs font-semibold text-white">Preferences & Hub</p>
+              <p className="text-[10px] text-slate-500">GrowForge AI OS</p>
             </div>
           </div>
 
@@ -171,7 +171,7 @@ export function SettingsOverlay() {
           <div className="mt-3 space-y-4">
             {SETTINGS_GROUPS.map((group) => (
               <div key={group.title} className="space-y-1">
-                <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-muted">
+                <span className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
                   {group.title}
                 </span>
                 <ul className="space-y-0.5">
@@ -185,20 +185,20 @@ export function SettingsOverlay() {
                           onClick={() => setActiveCategoryId(item.id)}
                           className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-all ${
                             active
-                              ? "bg-white text-navy shadow-sm ring-1 ring-border-metal-strong font-semibold"
-                              : "text-secondary hover:bg-white/60 hover:text-navy"
+                              ? "bg-cyan-500/15 text-cyan-300 ring-1 ring-cyan-500/30 font-semibold shadow-sm"
+                              : "text-slate-400 hover:bg-white/5 hover:text-slate-100"
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <Icon
                               className={`h-4 w-4 shrink-0 ${
-                                active ? "text-electric" : "text-muted"
+                                active ? "text-cyan-400" : "text-slate-500"
                               }`}
                             />
                             <span className="truncate">{item.label}</span>
                           </div>
                           {item.badge && (
-                            <span className="rounded bg-electric/10 text-electric px-1.5 py-0.2 text-[9px] font-bold uppercase shrink-0">
+                            <span className="rounded bg-cyan-500/15 text-cyan-400 px-1.5 py-0.2 text-[9px] font-bold uppercase shrink-0 border border-cyan-500/20">
                               {item.badge}
                             </span>
                           )}
@@ -213,14 +213,14 @@ export function SettingsOverlay() {
         </div>
 
         {/* Right Content Pane */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-white/60">
+        <div className="flex flex-1 flex-col overflow-hidden bg-[#030712]">
           {/* Top Header Bar */}
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-metal px-5 bg-white/80">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-800 px-5 bg-[#070b14]/80 backdrop-blur-md">
             <div className="flex items-center gap-2.5">
-              <activeCategory.icon className="h-4 w-4 text-electric" />
+              <activeCategory.icon className="h-4 w-4 text-cyan-400" />
               <div>
-                <h1 className="font-heading text-sm font-semibold text-navy">{activeCategory.label}</h1>
-                <p className="hidden md:block text-[11px] text-muted truncate max-w-md">
+                <h1 className="font-heading text-sm font-semibold text-white">{activeCategory.label}</h1>
+                <p className="hidden md:block text-[11px] text-slate-400 truncate max-w-md">
                   {activeCategory.description}
                 </p>
               </div>
@@ -230,26 +230,26 @@ export function SettingsOverlay() {
               type="button"
               onClick={closeSettings}
               aria-label="Close Settings"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-secondary hover:bg-sunken hover:text-navy transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
           {/* Active Category Content Panel */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#030712]">
             {/* 1. Account */}
             {activeCategoryId === "account" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-white font-heading font-semibold text-lg border-2 border-electric/30">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-cyan-400 font-heading font-semibold text-lg border-2 border-cyan-500/30 shadow-md">
                         GF
                       </div>
                       <div>
-                        <h2 className="font-heading text-sm font-semibold text-navy">Workspace Operator</h2>
-                        <p className="text-xs text-muted font-mono">anjum.ony96@gmail.com</p>
+                        <h2 className="font-heading text-sm font-semibold text-white">Workspace Operator</h2>
+                        <p className="text-xs text-slate-400 font-mono">anjum.ony96@gmail.com</p>
                         <span className="mt-1 inline-block rounded bg-gold/15 px-2 py-0.5 text-[9px] font-bold text-gold border border-gold/30">
                           PRIMARY OWNER
                         </span>
@@ -261,7 +261,7 @@ export function SettingsOverlay() {
                         closeSettings();
                         openUserProfile();
                       }}
-                      className="flex items-center gap-1.5 rounded-lg bg-electric px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all shrink-0"
+                      className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-cyan-500 px-3.5 py-1.5 text-xs font-semibold text-navy shadow-sm hover:opacity-90 transition-all shrink-0"
                     >
                       <span>Open Full Profile & Bio</span>
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -270,18 +270,18 @@ export function SettingsOverlay() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="glass-card rounded-xl p-4 border border-border-metal space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Organization</span>
-                    <p className="text-sm font-semibold text-navy">GrowForge Digital Systems</p>
-                    <p className="text-xs text-secondary">Autonomous multi-agent marketing & AI operations workspace.</p>
+                  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 shadow-lg space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">Organization</span>
+                    <p className="text-sm font-semibold text-white">GrowForge Digital Systems</p>
+                    <p className="text-xs text-slate-400">Autonomous multi-agent marketing & AI operations workspace.</p>
                   </div>
-                  <div className="glass-card rounded-xl p-4 border border-border-metal space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Session Status</span>
+                  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 shadow-lg space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">Session Status</span>
                     <p className="text-sm font-semibold text-emerald flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" />
                       Active Secure Session
                     </p>
-                    <p className="text-xs text-secondary">Protected by server-side vault session token.</p>
+                    <p className="text-xs text-slate-400">Protected by server-side vault session token.</p>
                   </div>
                 </div>
               </div>
@@ -290,29 +290,29 @@ export function SettingsOverlay() {
             {/* 2. Privacy & Security */}
             {activeCategoryId === "privacy" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal space-y-3">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-3">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-emerald" />
-                    <h2 className="font-heading text-sm font-semibold text-navy">Data Boundary & Vault Encryption</h2>
+                    <h2 className="font-heading text-sm font-semibold text-white">Data Boundary & Vault Encryption</h2>
                   </div>
-                  <p className="text-xs text-secondary leading-relaxed">
+                  <p className="text-xs text-slate-300 leading-relaxed">
                     GrowForge Digital AI OS is engineered on a strict zero-retention boundary. Your API keys, client briefs, and database credentials are encrypted with AES-GCM and stored exclusively in your local isolated server vault.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
-                    <div className="rounded-lg border border-border-metal bg-sunken/40 p-3 text-center">
-                      <Lock className="mx-auto h-4 w-4 text-electric mb-1" />
-                      <span className="block text-xs font-semibold text-navy">AES-GCM Encryption</span>
-                      <span className="text-[10px] text-muted">Active Vault Shield</span>
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-center">
+                      <Lock className="mx-auto h-4 w-4 text-cyan-400 mb-1" />
+                      <span className="block text-xs font-semibold text-white">AES-GCM Encryption</span>
+                      <span className="text-[10px] text-slate-500">Active Vault Shield</span>
                     </div>
-                    <div className="rounded-lg border border-border-metal bg-sunken/40 p-3 text-center">
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-center">
                       <CheckCircle2 className="mx-auto h-4 w-4 text-emerald mb-1" />
-                      <span className="block text-xs font-semibold text-navy">Zero Training</span>
-                      <span className="text-[10px] text-muted">Data never leaked to LLMs</span>
+                      <span className="block text-xs font-semibold text-white">Zero Training</span>
+                      <span className="text-[10px] text-slate-500">Data never leaked to LLMs</span>
                     </div>
-                    <div className="rounded-lg border border-border-metal bg-sunken/40 p-3 text-center">
+                    <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-center">
                       <Cpu className="mx-auto h-4 w-4 text-gold mb-1" />
-                      <span className="block text-xs font-semibold text-navy">Local Isolation</span>
-                      <span className="text-[10px] text-muted">Supports Private Subnets</span>
+                      <span className="block text-xs font-semibold text-white">Local Isolation</span>
+                      <span className="text-[10px] text-slate-500">Supports Private Subnets</span>
                     </div>
                   </div>
                 </div>
@@ -322,33 +322,33 @@ export function SettingsOverlay() {
             {/* 3. Billing & Plans */}
             {activeCategoryId === "billing" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <span className="rounded bg-electric/15 text-electric px-2 py-0.5 text-[10px] font-bold uppercase border border-electric/30">
+                      <span className="rounded bg-cyan-500/15 text-cyan-300 px-2 py-0.5 text-[10px] font-bold uppercase border border-cyan-500/30">
                         ENTERPRISE TIER
                       </span>
-                      <h2 className="mt-2 font-heading text-base font-semibold text-navy">GrowForge AI OS Workspace</h2>
-                      <p className="text-xs text-secondary">Unlimited multi-department agent pipelines and custom model connectors.</p>
+                      <h2 className="mt-2 font-heading text-base font-semibold text-white">GrowForge AI OS Workspace</h2>
+                      <p className="text-xs text-slate-400">Unlimited multi-department agent pipelines and custom model connectors.</p>
                     </div>
                     <div className="text-right sm:text-right">
-                      <span className="text-xs text-muted">Plan Billing</span>
-                      <p className="font-heading text-lg font-bold text-navy">Active</p>
+                      <span className="text-xs text-slate-500">Plan Billing</span>
+                      <p className="font-heading text-lg font-bold text-white">Active</p>
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-border-metal">
+                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-800">
                     <div className="p-2">
-                      <span className="text-[10px] font-bold text-muted uppercase">Departments</span>
-                      <p className="text-sm font-semibold text-navy">8 Specialists Active</p>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">Departments</span>
+                      <p className="text-sm font-semibold text-white">8 Specialists Active</p>
                     </div>
                     <div className="p-2">
-                      <span className="text-[10px] font-bold text-muted uppercase">Local LLM Connectors</span>
-                      <p className="text-sm font-semibold text-navy">Unlimited Private</p>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">Local LLM Connectors</span>
+                      <p className="text-sm font-semibold text-white">Unlimited Private</p>
                     </div>
                     <div className="p-2">
-                      <span className="text-[10px] font-bold text-muted uppercase">Agent Roster</span>
-                      <p className="text-sm font-semibold text-navy">279 Cataloged</p>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase font-mono">Agent Roster</span>
+                      <p className="text-sm font-semibold text-white">279 Cataloged</p>
                     </div>
                   </div>
                 </div>
@@ -359,20 +359,20 @@ export function SettingsOverlay() {
             {activeCategoryId === "usage" && (
               <div className="space-y-4 max-w-3xl">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="glass-card rounded-xl p-4 border border-border-metal">
-                    <span className="text-[10px] font-bold uppercase text-muted">Active Pipeline Jobs</span>
-                    <p className="mt-1 font-heading text-2xl font-bold text-navy">100%</p>
+                  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 shadow-lg">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 font-mono">Active Pipeline Jobs</span>
+                    <p className="mt-1 font-heading text-2xl font-bold text-white">100%</p>
                     <p className="mt-0.5 text-[11px] text-emerald font-medium">Telemetry Operational</p>
                   </div>
-                  <div className="glass-card rounded-xl p-4 border border-border-metal">
-                    <span className="text-[10px] font-bold uppercase text-muted">Router Dispatch Latency</span>
-                    <p className="mt-1 font-heading text-2xl font-bold text-electric">~140ms</p>
-                    <p className="mt-0.5 text-[11px] text-secondary">Dynamic multi-provider failover</p>
+                  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 shadow-lg">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 font-mono">Router Dispatch Latency</span>
+                    <p className="mt-1 font-heading text-2xl font-bold text-cyan-400">~140ms</p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">Dynamic multi-provider failover</p>
                   </div>
-                  <div className="glass-card rounded-xl p-4 border border-border-metal">
-                    <span className="text-[10px] font-bold uppercase text-muted">Encrypted Vault Storage</span>
-                    <p className="mt-1 font-heading text-2xl font-bold text-navy">Optimal</p>
-                    <p className="mt-0.5 text-[11px] text-secondary">Zero credential leakage</p>
+                  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 shadow-lg">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 font-mono">Encrypted Vault Storage</span>
+                    <p className="mt-1 font-heading text-2xl font-bold text-white">Optimal</p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">Zero credential leakage</p>
                   </div>
                 </div>
               </div>
@@ -381,35 +381,35 @@ export function SettingsOverlay() {
             {/* 5. Core Capabilities */}
             {activeCategoryId === "capabilities" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal space-y-3">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-3">
                   <div className="flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-electric" />
-                    <h2 className="font-heading text-sm font-semibold text-navy">Autonomous Pipeline Architecture</h2>
+                    <Layers className="h-5 w-5 text-cyan-400" />
+                    <h2 className="font-heading text-sm font-semibold text-white">Autonomous Pipeline Architecture</h2>
                   </div>
-                  <p className="text-xs text-secondary leading-relaxed">
+                  <p className="text-xs text-slate-300 leading-relaxed">
                     GrowForge orchestrates marketing, development, and growth operations through a standardized 7-phase execution funnel:
                   </p>
-                  <ol className="mt-3 space-y-2 border-l-2 border-electric/30 pl-4 text-xs">
+                  <ol className="mt-3 space-y-2 border-l-2 border-cyan-500/30 pl-4 text-xs">
                     <li>
-                      <span className="font-semibold text-navy">1. Client Brief Intake:</span> Structured goal extraction and parameter validation.
+                      <span className="font-semibold text-white">1. Client Brief Intake:</span> Structured goal extraction and parameter validation.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">2. GrowForge HQ Planning:</span> Strategic scoping and specialist assignment.
+                      <span className="font-semibold text-white">2. GrowForge HQ Planning:</span> Strategic scoping and specialist assignment.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">3. Live Research Engine:</span> Grounded market, competitive, and technical data gathering.
+                      <span className="font-semibold text-white">3. Live Research Engine:</span> Grounded market, competitive, and technical data gathering.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">4. Parallel Department Execution:</span> Concurrent execution across assigned domains.
+                      <span className="font-semibold text-white">4. Parallel Department Execution:</span> Concurrent execution across assigned domains.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">5. Cross-Team Reconciliation:</span> Harmonization of cross-departmental deliverables.
+                      <span className="font-semibold text-white">5. Cross-Team Reconciliation:</span> Harmonization of cross-departmental deliverables.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">6. Quality Assurance Gate:</span> Strict criteria verification and compliance check.
+                      <span className="font-semibold text-white">6. Quality Assurance Gate:</span> Strict criteria verification and compliance check.
                     </li>
                     <li>
-                      <span className="font-semibold text-navy">7. Final Deliverable:</span> Human-in-the-loop signoff and approval dispatch.
+                      <span className="font-semibold text-white">7. Final Deliverable:</span> Human-in-the-loop signoff and approval dispatch.
                     </li>
                   </ol>
                 </div>
@@ -419,12 +419,12 @@ export function SettingsOverlay() {
             {/* 6. Memory & Rules */}
             {activeCategoryId === "memory" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal space-y-3">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-3">
                   <div className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-electric" />
-                    <h2 className="font-heading text-sm font-semibold text-navy">Persistent Memory Layers</h2>
+                    <Brain className="h-5 w-5 text-cyan-400" />
+                    <h2 className="font-heading text-sm font-semibold text-white">Persistent Memory Layers</h2>
                   </div>
-                  <p className="text-xs text-secondary">
+                  <p className="text-xs text-slate-300">
                     Your persona guidelines, hard brand rejections, and strategic nuances are injected into every agent prompt cycle.
                   </p>
                   <div className="pt-2">
@@ -434,7 +434,7 @@ export function SettingsOverlay() {
                         closeSettings();
                         openUserProfile();
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-cyan-500 px-4 py-2 text-xs font-semibold text-navy shadow-sm hover:opacity-90"
                     >
                       <Brain className="h-3.5 w-3.5" />
                       <span>Manage Memory in Profile Dashboard</span>
@@ -447,30 +447,30 @@ export function SettingsOverlay() {
             {/* 7. Design Systems */}
             {activeCategoryId === "design-systems" && (
               <div className="space-y-4 max-w-3xl">
-                <div className="glass-card rounded-xl p-5 border border-border-metal space-y-3">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-3">
                   <div className="flex items-center gap-2">
-                    <Palette className="h-5 w-5 text-electric" />
-                    <h2 className="font-heading text-sm font-semibold text-navy">The Command Deck Design System</h2>
+                    <Palette className="h-5 w-5 text-cyan-400" />
+                    <h2 className="font-heading text-sm font-semibold text-white">The Command Deck Design System</h2>
                   </div>
-                  <p className="text-xs text-secondary">
+                  <p className="text-xs text-slate-300">
                     GrowForge AI OS is styled with a bespoke dark/navy glassmorphic theme designed for maximum clarity, focus, and visual depth.
                   </p>
                   <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <div className="rounded-lg bg-[#0B132B] p-3 text-white text-center">
-                      <span className="block text-xs font-semibold">Deep Navy</span>
-                      <span className="text-[10px] text-gray-400 font-mono">#0B132B</span>
+                    <div className="rounded-lg bg-[#070b14] border border-slate-800 p-3 text-white text-center">
+                      <span className="block text-xs font-semibold">Deep Obsidian</span>
+                      <span className="text-[10px] text-slate-500 font-mono">#030712</span>
                     </div>
-                    <div className="rounded-lg bg-electric p-3 text-white text-center">
-                      <span className="block text-xs font-semibold">Instrument Blue</span>
-                      <span className="text-[10px] text-blue-100 font-mono">#3B82F6</span>
+                    <div className="rounded-lg bg-cyan-600/30 border border-cyan-500/40 p-3 text-white text-center">
+                      <span className="block text-xs font-semibold">Instrument Cyan</span>
+                      <span className="text-[10px] text-cyan-300 font-mono">#06B6D4</span>
                     </div>
-                    <div className="rounded-lg bg-gold p-3 text-navy text-center font-semibold">
+                    <div className="rounded-lg bg-gold/20 border border-gold/30 p-3 text-gold text-center font-semibold">
                       <span className="block text-xs font-semibold">Earned Gold</span>
-                      <span className="text-[10px] text-navy font-mono">#F59E0B</span>
+                      <span className="text-[10px] text-gold/80 font-mono">#F59E0B</span>
                     </div>
-                    <div className="rounded-lg bg-emerald p-3 text-white text-center">
+                    <div className="rounded-lg bg-emerald/20 border border-emerald/30 p-3 text-emerald text-center">
                       <span className="block text-xs font-semibold">Live Emerald</span>
-                      <span className="text-[10px] text-emerald-100 font-mono">#10B981</span>
+                      <span className="text-[10px] text-emerald-300 font-mono">#10B981</span>
                     </div>
                   </div>
                 </div>
@@ -489,10 +489,10 @@ export function SettingsOverlay() {
                     { name: "Web Design & Conversion UX", dept: "web-design", tools: "Wireframes, layout audits" },
                     { name: "Client Success & Ops", dept: "client-success", tools: "SOWs, meeting agendas, deliverables" },
                   ].map((s) => (
-                    <div key={s.dept} className="glass-card rounded-xl p-3.5 border border-border-metal space-y-1">
-                      <h3 className="text-xs font-semibold text-navy">{s.name}</h3>
-                      <p className="text-[11px] text-secondary font-mono">{s.dept}</p>
-                      <p className="text-[11px] text-muted">{s.tools}</p>
+                    <div key={s.dept} className="rounded-xl p-3.5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-1">
+                      <h3 className="text-xs font-semibold text-white">{s.name}</h3>
+                      <p className="text-[11px] text-cyan-400 font-mono">{s.dept}</p>
+                      <p className="text-[11px] text-slate-400">{s.tools}</p>
                     </div>
                   ))}
                 </div>
@@ -500,7 +500,7 @@ export function SettingsOverlay() {
             )}
 
             {/* 9. Unified Connectors & Plugins Hub */}
-            {activeCategoryId === "connectors" && <IntegrationsHub />}
+            {activeCategoryId === "connectors" && <Integrations />}
 
             {/* 10. AI Models & API Keys */}
             {activeCategoryId === "ai-providers" && <AiModelManager />}
@@ -509,12 +509,12 @@ export function SettingsOverlay() {
             {activeCategoryId === "developer" && (
               <div className="space-y-4 max-w-3xl">
                 <InterfaceAccessCard />
-                <div className="glass-card rounded-xl p-5 border border-border-metal space-y-3">
+                <div className="rounded-xl p-5 border border-slate-800 bg-slate-900/60 shadow-lg space-y-3">
                   <div className="flex items-center gap-2">
-                    <Terminal className="h-4 w-4 text-electric" />
-                    <h3 className="font-heading text-sm font-semibold text-navy">Developer Tools & Terminal</h3>
+                    <Terminal className="h-4 w-4 text-cyan-400" />
+                    <h3 className="font-heading text-sm font-semibold text-white">Developer Tools & Terminal</h3>
                   </div>
-                  <p className="text-xs text-secondary">
+                  <p className="text-xs text-slate-400">
                     Access system execution logs, real-time command terminal, and router telemetry via the Admin Drawer.
                   </p>
                   <button
@@ -523,9 +523,9 @@ export function SettingsOverlay() {
                       closeSettings();
                       openAdminDrawer("terminal");
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3.5 py-2 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 transition-all"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-100 hover:border-cyan-500/50 hover:bg-slate-700 transition-all"
                   >
-                    <Terminal className="h-3.5 w-3.5 text-electric" />
+                    <Terminal className="h-3.5 w-3.5 text-cyan-400" />
                     <span>Open Admin Console & Logs</span>
                   </button>
                 </div>

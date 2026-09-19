@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "docs:brain": "npx tsx scripts/generate-brain-docs.ts",
-    "backtest": "npx tsx scripts/backtest.ts"
+    "backtest": "npx tsx scripts/backtest.ts",
+    "test:mcp": "npx tsx scripts/test-mcp-gemini-e2e.ts"
   },
   "dependencies": {
     "@google/genai": "^2.23.0",

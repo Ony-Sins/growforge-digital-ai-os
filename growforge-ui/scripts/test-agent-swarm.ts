@@ -68,25 +68,26 @@ async function runSwarmTests() {
 
   assert(transferRes.ok === true, "transfer_task tool executes cleanly");
   assert(capturedTransfer !== null, "Transfer handler captured the delegation payload");
-  assert(capturedTransfer.targetAgent === "lead-gen", "Target agent correctly dispatched");
-  assert(capturedTransfer.variables.offerRetainer === 3500, "Shared variables passed forward in transfer");
+  const transfer = capturedTransfer as unknown as TaskTransferPayload;
+  assert(transfer.targetAgent === "lead-gen", "Target agent correctly dispatched");
+  assert(transfer.variables?.offerRetainer === 3500, "Shared variables passed forward in transfer");
 
   // Mutate swarm context with peer handoff
   context.handoffDepth += 1;
-  context.activeAgent = capturedTransfer.targetAgent;
-  Object.assign(context.variables, capturedTransfer.variables);
+  context.activeAgent = transfer.targetAgent;
+  Object.assign(context.variables, transfer.variables);
   context.history.push({
     fromAgent: "GrowForge HQ Strategist",
     toAgent: leadGen.name,
-    task: capturedTransfer.task,
-    reason: capturedTransfer.reason,
+    task: transfer.task,
+    reason: transfer.reason,
     timestamp: new Date().toISOString(),
   });
   context.agentTrace.push({
     stepNumber: 1,
     agentId: leadGen.id,
     agentName: leadGen.name,
-    action: capturedTransfer.task,
+    action: transfer.task,
     timestamp: new Date().toISOString(),
   });
 
@@ -94,27 +95,31 @@ async function runSwarmTests() {
   assert(context.variables.icp === "B2B SaaS Founders ($1M-$10M ARR)", "SwarmContext stores mutated variables");
   assert(context.history.length === 1, "Handoff history logged in context");
 
-  console.log("\n=== Suite 3: Max Handoff Depth & Loop Prevention Guardrail ===");
-  // Simulate rapid peer-to-peer transfers reaching limit
-  context.handoffDepth = 5; // Reached limit 5
-  let consultationTriggered = false;
+  console.log("\n=== Suite 3: Multi-Agent Handoff Chain (Planning -> Sales -> Copywriter -> QA) ===");
+  // Step 2: Sales delegates to Copywriter
+  await transferTaskTool.execute({
+    targetAgent: "copywriter",
+    task: "Draft 3 outbound cold email templates emphasizing AI-driven ROI",
+    variables: { leadMagnet: "AI Ops Free Audit" },
+    reason: "Copywriting specialization required for email messaging",
+  });
+  const transfer2 = capturedTransfer as unknown as TaskTransferPayload;
+  context.handoffDepth += 1;
+  context.activeAgent = transfer2.targetAgent;
+  Object.assign(context.variables, transfer2.variables);
+  assert(context.handoffDepth === 2, "Handoff depth reaches 2");
+  assert(context.variables.leadMagnet === "AI Ops Free Audit", "State variables accumulate across hops");
 
-  const mockConsultationHandler = async (q: string, options?: string[]) => {
-    consultationTriggered = true;
-    assert(q.includes("depth reached maximum") || q.includes("5"), "Consultation question alerts operator of depth limit");
-    assert(Array.isArray(options) && options.length >= 2, "Operator presented with actionable guardrail options");
-    return "Synthesize & Finalize Current Findings";
-  };
-
-  // Test loop guardrail execution simulation
-  if (context.handoffDepth >= context.maxDepth) {
-    const answer = await mockConsultationHandler("Swarm handoff depth reached maximum (5). How to proceed?", [
-      "Synthesize & Finalize Current Findings",
-      "Authorize 3 Additional Handoffs",
-    ]);
-    assert(consultationTriggered, "Loop guardrail triggers Human-in-the-Loop consultation at maxDepth");
-    assert(answer === "Synthesize & Finalize Current Findings", "Operator choice captured for safe termination");
-  }
+  // Step 3: Copywriter delegates to QA
+  await transferTaskTool.execute({
+    targetAgent: "qa",
+    task: "Review and stress-test outbound copy against CAN-SPAM and conversion benchmarks",
+    reason: "Quality gate verification",
+  });
+  const transfer3 = capturedTransfer as unknown as TaskTransferPayload;
+  context.handoffDepth += 1;
+  context.activeAgent = transfer3.targetAgent;
+  assert(context.handoffDepth === 3, "Handoff depth reaches 3");
 
   console.log("\n=== Suite 4: Clean Directive Completion & Synthesis ===");
   let capturedCompletion: DirectiveCompletionPayload | null = null;
@@ -131,10 +136,11 @@ async function runSwarmTests() {
 
   assert(completeRes.ok === true, "complete_directive tool executes cleanly");
   assert(capturedCompletion !== null, "Completion handler captured final deliverable");
-  assert(capturedCompletion.deliverable.includes("Final GTM & Automation Plan"), "Consolidated deliverable synthesized");
+  const completion = capturedCompletion as unknown as DirectiveCompletionPayload;
+  assert(completion.deliverable.includes("Final GTM & Automation Plan"), "Consolidated deliverable synthesized");
 
   context.status = "completed";
-  context.finalPayload = capturedCompletion;
+  context.finalPayload = completion || undefined;
 
   console.log("\n=== Suite 5: Real-Time Digital Brain Telemetry Sync ===");
   await logSwarmStateChange(context);

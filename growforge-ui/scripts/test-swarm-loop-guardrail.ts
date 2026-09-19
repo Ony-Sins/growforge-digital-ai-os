@@ -34,13 +34,14 @@ import { logSwarmStateChange } from "../src/lib/brainLogger";
 let passed = 0;
 let failed = 0;
 
-function assert(cond: boolean, msg: string) {
+function assert(cond: unknown, msg: string): asserts cond {
   if (cond) {
     passed++;
     console.log(`  ✓ ${msg}`);
   } else {
     failed++;
     console.error(`  ✗ ${msg}`);
+    throw new Error(msg);
   }
 }
 
@@ -78,7 +79,7 @@ async function runLoopGuardrailStressTest() {
   });
   state.handoffDepth = 1;
   state.activeAgent = "qa";
-  applyStateDiff(state.variables, lastTransferPayload.variables);
+  applyStateDiff(state.variables, lastTransferPayload!.variables);
   state.history.push({ fromAgent: "Copywriter", toAgent: "QA", task: "Review Draft v1", timestamp: new Date().toISOString() });
   state.agentTrace.push({ stepNumber: 1, agentId: "copywriter", agentName: "Brand & Conversion Copywriter", action: "Review Draft v1", timestamp: new Date().toISOString() });
   assert(state.handoffDepth === 1, "Handoff 1/5: Copywriter -> QA");
@@ -92,7 +93,7 @@ async function runLoopGuardrailStressTest() {
   });
   state.handoffDepth = 2;
   state.activeAgent = "copywriter";
-  applyStateDiff(state.variables, lastTransferPayload.variables);
+  applyStateDiff(state.variables, lastTransferPayload!.variables);
   state.history.push({ fromAgent: "QA", toAgent: "Copywriter", task: "Revise Draft v2", timestamp: new Date().toISOString() });
   state.agentTrace.push({ stepNumber: 2, agentId: "qa", agentName: "Quality Assurance & Reality Checker", action: "Revise Draft v2", timestamp: new Date().toISOString() });
   assert(state.handoffDepth === 2, "Handoff 2/5: QA -> Copywriter");
@@ -106,7 +107,7 @@ async function runLoopGuardrailStressTest() {
   });
   state.handoffDepth = 3;
   state.activeAgent = "qa";
-  applyStateDiff(state.variables, lastTransferPayload.variables);
+  applyStateDiff(state.variables, lastTransferPayload!.variables);
   state.history.push({ fromAgent: "Copywriter", toAgent: "QA", task: "Review Draft v3", timestamp: new Date().toISOString() });
   state.agentTrace.push({ stepNumber: 3, agentId: "copywriter", agentName: "Brand & Conversion Copywriter", action: "Review Draft v3", timestamp: new Date().toISOString() });
   assert(state.handoffDepth === 3, "Handoff 3/5: Copywriter -> QA");
@@ -120,7 +121,7 @@ async function runLoopGuardrailStressTest() {
   });
   state.handoffDepth = 4;
   state.activeAgent = "copywriter";
-  applyStateDiff(state.variables, lastTransferPayload.variables);
+  applyStateDiff(state.variables, lastTransferPayload!.variables);
   state.history.push({ fromAgent: "QA", toAgent: "Copywriter", task: "Revise Draft v4", timestamp: new Date().toISOString() });
   state.agentTrace.push({ stepNumber: 4, agentId: "qa", agentName: "Quality Assurance & Reality Checker", action: "Revise Draft v4", timestamp: new Date().toISOString() });
   assert(state.handoffDepth === 4, "Handoff 4/5: QA -> Copywriter");
@@ -134,7 +135,7 @@ async function runLoopGuardrailStressTest() {
   });
   state.handoffDepth = 5;
   state.activeAgent = "qa";
-  applyStateDiff(state.variables, lastTransferPayload.variables);
+  applyStateDiff(state.variables, lastTransferPayload!.variables);
   state.history.push({ fromAgent: "Copywriter", toAgent: "QA", task: "Review Draft v5", timestamp: new Date().toISOString() });
   state.agentTrace.push({ stepNumber: 5, agentId: "copywriter", agentName: "Brand & Conversion Copywriter", action: "Review Draft v5", timestamp: new Date().toISOString() });
   assert(state.handoffDepth === 5, "Handoff 5/5: Max Depth limit reached");
