@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertCircle,
   Calendar,
   Check,
   CheckCircle2,
@@ -16,16 +15,12 @@ import {
   Grid2x2,
   HardDrive,
   Key,
-  Layers,
   Loader2,
-  Lock,
   Mail,
   MessagesSquare,
   Pencil,
   Plug,
   Plus,
-  Radio,
-  RefreshCw,
   Search,
   Server,
   ShieldAlert,
@@ -180,8 +175,11 @@ export function IntegrationsHub() {
   }, []);
 
   useEffect(() => {
-    loadAll();
-    checkN8nHealth();
+    const initialLoad = window.setTimeout(() => {
+      void Promise.all([loadAll(), checkN8nHealth()]);
+    }, 0);
+
+    return () => window.clearTimeout(initialLoad);
   }, [loadAll, checkN8nHealth]);
 
   const connectedCatalogIds = useMemo(
@@ -1025,13 +1023,9 @@ function CatalogInspectorModal({
   // Manual configuration inputs
   const [manualTransport, setManualTransport] = useState<"http" | "stdio">("http");
   const [manualUrl, setManualUrl] = useState("");
-  const [manualAuthMode, setManualAuthMode] = useState<"none" | "bearer" | "header">("bearer");
-  const [manualAuthHeaderName, setManualAuthHeaderName] = useState("");
   const [manualSecret, setManualSecret] = useState("");
   const [manualCommand, setManualCommand] = useState("");
   const [manualArgs, setManualArgs] = useState("");
-  const [manualEnvVar, setManualEnvVar] = useState("");
-  const [manualEnvValue, setManualEnvValue] = useState("");
 
   if (connectedServer) {
     return (
@@ -1096,8 +1090,7 @@ function CatalogInspectorModal({
               name: entry.name,
               transport: "http",
               url: manualUrl.trim(),
-              bearerToken: manualAuthMode !== "none" ? manualSecret.trim() : undefined,
-              authHeader: manualAuthMode === "header" ? manualAuthHeaderName.trim() : undefined,
+              bearerToken: manualSecret.trim() || undefined,
               catalogId: entry.id,
             }
           : {
@@ -1105,7 +1098,6 @@ function CatalogInspectorModal({
               transport: "stdio",
               command: manualCommand.trim(),
               args: manualArgs.split(/\s+/).filter(Boolean),
-              env: manualEnvVar.trim() ? { [manualEnvVar.trim()]: manualEnvValue.trim() } : undefined,
               catalogId: entry.id,
             };
       const res = await fetch("/api/mcp", {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BarChart3,
   BookOpen,
@@ -18,11 +18,9 @@ import {
   Shield,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   Terminal,
   User,
   X,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useAppState } from "@/lib/appState";
@@ -132,12 +130,14 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
 export function SettingsOverlay() {
   const { isSettingsOpen, settingsTab, closeSettings, openUserProfile, openAdminDrawer } = useAppState();
   const [activeCategoryId, setActiveCategoryId] = useState<string>(() => settingsTab || "connectors");
+  const [prevSettingsTab, setPrevSettingsTab] = useState(settingsTab);
 
-  useEffect(() => {
+  if (settingsTab !== prevSettingsTab) {
+    setPrevSettingsTab(settingsTab);
     if (settingsTab) {
       setActiveCategoryId(settingsTab);
     }
-  }, [settingsTab, isSettingsOpen]);
+  }
 
   if (!isSettingsOpen) return null;
 

@@ -338,7 +338,12 @@ export async function POST(req: Request) {
     provider = result.provider;
   } catch (err) {
     if (err instanceof LlmError) {
-      return NextResponse.json({ error: err.message, provider: err.provider }, { status: 503 });
+      return NextResponse.json({
+        error: err.message,
+        provider: err.provider,
+        code: err.code ?? (err.message.toLowerCase().includes("ollama") ? "OLLAMA_OFFLINE" : "BYOK_REQUIRED"),
+        requiresByok: true,
+      }, { status: 503 });
     }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Router failed unexpectedly." },

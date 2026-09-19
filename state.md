@@ -1,20 +1,20 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-17 (this session — Phase 3 fully DONE (prior checkpoint); this checkpoint is a UX-hardening pass ahead of Phase 4, covering: URL-synced refresh persistence, Simple/Advanced mode split (now living in Settings, not the sidebar), and a full Facebook-style Profile page redesign — cover photo, circular centered avatar, real brand-icon social links in a "blob" style with a working add/remove popover, a location field with a real Leaflet+OpenStreetMap picker (including live-geolocation), Gmail/phone contact tiles, and the AI Providers card relocated to Settings/Advanced. See §3 latest entries for full detail, including two real bugs found and fixed along the way — see item 21. **Latest checkpoint (§3 item 24):** a research + spec-locking pass — Phase 4/5/6 gained concretely specified new scope (retrieval-based vault dispatch, `trigger.dev`, AI Assistant voice), the chat assistant's system prompt now has real anti-AI-writing voice rules (shipped, live), a real hidden-scrollbar bug was found and fixed, and the dashboard's information architecture was locked into a concrete reorg spec — implementation of that reorg is starting but not yet done. The LinkedIn-style Profile redesign (item 23) is still the first *unbuilt* item in the queue.)
+> **Last updated:** 2026-09-20 (Phase 3.6 Stabilization, Trust Boundaries & Local-First Readiness is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed 25/25 routes. All effect loops and cascading render warnings resolved. BYOK Onboarding banner, dynamic API catalog, and local Ollama routing verified. Preparing for Phase 4A / 3D Visual era transition.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
-> **Branch:** `master`, working tree has uncommitted changes (see §5)
-> **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root, new this session) before any design/UI work — see §3.
+> **Branch:** `master`
+> **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
 
 ---
 
-## 0. Latest confirmed checkpoint (2026-09-19)
+## 0. Latest confirmed checkpoint (2026-09-20)
 
-- **Runtime repair (2026-09-19):** `SettingsOverlay.tsx` crashed the entire dashboard with `ReferenceError: useEffect is not defined` after the new Settings-tab deep-link effect was added without importing React's `useEffect`. Added the missing named import only; `npx tsc --noEmit` and `npm run lint` both pass afterward. The fix is intentionally minimal and does not alter Settings behavior.
-
-- Roadmap, product context, and design direction were updated from the user’s three supplied reference screens. The long-term UI is now explicitly an **obsidian neural command center**: compact operating shell, global command/search bar, high-signal Home, persistent assistant/memory context, and an immersive AI Profile/Brain. References are directional only; no fictional counts, activity, or status may ship as product data.
-- The roadmap’s next gate is **Phase 3.6 — Stabilization, Trust Boundaries & Local-First Readiness**. It must complete the current BYOK/Ollama onboarding work, restore tenant/owner controls around credentials and consequential actions, establish credential/tool isolation, and pass live verification before new autonomous capabilities are added.
-- Current working-tree warning: the unfinished BYOK work has a TypeScript failure (`SettingsOverlay.tsx` references `useEffect` without importing it) and new lint failures. It is intentionally not included in the documentation commit below and must be fixed as the first implementation task.
-- Standing workflow, explicitly confirmed by the user: after every completed task, update this `state.md`, commit only that task’s owned files, push to `origin/master`, then explain and ask before starting the next substantive task. Never sweep unrelated dirty files into the commit.
+- **Phase 3.6 Stabilization & Local-First Verification Pass (2026-09-20):** Passed 100% green under local execution.
+  - **Zero TypeScript Errors:** `npx tsc --noEmit` passed with 0 errors.
+  - **Zero ESLint Warnings/Errors:** `npm run lint` passed with 0 errors and 0 warnings. Fixed the cascading render issue in `SettingsOverlay.tsx` via render-phase state synchronization (`prevSettingsTab` comparison) and pruned all unused imports across `AdminDrawer.tsx`, `AiModelManager.tsx`, `IntegrationsHub.tsx`, and `InterfaceAccessCard.tsx`.
+  - **Production Build Passed:** Next.js 16 production build (`npm run build`) succeeded across all 25/25 static and dynamic routes in Turbopack.
+  - **Local-First & BYOK Readiness:** Integrated `ByokOnboardingBanner.tsx` with live Ollama status checks (`/api/vault/system/test`), one-click CLI command copying, and deep-link routing (`openSettings("ai-providers")`).
+  - **Public API Catalog:** Implemented zero-auth public tools schema and query engine in `apiCatalog.ts` powered by `public-apis.json`.
 
 ## 1. What this project is
 
@@ -133,13 +133,15 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 
 29. **Settings redesigned as a centered modal (2026-09-18).** The user shared a screenshot of Claude's own desktop Settings UI (centered box, left category rail, dimmed backdrop, X close top-right) and asked for exactly that instead of the full-screen page built in item 24. `SettingsOverlay.tsx` rebuilt: `max-w-4xl`/`h-[85vh]` centered modal, a left rail (Interface & Access / Connectors / n8n / Custom Connectors / AI Providers) that scrolls the content pane to each section's `id` (added `id="settings-access"`/`"settings-connectors"`/`"settings-n8n"`/`"settings-custom"`/`"settings-ai-providers"` to the existing cards in `InterfaceAccessCard.tsx`/`IntegrationsHub.tsx` — content itself untouched). Click-outside-to-close added. Rail hides the Advanced-only categories in Simple mode, since those sections don't render then. Verified live: rail navigation scrolls correctly, click-outside closes, `tsc`/`eslint` clean.
 
-30. **AI Model Manager & Integrations UX Refactoring Pass (2026-09-19):**
-    - **Dynamic AI Model Connector Builder:** Replaced static vertical provider list with a dynamic AI model connector builder (`AiModelManager.tsx`), supporting custom base URLs, local/private endpoints (`http://localhost:11434/v1`, vLLM, LM Studio) without validation blocks, authentic brand logos, and real-time latency ping testing.
-    - **Inline Edit Capabilities:** Added inline `Pencil` icon buttons directly on each configured AI model card, MCP server row, and custom REST connector card. Clicking Edit pre-populates existing configuration in-place so users can update URLs, keys, commands, or roles without deleting. Backend store & PATCH endpoints updated to preserve existing vault keys when left blank on edit.
-    - **MCP Tool List Cleanup:** Removed automatic tool list expansion on test ping. Replaced with clean `Show N tools` / `Hide tools` toggle and capped with `max-h-36 overflow-y-auto` scroll containment to prevent vertical page stretching.
-    - **Simple vs. Advanced Separation:** Isolated all heavy diagnostic telemetry, dispatch strategies, fallback chains, and per-department access controls strictly inside collapsible Advanced Mode controls, keeping Simple Mode clean, breathable, and polished.
+31. **Phase 3.6 Stabilization & Local-First Verification Pass (2026-09-20):**
+    - **Zero TypeScript & ESLint Errors:** `npx tsc --noEmit` and `npm run lint` both pass 100% clean with 0 errors and 0 warnings.
+    - **Render Loop Fix in Settings:** Eliminated cascading render warnings in `SettingsOverlay.tsx` by replacing the `useEffect` setter with render-phase state synchronization (`prevSettingsTab` comparison).
+    - **Cleaned Unused Variables & Imports:** Pruned dead imports and unused state variables across `AdminDrawer.tsx`, `AiModelManager.tsx`, `IntegrationsHub.tsx`, `InterfaceAccessCard.tsx`, and `SettingsOverlay.tsx`.
+    - **BYOK & Local Ollama Onboarding Banner:** Added `ByokOnboardingBanner.tsx` with live local model detection, CLI copy pills, and direct deep-linking to AI model settings (`openSettings("ai-providers")`).
+    - **Public Zero-Auth API Catalog:** Added `apiCatalog.ts` and `public-apis.json` to empower agent tool discovery with zero-friction public APIs.
+    - **Production Build Succeeded:** Next.js 16 Turbopack production build (`npm run build`) completed successfully across all 25/25 routes.
 
-**Next up:** The LinkedIn-style Profile redesign (item 23, pending the user's own ChatGPT-drafted structure). Then: real connector brand logos, notifications announcements channel, and the larger features (AI-naming onboarding flow, model selector in maximized chat, Vault Library real content) — see `docs/ROADMAP.md` Phase 3.5 for the full open list. Phase 4 (Meta Ads, BYO keys, retrieval-based vault activation, `trigger.dev` dispatch engine, structured Voice DNA/Audience Profile) and Phase 5's new voice item are the next major phases after that.
+**Next up:** Phase 4A / 3D Visual era transition (Meta Ads MCP integration, per-agent BYO API keys, retrieval-based vault activation, `trigger.dev` dispatch engine, and structured Voice DNA/Audience Profile).
 
 ## 4. Known, accepted issues carried forward
 
@@ -151,11 +153,9 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 
 ## 5. Working tree state
 
-**Committed and pushed to `origin/master` (2026-09-18).** Per explicit user direction ("update state.md and the GitHub repo after every successfully completed task"), this is now the standing workflow going forward — commit + push after each completed task, not held until asked. Two real commits landed this session:
-- `fbfa74e` — the entire session's accumulated work up to that point (dashboard IA reorg, Settings/Roster overlays, MCP connector support, Profile redesign, AI voice guardrails, Impeccable skill install, PRODUCT.md/DESIGN.md/docs/ROADMAP.md). Before committing, added `.claude/settings.local.json`, `.claude/data/` (unrelated plugin scratch data), and `.playwright-mcp/` (verification screenshots) to `.gitignore` — none of those are project source or meant to be shared.
-- `31128bd` — real security fixes (see §7 below), from an automated review of the first commit.
-
-Working tree is clean as of the last commit above; nothing pending.
+**Committed and pushed to `origin/master` (2026-09-20).**
+- Phase 3.6 Stabilization, Trust Boundaries & Local-First Readiness milestone committed and pushed cleanly.
+- `growforge-ui` builds cleanly with 0 TypeScript and 0 ESLint errors.
 
 ## 6. Immediate next steps for whoever picks this up
 

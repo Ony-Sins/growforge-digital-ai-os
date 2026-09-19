@@ -84,7 +84,8 @@ interface AppStateValue {
    *  inline scroll-anchor section, which is exactly why Connectors kept
    *  reading as dashboard clutter instead of configuration). */
   isSettingsOpen: boolean;
-  openSettings: () => void;
+  settingsTab: string;
+  openSettings: (tab?: string) => void;
   closeSettings: () => void;
 
   /** Agent Roster overlay — the full live roster, off the main scroll as of
@@ -169,6 +170,9 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
     initialLocation?.panel === "profile" && initialLocation?.tab === "profile" ? "profile" : "brain",
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(() => initialLocation?.panel === "settings");
+  const [settingsTab, setSettingsTab] = useState<string>(() =>
+    initialLocation?.panel === "settings" && initialLocation?.tab ? initialLocation.tab : "account",
+  );
   const [isAgentRosterOpen, setIsAgentRosterOpen] = useState(() => initialLocation?.panel === "roster");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [chatViewMode, setChatViewMode] = useState<"docked" | "maximized">("docked");
@@ -240,9 +244,10 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
     });
   }, []);
 
-  const openSettings = useCallback(() => {
+  const openSettings = useCallback((tab?: string) => {
+    if (tab) setSettingsTab(tab);
     setIsSettingsOpen(true);
-    writeLocationParams({ panel: "settings" });
+    writeLocationParams({ panel: "settings", tab });
   }, []);
 
   const closeSettings = useCallback(() => {
@@ -369,6 +374,7 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       openUserProfile,
       closeUserProfile,
       isSettingsOpen,
+      settingsTab,
       openSettings,
       closeSettings,
       isAgentRosterOpen,
@@ -408,6 +414,7 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       openUserProfile,
       closeUserProfile,
       isSettingsOpen,
+      settingsTab,
       openSettings,
       closeSettings,
       isAgentRosterOpen,

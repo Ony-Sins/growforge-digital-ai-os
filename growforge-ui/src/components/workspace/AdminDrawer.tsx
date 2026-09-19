@@ -5,7 +5,6 @@ import {
   Activity,
   CheckCircle2,
   KeyRound,
-  Lock,
   ScrollText,
   Shield,
   Terminal,
@@ -24,7 +23,6 @@ export function AdminDrawer() {
     adminDrawerTab,
     openAdminDrawer,
     closeAdminDrawer,
-    requestOwnerUnlock,
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<"terminal" | "logs" | "diagnostics">(adminDrawerTab);

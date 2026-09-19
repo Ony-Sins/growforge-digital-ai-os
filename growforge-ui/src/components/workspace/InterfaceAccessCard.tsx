@@ -10,7 +10,7 @@ import { useAppState } from "@/lib/appState";
  *  for a new session; changing either here is what reveals the rest of the
  *  Advanced-only surfaces elsewhere in the app. */
 export function InterfaceAccessCard() {
-  const { uiMode, setUiMode, role, setRole, requestOwnerUnlock } = useAppState();
+  const { uiMode, setUiMode, role, setRole } = useAppState();
 
   return (
     <div id="settings-access" className="glass-card rounded-xl p-5">

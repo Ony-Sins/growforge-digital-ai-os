@@ -18,6 +18,7 @@ import { ProjectCanvas } from "@/components/workspace/ProjectCanvas";
 import { SettingsOverlay } from "@/components/workspace/SettingsOverlay";
 import { SystemHealth } from "@/components/workspace/SystemHealth";
 import { UserProfileOverlay } from "@/components/workspace/UserProfileOverlay";
+import { ByokOnboardingBanner } from "@/components/workspace/ByokOnboardingBanner";
 import { useAppState, type ActiveView } from "@/lib/appState";
 import { useLiveAgents } from "@/lib/useLiveAgents";
 
@@ -167,6 +168,9 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
       }`}
     >
       <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
+        {/* Local Model or BYOK Onboarding Banner */}
+        <ByokOnboardingBanner />
+
         {/* Live multi-agent projects — the main surface */}
         <div id="section-projects" className={`rounded-2xl ${flash("section-projects")}`}>
           <ProjectCanvas />

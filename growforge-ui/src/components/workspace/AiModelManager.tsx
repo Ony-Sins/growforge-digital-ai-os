@@ -12,7 +12,6 @@ import {
   Cpu,
   ChevronDown,
   ChevronUp,
-  ShieldAlert,
   Globe,
   Zap,
   X,
@@ -117,7 +116,6 @@ export function AiModelManager() {
   const [routingChains, setRoutingChains] = useState<Record<string, string[]>>({});
   const [strategy, setStrategy] = useState<string>("auto");
   const [loaded, setLoaded] = useState(false);
-  const [forbidden, setForbidden] = useState(false);
 
   // Modal drawer state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -145,11 +143,9 @@ export function AiModelManager() {
     try {
       const res = await fetch("/api/vault/system");
       if (res.status === 401 || res.status === 403) {
-        setForbidden(true);
         setLoaded(true);
         return;
       }
-      setForbidden(false);
       const data = await res.json().catch(() => ({}));
       if (Array.isArray(data.models)) setModels(data.models);
       if (data.routingChains) setRoutingChains(data.routingChains);

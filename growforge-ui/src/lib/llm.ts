@@ -64,12 +64,16 @@ export const CLOUD_PROVIDERS: Record<CloudProvider, { label: string; envKey: str
   openrouter: { label: "OpenRouter", envKey: "OPENROUTER_API_KEY", envModel: "OPENROUTER_MODEL", defaultModel: "openrouter/auto" },
 };
 
+export type LlmErrorCode = "OLLAMA_OFFLINE" | "BYOK_REQUIRED" | "PROVIDER_ERROR";
+
 export class LlmError extends Error {
   provider: LlmProvider | "none";
-  constructor(message: string, provider: LlmProvider | "none") {
+  code?: LlmErrorCode;
+  constructor(message: string, provider: LlmProvider | "none", code?: LlmErrorCode) {
     super(message);
     this.name = "LlmError";
     this.provider = provider;
+    this.code = code;
   }
 }
 
@@ -413,18 +417,19 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
         text = data.message?.content ?? "";
       } else {
         const errText = await res.text().catch(() => "");
-        throw new LlmError(`Ollama request failed (${res.status}): ${errText.slice(0, 160)}`, "ollama");
+        throw new LlmError(`Ollama request failed (${res.status}): ${errText.slice(0, 160)}`, "ollama", "OLLAMA_OFFLINE");
       }
     } catch (err) {
       if (err instanceof LlmError) throw err;
       throw new LlmError(
-        `Could not reach local Ollama at ${cleanUrl} (${err instanceof Error ? err.message : String(err)}). Make sure Ollama is running and "${model}" is pulled (\`ollama run ${model}\`).`,
+        `Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.`,
         "ollama",
+        "OLLAMA_OFFLINE",
       );
     }
   }
 
-  if (!text.trim()) throw new LlmError(`Ollama returned an empty response for model "${model}".`, "ollama");
+  if (!text.trim()) throw new LlmError(`Ollama returned an empty response for model "${model}".`, "ollama", "OLLAMA_OFFLINE");
   return text;
 }
 
@@ -607,11 +612,17 @@ export async function chatComplete(
     opts.preferCloud && strategy === "auto" ? [...cloudProviderOrder(), "ollama"] : providerOrder(strategy);
 
   if (order.length === 0) {
+    if (strategy === "cloud") {
+      throw new LlmError(
+        "No cloud API key configured. Plug in your own API key in Settings → AI Models & API Keys to run cloud models.",
+        "none",
+        "BYOK_REQUIRED",
+      );
+    }
     throw new LlmError(
-      strategy === "cloud"
-        ? "No cloud provider configured. Add a key in Settings → Integrations, or switch strategy to \"local\"/\"auto\"."
-        : `No LLM provider available for strategy "${strategy}".`,
-      "none",
+      "Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.",
+      "ollama",
+      "OLLAMA_OFFLINE",
     );
   }
 
@@ -625,8 +636,19 @@ export async function chatComplete(
     }
   }
 
+  // If Ollama failed and no cloud providers are active
+  const hasCloudKey = cloudProviderOrder().length > 0;
+  if (!hasCloudKey) {
+    throw new LlmError(
+      "Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.",
+      "ollama",
+      "OLLAMA_OFFLINE",
+    );
+  }
+
   throw new LlmError(
-    `All providers failed for strategy "${strategy}":\n${failures.join("\n")}`,
+    `All configured providers failed for strategy "${strategy}":\n${failures.join("\n")}`,
     order[order.length - 1],
+    "PROVIDER_ERROR",
   );
 }
