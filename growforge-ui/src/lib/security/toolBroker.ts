@@ -246,3 +246,32 @@ export async function executePublicApiCall(opts: PublicApiExecutionOptions): Pro
     };
   }
 }
+
+export interface SafeExecutableTool {
+  name: string;
+  execute(args: Record<string, unknown>): Promise<{ ok: boolean; output: string }>;
+}
+
+/**
+ * Safely dispatch a tool execution through argument sanitization, isolation, and secret scrubbing boundaries.
+ */
+export async function dispatchSafeTool(
+  tool: SafeExecutableTool,
+  rawArgs: unknown
+): Promise<ToolBrokerResult> {
+  try {
+    const sanitizedArgs = sanitizeToolArgs(rawArgs);
+    const res = await tool.execute(sanitizedArgs);
+    const scrubbed = scrubSecrets(res.output ?? "");
+    return {
+      ok: Boolean(res.ok),
+      output: scrubbed,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      output: scrubSecrets(`Execution error in tool "${tool.name}": ${err instanceof Error ? err.message : String(err)}`),
+    };
+  }
+}
+

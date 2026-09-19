@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { useTelemetry } from "@/lib/useTelemetry";
 import type { BrainLobe } from "@/lib/telemetryStore";
 import {
@@ -293,7 +292,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const brainGroupRef = useRef<THREE.Group | null>(null);
   const meshesRef = useRef<Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>>(new Map());
   const particleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
 
@@ -303,7 +302,6 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const hoveredNodeRef = useRef<BrainNode | null>(hoveredNode);
   const telemetryRef = useRef(telemetry);
   const filterLobeRef = useRef<BrainLobe | "all">(filterLobe);
-  const rotationAngleRef = useRef(0);
 
   useEffect(() => {
     isAutoRotatingRef.current = isAutoRotating;
@@ -360,25 +358,13 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. OrbitControls setup — full 360° unconstrained manual orbiting in all directions
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxDistance = 500;
-    controls.minDistance = 30;
-    controls.minPolarAngle = 0;
-    controls.maxPolarAngle = Math.PI;
-    controls.minAzimuthAngle = -Infinity;
-    controls.maxAzimuthAngle = Infinity;
-    controls.enablePan = false;
-    controls.target.set(0, 0, 0);
-    controlsRef.current = controls;
-
-    // 5. Brain Group Hierarchy (turntable container strictly rotating on Y-axis)
+    // 4. Brain Group Hierarchy (turntable container with direct unclamped 360° rotation)
     const brainGroup = new THREE.Group();
+    brainGroup.rotation.order = "YXZ";
     scene.add(brainGroup);
+    brainGroupRef.current = brainGroup;
 
-    // 6. Ambient & Point Lighting
+    // 5. Ambient & Point Lighting
     const ambientLight = new THREE.AmbientLight(0x223355, 1.8);
     scene.add(ambientLight);
 
@@ -394,7 +380,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     rightLight.position.set(60, 20, 20);
     scene.add(rightLight);
 
-    // 7. Build Neural Somas (Spheres + Halo Sprites)
+    // 6. Build Neural Somas (Spheres + Halo Sprites)
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const meshesMap = new Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>();
 
@@ -431,7 +417,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     meshesRef.current = meshesMap;
 
-    // 8. Build Organic Axon Splines (Curved Bezier Tubes) & Action Potential Particles
+    // 7. Build Organic Axon Splines (Curved Bezier Tubes) & Action Potential Particles
     const particleSystems: { curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[] = [];
 
     axons.forEach((axon) => {
@@ -482,16 +468,45 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     particleSystemsRef.current = particleSystems;
 
-    // 9. Raycasting for Interaction
+    // 8. Unclamped 360° Direct Pointer Rotation & Raycasting
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    const handlePointerMove = (e: MouseEvent) => {
+    let isDragging = false;
+    let prevX = 0;
+    let prevY = 0;
+    let totalDragDist = 0;
+    const sensitivity = 0.006;
+
+    const onPointerDown = (e: PointerEvent) => {
+      isDragging = true;
+      prevX = e.clientX;
+      prevY = e.clientY;
+      totalDragDist = 0;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
       if (!container) return;
       const rect = container.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
+      if (isDragging) {
+        const deltaX = e.clientX - prevX;
+        const deltaY = e.clientY - prevY;
+        prevX = e.clientX;
+        prevY = e.clientY;
+        totalDragDist += Math.abs(deltaX) + Math.abs(deltaY);
+
+        // Fully unclamped 360° direct object rotation over the poles
+        brainGroup.rotation.y += deltaX * sensitivity;
+        brainGroup.rotation.x += deltaY * sensitivity;
+
+        container.style.cursor = "grabbing";
+        return;
+      }
+
+      // Hover raycasting when not dragging
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(
         Array.from(meshesMap.values()).map((v) => v.mesh),
@@ -510,25 +525,42 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       }
     };
 
-    const handleClick = () => {
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(
-        Array.from(meshesMap.values()).map((v) => v.mesh),
-      );
+    const onPointerUp = () => {
+      if (!container) return;
+      const wasDragging = isDragging;
+      isDragging = false;
 
-      if (intersects.length > 0) {
-        const id = intersects[0].object.userData.nodeId;
-        const found = nodeMap.get(id) || null;
-        selectedNodeRef.current = found;
-        setSelectedNode(found);
+      // If moved less than 5px, treat as node click selection
+      if (wasDragging && totalDragDist < 5) {
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(
+          Array.from(meshesMap.values()).map((v) => v.mesh),
+        );
+
+        if (intersects.length > 0) {
+          const id = intersects[0].object.userData.nodeId;
+          const found = nodeMap.get(id) || null;
+          selectedNodeRef.current = found;
+          setSelectedNode(found);
+        }
       }
+
+      container.style.cursor = hoveredNodeRef.current ? "pointer" : "default";
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      camera.position.z += e.deltaY * 0.2;
+      camera.position.z = Math.min(Math.max(camera.position.z, 60), 450);
     };
 
     const dom = renderer.domElement;
-    dom.addEventListener("mousemove", handlePointerMove);
-    dom.addEventListener("click", handleClick);
+    dom.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    dom.addEventListener("wheel", onWheel, { passive: false });
 
-    // 10. Animation Loop
+    // 9. Animation Loop
     let animationFrameId: number;
     const clock = new THREE.Clock();
 
@@ -537,11 +569,10 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Continuous unbroken turntable yaw rotation strictly around the vertical Y-axis
+      // Continuous unbroken sideways turntable yaw rotation
       if (isAutoRotatingRef.current) {
-        rotationAngleRef.current += 0.0012;
+        brainGroup.rotation.y += 0.0012;
       }
-      brainGroup.rotation.y = rotationAngleRef.current;
       brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
 
       // Update action potential traveling particles
@@ -590,13 +621,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         }
       });
 
-      controls.update();
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // 11. Resize handler
+    // 10. Resize handler
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -611,9 +641,10 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      dom.removeEventListener("mousemove", handlePointerMove);
-      dom.removeEventListener("click", handleClick);
-      controls.dispose();
+      dom.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      dom.removeEventListener("wheel", onWheel);
       renderer.dispose();
       if (container && dom) {
         container.removeChild(dom);
@@ -621,15 +652,16 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     };
   }, [nodes, axons, createHaloTexture]);
 
-  // Reset Camera View
+  // Reset Camera View & Brain Rotation
   const handleResetView = () => {
-    if (cameraRef.current && controlsRef.current) {
+    if (cameraRef.current) {
       cameraRef.current.position.set(0, 40, 220);
-      controlsRef.current.target.set(0, 0, 0);
-      controlsRef.current.update();
-      setSelectedNode(null);
-      selectedNodeRef.current = null;
     }
+    if (brainGroupRef.current) {
+      brainGroupRef.current.rotation.set(0, 0, 0);
+    }
+    setSelectedNode(null);
+    selectedNodeRef.current = null;
   };
 
   return (
