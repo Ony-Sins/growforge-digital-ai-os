@@ -9,6 +9,8 @@
 
 ## 0. Latest confirmed checkpoint (2026-09-19)
 
+- **Runtime repair (2026-09-19):** `SettingsOverlay.tsx` crashed the entire dashboard with `ReferenceError: useEffect is not defined` after the new Settings-tab deep-link effect was added without importing React's `useEffect`. Added the missing named import only; `npx tsc --noEmit` and `npm run lint` both pass afterward. The fix is intentionally minimal and does not alter Settings behavior.
+
 - Roadmap, product context, and design direction were updated from the user’s three supplied reference screens. The long-term UI is now explicitly an **obsidian neural command center**: compact operating shell, global command/search bar, high-signal Home, persistent assistant/memory context, and an immersive AI Profile/Brain. References are directional only; no fictional counts, activity, or status may ship as product data.
 - The roadmap’s next gate is **Phase 3.6 — Stabilization, Trust Boundaries & Local-First Readiness**. It must complete the current BYOK/Ollama onboarding work, restore tenant/owner controls around credentials and consequential actions, establish credential/tool isolation, and pass live verification before new autonomous capabilities are added.
 - Current working-tree warning: the unfinished BYOK work has a TypeScript failure (`SettingsOverlay.tsx` references `useEffect` without importing it) and new lint failures. It is intentionally not included in the documentation commit below and must be fixed as the first implementation task.
@@ -280,6 +282,5 @@ Removed restrictive "Owner-only" permission gates across settings and interface 
 3. **Verification:**
    - TypeScript compilation (`npx tsc --noEmit`): 0 errors.
    - Next.js 16 production build (`npm run build`): Completed successfully with 25/25 static & dynamic routes generated.
-
 
 

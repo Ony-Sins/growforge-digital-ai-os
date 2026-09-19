@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   BookOpen,
@@ -130,8 +130,14 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
 ];
 
 export function SettingsOverlay() {
-  const { isSettingsOpen, closeSettings, openUserProfile, openAdminDrawer } = useAppState();
-  const [activeCategoryId, setActiveCategoryId] = useState<string>("connectors");
+  const { isSettingsOpen, settingsTab, closeSettings, openUserProfile, openAdminDrawer } = useAppState();
+  const [activeCategoryId, setActiveCategoryId] = useState<string>(() => settingsTab || "connectors");
+
+  useEffect(() => {
+    if (settingsTab) {
+      setActiveCategoryId(settingsTab);
+    }
+  }, [settingsTab, isSettingsOpen]);
 
   if (!isSettingsOpen) return null;
 
