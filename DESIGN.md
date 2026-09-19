@@ -59,6 +59,16 @@ components:
 
 # Design System: GrowForge Digital AI OS
 
+## Future visual direction — "The Neural Command Center" (2026-09-19)
+
+The current light Command Deck is an incumbent implementation, not the long-term visual world. The supplied references establish an obsidian neural operating environment with a compact sidebar, global command/search bar, persistent assistant or memory/profile rail, high-signal live-work dashboard, and immersive AI Profile/Brain surface.
+
+- **Atmosphere:** near-black/navy space field, deep blue glass panels, fine electric-blue signal borders, sparse particles, and restrained departmental spectral color only inside telemetry/brain views.
+- **Information architecture:** Home answers what is running, blocked, and needs attention; the AI Profile owns Brain, Memory, Activity, Connections, and Profile; inventories remain behind dedicated views rather than filling the home screen.
+- **Brain:** the primary landmark; start as data-driven 2D/2.5D telemetry before full WebGL 3D. Departments, agents, tools, and activity appear only when backed by real state.
+- **Interaction:** luminous but quiet. Glows mean live, connected, selected, approved, or needs attention; never ambient decoration.
+- **Reference boundary:** do not reproduce fictional counts, named projects, copy, or images from the references. They establish composition, density, contrast, and emotional tone—not product facts.
+
 ## Overview
 
 **Creative North Star: "The Command Deck"**

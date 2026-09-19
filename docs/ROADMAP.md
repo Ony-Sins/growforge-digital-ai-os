@@ -1,5 +1,26 @@
 # GrowForge Digital AI OS — Roadmap
 
+## 2026-09-19 Roadmap Amendment — Phase 3.6 Now Next
+
+**Goal:** Stabilize the recently added local-model, BYOK, Settings, and access-control work before increasing agent autonomy or external reach.
+
+1. Finish local/Ollama and BYOK onboarding: correct its type/lint failures, verify the Settings deep link, and live-test offline, local, and cloud/BYOK states. The UI must state provider availability truthfully.
+2. Restore deliberate access boundaries: keep frictionless preview separate from production authorization. System credentials, destructive connector changes, and consequential approvals must be tenant/owner scoped. Encryption at rest is not authorization.
+3. Create a scoped credential-broker contract: tools get only the secret/action scope required; raw keys never enter prompts, client state, logs, or generic child-process environments. Add use, rotation/revocation, and approval receipts.
+4. Set a local tool-isolation baseline: dedicated worker directories, explicit tool allowlists, no ambient host secrets, and outbound-domain allowlists. NVIDIA NemoClaw/OpenShell remains a layered-isolation reference, not a required Windows runtime.
+5. Pass `npx tsc --noEmit`, `npm run lint`, `npm run build`, and backtests; exercise the local/BYOK and authorization flows live.
+
+**Exit gate:** A normal authenticated user cannot alter another tenant’s/system credentials or approve an action outside their scope; onboarding is clean and truthful; all standing checks pass.
+
+### Phase 4 refinements
+
+- Keep Ollama as the no-token-cost default and define policy/health/fallback/telemetry in the existing router before adding a self-hosted LiteLLM or Bifrost gateway. Cloud endpoints are **free-tier fallbacks**, not guaranteed-free execution.
+- Add a curated public API registry only: schema, terms/attribution, rate/key requirements, data sensitivity, approval tier, test, and explicit user enablement. Never expose a blind dynamic endpoint dump to agents.
+- Meta Ads remains strictly opt-in and follows the access/approval gate. Connection tooling is not a no-cost substitute for campaign spend.
+- Phase 6’s local-first memory default is SQLite FTS5 plus bounded retrieval and reviewed `SKILL.md` proposals. Notion/cloud sync is optional, never the core dependency.
+
+---
+
 **Status:** Locked. This is the agreed build order. Don't skip a phase or reorder it without deliberately updating this file first — if priorities genuinely change, edit this document and say why, rather than silently working out of order.
 
 **Locked on:** 2026-09-16

@@ -7,6 +7,13 @@
 
 ---
 
+## 0. Latest confirmed checkpoint (2026-09-19)
+
+- Roadmap, product context, and design direction were updated from the user’s three supplied reference screens. The long-term UI is now explicitly an **obsidian neural command center**: compact operating shell, global command/search bar, high-signal Home, persistent assistant/memory context, and an immersive AI Profile/Brain. References are directional only; no fictional counts, activity, or status may ship as product data.
+- The roadmap’s next gate is **Phase 3.6 — Stabilization, Trust Boundaries & Local-First Readiness**. It must complete the current BYOK/Ollama onboarding work, restore tenant/owner controls around credentials and consequential actions, establish credential/tool isolation, and pass live verification before new autonomous capabilities are added.
+- Current working-tree warning: the unfinished BYOK work has a TypeScript failure (`SettingsOverlay.tsx` references `useEffect` without importing it) and new lint failures. It is intentionally not included in the documentation commit below and must be fixed as the first implementation task.
+- Standing workflow, explicitly confirmed by the user: after every completed task, update this `state.md`, commit only that task’s owned files, push to `origin/master`, then explain and ask before starting the next substantive task. Never sweep unrelated dirty files into the commit.
+
 ## 1. What this project is
 
 A Next.js 16 (Turbopack, App Router) multi-department AI agency automation platform. Real pipeline: `brief → HQ plan → live research → departments (parallel) → HQ cross-department review → QA → final plan`, in `src/lib/orchestrator.ts`. 8 real departments (`src/lib/departments.ts`, classily renamed), each backed by a real `*_Agent_System.md` file at the repo root, plus HQ and QA. Multi-provider LLM routing (`src/lib/llm.ts`, `src/lib/model-router.ts`) across Gemini/Groq/OpenAI/Anthropic/OpenRouter/Ollama with live free-model discovery and rate-limit cooldowns. A separate, lightweight 7-agent single-dispatch roster (`src/lib/agents.ts`) exists for quick one-off text tasks — confirmed to have **zero tool access** (a single `chatComplete` call, nothing more).
@@ -273,7 +280,6 @@ Removed restrictive "Owner-only" permission gates across settings and interface 
 3. **Verification:**
    - TypeScript compilation (`npx tsc --noEmit`): 0 errors.
    - Next.js 16 production build (`npm run build`): Completed successfully with 25/25 static & dynamic routes generated.
-
 
 
 

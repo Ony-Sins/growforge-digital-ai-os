@@ -1,5 +1,7 @@
 # Product
 
+> **2026-09-19 future visual direction:** Three user-provided reference screens set the future direction: an **obsidian neural command center** — immersive dark-space canvas, fine electric-blue glass boundaries, restrained spectral neuron/brain energy, compact instrument-like navigation, and an always-present assistant/memory rail. This is a future interface replacement, not a claim that the current light Command Deck already matches it. The AI Profile owns Brain, Memory, Activity, Connections, and Profile. Home answers what is running, blocked, and needs attention. The brain, counts, activity pulse, and glowing connections must be driven by real job, tool, memory, and approval state. Reference imagery establishes the emotional destination, never permission to invent activity.
+
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
