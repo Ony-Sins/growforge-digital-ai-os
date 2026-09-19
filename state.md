@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (Phase 4A: Local-First Runtime & Safe Tool Foundation is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed across 26/26 routes. Scoped Credential & Tool Broker (`toolBroker.ts`), zero-auth public API tools in `tools.ts`, real-time operational telemetry store (`telemetryStore.ts`), and `/api/telemetry` endpoint established. Ready for Phase 4B / 3D WebGL Neural Brain UI mounting.)
+> **Last updated:** 2026-09-20 (Phase 5: The 3D Microscopic Neural Brain Canvas is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed across 26/26 routes. Dynamic WebGL canvas mounting, dual-hemisphere somas, organic CatmullRom axon splines, live traveling action potentials, bioluminescent radial halos, OrbitControls, raycasting hover badges, and real-time telemetry binding completed.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -8,6 +8,14 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Phase 5 — The 3D Microscopic Neural Brain Canvas (2026-09-20):** Passed 100% green under local execution.
+  - **Dynamic WebGL Canvas & Next.js 16 Client Mounting:** Implemented `NeuralBrainCanvas.tsx` mounted via `next/dynamic({ ssr: false })` in `UserProfileOverlay.tsx` (with 3D Neural View vs 2D Flow Map switcher) and `Workspace.tsx` (`#section-brain`), ensuring zero SSR hydration mismatch.
+  - **Biological Dual-Hemisphere Architecture:** Positioned somas across anatomical coordinates (Left Hemisphere: Strategy, Analytics, Research, QA; Right Hemisphere: Creative, Growth, Paid Media, Delivery; Center: GrowForge HQ Orchestrator) with slow idle yaw and sinusoidal breathing float.
+  - **Microscopic Axon Splines & Action Potentials:** Curved 3D `CatmullRomCurve3` axon splines with traveling particle bursts simulating synaptic action potential transmissions.
+  - **Bioluminescent Halos & Telemetry Binding:** Custom radial canvas gradient texture halos on somas with pulsating scale and color modulation dynamically driven by live `useTelemetry()` state (`idle`, `processing`, `blocked_approval`, `error`).
+  - **Interaction & Obsidian Hover Badges:** Full OrbitControls (damping, pan, zoom, rotate limits) and Three.js Raycaster hover/select badges displaying real department roles, connected tools, and latency metrics.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors / 0 warnings (`npm run lint`), and Next.js 16 production build (`npm run build`) succeeded across 26/26 routes.
 
 - **Phase 4A — Local-First Runtime & Safe Tool Foundation (2026-09-20):** Passed 100% green under local execution.
   - **Scoped Credential & Tool Broker (`toolBroker.ts`):** Enforces execution isolation with regex/entropy-based secret scrubbing (masking API keys, bearer tokens, and internal env variables from outputs and transcripts), SSRF & cloud metadata service protection (`169.254.169.254`), argument sandboxing, and safe outbound HTTP dispatching.

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowUpRight,
   Bot,
+  Brain,
   CheckCircle2,
   Library,
   TriangleAlert,
@@ -21,6 +23,19 @@ import { UserProfileOverlay } from "@/components/workspace/UserProfileOverlay";
 import { ByokOnboardingBanner } from "@/components/workspace/ByokOnboardingBanner";
 import { useAppState, type ActiveView } from "@/lib/appState";
 import { useLiveAgents } from "@/lib/useLiveAgents";
+
+const NeuralBrainCanvas = dynamic(
+  () => import("@/components/brain/NeuralBrainCanvas").then((m) => m.NeuralBrainCanvas),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-96 w-full flex-col items-center justify-center rounded-2xl border border-border-metal bg-[#070b14] text-slate-400">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-electric border-t-transparent" />
+        <p className="mt-3 font-mono text-xs text-sky-400">Initializing 3D Neural Canvas...</p>
+      </div>
+    ),
+  }
+);
 
 interface WorkspaceUser {
   name?: string | null;
@@ -75,6 +90,8 @@ function sectionIdFor(view: ActiveView): string | null {
       return "section-activity";
     case "workflows":
       return "section-projects";
+    case "brain":
+      return "section-brain";
     case "vault":
       return "section-placeholder";
     case "dashboard":
@@ -90,6 +107,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     setActiveView,
     openAdminDrawer,
     openAgentRoster,
+    openUserProfile,
     chatViewMode,
   } = useAppState();
   const [flashSection, setFlashSection] = useState<string | null>(null);
@@ -174,6 +192,36 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
         {/* Live multi-agent projects — the main surface */}
         <div id="section-projects" className={`rounded-2xl ${flash("section-projects")}`}>
           <ProjectCanvas />
+        </div>
+
+        {/* Live 3D Microscopic Neural Brain Canvas */}
+        <div id="section-brain" className={`rounded-2xl ${flash("section-brain")}`}>
+          <div className="glass-card overflow-hidden rounded-2xl border border-border-metal p-1 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border-metal bg-slate-900/40 px-4 py-2.5 backdrop-blur">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 text-sky-400 ring-1 ring-sky-400/30">
+                  <Brain className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="font-heading text-sm font-semibold text-slate-100">
+                    Live 3D Neural Canvas
+                  </h2>
+                  <p className="text-[11px] text-slate-400">
+                    Dual-hemisphere biological network with real-time axon firing
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => openUserProfile("brain")}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-200 transition-colors hover:border-sky-400/50 hover:text-sky-300"
+              >
+                Expand Hologram
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <NeuralBrainCanvas className="h-[460px] w-full" />
+          </div>
         </div>
 
         {/* Page heading */}
