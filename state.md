@@ -10,12 +10,12 @@
 ## 0. Latest confirmed checkpoint (2026-09-20)
 
 - **Phase 5 — The 3D Microscopic Neural Brain Canvas (2026-09-20):** Passed 100% green under local execution.
-  - **Unbroken Turntable Rotation & Camera Constraints (`NeuralBrainCanvas.tsx`):** Parent graph group (`brainGroup`) executes continuous, unbroken sideways yaw rotation strictly around the vertical Y-axis. Clicking, pinning, selecting, or hovering nodes never interrupts or resets the spin angle. OrbitControls is constrained to `minPolarAngle = Math.PI / 3` (~60°) and `maxPolarAngle = 2 * Math.PI / 3` (~120°), guaranteeing the biological silhouette stays upright and never tumbles upside down.
+  - **Full 360° Orbit Freedom & Unbroken Turntable Rotation (`NeuralBrainCanvas.tsx`):** Parent graph group (`brainGroup`) executes continuous, uninterrupted sideways yaw rotation on every frame. All vertical polar and horizontal azimuth clamping has been removed (`minPolarAngle = 0`, `maxPolarAngle = Math.PI`, `minAzimuthAngle = -Infinity`, `maxAzimuthAngle = Infinity`), giving users 100% unrestricted 360° manual camera orbiting across all axes (vertical, diagonal, reverse) with seamless continuation of the default sideways rotation.
   - **Dynamic WebGL Canvas & Next.js 16 Client Mounting:** Implemented `NeuralBrainCanvas.tsx` mounted via `next/dynamic({ ssr: false })` in `UserProfileOverlay.tsx` (with 3D Neural View vs 2D Flow Map switcher) and `Workspace.tsx` (`#section-brain`), ensuring zero SSR hydration mismatch.
   - **Biological Dual-Hemisphere Architecture:** Positioned somas across anatomical coordinates (Left Hemisphere: Strategy, Analytics, Research, QA; Right Hemisphere: Creative, Growth, Paid Media, Delivery; Center: GrowForge HQ Orchestrator) with continuous turntable yaw and sinusoidal breathing float.
   - **Microscopic Axon Splines & Action Potentials:** Curved 3D `CatmullRomCurve3` axon splines with traveling particle bursts simulating synaptic action potential transmissions.
   - **Bioluminescent Halos & Telemetry Binding:** Custom radial canvas gradient texture halos on somas with pulsating scale and color modulation dynamically driven by live `useTelemetry()` state (`idle`, `processing`, `blocked_approval`, `error`).
-  - **Interaction & Obsidian Hover Badges:** Full OrbitControls (damping, pan, zoom, rotate limits) and Three.js Raycaster hover/select badges displaying real department roles, connected tools, and latency metrics.
+  - **Interaction & Obsidian Hover Badges:** OrbitControls (damping, pan, zoom, full 360° freedom) and Three.js Raycaster hover/select badges displaying real department roles, connected tools, and latency metrics.
   - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors / 0 warnings (`npm run lint`), and Next.js 16 production build (`npm run build`) succeeded across 26/26 routes.
 
 - **Phase 4A — Local-First Runtime & Safe Tool Foundation (2026-09-20):** Passed 100% green under local execution.

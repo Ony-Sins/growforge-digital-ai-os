@@ -360,14 +360,16 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. OrbitControls setup — polar angles constrained to 60°-120° so brain silhouette never tumbles
+    // 4. OrbitControls setup — full 360° unconstrained manual orbiting in all directions
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxDistance = 420;
-    controls.minDistance = 60;
-    controls.minPolarAngle = Math.PI / 3; // ~60° (prevents top flipping)
-    controls.maxPolarAngle = (2 * Math.PI) / 3; // ~120° (prevents bottom flipping)
+    controls.maxDistance = 500;
+    controls.minDistance = 30;
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = Math.PI;
+    controls.minAzimuthAngle = -Infinity;
+    controls.maxAzimuthAngle = Infinity;
     controls.enablePan = false;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
