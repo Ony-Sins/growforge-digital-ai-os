@@ -284,9 +284,41 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [filterLobe, setFilterLobe] = useState<BrainLobe | "all">("all");
+  const [dynamicTopology, setDynamicTopology] = useState<{ nodes: BrainNode[]; axons: BrainAxon[] }>({
+    nodes: [],
+    axons: [],
+  });
 
-  const nodes = useMemo(() => INITIAL_NODES, []);
-  const axons = useMemo(() => INITIAL_AXONS, []);
+  const loadDynamicTopology = useCallback(async () => {
+    try {
+      const res = await fetch("/api/mcp/connect");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.topology) {
+          setDynamicTopology({
+            nodes: (data.topology.nodes as BrainNode[]) || [],
+            axons: (data.topology.axons as BrainAxon[]) || [],
+          });
+        }
+      }
+    } catch {
+      // Non-blocking
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialTimer = setTimeout(() => {
+      void loadDynamicTopology();
+    }, 0);
+    const interval = setInterval(loadDynamicTopology, 4000);
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [loadDynamicTopology]);
+
+  const nodes = useMemo(() => [...INITIAL_NODES, ...dynamicTopology.nodes], [dynamicTopology.nodes]);
+  const axons = useMemo(() => [...INITIAL_AXONS, ...dynamicTopology.axons], [dynamicTopology.axons]);
 
   // Internal refs for animation & Three.js cleanup
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -443,17 +475,18 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       brainGroup.add(tubeMesh);
 
       // Action potential traveling particles
-      const particleCount = 3;
+      const isDynamicAxon = axon.color === "#06b6d4";
+      const particleCount = isDynamicAxon ? 4 : 3;
       const particleGeo = new THREE.BufferGeometry();
       const positions = new Float32Array(particleCount * 3);
       particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
       const particleMat = new THREE.PointsMaterial({
-        color: new THREE.Color(0xffffff),
-        size: 2.2,
+        color: new THREE.Color(isDynamicAxon ? 0x22d3ee : 0xffffff),
+        size: isDynamicAxon ? 2.8 : 2.2,
         blending: THREE.AdditiveBlending,
         transparent: true,
-        opacity: 0.9,
+        opacity: isDynamicAxon ? 0.95 : 0.9,
       });
 
       const points = new THREE.Points(particleGeo, particleMat);

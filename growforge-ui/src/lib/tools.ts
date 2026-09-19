@@ -14,6 +14,7 @@ import { probeMcpServer, callMcpTool } from "@/lib/mcp/client";
 import { getExecutablePublicApiTools } from "@/lib/apiCatalog";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import { scrubSecrets } from "@/lib/security/toolBroker";
+import { pluginRegistry } from "@/lib/mcp/pluginRegistry";
 
 export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nTemplateTool };
 
@@ -339,6 +340,7 @@ async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
  *  allowed to use (see mcp/store.ts's per-department allow list). */
 export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
   const mcpTools = departmentId ? await mcpToolsForDepartment(departmentId) : [];
+  const customMcpTools = pluginRegistry.getCustomTools() as Tool[];
   const publicTools = getExecutablePublicApiTools() as Tool[];
   return [
     webSearchTool,
@@ -351,5 +353,6 @@ export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
     n8nTemplateTool,
     ...publicTools,
     ...mcpTools,
+    ...customMcpTools,
   ];
 }

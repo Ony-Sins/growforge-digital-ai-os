@@ -38,6 +38,7 @@ import { MCP_CATALOG, type CatalogEntry } from "@/lib/mcp/catalog";
 import { CONNECTOR_BRAND_ICONS } from "@/lib/connectorIcons";
 import { useAppState } from "@/lib/appState";
 import { AiModelManager } from "./AiModelManager";
+import { Integrations } from "./Integrations";
 
 export interface N8nConfig {
   host: { value: string; source: "vault" | "env" | "default" };
@@ -98,7 +99,7 @@ const CATALOG_ICONS: Record<string, LucideIcon> = {
   Triangle,
 };
 
-type ActiveTab = "installed" | "discover";
+type ActiveTab = "installed" | "discover" | "byo-mcp";
 type FilterType = "all" | "mcp" | "rest" | "automation";
 
 /** Unified Connectors & Plugins Directory with Click-to-Inspect Pattern */
@@ -251,6 +252,14 @@ export function IntegrationsHub() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
+              onClick={() => setActiveTab("byo-mcp")}
+              className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20 transition-all shrink-0"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-cyan-500" />
+              <span>BYO-MCP Hub</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setIsNewCustomModalOpen(true)}
               className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 transition-all shrink-0"
             >
@@ -300,6 +309,18 @@ export function IntegrationsHub() {
                 {MCP_CATALOG.length + 2}
               </span>
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("byo-mcp")}
+              className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                activeTab === "byo-mcp"
+                  ? "bg-white text-navy shadow-sm"
+                  : "text-secondary hover:text-navy"
+              }`}
+            >
+              <Sparkles className="h-3 w-3 text-cyan-500" />
+              <span>BYO-MCP Hub</span>
+            </button>
           </div>
 
           {/* Search Input */}
@@ -342,7 +363,9 @@ export function IntegrationsHub() {
       </div>
 
       {/* Directory Grid View */}
-      {activeTab === "installed" ? (
+      {activeTab === "byo-mcp" ? (
+        <Integrations />
+      ) : activeTab === "installed" ? (
         <div className="space-y-4">
           {installedCount === 0 ? (
             <div className="rounded-2xl border border-dashed border-border-metal p-12 text-center bg-white/40">
