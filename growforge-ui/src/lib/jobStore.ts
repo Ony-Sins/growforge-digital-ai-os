@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import type { Source } from "@/lib/research";
 
 /**
@@ -195,6 +196,19 @@ export function updateStep(jobId: string, stepId: string, patch: Partial<JobStep
   job.percent = computePercent(job.steps);
   job.updatedAt = new Date().toISOString();
   persist();
+
+  // Emit real operational telemetry
+  telemetryStore.emitEvent({
+    type: "step_changed",
+    lobe: resolveLobe(stepId),
+    nodeId: stepId,
+    label: patch.activity || patch.label || stepId,
+    details: patch.status ? `Status: ${patch.status}` : undefined,
+  });
+  telemetryStore.setExecutionState(
+    job.status === "running" ? "processing" : job.status === "error" ? "error" : "idle",
+    { jobId, nodeId: stepId, progress: job.percent },
+  );
 }
 
 export function updateJob(jobId: string, patch: Partial<Job>): void {
@@ -203,6 +217,24 @@ export function updateJob(jobId: string, patch: Partial<Job>): void {
   Object.assign(job, patch, { updatedAt: new Date().toISOString() });
   job.percent = patch.status === "done" ? 100 : computePercent(job.steps);
   persist();
+
+  if (patch.status === "done") {
+    telemetryStore.emitEvent({
+      type: "job_completed",
+      lobe: "neural_core",
+      nodeId: "final",
+      label: `Project complete: ${job.title}`,
+    });
+    telemetryStore.setExecutionState("idle", { jobId, progress: 100 });
+  } else if (patch.status === "error") {
+    telemetryStore.emitEvent({
+      type: "error",
+      lobe: "neural_core",
+      nodeId: "error",
+      label: `Execution failed: ${patch.error || "Unknown error"}`,
+    });
+    telemetryStore.setExecutionState("error", { jobId });
+  }
 }
 
 /** Appends a live note a not-yet-started stage will pick up on its next

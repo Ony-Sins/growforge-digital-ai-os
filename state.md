@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (Phase 3.6 Stabilization, Trust Boundaries & Local-First Readiness is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed 25/25 routes. All effect loops and cascading render warnings resolved. BYOK Onboarding banner, dynamic API catalog, and local Ollama routing verified. Preparing for Phase 4A / 3D Visual era transition.)
+> **Last updated:** 2026-09-20 (Phase 4A: Local-First Runtime & Safe Tool Foundation is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed across 26/26 routes. Scoped Credential & Tool Broker (`toolBroker.ts`), zero-auth public API tools in `tools.ts`, real-time operational telemetry store (`telemetryStore.ts`), and `/api/telemetry` endpoint established. Ready for Phase 4B / 3D WebGL Neural Brain UI mounting.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -9,12 +9,11 @@
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
 
-- **Phase 3.6 Stabilization & Local-First Verification Pass (2026-09-20):** Passed 100% green under local execution.
-  - **Zero TypeScript Errors:** `npx tsc --noEmit` passed with 0 errors.
-  - **Zero ESLint Warnings/Errors:** `npm run lint` passed with 0 errors and 0 warnings. Fixed the cascading render issue in `SettingsOverlay.tsx` via render-phase state synchronization (`prevSettingsTab` comparison) and pruned all unused imports across `AdminDrawer.tsx`, `AiModelManager.tsx`, `IntegrationsHub.tsx`, and `InterfaceAccessCard.tsx`.
-  - **Production Build Passed:** Next.js 16 production build (`npm run build`) succeeded across all 25/25 static and dynamic routes in Turbopack.
-  - **Local-First & BYOK Readiness:** Integrated `ByokOnboardingBanner.tsx` with live Ollama status checks (`/api/vault/system/test`), one-click CLI command copying, and deep-link routing (`openSettings("ai-providers")`).
-  - **Public API Catalog:** Implemented zero-auth public tools schema and query engine in `apiCatalog.ts` powered by `public-apis.json`.
+- **Phase 4A — Local-First Runtime & Safe Tool Foundation (2026-09-20):** Passed 100% green under local execution.
+  - **Scoped Credential & Tool Broker (`toolBroker.ts`):** Enforces execution isolation with regex/entropy-based secret scrubbing (masking API keys, bearer tokens, and internal env variables from outputs and transcripts), SSRF & cloud metadata service protection (`169.254.169.254`), argument sandboxing, and safe outbound HTTP dispatching.
+  - **Zero-Auth Public API Execution Engine:** Integrated `apiCatalog.ts` and `public-apis.json` directly into `getDefaultTools()` in `tools.ts`. Enables agents and routers to execute zero-credential tools (e.g. Open-Meteo weather, World Bank indicators) with live verification.
+  - **Operational Telemetry Backbone (`telemetryStore.ts` & `/api/telemetry`):** Maps agent execution nodes to cognitive brain lobes (`neural_core`, `creative_strategy`, `growth_expansion`, `analytics_governance`, `performance_media`) and tracks operational states (`idle`, `processing`, `blocked_approval`, `error`) and tool metrics. Hooked to `jobStore.ts` and `tools.ts`, with client hook `useTelemetry.ts` ready for the 3D WebGL Neural Brain.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors / 0 warnings (`npm run lint`), and Next.js 16 production build (`npm run build`) succeeded with 26/26 routes generated.
 
 ## 1. What this project is
 
@@ -141,7 +140,13 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
     - **Public Zero-Auth API Catalog:** Added `apiCatalog.ts` and `public-apis.json` to empower agent tool discovery with zero-friction public APIs.
     - **Production Build Succeeded:** Next.js 16 Turbopack production build (`npm run build`) completed successfully across all 25/25 routes.
 
-**Next up:** Phase 4A / 3D Visual era transition (Meta Ads MCP integration, per-agent BYO API keys, retrieval-based vault activation, `trigger.dev` dispatch engine, and structured Voice DNA/Audience Profile).
+32. **Phase 4A: Local-First Runtime & Safe Tool Foundation (2026-09-20):**
+    - **Scoped Credential & Tool Broker (`toolBroker.ts`):** Established security sandbox with regex and entropy-based secret scrubbers (masking API keys, Bearer tokens, passwords, and server environment variables from tool outputs and prompt transcripts), SSRF & cloud metadata service protection (`169.254.169.254`), prototype pollution defense, and safe HTTP dispatch with timeouts.
+    - **Zero-Auth Public API Execution Engine (`apiCatalog.ts` & `tools.ts`):** Generated dynamic executable tool adapters via `getExecutablePublicApiTools()` and registered them in `getDefaultTools()`. Verified live end-to-end execution of public APIs (e.g. Open-Meteo weather forecast) with real data and zero credentials required.
+    - **Operational Telemetry Backbone (`telemetryStore.ts` & `/api/telemetry`):** Built real-time cognitive brain lobe mapping (`neural_core`, `creative_strategy`, `growth_expansion`, `analytics_governance`, `performance_media`) and operational state tracking (`idle` | `processing` | `blocked_approval` | `error`). Hooked into `jobStore.ts` and `tools.ts`, with client hook `useTelemetry.ts` ready for the upcoming 3D WebGL Neural Brain.
+    - **Verified Clean:** TypeScript 0 errors, ESLint 0 errors / 0 warnings, and Next.js 16 production build succeeded across 26/26 routes.
+
+**Next up:** Phase 4B / Phase 5: 3D Interactive WebGL Neural Brain Canvas integration, Meta Ads MCP connector, and per-agent BYO key dispatching.
 
 ## 4. Known, accepted issues carried forward
 
@@ -154,7 +159,7 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 ## 5. Working tree state
 
 **Committed and pushed to `origin/master` (2026-09-20).**
-- Phase 3.6 Stabilization, Trust Boundaries & Local-First Readiness milestone committed and pushed cleanly.
+- Phase 4A (Local-First Runtime & Safe Tool Foundation) milestone committed and pushed cleanly.
 - `growforge-ui` builds cleanly with 0 TypeScript and 0 ESLint errors.
 
 ## 6. Immediate next steps for whoever picks this up

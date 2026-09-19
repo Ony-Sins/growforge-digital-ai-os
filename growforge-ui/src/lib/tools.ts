@@ -11,6 +11,9 @@ import { transferTaskTool } from "@/lib/tools/transferTask";
 import { completeDirectiveTool } from "@/lib/tools/completeDirective";
 import { mcpServersForDepartment } from "@/lib/mcp/store";
 import { probeMcpServer, callMcpTool } from "@/lib/mcp/client";
+import { getExecutablePublicApiTools } from "@/lib/apiCatalog";
+import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
+import { scrubSecrets } from "@/lib/security/toolBroker";
 
 export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nTemplateTool };
 
@@ -201,6 +204,15 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
       const needsApproval = typeof tool.requiresApproval === "function" ? tool.requiresApproval(args) : tool.requiresApproval;
       let approved = !needsApproval;
       if (needsApproval) {
+        if (!requestApproval) {
+          telemetryStore.emitEvent({
+            type: "approval_required",
+            lobe: resolveLobe(tool.name),
+            nodeId: tool.name,
+            label: `Approval blocked for ${tool.name}`,
+          });
+          telemetryStore.setExecutionState("blocked_approval");
+        }
         approved = requestApproval ? await requestApproval(tool.name, args) : false;
       }
 
@@ -209,9 +221,25 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
         resultText = "Not approved — this action needs owner sign-off and was not approved. Do not retry it.";
       } else {
         try {
-          resultText = (await tool.execute(args)).output;
+          const res = await tool.execute(args);
+          resultText = scrubSecrets(res.output);
+          telemetryStore.recordToolCall(res.ok);
+          telemetryStore.emitEvent({
+            type: "tool_invoked",
+            lobe: resolveLobe(tool.name),
+            nodeId: tool.name,
+            label: `Executed ${tool.name}`,
+            details: res.ok ? "Success" : "Failed",
+          });
         } catch (err) {
-          resultText = `Tool failed: ${err instanceof Error ? err.message : String(err)}`;
+          resultText = scrubSecrets(`Tool failed: ${err instanceof Error ? err.message : String(err)}`);
+          telemetryStore.recordToolCall(false);
+          telemetryStore.emitEvent({
+            type: "error",
+            lobe: resolveLobe(tool.name),
+            nodeId: tool.name,
+            label: `Tool error: ${tool.name}`,
+          });
         }
       }
 
@@ -311,5 +339,17 @@ async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
  *  allowed to use (see mcp/store.ts's per-department allow list). */
 export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
   const mcpTools = departmentId ? await mcpToolsForDepartment(departmentId) : [];
-  return [webSearchTool, connectorTool(), piperTool, whisperTool, comfyuiTool, askOperatorTool, n8nTool, n8nTemplateTool, ...mcpTools];
+  const publicTools = getExecutablePublicApiTools() as Tool[];
+  return [
+    webSearchTool,
+    connectorTool(),
+    piperTool,
+    whisperTool,
+    comfyuiTool,
+    askOperatorTool,
+    n8nTool,
+    n8nTemplateTool,
+    ...publicTools,
+    ...mcpTools,
+  ];
 }

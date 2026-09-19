@@ -118,3 +118,63 @@ export function getAgentToolSchemas(query: ApiCatalogQuery = {}): AgentToolSchem
 export function listApiCatalog(): PublicApiDefinition[] {
   return [...PUBLIC_API_CATALOG];
 }
+
+export interface ExecutableTool {
+  name: string;
+  description: string;
+  usage: string;
+  requiresApproval: boolean;
+  execute(args: Record<string, unknown>): Promise<{ ok: boolean; output: string }>;
+}
+
+/**
+ * Generates an array of executable Tool objects ready for the agent tool loop.
+ */
+export function getExecutablePublicApiTools(query: ApiCatalogQuery = {}): ExecutableTool[] {
+  const apis = queryApiCatalog(query);
+  const tools: ExecutableTool[] = [];
+
+  for (const api of apis) {
+    for (const tool of api.tools) {
+      tools.push({
+        name: tool.name,
+        description: `[Public API: ${api.name}] ${tool.description}`,
+        usage: JSON.stringify(tool.parameters.properties ?? {}),
+        requiresApproval: false,
+        async execute(args: Record<string, unknown>) {
+          const { executePublicApiCall } = await import("./security/toolBroker");
+          return executePublicApiCall({
+            method: tool.method,
+            baseUrl: api.baseUrl,
+            path: tool.path,
+            args,
+          });
+        },
+      });
+    }
+  }
+
+  return tools;
+}
+
+/**
+ * Directly execute a public API tool by name.
+ */
+export async function invokePublicApiTool(
+  toolName: string,
+  args: Record<string, unknown>,
+): Promise<{ ok: boolean; output: string } | null> {
+  for (const api of PUBLIC_API_CATALOG) {
+    const tool = api.tools.find((t) => t.name === toolName);
+    if (tool) {
+      const { executePublicApiCall } = await import("./security/toolBroker");
+      return executePublicApiCall({
+        method: tool.method,
+        baseUrl: api.baseUrl,
+        path: tool.path,
+        args,
+      });
+    }
+  }
+  return null;
+}
