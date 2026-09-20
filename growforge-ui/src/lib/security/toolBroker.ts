@@ -6,7 +6,11 @@
  * 2. Scrub credentials, keys, and tokens from all tool outputs and logs.
  * 3. Enforces domain and network safety (SSRF protection, cloud metadata blocking).
  * 4. Provides safe dispatch for zero-auth public API catalog tools.
+ * 5. Runs prose tool output through the humanizer engine (stock-phrasing
+ *    cleanup) — skipped for structured data, see humanizerEngine.ts.
  */
+
+import { sanitizeOutput, looksLikeStructuredData } from "@/lib/security/humanizerEngine";
 
 export interface ToolBrokerResult {
   ok: boolean;
@@ -263,9 +267,10 @@ export async function dispatchSafeTool(
     const sanitizedArgs = sanitizeToolArgs(rawArgs);
     const res = await tool.execute(sanitizedArgs);
     const scrubbed = scrubSecrets(res.output ?? "");
+    const output = looksLikeStructuredData(scrubbed) ? scrubbed : sanitizeOutput(scrubbed).cleanText;
     return {
       ok: Boolean(res.ok),
-      output: scrubbed,
+      output,
     };
   } catch (err) {
     return {
