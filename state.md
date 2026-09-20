@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 13:58, Antigravity + Claude Code (first deliberate parallel-work session — see §0 and §3 item 36). **Antigravity, 13:58**: client-side WebLLM (`@mlc-ai/web-llm`) fallback for zero-setup execution — quantized `Llama-3.2-1B-Instruct-q4f16` running in-browser via WebGPU as the lowest-priority provider-chain fallback after local Ollama and BYOK; new `src/lib/webLlm.ts` + `WebLlmIndicator.tsx`, minimal `ChatView.tsx` wiring; committed locally as `fa85231`, not pushed. **Claude Code, 13:57**: universal humanizer/anti-slop middleware (`humanizerEngine.ts`, wired into `toolBroker.ts`'s `dispatchSafeTool` with a structured-data guard). Both verified 0 TypeScript/ESLint errors and clean production builds independently; zero file overlap between the two changes, confirmed after the fact via `git status`.
+> **Last updated:** 2026-09-20, 14:08, Antigravity. **Antigravity, 14:08**: Vault capability catalog extraction — 279 `.claude/vault/*.md` agent files parsed into `src/data/vaultCapabilities.json` (144 KB, pure data, no behavior change). Each record carries: `id` (filename slug), `name`, `emoji`, `color`, `category` (filename prefix), `summary` (frontmatter `description`), `tools` (frontmatter `tools` field + named-tool pattern scan, always a proper JSON array), `approvalTier` (`read-only` | `needs-approval-to-act`, inferred from action-keyword scoring + role-name heuristics). 152 needs-approval, 127 read-only; 109/279 have explicit tool lists. Data-only — not wired into orchestrator, dispatch, or any live routing. Committed locally as `feat(data): extract 279 vault agent capability records into vaultCapabilities.json`, not pushed. **Previous:** client-side WebLLM (`@mlc-ai/web-llm`) fallback `fa85231` (Antigravity, 13:58); humanizer middleware (Claude Code, 13:57).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,12 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Vault Agent Capability Catalog (2026-09-20, 14:08, Antigravity):**
+  - **Data Extraction (`src/data/vaultCapabilities.json`):** Parsed all 279 `.claude/vault/*.md` agent files into a single structured JSON array (144 KB). Each record: `id` (filename slug), `filename`, `name`, `emoji`, `color`, `category` (filename prefix), `summary` (frontmatter `description` field), `tools` (array — sourced from frontmatter `tools:` field + named-tool body scan for 60+ known platforms/CLIs), `approvalTier` (`"read-only"` | `"needs-approval-to-act"`, inferred via action-keyword scoring + role-name heuristics). Breakdown: 152 needs-approval-to-act, 127 read-only; 109/279 records carry at least one extracted tool.
+  - **Scope Isolation:** Data-only file, no wiring into `orchestrator.ts`, HQ dispatch, or any live routing. Kept untouched: `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `WebLlmIndicator.tsx`, `growforge-ui/STATE.md`.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) 28/28 routes clean.
+
 
 - **Client-Side WebLLM WebGPU Fallback (2026-09-20, 13:58, Antigravity):**
   - **Zero-Setup WebLLM Engine (`src/lib/webLlm.ts`):** Added client-side in-browser LLM loader using `@mlc-ai/web-llm` targeting `Llama-3.2-1B-Instruct-q4f16_1-MLC`. Supports WebGPU capability detection, singleton engine lifecycle caching, dynamically loaded browser imports to prevent SSR interference, and progress callbacks.
