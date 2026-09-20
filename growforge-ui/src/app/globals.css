@@ -2,31 +2,36 @@
 
 :root {
   /* GrowForge Official Brand Palette */
-  --color-bg-app: #0b1220;      /* Navy (Primary Base / Canvas) */
-  --color-bg-surface: #111c34;  /* Deep Navy Elevated Surface */
-  --color-bg-charcoal: #333333; /* Charcoal (Card Fill / Elevated Surfaces) */
-  --color-bg-black: #000000;    /* Black (Deep Scaffolding / Contrast) */
-  --color-bg-glass: rgba(17, 28, 52, 0.85); /* Glassmorphism card fill */
+  --color-bg-base: #0b1220;      /* Canvas Foundation (Navy) */
+  --color-bg-app: #0b1220;       /* Navy Primary Canvas */
+  --color-bg-panel: #111827;     /* Surface Containers (Panel) */
+  --color-bg-elevated: #1f2937;  /* Elevated Surface */
+  --color-bg-surface: #111c34;   /* Deep Navy Elevated Surface */
+  --color-bg-charcoal: #333333;  /* Charcoal (Card Fill / Elevated Surfaces) */
+  --color-bg-black: #000000;     /* Black (Deep Scaffolding / Contrast) */
+  --color-bg-glass: rgba(17, 24, 39, 0.85); /* Glassmorphism card fill */
   --color-bg-glass-strong: rgba(11, 18, 32, 0.95);
-  --color-bg-sunken: rgba(0, 0, 0, 0.55); /* Recessed panels */
+  --color-bg-sunken: #0b1220;    /* Recessed panels */
   --color-bg-code: #000000;
 
   /* Metallic & Brand Borders */
+  --color-border-subtle: #333333; /* Subtle Borders */
   --color-border-metal: #333333;
   --color-border-metal-strong: rgba(204, 204, 204, 0.25);
   --color-border-silver: #cccccc;
 
   /* Typography & Text */
+  --color-text-primary: #ffffff;   /* Text Primary */
+  --color-text-secondary: #cccccc; /* Text Secondary (Silver subtext) */
   --color-text-navy: #ffffff;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #cccccc; /* Silver subtext */
   --color-text-muted: #94a3b8;
   --color-text-on-navy: #ffffff;
 
   /* Brand Accents */
+  --color-accent-blue: #0078ff;     /* Primary Brand Accent (Electric Blue) */
   --color-accent-electric: #0078ff; /* Electric Blue (Primary Accent) */
   --color-accent-electric-soft: #4da2ff;
-  --color-accent-gold: #ffc432;     /* Gold (Secondary Energy / Accent) */
+  --color-accent-gold: #ffc432;     /* Energy / Highlight Accent (Gold) */
   --color-accent-gold-soft: #ffd970;
   --color-accent-silver: #cccccc;   /* Silver (Subtext & Inactive Borders) */
   --color-accent-charcoal: #333333; /* Charcoal (Card Fill / Elevated Surfaces) */
@@ -43,6 +48,9 @@
   --font-sans: var(--font-inter);
   --font-mono: var(--font-mono);
 
+  --color-bg-base: var(--color-bg-base);
+  --color-bg-panel: var(--color-bg-panel);
+  --color-bg-elevated: var(--color-bg-elevated);
   --color-app: var(--color-bg-app);
   --color-surface: var(--color-bg-surface);
   --color-charcoal: var(--color-bg-charcoal);
@@ -52,15 +60,19 @@
   --color-sunken: var(--color-bg-sunken);
   --color-code: var(--color-bg-code);
 
+  --color-border-subtle: var(--color-border-subtle);
   --color-border-metal: var(--color-border-metal);
   --color-border-metal-strong: var(--color-border-metal-strong);
   --color-border-silver: var(--color-border-silver);
 
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
   --color-navy: var(--color-text-navy);
   --color-secondary: var(--color-text-secondary);
   --color-muted: var(--color-text-muted);
   --color-on-navy: var(--color-text-on-navy);
 
+  --color-accent-blue: var(--color-accent-blue);
   --color-electric: var(--color-accent-electric);
   --color-electric-soft: var(--color-accent-electric-soft);
   --color-gold: var(--color-accent-gold);
@@ -135,12 +147,13 @@ kbd,
 }
 
 /* Standardized Primary CTA Button: Rounded pill container with Electric Blue to Gold gradient */
+.btn-primary-cta,
 .btn-primary-pill {
   border-radius: 9999px;
-  background-image: linear-gradient(to right, #0078ff, #ffc432);
+  background: linear-gradient(90deg, #0078ff 0%, #ffc432 100%);
   color: #ffffff;
   font-weight: 700;
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sora), sans-serif;
   padding: 0.625rem 1.25rem;
   box-shadow: 0 10px 25px -5px rgba(0, 120, 255, 0.25);
   transition: all 0.2s ease-in-out;
@@ -150,11 +163,13 @@ kbd,
   gap: 0.5rem;
 }
 
+.btn-primary-cta:hover,
 .btn-primary-pill:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
+.btn-primary-cta:active,
 .btn-primary-pill:active {
   transform: scale(0.97);
 }

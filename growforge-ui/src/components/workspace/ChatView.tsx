@@ -103,7 +103,7 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
   const agent = agents.find((a) => a.id === dispatch.agentId);
   const Icon = agent ? (ICONS[agent.icon] ?? Bot) : Bot;
   return (
-    <div className="mt-2 flex items-center gap-3 rounded-xl border border-border-metal bg-white/70 px-3 py-2.5">
+    <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#333333] bg-[#111827] px-3 py-2.5">
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${agent?.hub ? "bg-navy" : "bg-sunken"}`}>
         <Icon className={`h-4 w-4 ${agent?.hub ? "text-gold" : "text-electric"}`} />
       </span>
@@ -500,24 +500,17 @@ export function ChatView() {
     <section
       className={
         maximized
-          ? "fixed inset-0 z-50 flex flex-col bg-app"
-          : // Docked: a bottom sheet (under half the viewport height, so the
-            // dashboard above stays usable) below lg, becoming the
-            // persistent right-side panel — like the sidebar — at lg and
-            // up. Switching at lg rather than md is deliberate: the left
-            // Sidebar already claims up to 288px from md, and adding a
-            // 384px-wide right dock on top of that crushed the middle
-            // content on real tablet widths (~768-1024px) when this was
-            // tried at md — verified live, not a guess.
-            "fixed inset-x-0 bottom-0 top-auto z-30 flex h-[45vh] flex-col border-t border-border-metal bg-white shadow-2xl lg:inset-x-auto lg:inset-y-auto lg:right-0 lg:top-16 lg:bottom-0 lg:h-auto lg:w-full lg:max-w-sm lg:border-l lg:border-t-0"
+          ? "fixed inset-0 z-50 flex flex-col bg-[#0B1220]"
+          : // Docked: a bottom sheet below lg, persistent right-side panel at lg+
+            "fixed inset-x-0 bottom-0 top-auto z-30 flex h-[45vh] flex-col border-t border-[#333333] bg-[#0B1220]/95 backdrop-blur-2xl shadow-2xl lg:inset-x-auto lg:inset-y-auto lg:right-0 lg:top-16 lg:bottom-0 lg:h-auto lg:w-full lg:max-w-sm lg:border-l lg:border-t-0"
       }
     >
-      <div className="flex items-center gap-2.5 border-b border-border-metal px-4 py-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-border-metal">
+      <div className="flex items-center gap-2.5 border-b border-[#333333] px-4 py-3 bg-[#111827]/60">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-[#333333]">
           <MessageSquare className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-heading text-sm font-semibold text-navy">AI Assistant</h2>
+          <h2 className="truncate font-heading text-sm font-semibold text-white">AI Assistant</h2>
           {maximized && (
             <p className="truncate text-xs text-secondary">Describe it in plain language. I ask, confirm, then the team builds it.</p>
           )}
@@ -531,7 +524,7 @@ export function ChatView() {
               disabled={switching}
               onChange={(e) => handleStrategyChange(e.target.value as LlmStrategy)}
               title={`Tries: ${providerOrderList.join(" → ") || "none configured"}`}
-              className="rounded-full border border-border-metal bg-sunken px-2.5 py-1 font-mono text-[10px] text-muted outline-none disabled:opacity-60"
+              className="rounded-full border border-[#333333] bg-[#111827] px-2.5 py-1 font-mono text-[10px] text-muted outline-none disabled:opacity-60"
             >
               {(Object.keys(STRATEGY_LABEL) as LlmStrategy[]).map((s) => (
                 <option key={s} value={s}>
@@ -545,7 +538,7 @@ export function ChatView() {
           type="button"
           onClick={() => setChatViewMode(maximized ? "docked" : "maximized")}
           title={maximized ? "Dock to the right side" : "Maximize to full screen"}
-          className="flex shrink-0 items-center justify-center rounded-lg border border-border-metal bg-white/80 p-1.5 text-secondary hover:border-electric/40 hover:text-electric"
+          className="flex shrink-0 items-center justify-center rounded-lg border border-[#333333] bg-[#111827] p-1.5 text-secondary hover:border-electric/40 hover:text-electric"
         >
           {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
         </button>
@@ -575,8 +568,8 @@ export function ChatView() {
                 <div
                   className={`rounded-2xl px-4 py-3 ${
                     isUser
-                      ? "bg-gradient-to-br from-electric to-gold text-white"
-                      : "border border-border-metal bg-white/80"
+                      ? "btn-primary-cta text-white shadow-lg"
+                      : "border border-[#333333] bg-[#111827] text-white shadow-sm"
                   }`}
                 >
                   {isUser ? (
@@ -589,10 +582,10 @@ export function ChatView() {
                 {m.confirmBrief && (
                   <div className="mt-2 rounded-xl border border-gold/40 bg-gold/5 p-3">
                     <details>
-                      <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-navy">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-white">
                         <ClipboardCheck className="h-4 w-4 text-gold" /> Project brief · tap to review the full version
                       </summary>
-                      <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white/80 p-3 font-body text-xs text-secondary">
+                      <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-[#0B1220] border border-[#333333] p-3 font-body text-xs text-secondary">
                         {m.confirmBrief}
                       </pre>
                     </details>
@@ -602,14 +595,14 @@ export function ChatView() {
                           type="button"
                           disabled={sending}
                           onClick={() => handleSend(undefined, "Yes, looks right. Send it to the team.")}
-                          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+                          className="btn-primary-cta !px-3 !py-1.5 text-xs font-semibold shadow-sm disabled:opacity-60"
                         >
                           <Rocket className="h-3.5 w-3.5" /> Send to the team
                         </button>
                         <button
                           type="button"
                           onClick={() => inputRef.current?.focus()}
-                          className="rounded-lg border border-border-metal bg-white/80 px-3 py-1.5 text-xs font-medium text-secondary hover:text-navy"
+                          className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs font-medium text-secondary hover:text-white"
                         >
                           Make changes
                         </button>
@@ -621,25 +614,25 @@ export function ChatView() {
                   <button
                     type="button"
                     onClick={() => m.job && openJob(m.job.id)}
-                    className="mt-2 flex w-full items-center gap-3 rounded-xl border border-electric/30 bg-electric/5 px-3 py-2.5 text-left transition-colors hover:bg-electric/10"
+                    className="mt-2 flex w-full items-center gap-3 rounded-xl border border-electric/30 bg-electric/10 px-3 py-2.5 text-left transition-colors hover:bg-electric/15"
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-electric/10 text-electric">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-electric/15 text-electric">
                       <Rocket className="h-4 w-4" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-navy">{m.job.title}</span>
+                      <span className="block truncate text-sm font-medium text-white">{m.job.title}</span>
                       <span className="block text-xs text-secondary">Sent to the team — watch it live</span>
                     </span>
                     <span className="shrink-0 text-xs font-semibold text-electric">Open →</span>
                   </button>
                 )}
                 {m.locked && (
-                  <div className="mt-2 flex items-center gap-3 rounded-xl border border-border-metal bg-white/70 px-3 py-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sunken text-muted">
+                  <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#333333] bg-[#111827] px-3 py-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1220] text-muted">
                       <Lock className="h-4 w-4" />
                     </span>
                     <p className="min-w-0 flex-1 text-sm text-secondary">
-                      <span className="font-medium text-navy">{m.locked.agentName}</span> is locked for your role.
+                      <span className="font-medium text-white">{m.locked.agentName}</span> is locked for your role.
                     </p>
                     <button
                       type="button"
@@ -654,9 +647,9 @@ export function ChatView() {
                   <div className="mt-2 flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-2 text-xs text-secondary">
                     <ArrowRightLeft className="h-3.5 w-3.5 shrink-0 text-gold" />
                     {m.handoffResolved ? (
-                      <span>Hand-off to <span className="font-medium text-navy">{m.handoff.targetAgentName}</span> resolved.</span>
+                      <span>Hand-off to <span className="font-medium text-white">{m.handoff.targetAgentName}</span> resolved.</span>
                     ) : (
-                      <span>Suggested hand-off to <span className="font-medium text-navy">{m.handoff.targetAgentName}</span> — see prompt above.</span>
+                      <span>Suggested hand-off to <span className="font-medium text-white">{m.handoff.targetAgentName}</span> — see prompt above.</span>
                     )}
                   </div>
                 )}
@@ -676,7 +669,7 @@ export function ChatView() {
 
         {sending && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-2xl border border-border-metal bg-white/80 px-4 py-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-[#333333] bg-[#111827] px-4 py-3">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-electric" />
               <span className="text-sm text-secondary">Thinking…</span>
             </div>
@@ -684,20 +677,20 @@ export function ChatView() {
         )}
       </div>
 
-      <div className={`border-t border-border-metal ${maximized ? "mx-auto w-full max-w-3xl" : ""}`}>
+      <div className={`border-t border-[#333333] bg-[#111827]/40 ${maximized ? "mx-auto w-full max-w-3xl" : ""}`}>
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 px-4 pt-3">
             {attachments.map((a) => (
               <div
                 key={a.name}
                 className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${
-                  a.status === "error" ? "border-crimson/30 bg-crimson/5 text-crimson" : "border-border-metal bg-white/80 text-secondary"
+                  a.status === "error" ? "border-crimson/30 bg-crimson/5 text-crimson" : "border-[#333333] bg-[#111827] text-secondary"
                 }`}
                 title={a.status === "error" ? a.extractedText : a.status === "done" ? a.extractedText.slice(0, 200) : undefined}
               >
                 {a.status === "uploading" ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <FileText className="h-3.5 w-3.5 shrink-0" />}
                 <span className="max-w-[10rem] truncate">{a.name}</span>
-                <button type="button" onClick={() => removeAttachment(a.name)} aria-label={`Remove ${a.name}`} className="text-muted hover:text-navy">
+                <button type="button" onClick={() => removeAttachment(a.name)} aria-label={`Remove ${a.name}`} className="text-muted hover:text-white">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -710,9 +703,6 @@ export function ChatView() {
             type="file"
             multiple
             accept=".pdf,.docx,.txt,.md,.csv,image/*"
-            // sr-only, not `hidden` — see ProfileDashboard.tsx's avatar
-            // input for why: display:none breaks programmatic .click() in
-            // some browsers, silently, with no dialog and no error.
             className="sr-only"
             onChange={(e) => {
               handleFilesSelected(e.target.files);
@@ -723,7 +713,7 @@ export function ChatView() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             title="Attach files (PDF, Word doc, image, text)"
-            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl border border-border-metal bg-white/80 text-secondary hover:border-electric/40 hover:text-electric"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl border border-[#333333] bg-[#111827] text-secondary hover:border-electric/40 hover:text-electric"
           >
             <Paperclip className="h-4 w-4" />
           </button>
@@ -740,12 +730,12 @@ export function ChatView() {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder={pendingBrief ? "Reply “yes” or tell me what to change…" : "Describe a project…"}
-            className="max-h-48 min-h-[52px] flex-1 resize-none overflow-y-auto rounded-xl border border-border-metal bg-white/80 px-3.5 py-4 text-sm leading-5 text-navy outline-none focus:border-electric/50"
+            className="max-h-48 min-h-[52px] flex-1 resize-none overflow-y-auto rounded-xl border border-[#333333] bg-[#0B1220] px-3.5 py-4 text-sm leading-5 text-white placeholder:text-muted outline-none focus:border-electric/50"
           />
           <button
             type="submit"
             disabled={sending || !input.trim() || attachments.some((a) => a.status === "uploading")}
-            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-electric to-gold text-white shadow-sm transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+            className="btn-primary-cta !h-[52px] !w-[52px] !p-0 shrink-0 shadow-lg disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -758,16 +748,16 @@ export function ChatView() {
             type="button"
             aria-label="Dismiss"
             onClick={handoffBusy ? undefined : handleCancelHandoff}
-            className="absolute inset-0 bg-navy/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-navy/60 backdrop-blur-sm"
           />
-          <div className="glass-card-strong relative w-full max-w-sm rounded-2xl border border-border-metal-strong p-6 shadow-2xl">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold/15 to-electric/15 text-gold ring-1 ring-border-metal">
+          <div className="glass-card-strong relative w-full max-w-sm rounded-2xl border border-[#333333] p-6 shadow-2xl bg-[#0B1220]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold/15 to-electric/15 text-gold ring-1 ring-[#333333]">
               <ArrowRightLeft className="h-5 w-5" />
             </span>
-            <h2 className="mt-3 font-heading text-base font-semibold text-navy">Hand off this task?</h2>
+            <h2 className="mt-3 font-heading text-base font-semibold text-white">Hand off this task?</h2>
             <p className="mt-1 text-sm text-secondary">
               This task is best handled by{" "}
-              <span className="font-medium text-navy">{pendingHandoff.handoff.targetAgentName}</span>.{" "}
+              <span className="font-medium text-white">{pendingHandoff.handoff.targetAgentName}</span>.{" "}
               {pendingHandoff.handoff.reason}
             </p>
 
@@ -776,7 +766,7 @@ export function ChatView() {
                 type="button"
                 onClick={handleConfirmHandoff}
                 disabled={handoffBusy}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-primary-cta w-full !py-2.5 text-sm font-semibold shadow-md disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {handoffBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
                 Hand off to {pendingHandoff.handoff.targetAgentName}
@@ -785,7 +775,7 @@ export function ChatView() {
                 type="button"
                 onClick={handleRunAnyway}
                 disabled={handoffBusy}
-                className="w-full rounded-lg border border-border-metal bg-white/70 px-4 py-2.5 text-sm font-medium text-secondary transition-colors hover:text-navy disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-4 py-2.5 text-sm font-medium text-secondary transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Run here anyway
               </button>
@@ -793,7 +783,7 @@ export function ChatView() {
                 type="button"
                 onClick={handleCancelHandoff}
                 disabled={handoffBusy}
-                className="w-full rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-navy disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>

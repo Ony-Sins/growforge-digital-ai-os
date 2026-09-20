@@ -139,6 +139,18 @@ export function AiModelManager() {
   // Advanced Mode (Diagnostics & Routing hidden by default)
   const [advancedMode, setAdvancedMode] = useState(false);
 
+  const effectiveChains: Record<"planning" | "coding" | "utility", ClientAiModel[]> = {
+    planning: routingChains.planning?.length
+      ? (routingChains.planning.map((id) => models.find((m) => m.id === id || m.modelName === id)).filter(Boolean) as ClientAiModel[])
+      : models.filter((m) => m.taskRole === "planning" || m.taskRole === "general"),
+    coding: routingChains.coding?.length
+      ? (routingChains.coding.map((id) => models.find((m) => m.id === id || m.modelName === id)).filter(Boolean) as ClientAiModel[])
+      : models.filter((m) => m.taskRole === "coding" || m.taskRole === "general"),
+    utility: routingChains.utility?.length
+      ? (routingChains.utility.map((id) => models.find((m) => m.id === id || m.modelName === id)).filter(Boolean) as ClientAiModel[])
+      : models.filter((m) => m.taskRole === "utility" || m.taskRole === "general"),
+  };
+
   async function loadData() {
     try {
       const res = await fetch("/api/vault/system");
@@ -377,7 +389,7 @@ export function AiModelManager() {
                 return (
                   <li
                     key={m.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-metal bg-white/90 px-3.5 py-3 transition-all hover:border-electric/40 hover:bg-white"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-3 transition-all hover:border-electric/50"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Authentic Brand Logo */}
@@ -391,7 +403,7 @@ export function AiModelManager() {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-semibold text-navy truncate">{m.name}</span>
+                          <span className="text-xs font-semibold text-white truncate">{m.name}</span>
                           {m.isPrimary && (
                             <span className="rounded bg-gold/15 px-1.5 py-0.5 text-[9px] font-bold text-gold border border-gold/30">
                               PRIMARY
@@ -408,7 +420,7 @@ export function AiModelManager() {
                         </div>
 
                         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted flex-wrap">
-                          <code className="font-mono text-navy font-medium">{m.modelName}</code>
+                          <code className="font-mono text-white font-medium">{m.modelName}</code>
                           <span>•</span>
                           <span className="truncate max-w-[240px] font-mono text-secondary" title={m.baseUrl}>
                             {m.baseUrl}
@@ -439,7 +451,7 @@ export function AiModelManager() {
                         onClick={() => handleTestModel(m)}
                         disabled={isTesting || isDeleting}
                         title="Ping endpoint to measure real-time latency"
-                        className="flex items-center gap-1 rounded-md border border-border-metal bg-white px-2.5 py-1 text-xs font-medium text-secondary transition-colors hover:border-electric/50 hover:text-electric disabled:opacity-50"
+                        className="flex items-center gap-1 rounded-md border border-[#333333] bg-[#0B1220] px-2.5 py-1 text-xs font-medium text-secondary transition-colors hover:border-electric/50 hover:text-white disabled:opacity-50"
                       >
                         {isTesting ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -516,7 +528,7 @@ export function AiModelManager() {
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
                       strategy === s
                         ? "bg-electric text-white shadow-sm"
-                        : "bg-white text-secondary hover:text-navy border border-border-metal"
+                        : "bg-[#111827] text-secondary hover:text-white border border-[#333333]"
                     }`}
                   >
                     {s.toUpperCase()}
@@ -530,52 +542,49 @@ export function AiModelManager() {
               {/* Planning */}
               <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Strategic Planning</span>
-                  <span className="text-[10px] text-purple-600 font-mono">HQ & PM</span>
+                  <span className="text-xs font-semibold text-purple-400">Strategic Planning</span>
+                  <span className="text-[10px] text-purple-400 font-mono">HQ & PM</span>
                 </div>
-                <ol className="space-y-1 text-xs">
-                  {(routingChains.planning || ["openrouter/free", "meta-llama/llama-3.1-8b-instruct", "local/ollama"]).map((slug, idx) => (
-                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-[9px] font-bold text-purple-700">
-                        {idx + 1}
-                      </span>
-                      <span className="truncate">{slug}</span>
+                <ol className="space-y-1 text-xs font-mono">
+                  {effectiveChains.planning.map((m, idx) => (
+                    <li key={m.id} className="flex items-center gap-1.5 text-secondary truncate">
+                      <span className="text-[10px] text-muted">{idx + 1}.</span>
+                      <span className="truncate text-white font-medium">{m.name}</span>
+                      <span className="text-[10px] text-muted">({m.providerType})</span>
                     </li>
                   ))}
                 </ol>
               </div>
 
               {/* Coding */}
-              <div className="rounded-lg border border-emerald/20 bg-emerald/5 p-3">
+              <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-emerald">Coding & Automations</span>
-                  <span className="text-[10px] text-emerald font-mono">AI Systems</span>
+                  <span className="text-xs font-semibold text-cyan-400">Code & Automation</span>
+                  <span className="text-[10px] text-cyan-400 font-mono">Systems & Tools</span>
                 </div>
-                <ol className="space-y-1 text-xs">
-                  {(routingChains.coding || ["cohere/north-mini-code:free", "openrouter/free", "local/ollama"]).map((slug, idx) => (
-                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald/20 text-[9px] font-bold text-emerald">
-                        {idx + 1}
-                      </span>
-                      <span className="truncate">{slug}</span>
+                <ol className="space-y-1 text-xs font-mono">
+                  {effectiveChains.coding.map((m, idx) => (
+                    <li key={m.id} className="flex items-center gap-1.5 text-secondary truncate">
+                      <span className="text-[10px] text-muted">{idx + 1}.</span>
+                      <span className="truncate text-white font-medium">{m.name}</span>
+                      <span className="text-[10px] text-muted">({m.providerType})</span>
                     </li>
                   ))}
                 </ol>
               </div>
 
-              {/* Utility */}
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              {/* Utility / QA */}
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Fast Utility</span>
-                  <span className="text-[10px] text-amber-600 font-mono">Router & QA</span>
+                  <span className="text-xs font-semibold text-emerald-400">Fast Triage & QA</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">Utility</span>
                 </div>
-                <ol className="space-y-1 text-xs">
-                  {(routingChains.utility || ["openrouter/free", "nvidia/nemotron-3.5-lightning:free", "local/ollama"]).map((slug, idx) => (
-                    <li key={slug} className="flex items-center gap-1.5 font-mono text-[11px] text-navy">
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[9px] font-bold text-amber-700">
-                        {idx + 1}
-                      </span>
-                      <span className="truncate">{slug}</span>
+                <ol className="space-y-1 text-xs font-mono">
+                  {effectiveChains.utility.map((m, idx) => (
+                    <li key={m.id} className="flex items-center gap-1.5 text-secondary truncate">
+                      <span className="text-[10px] text-muted">{idx + 1}.</span>
+                      <span className="truncate text-white font-medium">{m.name}</span>
+                      <span className="text-[10px] text-muted">({m.providerType})</span>
                     </li>
                   ))}
                 </ol>
@@ -587,14 +596,14 @@ export function AiModelManager() {
 
       {/* Clean 'Add/Edit AI Model' Modal / Drawer Overlay */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-xl rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-xl rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+            <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
               <div className="flex items-center gap-2">
                 <Cpu className="h-5 w-5 text-electric" />
                 <div>
-                  <h3 className="font-heading text-base font-semibold text-navy">
+                  <h3 className="font-heading text-base font-semibold text-white">
                     {editingId ? "Edit AI Model Connector" : "Add AI Model Connector"}
                   </h3>
                   {editingId && (
@@ -608,7 +617,7 @@ export function AiModelManager() {
                   setIsModalOpen(false);
                   setEditingId(null);
                 }}
-                className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy"
+                className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -624,7 +633,7 @@ export function AiModelManager() {
                       key={p.label}
                       type="button"
                       onClick={() => openBuilderWithPreset(p)}
-                      className="rounded-md border border-border-metal bg-sunken/50 px-2.5 py-1 text-xs font-medium text-navy transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
+                      className="rounded-md border border-[#333333] bg-[#111827] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
                     >
                       {p.label}
                     </button>
@@ -636,19 +645,19 @@ export function AiModelManager() {
             {/* Form */}
             <form onSubmit={handleSaveModel} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-medium text-navy">Display Label</label>
+                <label className="block text-xs font-medium text-white">Display Label</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. My Local vLLM, DeepSeek API"
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                  className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-medium text-navy">Custom Base URL</label>
+                  <label className="block text-xs font-medium text-white">Custom Base URL</label>
                   <span className="text-[10px] text-emerald font-semibold flex items-center gap-1">
                     <Globe className="h-3 w-3" /> Local & private endpoints supported
                   </span>
@@ -659,42 +668,42 @@ export function AiModelManager() {
                   onChange={(e) => setBaseUrl(e.target.value)}
                   placeholder="http://localhost:11434/v1 or https://api.openai.com/v1"
                   required
-                  className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-navy">Model Name / Slug</label>
+                  <label className="block text-xs font-medium text-white">Model Name / Slug</label>
                   <input
                     type="text"
                     value={modelName}
                     onChange={(e) => setModelName(e.target.value)}
                     placeholder="e.g. llama3.2:1b, gpt-4o-mini"
                     required
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-navy">API Key / Token</label>
+                  <label className="block text-xs font-medium text-white">API Key / Token</label>
                   <input
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder={editingId ? "•••••••• (enter new key to replace, or blank to keep)" : "Leave blank for local Ollama"}
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-xs font-medium text-navy">Assigned Task Role</label>
+                  <label className="block text-xs font-medium text-white">Assigned Task Role</label>
                   <select
                     value={taskRole}
                     onChange={(e) => setTaskRole(e.target.value as TaskRole)}
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric/60"
                   >
                     <option value="general">General Purpose & Briefs</option>
                     <option value="planning">Strategic Planning (HQ & PM)</option>
@@ -709,9 +718,9 @@ export function AiModelManager() {
                     id="isPrimaryModelModal"
                     checked={isPrimary}
                     onChange={(e) => setIsPrimary(e.target.checked)}
-                    className="h-4 w-4 rounded border-border-metal text-electric focus:ring-electric"
+                    className="h-4 w-4 rounded border-[#333333] bg-[#111827] text-electric focus:ring-electric"
                   />
-                  <label htmlFor="isPrimaryModelModal" className="text-xs font-medium text-navy cursor-pointer">
+                  <label htmlFor="isPrimaryModelModal" className="text-xs font-medium text-white cursor-pointer">
                     Set as Primary Default Model
                   </label>
                 </div>
@@ -726,7 +735,7 @@ export function AiModelManager() {
               )}
               {builderTestResult?.ok && (
                 <div className="flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/20 p-2.5 text-xs text-emerald">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
                   <span>
                     Connection Verified! Responded in {builderTestResult.latencyMs ?? 0}ms.
                   </span>
@@ -734,12 +743,12 @@ export function AiModelManager() {
               )}
 
               {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-border-metal">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#333333]">
                 <button
                   type="button"
                   onClick={handleTestBuilder}
                   disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                  className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3.5 py-2 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs font-medium text-white hover:border-electric/50 hover:bg-electric/5 disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
                   Test Endpoint
@@ -748,12 +757,15 @@ export function AiModelManager() {
                 <button
                   type="submit"
                   disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                  className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+                  className="btn-primary-cta !px-4 !py-2 text-xs font-semibold shadow-sm disabled:opacity-60"
                 >
                   {saving ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Saving…
+                    </>
                   ) : editingId ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    "Save Changes"
                   ) : (
                     <Plus className="h-3.5 w-3.5" />
                   )}

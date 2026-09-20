@@ -1,8 +1,8 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (Milestone Complete: Settings De-Cluttering & Brand Guidelines (#0B1220 / #0078FF / #FFC432) Enforcement. In-scope: `src/components/workspace/SettingsOverlay.tsx`, `src/app/globals.css`, `src/components/layout/Workspace.tsx`, `src/components/workspace/ProfileDashboard.tsx`, `src/components/workspace/Integrations.tsx`, `src/components/layout/Sidebar.tsx`, `src/components/layout/Header.tsx`, `src/components/workspace/AdminDrawer.tsx`. Build verification: 28 static/dynamic App Router routes compiled cleanly with 0 TypeScript compilation errors and 0 ESLint errors/warnings.)
+> **Last updated:** 2026-09-20 (COMPLETED: Production-Grade Dark UI Visual Repair & Strict Brand Token Enforcement. All white card leakages eradicated, white-on-white inputs in Connections Hub/AiModelManager/ProjectCanvas fixed with dark obsidian `#0B1220` backgrounds and `#111827` surface containers, docked and maximized AI Assistant chat container restored with dark obsidian glass `#0B1220`/95 and `.btn-primary-cta` pill gradients, canvas backgrounds set to dark `#0B1220` with `#333333` borders and grid dots. Verified clean build with 0 TypeScript/ESLint errors.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
-> **Branch:** `master`, clean working tree
+> **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root, new this session) before any design/UI work — see §3.
 
 ---

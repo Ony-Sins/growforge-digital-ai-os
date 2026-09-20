@@ -97,22 +97,19 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
 
   return (
     <div
-      className={`relative w-[230px] cursor-pointer rounded-2xl border-2 bg-white p-3 shadow-[0_8px_24px_-14px_rgba(11,18,32,0.35)] transition-all ${style.ring} ${
+      className={`relative w-[230px] cursor-pointer rounded-2xl border-2 bg-[#111827] border-[#333333] p-3 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.6)] transition-all ${style.ring} ${
         selected ? "scale-[1.03] shadow-[0_14px_32px_-12px_rgba(0,120,255,0.45)]" : "hover:-translate-y-0.5"
-      } ${isFinal && step.status === "done" ? "bg-gradient-to-br from-white to-emerald/10" : ""}`}
+      } ${isFinal && step.status === "done" ? "bg-gradient-to-br from-[#111827] to-emerald/10" : ""}`}
     >
-      {/* Floating "working" badge — a slowly spinning gear that hovers just
-       *  above the node while its status is active, instead of swapping out
-       *  the department's own icon. Keeps "what this is" and "is it working
-       *  right now" visually separate. */}
+      {/* Floating "working" badge */}
       {step.status === "active" && (
-        <span className="absolute -top-3 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-electric to-gold text-white shadow-[0_4px_14px_-2px_rgba(0,120,255,0.55)] ring-4 ring-white">
+        <span className="absolute -top-3 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-electric to-gold text-white shadow-[0_4px_14px_-2px_rgba(0,120,255,0.55)] ring-4 ring-[#0B1220]">
           <Cog className="h-3.5 w-3.5 animate-[spin_2.5s_linear_infinite]" />
         </span>
       )}
 
-      {step.kind !== "brief" && <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-2 !border-white !bg-muted" />}
-      {step.kind !== "final" && <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5 !border-2 !border-white !bg-muted" />}
+      {step.kind !== "brief" && <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-2 !border-[#0B1220] !bg-muted" />}
+      {step.kind !== "final" && <Handle type="source" position={Position.Right} className="!h-2.5 !w-2.5 !border-2 !border-[#0B1220] !bg-muted" />}
 
       <div className="flex items-start gap-2.5">
         <span
@@ -124,7 +121,7 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{KIND_TAG[step.kind]}</p>
-          <p className="truncate font-heading text-sm font-semibold text-navy">{step.label}</p>
+          <p className="truncate font-heading text-sm font-semibold text-white">{step.label}</p>
         </div>
         <span className={`shrink-0 font-mono text-xs font-semibold ${style.text}`}>{percent}%</span>
       </div>
@@ -305,7 +302,7 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder='e.g. "Budget is actually $4,000/month" or "Focus on Google Ads, drop Meta Ads"'
-              className="min-w-0 flex-1 rounded-lg border border-border-metal bg-white/80 px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="min-w-0 flex-1 rounded-lg border border-[#333333] bg-[#0B1220] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric/50"
               autoFocus
             />
             <button
@@ -316,7 +313,7 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
               {wasRunning ? "Queue it" : "Apply & redo"}
             </button>
-            <button type="button" onClick={() => setOpen(false)} className="shrink-0 rounded-lg px-2 py-2 text-xs text-muted hover:text-navy">
+            <button type="button" onClick={() => setOpen(false)} className="shrink-0 rounded-lg px-2 py-2 text-xs text-muted hover:text-white">
               Cancel
             </button>
           </div>
@@ -353,12 +350,6 @@ function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => 
   const [copied, setCopied] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
-  // Older plans (generated before real approval tracking existed) had a
-  // static "Status: PROPOSAL — pending CEO approval" line baked into the
-  // stored markdown itself. That line now contradicts the live, dynamic
-  // approval badge in the header the moment a plan is actually approved —
-  // strip it at render time rather than leaving two disagreeing sources of
-  // truth on screen. New plans no longer write this line at all.
   const content = (job.finalOutput ?? "").replace(/^>?\s*\*\*Status:\*\*\s*PROPOSAL.*$/gim, "").replace(/\n{3,}/g, "\n\n").trim();
 
   function handleDownload() {
@@ -392,8 +383,8 @@ function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-navy/60 backdrop-blur-sm" />
-      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-border-metal">
-        <div className="flex items-center gap-3 border-b border-border-metal bg-gradient-to-r from-navy to-navy/90 px-6 py-5">
+      <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#0B1220] border border-[#333333] shadow-2xl">
+        <div className="flex items-center gap-3 border-b border-[#333333] bg-[#111827] px-6 py-5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold ring-1 ring-gold/30">
             <Trophy className="h-5 w-5" />
           </span>
@@ -432,8 +423,8 @@ function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => 
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto bg-app px-6 py-6">
-          <div className="mx-auto max-w-3xl rounded-2xl bg-white px-6 py-6 shadow-sm ring-1 ring-border-metal">
+        <div className="overflow-y-auto bg-[#0B1220] px-6 py-6">
+          <div className="mx-auto max-w-3xl rounded-2xl bg-[#111827] border border-[#333333] px-6 py-6 shadow-sm">
             <Markdown content={content} size="base" />
           </div>
         </div>
@@ -564,7 +555,7 @@ export function ProjectCanvas() {
           <button
             type="button"
             onClick={() => setJobsMenuOpen((v) => !v)}
-            className="flex w-full items-center gap-2 rounded-xl border border-border-metal bg-white/70 px-3 py-2 text-left transition-colors hover:border-electric/30 sm:w-auto sm:min-w-[20rem]"
+            className="flex w-full items-center gap-2 rounded-xl border border-[#333333] bg-[#111827] px-3 py-2 text-left transition-colors hover:border-electric/30 sm:w-auto sm:min-w-[20rem]"
           >
             <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted" />
             {currentSummary ? (
@@ -578,7 +569,7 @@ export function ProjectCanvas() {
                         : "bg-crimson"
                   }`}
                 />
-                <span className="min-w-0 flex-1 truncate text-xs font-medium text-navy">{currentSummary.title}</span>
+                <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">{currentSummary.title}</span>
                 <span className="shrink-0 font-mono text-[11px] text-muted">{currentSummary.percent}%</span>
               </>
             ) : (
@@ -595,7 +586,7 @@ export function ProjectCanvas() {
                 className="fixed inset-0 z-40 cursor-default"
                 onClick={() => setJobsMenuOpen(false)}
               />
-              <div className="absolute left-5 right-5 top-full z-50 mt-1.5 max-h-96 overflow-y-auto rounded-xl border border-border-metal bg-white p-2 shadow-2xl sm:right-auto sm:w-[26rem]">
+              <div className="absolute left-5 right-5 top-full z-50 mt-1.5 max-h-96 overflow-y-auto rounded-xl border border-[#333333] bg-[#0B1220] p-2 shadow-2xl sm:right-auto sm:w-[26rem]">
                 {runningJobs.length > 0 && (
                   <div className="mb-1">
                     <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">Running now</p>
@@ -610,7 +601,7 @@ export function ProjectCanvas() {
                               setJobsMenuOpen(false);
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors ${
-                              j.id === currentId ? "bg-electric/5 text-navy" : "text-secondary hover:bg-sunken hover:text-navy"
+                              j.id === currentId ? "bg-electric/15 text-white" : "text-secondary hover:bg-[#111827] hover:text-white"
                             }`}
                           >
                             <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-electric" />
@@ -638,7 +629,7 @@ export function ProjectCanvas() {
                               setJobsMenuOpen(false);
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors ${
-                              j.id === currentId ? "bg-electric/5 text-navy" : "text-secondary hover:bg-sunken hover:text-navy"
+                              j.id === currentId ? "bg-electric/15 text-white" : "text-secondary hover:bg-[#111827] hover:text-white"
                             }`}
                           >
                             <span className={`h-2 w-2 shrink-0 rounded-full ${j.status === "done" ? "bg-emerald" : "bg-crimson"}`} />
@@ -672,7 +663,7 @@ export function ProjectCanvas() {
         <>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-navy">{visibleJob.title}</p>
+              <p className="truncate text-sm font-semibold text-white">{visibleJob.title}</p>
               <p className="truncate text-xs text-secondary">
                 {visibleJob.status === "running"
                   ? activeStep
@@ -692,7 +683,7 @@ export function ProjectCanvas() {
                   style={{ width: `${visibleJob.percent}%` }}
                 />
               </div>
-              <span className="w-10 text-right font-mono text-sm font-semibold text-navy">{visibleJob.percent}%</span>
+              <span className="w-10 text-right font-mono text-sm font-semibold text-white">{visibleJob.percent}%</span>
             </div>
           </div>
 
@@ -700,9 +691,9 @@ export function ProjectCanvas() {
             <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-secondary">
               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
               <span>
-                <span className="font-semibold text-navy">Reduced quality:</span> {localFallbackSteps.length} step
+                <span className="font-semibold text-white">Reduced quality:</span> {localFallbackSteps.length} step
                 {localFallbackSteps.length === 1 ? "" : "s"} ran on the small local model because no cloud AI provider responded
-                (usually a used-up quota). Check <span className="font-medium text-navy">Settings → AI Providers</span>, then request a change to redo them.
+                (usually a used-up quota). Check <span className="font-medium text-white">Settings → AI Providers</span>, then request a change to redo them.
               </span>
             </div>
           )}
@@ -711,7 +702,7 @@ export function ProjectCanvas() {
             <RevisePanel job={visibleJob} onRevised={setJob} />
           )}
 
-          <div className="relative h-[34rem] border-t border-border-metal bg-[#fbfcfe]">
+          <div className="relative h-[34rem] border-t border-[#333333] bg-[#0B1220]">
             <ReactFlow
               key={visibleJob.id}
               nodes={graph.nodes}
@@ -729,7 +720,7 @@ export function ProjectCanvas() {
               nodesConnectable={false}
               proOptions={{ hideAttribution: true }}
             >
-              <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="#cbd5e1" />
+              <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="#333333" />
               <Controls showInteractive={false} />
             </ReactFlow>
             {selectedStep && <StepPanel step={selectedStep} onClose={() => setSelectedStepId(null)} />}

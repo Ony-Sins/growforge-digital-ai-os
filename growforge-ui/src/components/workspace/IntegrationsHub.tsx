@@ -261,7 +261,7 @@ export function IntegrationsHub() {
             <button
               type="button"
               onClick={() => setIsNewCustomModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/50 hover:bg-electric/5 transition-all shrink-0"
+              className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs font-medium text-white hover:border-electric/50 hover:bg-electric/5 transition-all shrink-0"
             >
               <Plus className="h-3.5 w-3.5 text-electric" />
               <span>Custom REST</span>
@@ -269,7 +269,7 @@ export function IntegrationsHub() {
             <button
               type="button"
               onClick={() => setIsNewMcpModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all shrink-0"
+              className="btn-primary-cta !px-3.5 !py-1.5 text-xs font-semibold shadow-sm hover:opacity-90 transition-all shrink-0"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Add MCP Server</span>
@@ -278,16 +278,16 @@ export function IntegrationsHub() {
         </div>
 
         {/* Directory Controls: Search, Tabs & Filter Pills */}
-        <div className="mt-5 flex flex-col md:flex-row md:items-center justify-between gap-3 pt-4 border-t border-border-metal">
+        <div className="mt-5 flex flex-col md:flex-row md:items-center justify-between gap-3 pt-4 border-t border-[#333333]">
           {/* Main Tabs */}
-          <div className="flex rounded-lg border border-border-metal bg-sunken/60 p-1">
+          <div className="flex rounded-lg border border-[#333333] bg-[#0B1220] p-1">
             <button
               type="button"
               onClick={() => setActiveTab("installed")}
               className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
                 activeTab === "installed"
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-secondary hover:text-navy"
+                  ? "bg-[#111827] text-white shadow-sm border border-[#333333]"
+                  : "text-secondary hover:text-white"
               }`}
             >
               <span>Your Connectors</span>
@@ -300,8 +300,8 @@ export function IntegrationsHub() {
               onClick={() => setActiveTab("discover")}
               className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
                 activeTab === "discover"
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-secondary hover:text-navy"
+                  ? "bg-[#111827] text-white shadow-sm border border-[#333333]"
+                  : "text-secondary hover:text-white"
               }`}
             >
               <span>Discover Directory</span>
@@ -314,8 +314,8 @@ export function IntegrationsHub() {
               onClick={() => setActiveTab("byo-mcp")}
               className={`flex items-center gap-2 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
                 activeTab === "byo-mcp"
-                  ? "bg-white text-navy shadow-sm"
-                  : "text-secondary hover:text-navy"
+                  ? "bg-[#111827] text-white shadow-sm border border-[#333333]"
+                  : "text-secondary hover:text-white"
               }`}
             >
               <Sparkles className="h-3 w-3 text-cyan-500" />
@@ -331,7 +331,7 @@ export function IntegrationsHub() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search tools, protocols, or vendors…"
-              className="w-full rounded-lg border border-border-metal bg-white pl-8 pr-3 py-1.5 text-xs text-navy outline-none focus:border-electric/60"
+              className="w-full rounded-lg border border-[#333333] bg-[#111827] pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
             />
           </div>
         </div>
@@ -353,7 +353,7 @@ export function IntegrationsHub() {
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
                 filterType === f.id
                   ? "bg-electric/10 text-electric border-electric/30 font-semibold"
-                  : "bg-white text-muted border-border-metal hover:text-navy"
+                  : "bg-[#111827] text-secondary border-[#333333] hover:text-white"
               }`}
             >
               {f.label}
@@ -368,9 +368,9 @@ export function IntegrationsHub() {
       ) : activeTab === "installed" ? (
         <div className="space-y-4">
           {installedCount === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border-metal p-12 text-center bg-white/40">
+            <div className="rounded-2xl border border-dashed border-[#333333] p-12 text-center bg-[#111827]/40">
               <Plug className="mx-auto h-8 w-8 text-muted" />
-              <p className="mt-2 text-sm font-semibold text-navy">No connectors active yet</p>
+              <p className="mt-2 text-sm font-semibold text-white">No connectors active yet</p>
               <p className="mt-1 text-xs text-secondary max-w-sm mx-auto">
                 Explore the Discover Directory to connect Linear, Notion, HubSpot, GitHub, or add a custom REST webhook.
               </p>
@@ -392,11 +392,11 @@ export function IntegrationsHub() {
                   <div
                     key={server.id}
                     onClick={() => setInspectedMcp(server)}
-                    className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                    className="group relative cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-navy text-white">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0B1220] border border-[#333333] text-white">
                           {brand ? (
                             <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
                               <path d={brand.path} />
@@ -406,11 +406,11 @@ export function IntegrationsHub() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
+                          <h3 className="text-xs font-semibold text-white truncate group-hover:text-electric transition-colors">
                             {server.name}
                           </h3>
                           <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className="rounded bg-navy/5 px-1.5 py-0.2 font-mono text-[9px] font-bold text-navy uppercase">
+                            <span className="rounded bg-[#0B1220] border border-[#333333] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
                               MCP {server.transport}
                             </span>
                             <span className="flex items-center gap-1 text-[10px] font-medium text-emerald">
@@ -426,7 +426,7 @@ export function IntegrationsHub() {
                       {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
+                    <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-[#333333] text-[11px] text-secondary">
                       <span>Click to inspect & test</span>
                       <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
                     </div>
@@ -439,7 +439,7 @@ export function IntegrationsHub() {
                 <div
                   key={connector.id}
                   onClick={() => setInspectedCustom(connector)}
-                  className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                  className="group relative cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -447,11 +447,11 @@ export function IntegrationsHub() {
                         <Plug className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
+                        <h3 className="text-xs font-semibold text-white truncate group-hover:text-electric transition-colors">
                           {connector.name}
                         </h3>
                         <div className="mt-0.5 flex items-center gap-1.5">
-                          <span className="rounded bg-navy px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
+                          <span className="rounded bg-[#0B1220] border border-[#333333] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
                             {connector.method}
                           </span>
                           <span className="rounded bg-emerald/10 text-emerald px-1.5 py-0.2 text-[9px] font-medium">
@@ -464,7 +464,7 @@ export function IntegrationsHub() {
 
                   <p className="mt-3 truncate font-mono text-[11px] text-muted">{connector.url}</p>
 
-                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
+                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-[#333333] text-[11px] text-secondary">
                     <span>Inspect payload & auth</span>
                     <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
                   </div>
@@ -475,40 +475,34 @@ export function IntegrationsHub() {
               {isN8nVisible && n8nConfig?.apiKey.configured && (
                 <div
                   onClick={() => setIsN8nInspectOpen(true)}
-                  className="group relative cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md"
+                  className="group relative cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/20 to-gold/20 text-electric border border-electric/30">
                         <Zap className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-xs font-semibold text-navy truncate group-hover:text-electric transition-colors">
-                          n8n Automation Engine
+                        <h3 className="text-xs font-semibold text-white truncate group-hover:text-electric transition-colors">
+                          n8n Workflow Automation
                         </h3>
                         <div className="mt-0.5 flex items-center gap-1.5">
-                          <span className="rounded bg-[#EA4B71]/10 text-[#EA4B71] px-1.5 py-0.2 font-mono text-[9px] font-bold">
-                            WORKFLOW ENGINE
+                          <span className="rounded bg-[#0B1220] border border-[#333333] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
+                            Engine
                           </span>
-                          <span
-                            className={`flex items-center gap-1 text-[10px] font-medium ${
-                              n8nHealth.status === "connected" ? "text-emerald" : "text-crimson"
-                            }`}
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            {n8nHealth.status === "connected" ? "Online" : "Offline"}
+                          <span className={`flex items-center gap-1 text-[10px] font-medium ${n8nHealth.status === "connected" ? "text-emerald" : "text-crimson"}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${n8nHealth.status === "connected" ? "bg-emerald" : "bg-crimson"}`} />
+                            {n8nHealth.status === "connected" ? "Connected" : "Offline"}
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <p className="mt-3 truncate font-mono text-[11px] text-muted">
-                    {n8nConfig.host.value || "http://localhost:5678"}
-                  </p>
+                  <p className="mt-3 truncate font-mono text-[11px] text-muted">{n8nConfig.host.value}</p>
 
-                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-border-metal text-[11px] text-secondary">
-                    <span>Inspect engine health & keys</span>
+                  <div className="mt-3 flex items-center justify-between pt-2.5 border-t border-[#333333] text-[11px] text-secondary">
+                    <span>Inspect host & webhook routes</span>
                     <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
                   </div>
                 </div>
@@ -523,11 +517,11 @@ export function IntegrationsHub() {
           {isN8nVisible && (
             <div
               onClick={() => setIsN8nInspectOpen(true)}
-              className="group cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
+              className="group cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-electric/20 to-gold/20 text-electric border border-electric/30">
                     <Zap className="h-5 w-5" />
                   </div>
                   {n8nConfig?.apiKey.configured ? (
@@ -535,19 +529,19 @@ export function IntegrationsHub() {
                       <Check className="h-3 w-3" /> Connected
                     </span>
                   ) : (
-                    <span className="rounded-full bg-sunken px-2 py-0.5 text-[10px] font-medium text-secondary">
+                    <span className="rounded-full bg-[#0B1220] border border-[#333333] px-2 py-0.5 text-[10px] font-medium text-secondary">
                       Self-Hosted
                     </span>
                   )}
                 </div>
-                <h3 className="mt-3 text-xs font-semibold text-navy group-hover:text-electric transition-colors">
+                <h3 className="mt-3 text-xs font-semibold text-white group-hover:text-electric transition-colors">
                   n8n Automation Engine
                 </h3>
                 <p className="mt-1 text-[11px] text-muted line-clamp-2">
                   Multi-step autonomous workflow automation engine and trigger webhooks.
                 </p>
               </div>
-              <div className="mt-4 pt-2.5 border-t border-border-metal flex items-center justify-between text-[11px] text-secondary">
+              <div className="mt-4 pt-2.5 border-t border-[#333333] flex items-center justify-between text-[11px] text-secondary">
                 <span>Configure Engine</span>
                 <span className="font-semibold text-electric">→</span>
               </div>
@@ -564,17 +558,17 @@ export function IntegrationsHub() {
               <div
                 key={entry.id}
                 onClick={() => setInspectedCatalog(entry)}
-                className="group cursor-pointer rounded-xl border border-border-metal bg-white p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
+                className="group cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${entry.tint}`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B1220] border border-[#333333] text-white`}>
                       {brand ? (
                         <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
                           <path d={brand.path} />
                         </svg>
                       ) : (
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5 text-electric" />
                       )}
                     </div>
                     {isConnected ? (
@@ -582,17 +576,17 @@ export function IntegrationsHub() {
                         <Check className="h-3 w-3" /> Connected
                       </span>
                     ) : (
-                      <span className="rounded-full bg-navy/5 px-2 py-0.5 text-[10px] font-bold text-navy uppercase">
+                      <span className="rounded-full bg-[#0B1220] border border-[#333333] px-2 py-0.5 text-[10px] font-bold text-white uppercase">
                         MCP
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-3 text-xs font-semibold text-navy group-hover:text-electric transition-colors">
+                  <h3 className="mt-3 text-xs font-semibold text-white group-hover:text-electric transition-colors">
                     {entry.name}
                   </h3>
                   <p className="mt-1 text-[11px] text-muted line-clamp-2">{entry.description}</p>
                 </div>
-                <div className="mt-4 pt-2.5 border-t border-border-metal flex items-center justify-between text-[11px] text-secondary">
+                <div className="mt-4 pt-2.5 border-t border-[#333333] flex items-center justify-between text-[11px] text-secondary">
                   <span>{isConnected ? "Inspect & Manage" : "Connect Tool"}</span>
                   <span className="font-semibold text-electric">→</span>
                 </div>
@@ -785,12 +779,12 @@ function McpInspectorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+        <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-white shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827] text-white border border-[#333333] shadow-sm">
               {brand ? (
                 <svg role="img" viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-label={brand.title}>
                   <path d={brand.path} />
@@ -800,20 +794,20 @@ function McpInspectorModal({
               )}
             </div>
             <div>
-              <h3 className="font-heading text-base font-semibold text-navy">{server.name}</h3>
+              <h3 className="font-heading text-base font-semibold text-white">{server.name}</h3>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="rounded bg-navy/5 px-1.5 py-0.2 font-mono text-[10px] font-bold text-navy uppercase">
+                <span className="rounded bg-[#111827] border border-[#333333] px-1.5 py-0.2 font-mono text-[10px] font-bold text-secondary uppercase">
                   MCP {server.transport}
                 </span>
                 {server.hasCredential && (
-                  <span className="rounded-full bg-emerald/10 text-emerald px-2 py-0.2 text-[10px] font-semibold">
+                  <span className="rounded-full bg-emerald/10 text-emerald px-2 py-0.2 text-[10px] font-semibold border border-emerald/20">
                     Vault Authenticated
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -822,46 +816,46 @@ function McpInspectorModal({
         {isEditing ? (
           <form onSubmit={handleSaveEdit} className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-navy">Server Name</label>
+              <label className="block text-xs font-medium text-white">Server Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 required
               />
             </div>
             {server.transport === "http" ? (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-navy">MCP Server URL</label>
+                  <label className="block text-xs font-medium text-white">MCP Server URL</label>
                   <input
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-navy">Auth Header Name</label>
+                    <label className="block text-xs font-medium text-white">Auth Header Name</label>
                     <input
                       type="text"
                       value={authHeader}
                       onChange={(e) => setAuthHeader(e.target.value)}
                       placeholder="e.g. X-Api-Key"
-                      className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+                      className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-navy">Bearer Token</label>
+                    <label className="block text-xs font-medium text-white">Bearer Token</label>
                     <input
                       type="password"
                       value={bearerToken}
                       onChange={(e) => setBearerToken(e.target.value)}
                       placeholder="•••••••• (leave blank to keep)"
-                      className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                      className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     />
                   </div>
                 </div>
@@ -869,22 +863,22 @@ function McpInspectorModal({
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-navy">Command</label>
+                  <label className="block text-xs font-medium text-white">Command</label>
                   <input
                     type="text"
                     value={command}
                     onChange={(e) => setCommand(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-navy">Args</label>
+                  <label className="block text-xs font-medium text-white">Args</label>
                   <input
                     type="text"
                     value={args}
                     onChange={(e) => setArgs(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                   />
                 </div>
               </div>
@@ -894,24 +888,25 @@ function McpInspectorModal({
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded-lg border border-border-metal px-3 py-1.5 text-xs text-muted hover:text-navy"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs text-muted hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+                className="btn-primary-cta px-4 py-1.5 text-xs disabled:opacity-60"
               >
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline mr-1" /> : null}
+                Save Changes
               </button>
             </div>
           </form>
         ) : (
           <div className="space-y-3">
-            <div className="rounded-xl border border-border-metal bg-sunken/60 p-3 space-y-1.5">
+            <div className="rounded-xl border border-[#333333] bg-[#111827] p-3 space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint Target</span>
-              <p className="font-mono text-xs text-navy break-all">
+              <p className="font-mono text-xs text-white break-all">
                 {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
               </p>
             </div>
@@ -922,7 +917,7 @@ function McpInspectorModal({
                 type="button"
                 onClick={handleTest}
                 disabled={testing}
-                className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/60 hover:text-electric transition-colors"
+                className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs font-medium text-white hover:border-electric hover:text-electric transition-colors"
               >
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
                 <span>{testing ? "Testing Ping…" : "Test Connection"}</span>
@@ -957,10 +952,10 @@ function McpInspectorModal({
                   {toolsExpanded ? "Hide Discovered Tools" : `View ${test.tools.length} Tools`}
                 </button>
                 {toolsExpanded && (
-                  <ul className="mt-2 space-y-1.5 rounded-lg bg-sunken p-3 max-h-48 overflow-y-auto border border-border-metal">
+                  <ul className="mt-2 space-y-1.5 rounded-lg bg-[#111827] p-3 max-h-48 overflow-y-auto border border-[#333333]">
                     {test.tools.map((t) => (
                       <li key={t.name} className="text-xs text-secondary">
-                        <span className="font-mono font-semibold text-navy">{t.name}</span>
+                        <span className="font-mono font-semibold text-white">{t.name}</span>
                         {t.description && <p className="text-[11px] text-muted">{t.description}</p>}
                       </li>
                     ))}
@@ -971,8 +966,8 @@ function McpInspectorModal({
 
             {/* Department Access in Advanced Mode */}
             {uiMode === "advanced" && (
-              <div className="pt-2 border-t border-border-metal">
-                <span className="text-[11px] font-semibold text-navy">Department Access Permissions</span>
+              <div className="pt-2 border-t border-[#333333]">
+                <span className="text-[11px] font-semibold text-white">Department Access Permissions</span>
                 <p className="text-[10px] text-muted">Toggle which specialist departments can invoke this server.</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {departments.map((d) => {
@@ -986,7 +981,7 @@ function McpInspectorModal({
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
                           active
                             ? "bg-electric text-white border-electric"
-                            : "bg-white text-secondary border-border-metal hover:border-electric/40"
+                            : "bg-[#111827] text-secondary border-[#333333] hover:border-electric/40"
                         }`}
                       >
                         {d.name}
@@ -1000,7 +995,7 @@ function McpInspectorModal({
         )}
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-border-metal">
+        <div className="flex items-center justify-between pt-3 border-t border-[#333333]">
           <button
             type="button"
             onClick={handleDelete}
@@ -1012,7 +1007,7 @@ function McpInspectorModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-border-metal bg-sunken px-4 py-1.5 text-xs font-semibold text-navy hover:bg-white"
+            className="rounded-lg border border-[#333333] bg-[#111827] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#1f2937] transition-colors"
           >
             Done
           </button>
@@ -1140,9 +1135,9 @@ function CatalogInspectorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-3">
             <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${entry.tint}`}>
               {brand ? (
@@ -1154,11 +1149,11 @@ function CatalogInspectorModal({
               )}
             </div>
             <div>
-              <h3 className="font-heading text-base font-semibold text-navy">Connect {entry.name}</h3>
+              <h3 className="font-heading text-base font-semibold text-white">Connect {entry.name}</h3>
               <p className="text-xs text-secondary">{entry.description}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1167,7 +1162,7 @@ function CatalogInspectorModal({
           <form onSubmit={handleConnectToken} className="space-y-3.5">
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-medium text-navy">{entry.tokenLabel || "API / Access Token"}</label>
+                <label className="block text-xs font-medium text-white">{entry.tokenLabel || "API / Access Token"}</label>
                 {entry.tokenHelpUrl && (
                   <a
                     href={entry.tokenHelpUrl}
@@ -1187,14 +1182,14 @@ function CatalogInspectorModal({
                 placeholder="Paste token or key..."
                 autoFocus
                 required
-                className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               />
             </div>
             {error && <p className="text-xs text-crimson">{error}</p>}
             <button
               type="submit"
               disabled={!token.trim() || busy}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+              className="btn-primary-cta flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               Connect {entry.name}
@@ -1205,7 +1200,7 @@ function CatalogInspectorModal({
             <select
               value={manualTransport}
               onChange={(e) => setManualTransport(e.target.value as "http" | "stdio")}
-              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/60"
+              className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric"
             >
               <option value="http">Remote (HTTP MCP Server)</option>
               <option value="stdio">Local Process (command via npx/etc)</option>
@@ -1218,14 +1213,14 @@ function CatalogInspectorModal({
                   onChange={(e) => setManualUrl(e.target.value)}
                   placeholder="MCP server URL (https://...)"
                   required
-                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 />
                 <input
                   type="password"
                   value={manualSecret}
                   onChange={(e) => setManualSecret(e.target.value)}
                   placeholder="Bearer token or API key"
-                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 />
               </>
             ) : (
@@ -1236,14 +1231,14 @@ function CatalogInspectorModal({
                   onChange={(e) => setManualCommand(e.target.value)}
                   placeholder="Command, e.g. npx"
                   required
-                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 />
                 <input
                   type="text"
                   value={manualArgs}
                   onChange={(e) => setManualArgs(e.target.value)}
                   placeholder="Args, e.g. -y @vendor/mcp-server"
-                  className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+                  className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 />
               </>
             )}
@@ -1251,7 +1246,7 @@ function CatalogInspectorModal({
             <button
               type="submit"
               disabled={busy}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+              className="btn-primary-cta flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               Connect {entry.name}
@@ -1337,21 +1332,21 @@ function CustomConnectorInspectorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/20 to-gold/20 text-electric border border-electric/30">
               <Plug className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-heading text-base font-semibold text-navy">{connector.name}</h3>
-              <span className="rounded bg-navy px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
+              <h3 className="font-heading text-base font-semibold text-white">{connector.name}</h3>
+              <span className="rounded bg-[#111827] border border-[#333333] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
                 {connector.method} REST Endpoint
               </span>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1362,7 +1357,7 @@ function CustomConnectorInspectorModal({
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-2 py-2 text-xs text-white outline-none focus:border-electric"
               >
                 {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
                   <option key={m} value={m}>
@@ -1374,7 +1369,7 @@ function CustomConnectorInspectorModal({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 required
               />
             </div>
@@ -1382,14 +1377,14 @@ function CustomConnectorInspectorModal({
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               required
             />
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={authMode}
                 onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
-                className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-electric"
               >
                 <option value="none">No auth</option>
                 <option value="bearer">Bearer token</option>
@@ -1401,7 +1396,7 @@ function CustomConnectorInspectorModal({
                   value={authHeaderName}
                   onChange={(e) => setAuthHeaderName(e.target.value)}
                   placeholder="Header name (e.g. X-Api-Key)"
-                  className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                  className="rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 />
               )}
             </div>
@@ -1411,7 +1406,7 @@ function CustomConnectorInspectorModal({
                 value={secretValue}
                 onChange={(e) => setSecretValue(e.target.value)}
                 placeholder="•••••••• (leave blank to keep current secret)"
-                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               />
             )}
             {error && <p className="text-xs text-crimson">{error}</p>}
@@ -1419,24 +1414,25 @@ function CustomConnectorInspectorModal({
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded-lg border border-border-metal px-3 py-1.5 text-xs text-muted hover:text-navy"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs text-muted hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60"
+                className="btn-primary-cta px-4 py-1.5 text-xs disabled:opacity-60"
               >
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline mr-1" /> : null}
+                Save Changes
               </button>
             </div>
           </form>
         ) : (
           <div className="space-y-3">
-            <div className="rounded-xl border border-border-metal bg-sunken/60 p-3 space-y-1">
+            <div className="rounded-xl border border-[#333333] bg-[#111827] p-3 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint URL</span>
-              <p className="font-mono text-xs text-navy break-all">{connector.url}</p>
+              <p className="font-mono text-xs text-white break-all">{connector.url}</p>
             </div>
 
             <div className="flex items-center justify-between gap-2 pt-1">
@@ -1444,7 +1440,7 @@ function CustomConnectorInspectorModal({
                 type="button"
                 onClick={handleTest}
                 disabled={testing}
-                className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white px-3 py-1.5 text-xs font-medium text-navy hover:border-electric/60 hover:text-electric transition-colors"
+                className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs font-medium text-white hover:border-electric hover:text-electric transition-colors"
               >
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
                 <span>{testing ? "Testing Ping…" : "Test Endpoint"}</span>
@@ -1461,13 +1457,13 @@ function CustomConnectorInspectorModal({
             {testResult && (
               <div className={`flex items-start gap-2 rounded-lg p-2.5 text-xs border ${testResult.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"}`}>
                 {testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
-                <span>{testResult.message}</span>
+                <span className="text-white">{testResult.message}</span>
               </div>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-3 border-t border-border-metal">
+        <div className="flex items-center justify-between pt-3 border-t border-[#333333]">
           <button
             type="button"
             onClick={handleDelete}
@@ -1479,7 +1475,7 @@ function CustomConnectorInspectorModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-border-metal bg-sunken px-4 py-1.5 text-xs font-semibold text-navy hover:bg-white"
+            className="rounded-lg border border-[#333333] bg-[#111827] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#1f2937] transition-colors"
           >
             Done
           </button>
@@ -1530,15 +1526,15 @@ function N8nInspectorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between pb-3 border-b border-border-metal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#EA4B71] to-[#FF6D5A] text-white shadow-sm">
               <Zap className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-heading text-base font-semibold text-navy">n8n Automation Engine</h3>
+              <h3 className="font-heading text-base font-semibold text-white">n8n Automation Engine</h3>
               <div className="mt-0.5 flex items-center gap-2">
                 <span
                   className={`flex items-center gap-1 text-[10px] font-semibold ${
@@ -1551,30 +1547,30 @@ function N8nInspectorModal({
               </div>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <form onSubmit={handleSave} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-navy">N8N_HOST URL</label>
+            <label className="block text-xs font-medium text-white">N8N_HOST URL</label>
             <input
               type="url"
               value={host}
               onChange={(e) => setHost(e.target.value)}
               placeholder="http://localhost:5678"
-              className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-navy">N8N_API_KEY</label>
+            <label className="block text-xs font-medium text-white">N8N_API_KEY</label>
             <input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={config?.apiKey.configured ? "•••••••• (enter to replace existing key)" : "Paste API key from n8n Settings"}
-              className="mt-1 w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/60"
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
             />
           </div>
           {err && <p className="text-xs text-crimson">{err}</p>}
@@ -1591,7 +1587,7 @@ function N8nInspectorModal({
             <button
               type="submit"
               disabled={saving || (!host.trim() && !apiKey.trim())}
-              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+              className="btn-primary-cta flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : <Key className="h-3.5 w-3.5" />}
               <span>{saved ? "Saved!" : saving ? "Saving…" : "Save n8n Config"}</span>
@@ -1648,14 +1644,14 @@ function NewCustomConnectorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-2">
             <Plug className="h-5 w-5 text-electric" />
-            <h3 className="font-heading text-base font-semibold text-navy">Add Custom REST Connector</h3>
+            <h3 className="font-heading text-base font-semibold text-white">Add Custom REST Connector</h3>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1665,7 +1661,7 @@ function NewCustomConnectorModal({
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-2 py-2 text-xs text-white outline-none focus:border-electric"
             >
               {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
                 <option key={m} value={m}>
@@ -1678,7 +1674,7 @@ function NewCustomConnectorModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Connector display label"
-              className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               required
             />
           </div>
@@ -1687,14 +1683,14 @@ function NewCustomConnectorModal({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://api.example.com/endpoint"
-            className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+            className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
             required
           />
           <div className="grid grid-cols-2 gap-2">
             <select
               value={authMode}
               onChange={(e) => setAuthMode(e.target.value as typeof authMode)}
-              className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-electric"
             >
               <option value="none">No Auth</option>
               <option value="bearer">Bearer Token</option>
@@ -1706,7 +1702,7 @@ function NewCustomConnectorModal({
                 value={authHeaderName}
                 onChange={(e) => setAuthHeaderName(e.target.value)}
                 placeholder="Header (e.g. X-Api-Key)"
-                className="rounded-lg border border-border-metal bg-white px-2.5 py-2 text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               />
             )}
           </div>
@@ -1716,22 +1712,22 @@ function NewCustomConnectorModal({
               value={secretValue}
               onChange={(e) => setSecretValue(e.target.value)}
               placeholder="Secret / Key value"
-              className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+              className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
             />
           )}
           {error && <p className="text-xs text-crimson">{error}</p>}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border-metal">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#333333]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-border-metal px-4 py-2 text-xs text-muted hover:text-navy"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-4 py-2 text-xs text-muted hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy || !name.trim() || !url.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+              className="btn-primary-cta flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               <span>Create Connector</span>
@@ -1788,14 +1784,14 @@ function NewMcpServerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-border-metal bg-white shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between pb-3 border-b border-border-metal">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-2">
             <Server className="h-5 w-5 text-electric" />
-            <h3 className="font-heading text-base font-semibold text-navy">Add MCP Server (Custom)</h3>
+            <h3 className="font-heading text-base font-semibold text-white">Add MCP Server (Custom)</h3>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1805,7 +1801,7 @@ function NewMcpServerModal({
             <select
               value={transport}
               onChange={(e) => setTransport(e.target.value as "stdio" | "http")}
-              className="rounded-lg border border-border-metal bg-white px-2 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-2 py-2 text-xs text-white outline-none focus:border-electric"
             >
               <option value="stdio">Local (stdio)</option>
               <option value="http">Remote (http)</option>
@@ -1815,7 +1811,7 @@ function NewMcpServerModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Server display label"
-              className="rounded-lg border border-border-metal bg-white px-3 py-2 text-xs text-navy outline-none focus:border-electric/50"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               required
             />
           </div>
@@ -1826,7 +1822,7 @@ function NewMcpServerModal({
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder="Command, e.g. npx"
-                className="rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 required
               />
               <input
@@ -1834,7 +1830,7 @@ function NewMcpServerModal({
                 value={args}
                 onChange={(e) => setArgs(e.target.value)}
                 placeholder="Args, e.g. -y @vendor/mcp-server"
-                className="rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               />
             </div>
           ) : (
@@ -1844,7 +1840,7 @@ function NewMcpServerModal({
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://... (MCP server URL)"
-                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 required
               />
               <input
@@ -1852,23 +1848,23 @@ function NewMcpServerModal({
                 value={bearerToken}
                 onChange={(e) => setBearerToken(e.target.value)}
                 placeholder="Bearer token (optional)"
-                className="w-full rounded-lg border border-border-metal bg-white px-3 py-2 font-mono text-xs text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
               />
             </>
           )}
           {error && <p className="text-xs text-crimson">{error}</p>}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border-metal">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#333333]">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-border-metal px-4 py-2 text-xs text-muted hover:text-navy"
+              className="rounded-lg border border-[#333333] bg-[#111827] px-4 py-2 text-xs text-muted hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy || !name.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm disabled:opacity-50"
+              className="btn-primary-cta flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               <span>Add Server</span>
