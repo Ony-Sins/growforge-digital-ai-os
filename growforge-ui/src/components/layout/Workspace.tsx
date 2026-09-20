@@ -51,6 +51,28 @@ function sectionIdFor(view: ActiveView): string | null {
   }
 }
 
+function resolveGreetingName(userPropName?: string | null, memoryProfileName?: string | null): string {
+  const candidate = (memoryProfileName || userPropName || "").trim();
+
+  if (!candidate || candidate.toLowerCase().startsWith("dev") || candidate.toLowerCase() === "preview") {
+    return "Ony";
+  }
+
+  if (
+    /arif\s+md\.?\s*anjum\s+ony/i.test(candidate) ||
+    /\bony\b/i.test(candidate)
+  ) {
+    return "Ony";
+  }
+
+  const first = candidate.split(/\s+/)[0];
+  if (first.toLowerCase().startsWith("dev") || first.toLowerCase() === "preview") {
+    return "Ony";
+  }
+
+  return first || "Ony";
+}
+
 export function Workspace({ user }: { user: WorkspaceUser | null }) {
   const {
     activeView,
@@ -60,6 +82,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     openUserProfile,
     openAgentRoster,
     chatViewMode,
+    profileName,
   } = useAppState();
   const [flashSection, setFlashSection] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -69,7 +92,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
   const [inspectorJobId, setInspectorJobId] = useState<string | null>(null);
   const [inspectorShowFinal, setInspectorShowFinal] = useState(false);
 
-  const displayName = user?.name?.trim().split(/\s+/)[0] || "Ony";
+  const displayName = resolveGreetingName(user?.name, profileName);
 
   useEffect(() => {
     if (activeView === "brain") {

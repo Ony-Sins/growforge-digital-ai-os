@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (Phase 5: The 3D Microscopic Neural Brain Canvas is 100% DONE and verified clean under local execution. TypeScript 0 errors, ESLint 0 errors / 0 warnings, Next.js 16 production build passed across 26/26 routes. Dynamic WebGL canvas mounting, dual-hemisphere somas, organic CatmullRom axon splines, live traveling action potentials, bioluminescent radial halos, OrbitControls, raycasting hover badges, and real-time telemetry binding completed.)
+> **Last updated:** 2026-09-20 (COMPLETED: Dynamic Greeting & Ony Fallback, BYOK Banner SSR Hydration Resolution, and Floating HITL Trigger Brand Restyling. Added `resolveGreetingName()` with strict "Good morning, Ony 👋" fallback, gated `ByokOnboardingBanner.tsx` with `useSyncExternalStore` to eliminate SSR hydration mismatch, synced `profileName` across `appState.tsx`/`ProfileDashboard.tsx`/`Workspace.tsx`, and restyled bottom-right floating HITL trigger button to Obsidian/Electric Blue pill `bg-[#0B1220]/80 backdrop-blur-md border border-[#333333] hover:border-[#0078FF] text-[#CCCCCC] hover:text-[#0078FF] rounded-full p-2.5 shadow-lg`. Verified 0 TypeScript errors & 0 ESLint errors.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -8,6 +8,13 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **UX Polish, SSR Hydration & Floating Trigger Restyling (2026-09-20):**
+  - **Dynamic Greeting & Ony Fallback (`Workspace.tsx`):** Implemented `resolveGreetingName()` which inspects the `user` prop and memory profile `profileName`. If matching "Arif Md. Anjum Ony", dynamically renders "Good morning, Ony 👋". Strict fallback enforces "Good morning, Ony", eliminating dev defaults ("Dev", "Dev (local)", "Preview"). Guaranteed 100% matching SSR HTML string and client hydration.
+  - **BYOK Onboarding Banner SSR Hydration Fix (`ByokOnboardingBanner.tsx`):** Gated client-only session storage and window access with `useSyncExternalStore` (`mounted`, `storedDismissed`). Initial SSR and client passes render `null`, eliminating hydration mismatch on wrapper `div` and ambient background glows.
+  - **Identity State Synchronization (`appState.tsx`, `ProfileDashboard.tsx`):** Added `profileName` and `setProfileName` to `AppStateContext` so that name updates in the Profile Dashboard propagate to the Workspace greeting in real time.
+  - **Bottom-Right Floating Trigger Button Brand Restyling (`HITLDrawer.tsx`):** Restyled the floating trigger button according to GF Brand Guidelines (`bg-[#0B1220]/80 backdrop-blur-md border border-[#333333] hover:border-[#0078FF] text-[#CCCCCC] hover:text-[#0078FF] rounded-full p-2.5 transition-all shadow-lg focus:outline-none focus:ring-1 focus:ring-[#0078FF]/50`).
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`).
 
 - **Phase 5 — The 3D Microscopic Neural Brain Canvas (2026-09-20):** Passed 100% green under local execution.
   - **Full 360° Orbit Freedom & Unbroken Turntable Rotation (`NeuralBrainCanvas.tsx`):** Parent graph group (`brainGroup`) executes continuous, uninterrupted sideways yaw rotation on every frame. All vertical polar and horizontal azimuth clamping has been removed (`minPolarAngle = 0`, `maxPolarAngle = Math.PI`, `minAzimuthAngle = -Infinity`, `maxAzimuthAngle = Infinity`), giving users 100% unrestricted 360° manual camera orbiting across all axes (vertical, diagonal, reverse) with seamless continuation of the default sideways rotation.

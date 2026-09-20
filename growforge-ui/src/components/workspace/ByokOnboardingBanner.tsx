@@ -1,25 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { Cpu, Key, Terminal, Check, Copy, X, RefreshCw, ArrowRight } from "lucide-react";
 import { useAppState } from "@/lib/appState";
 
 const DISMISSED_KEY = "growforge.byok_onboarding_dismissed";
 type ProviderStatus = "checking" | "local-ready" | "local-offline" | "cloud-configured";
 
+const emptySubscribe = () => () => {};
+
 export function ByokOnboardingBanner() {
   const { openSettings } = useAppState();
-  const [isDismissed, setIsDismissed] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      return window.sessionStorage.getItem(DISMISSED_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+  const [dismissedLocally, setDismissedLocally] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [providerStatus, setProviderStatus] = useState<ProviderStatus>("checking");
+
+  const storedDismissed = useSyncExternalStore(
+    emptySubscribe,
+    () => {
+      try {
+        return window.sessionStorage.getItem(DISMISSED_KEY) === "true";
+      } catch {
+        return false;
+      }
+    },
+    () => false,
+  );
 
   useEffect(() => {
     void checkProviderStatus();
@@ -61,7 +73,7 @@ export function ByokOnboardingBanner() {
   }
 
   function handleDismiss() {
-    setIsDismissed(true);
+    setDismissedLocally(true);
     try {
       window.sessionStorage.setItem(DISMISSED_KEY, "true");
     } catch {}
@@ -73,9 +85,11 @@ export function ByokOnboardingBanner() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const isDismissed = dismissedLocally || storedDismissed;
+
   // A confirmed local runtime needs no onboarding banner. A configured cloud
   // key stays visible until the user verifies it from the model manager.
-  if (isDismissed || providerStatus === "local-ready") return null;
+  if (!mounted || isDismissed || providerStatus === "local-ready") return null;
 
   const hasCloudConfiguration = providerStatus === "cloud-configured";
   const isChecking = providerStatus === "checking";

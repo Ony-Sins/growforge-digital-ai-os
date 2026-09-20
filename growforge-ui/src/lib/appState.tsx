@@ -117,6 +117,11 @@ interface AppStateValue {
   chatViewMode: "docked" | "maximized";
   setChatViewMode: (mode: "docked" | "maximized") => void;
 
+  /** The operator's display/full name from memory profile (UserMemory.profile.fullName),
+   *  shared here so Workspace greeting stays in sync without page reload. */
+  profileName: string | null;
+  setProfileName: (name: string | null) => void;
+
   /** Simple/Advanced UI mode — default is Simple (everyday-user-friendly,
    *  no dev/technical surfaces). Advanced reveals the Admin Drawer button,
    *  raw connector/MCP config, and per-department access toggles — real
@@ -175,6 +180,7 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
   );
   const [isAgentRosterOpen, setIsAgentRosterOpen] = useState(() => initialLocation?.panel === "roster");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [chatViewMode, setChatViewMode] = useState<"docked" | "maximized">("docked");
   const [uiMode, setUiModeState] = useState<UiMode>("simple");
 
@@ -184,9 +190,11 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       .then((data) => {
         const url = data?.memory?.profile?.avatarUrl;
         if (typeof url === "string" && url) setAvatarUrl(url);
+        const name = data?.memory?.profile?.fullName;
+        if (typeof name === "string" && name) setProfileName(name);
       })
       .catch(() => {
-        // no avatar yet, or not reachable — Header/ProfileDashboard fall back to initials
+        // no avatar or memory yet, or not reachable — Header/Workspace fall back to defaults
       });
   }, []);
 
@@ -387,6 +395,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       unlockAgent,
       avatarUrl,
       setAvatarUrl,
+      profileName,
+      setProfileName,
       chatViewMode,
       setChatViewMode,
       uiMode,
@@ -427,6 +437,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       unlockAgent,
       avatarUrl,
       setAvatarUrl,
+      profileName,
+      setProfileName,
       chatViewMode,
       setChatViewMode,
       uiMode,

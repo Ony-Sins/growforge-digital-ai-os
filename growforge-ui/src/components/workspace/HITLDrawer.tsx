@@ -417,18 +417,18 @@ export function HITLDrawer() {
         aria-label={`HITL: ${pendingCount} pending operator input${pendingCount !== 1 ? "s" : ""}`}
         onClick={() => setOpen((v) => !v)}
         className={[
-          "fixed z-50 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl transition-all duration-300",
+          "fixed z-50 flex items-center justify-center bg-[#0B1220]/80 backdrop-blur-md border border-[#333333] hover:border-[#0078FF] text-[#CCCCCC] hover:text-[#0078FF] rounded-full p-2.5 transition-all shadow-lg focus:outline-none focus:ring-1 focus:ring-[#0078FF]/50",
           // The docked AI Assistant panel is a full-width 45vh bottom sheet
           // below lg, and a fixed right column at lg+ — a plain bottom-6
           // right-6 sits directly underneath either one. Shift out of its
           // way instead of floating on top of the chat input.
           chatViewMode === "docked" ? "bottom-[calc(45vh+1rem)] right-6 lg:bottom-6 lg:right-[25rem]" : "bottom-6 right-6",
           pendingCount > 0
-            ? "bg-gradient-to-br from-electric to-gold glow-electric animate-pulse"
-            : "bg-navy/90 hover:bg-navy",
-        ].join(" ")}
+            ? "border-electric text-electric glow-electric animate-pulse"
+            : "",
+        ].filter(Boolean).join(" ")}
       >
-        <HelpCircle className="h-5 w-5 text-white" />
+        <HelpCircle className="h-5 w-5" />
         {pendingCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-crimson text-[10px] font-bold text-white shadow">
             {pendingCount}

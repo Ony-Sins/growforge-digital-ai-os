@@ -1,13 +1,20 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (COMPLETED: OrbitControls Depth Boundaries & Exact Brand Polish. Integrated Three.js `OrbitControls` into `NeuralBrainCanvas.tsx` with `minDistance=150` to prevent mesh clipping, `maxDistance=1000`, `enablePan=true`, and smooth damping `dampingFactor=0.05`. Polished `UserProfileOverlay.tsx` header tabs with dark obsidian container `bg-[#0B1220]/90 border border-[#333333] p-1 rounded-xl` and Sora-styled Electric Blue active pills. Applied Brand Guidelines tokens (Base `#0B1220`, Electric Blue `#0078FF`, Gold `#FFC432`, Charcoal `#333333`, Silver `#CCCCCC`) across `Workspace.tsx`, `NeedsAttention.tsx`, `SystemHealth.tsx`, and `globals.css` with `.btn-primary-cta` gradient pill CTA and typography discipline. Verified clean build with 0 TypeScript/ESLint errors.)
+> **Last updated:** 2026-09-20 (COMPLETED: Dynamic Greeting & Ony Fallback, BYOK Banner SSR Hydration Resolution, and Floating HITL Trigger Brand Restyling. Added `resolveGreetingName()` with strict "Good morning, Ony 👋" fallback, gated `ByokOnboardingBanner.tsx` with `useSyncExternalStore` to eliminate SSR hydration mismatch, synced `profileName` across `appState.tsx`/`ProfileDashboard.tsx`/`Workspace.tsx`, and restyled bottom-right floating HITL trigger button to Obsidian/Electric Blue pill `bg-[#0B1220]/80 backdrop-blur-md border border-[#333333] hover:border-[#0078FF] text-[#CCCCCC] hover:text-[#0078FF] rounded-full p-2.5 shadow-lg`. Verified 0 TypeScript errors & 0 ESLint errors.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
 
 ---
 
-## 1. What this project is
+## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **UX Polish, SSR Hydration & Floating Trigger Restyling (2026-09-20):**
+  - **Dynamic Greeting & Ony Fallback (`Workspace.tsx`):** Implemented `resolveGreetingName()` which inspects the `user` prop and memory profile `profileName`. If matching "Arif Md. Anjum Ony", dynamically renders "Good morning, Ony 👋". Strict fallback enforces "Good morning, Ony", eliminating dev defaults ("Dev", "Dev (local)", "Preview"). Guaranteed 100% matching SSR HTML string and client hydration.
+  - **BYOK Onboarding Banner SSR Hydration Fix (`ByokOnboardingBanner.tsx`):** Gated client-only session storage and window access with `useSyncExternalStore` (`mounted`, `storedDismissed`). Initial SSR and client passes render `null`, eliminating hydration mismatch on wrapper `div` and ambient background glows.
+  - **Identity State Synchronization (`appState.tsx`, `ProfileDashboard.tsx`):** Added `profileName` and `setProfileName` to `AppStateContext` so that name updates in the Profile Dashboard propagate to the Workspace greeting in real time.
+  - **Bottom-Right Floating Trigger Button Brand Restyling (`HITLDrawer.tsx`):** Restyled the floating trigger button according to GF Brand Guidelines (`bg-[#0B1220]/80 backdrop-blur-md border border-[#333333] hover:border-[#0078FF] text-[#CCCCCC] hover:text-[#0078FF] rounded-full p-2.5 transition-all shadow-lg focus:outline-none focus:ring-1 focus:ring-[#0078FF]/50`).
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`).
 
 A Next.js 16 (Turbopack, App Router) multi-department AI agency automation platform. Real pipeline: `brief → HQ plan → live research → departments (parallel) → HQ cross-department review → QA → final plan`, in `src/lib/orchestrator.ts`. 8 real departments (`src/lib/departments.ts`, classily renamed), each backed by a real `*_Agent_System.md` file at the repo root, plus HQ and QA. Multi-provider LLM routing (`src/lib/llm.ts`, `src/lib/model-router.ts`) across Gemini/Groq/OpenAI/Anthropic/OpenRouter/Ollama with live free-model discovery and rate-limit cooldowns. A separate, lightweight 7-agent single-dispatch roster (`src/lib/agents.ts`) exists for quick one-off text tasks — confirmed to have **zero tool access** (a single `chatComplete` call, nothing more).
 

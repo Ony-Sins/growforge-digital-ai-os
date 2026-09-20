@@ -108,7 +108,7 @@ const STYLE_PRESETS = [
 ];
 
 export function ProfileDashboard({ user }: ProfileDashboardProps) {
-  const { setAvatarUrl } = useAppState();
+  const { setAvatarUrl, setProfileName } = useAppState();
   const [memory, setMemory] = useState<UserMemory | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -154,6 +154,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
         setWritingStyle(data.memory.writingStyle || "");
         const profile: UserProfileIdentity = data.memory.profile || emptyIdentity();
         setIdentity(profile);
+        if (profile.fullName) setProfileName(profile.fullName);
         setIsEditingIdentity(!(profile.fullName || profile.designation || profile.companyName || profile.about));
       }
     } catch (err) {
@@ -177,7 +178,9 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
       const data = await res.json();
       if (data.memory) {
         setMemory(data.memory);
-        setIdentity(data.memory.profile || emptyIdentity());
+        const profile: UserProfileIdentity = data.memory.profile || emptyIdentity();
+        setIdentity(profile);
+        if (profile.fullName) setProfileName(profile.fullName);
         setIdentitySaved(true);
         setIsEditingIdentity(false);
         setTimeout(() => setIdentitySaved(false), 3000);
