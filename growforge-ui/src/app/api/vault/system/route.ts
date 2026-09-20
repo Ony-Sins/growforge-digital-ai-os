@@ -81,6 +81,9 @@ interface SaveModelRequestBody {
 export async function POST(req: Request) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only. Sign in to save provider settings." }, { status: 403 });
+  }
 
   let body: SaveModelRequestBody;
   try {
