@@ -1,9 +1,9 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20 (COMPLETED: Production-Grade Dark UI Visual Repair & Strict Brand Token Enforcement. All white card leakages eradicated, white-on-white inputs in Connections Hub/AiModelManager/ProjectCanvas fixed with dark obsidian `#0B1220` backgrounds and `#111827` surface containers, docked and maximized AI Assistant chat container restored with dark obsidian glass `#0B1220`/95 and `.btn-primary-cta` pill gradients, canvas backgrounds set to dark `#0B1220` with `#333333` borders and grid dots. Verified clean build with 0 TypeScript/ESLint errors.)
+> **Last updated:** 2026-09-20 (COMPLETED: Dashboard Layout Overhaul & Visual Artifact Cleanup. Inline 10-node ReactFlow canvas moved out of dashboard scroll feed into slide-over `ProjectInspectorDrawer` modal. Replaced with compact 2-column "Active Pipelines" card grid featuring live progress, agent metrics, and inspector triggers. Added Hero Greeting and directive command input bar in initial viewport. Cleaned Header unstyled white pill artifact and enforced dark obsidian styling. Removed bottom-left canvas white rectangle and harsh neon borders in favor of Charcoal `#333333` and Electric Blue `#0078FF` brand tokens. Verified clean build with 0 TypeScript/ESLint errors.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
-> **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root, new this session) before any design/UI work — see §3.
+> **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
 
 ---
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   Handle,
   MarkerType,
   Position,
@@ -78,11 +77,11 @@ const KIND_TAG: Record<JobStep["kind"], string> = {
 };
 
 const STATUS_STYLE: Record<StepStatus, { ring: string; bar: string; text: string; label: string }> = {
-  pending: { ring: "border-border-metal", bar: "bg-muted/40", text: "text-muted", label: "Waiting" },
-  active: { ring: "border-electric ring-4 ring-electric/15", bar: "bg-gradient-to-r from-electric to-gold", text: "text-electric", label: "Working" },
-  done: { ring: "border-emerald/60", bar: "bg-emerald", text: "text-emerald", label: "Done" },
+  pending: { ring: "border-[#333333]", bar: "bg-[#333333]", text: "text-muted", label: "Waiting" },
+  active: { ring: "border-electric ring-4 ring-electric/25", bar: "bg-gradient-to-r from-electric to-gold", text: "text-electric", label: "Working" },
+  done: { ring: "border-[#333333]", bar: "bg-electric", text: "text-white", label: "Done" },
   error: { ring: "border-crimson/60", bar: "bg-crimson", text: "text-crimson", label: "Failed" },
-  skipped: { ring: "border-gold/60 border-dashed", bar: "bg-gold", text: "text-gold", label: "Skipped" },
+  skipped: { ring: "border-[#333333] border-dashed", bar: "bg-[#333333]", text: "text-muted", label: "Skipped" },
 };
 
 type StepNodeData = { step: JobStep; selected: boolean };
@@ -97,9 +96,9 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
 
   return (
     <div
-      className={`relative w-[230px] cursor-pointer rounded-2xl border-2 bg-[#111827] border-[#333333] p-3 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.6)] transition-all ${style.ring} ${
-        selected ? "scale-[1.03] shadow-[0_14px_32px_-12px_rgba(0,120,255,0.45)]" : "hover:-translate-y-0.5"
-      } ${isFinal && step.status === "done" ? "bg-gradient-to-br from-[#111827] to-emerald/10" : ""}`}
+      className={`relative w-[230px] cursor-pointer rounded-2xl border-2 bg-[#111827] p-3 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.6)] transition-all ${style.ring} ${
+        selected ? "scale-[1.03] shadow-[0_14px_32px_-12px_rgba(0,120,255,0.45)] border-electric" : "hover:-translate-y-0.5"
+      } ${isFinal && step.status === "done" ? "bg-gradient-to-br from-[#111827] to-electric/15" : ""}`}
     >
       {/* Floating "working" badge */}
       {step.status === "active" && (
@@ -114,7 +113,7 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
       <div className="flex items-start gap-2.5">
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-            step.status === "active" ? "bg-electric/10 text-electric" : step.status === "done" ? "bg-emerald/10 text-emerald" : "bg-sunken text-secondary"
+            step.status === "active" ? "bg-electric/15 text-electric" : step.status === "done" ? "bg-electric/10 text-electric" : "bg-sunken text-secondary"
           }`}
         >
           <Icon className="h-4 w-4" />
@@ -128,7 +127,7 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
 
       <p className="mt-2 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-secondary">{step.activity}</p>
 
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sunken">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#1F2937]">
         <div className={`h-full rounded-full transition-[width] duration-700 ease-out ${style.bar}`} style={{ width: `${percent}%` }} />
       </div>
 
@@ -169,15 +168,15 @@ function buildGraph(job: Job, selectedId: string | null): { nodes: StepNodeType[
         const source = byId.get(dep)!;
         const flowing = step.status === "active";
         const complete = source.status === "done" && (step.status === "done" || step.status === "active");
-        const color = flowing ? "#0078ff" : complete ? "#10b981" : "#cbd5e1";
+        const color = flowing ? "#0078FF" : complete ? "#0078FF" : "#333333";
         return {
           id: `${dep}->${step.id}`,
           source: dep,
           target: step.id,
           type: "smoothstep",
           animated: flowing,
-          style: { stroke: color, strokeWidth: flowing ? 2.5 : 2 },
-          markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+          style: { stroke: color, strokeWidth: flowing ? 2.5 : 1.5 },
+          markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
         };
       }),
   );
@@ -195,11 +194,11 @@ function formatDuration(from?: string, to?: string) {
 function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
   const style = STATUS_STYLE[step.status];
   return (
-    <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-md flex-col border-l border-border-metal bg-white/95 shadow-2xl backdrop-blur-xl">
-      <div className="flex items-start gap-3 border-b border-border-metal p-4">
+    <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-md flex-col border-l border-[#333333] bg-[#0B1220]/95 shadow-2xl backdrop-blur-xl text-white">
+      <div className="flex items-start gap-3 border-b border-[#333333] p-4">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{KIND_TAG[step.kind]}</p>
-          <h3 className="font-heading text-base font-semibold text-navy">{step.label}</h3>
+          <h3 className="font-heading text-base font-semibold text-white">{step.label}</h3>
           <p className={`mt-0.5 text-xs font-medium ${style.text}`}>
             {style.label} · {step.activity}
             {step.startedAt && ` · ${formatDuration(step.startedAt, step.finishedAt)}`}
@@ -211,7 +210,7 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
             </p>
           )}
         </div>
-        <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-sunken hover:text-navy">
+        <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -466,15 +465,23 @@ function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => 
   );
 }
 
-export function ProjectCanvas() {
+export function ProjectCanvas({
+  initialJobId,
+  onClose,
+  initialShowFinal = false,
+}: {
+  initialJobId?: string | null;
+  onClose?: () => void;
+  initialShowFinal?: boolean;
+} = {}) {
   const { activeJobId, openJob } = useAppState();
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [job, setJob] = useState<Job | null>(null);
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
-  const [showFinal, setShowFinal] = useState(false);
+  const [showFinal, setShowFinal] = useState(initialShowFinal);
   const [jobsMenuOpen, setJobsMenuOpen] = useState(false);
 
-  const currentId = activeJobId ?? jobs[0]?.id ?? null;
+  const currentId = initialJobId ?? activeJobId ?? jobs[0]?.id ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -528,30 +535,40 @@ export function ProjectCanvas() {
   const localFallbackSteps = visibleJob?.steps.filter((s) => s.provider === "ollama") ?? [];
 
   return (
-    <section className="glass-card overflow-hidden rounded-2xl">
-      <div className="flex flex-wrap items-center gap-3 border-b border-border-metal px-5 py-4">
+    <section className="glass-card overflow-hidden rounded-2xl flex flex-col h-full">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[#333333] bg-[#0B1220] px-5 py-4 shrink-0">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-border-metal">
           <Sparkles className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-heading text-base font-semibold text-navy">Live Projects</h2>
+          <h2 className="font-heading text-base font-semibold text-white">Live Execution Pipeline</h2>
           <p className="text-xs text-secondary">
-            Brief → HQ → research → departments → team review → QA → final plan. Click any node to see what that agent produced.
+            Brief → HQ → research → departments → team review → QA → final plan. Click any node to inspect agent output.
           </p>
         </div>
         {visibleJob?.status === "done" && visibleJob.finalOutput && (
           <button
             type="button"
             onClick={() => setShowFinal(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-electric to-gold px-4 py-2 text-sm font-semibold text-white shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-95"
           >
-            <Trophy className="h-4 w-4" /> View final plan
+            <Trophy className="h-4 w-4" /> View Final Plan
+          </button>
+        )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-[#333333] bg-[#111827] p-2 text-[#CCCCCC] hover:bg-[#1F2937] hover:text-white transition-colors"
+            title="Close Inspector"
+          >
+            <X className="h-5 w-5" />
           </button>
         )}
       </div>
 
       {jobs.length > 0 && (
-        <div className="relative border-b border-border-metal px-5 py-3">
+        <div className="relative border-b border-[#333333] bg-[#0B1220]/60 px-5 py-3 shrink-0">
           <button
             type="button"
             onClick={() => setJobsMenuOpen((v) => !v)}
@@ -652,7 +669,7 @@ export function ProjectCanvas() {
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sunken text-muted">
             <Workflow className="h-6 w-6" />
           </span>
-          <p className="font-heading text-sm font-semibold text-navy">{currentId ? "Loading project…" : "No projects yet"}</p>
+          <p className="font-heading text-sm font-semibold text-white">{currentId ? "Loading project…" : "No projects yet"}</p>
           {!currentId && (
             <p className="max-w-md text-sm text-secondary">
               Describe a project to the AI Assistant — for example, <em>&quot;my client just started a roofing business and needs a full growth plan&quot;</em>. It will ask a few questions, confirm, then send it to the team. You&apos;ll watch every department work here.
@@ -661,7 +678,7 @@ export function ProjectCanvas() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 shrink-0 bg-[#0B1220]">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-white">{visibleJob.title}</p>
               <p className="truncate text-xs text-secondary">
@@ -675,7 +692,7 @@ export function ProjectCanvas() {
               </p>
             </div>
             <div className="flex w-full items-center gap-3 sm:w-72">
-              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-sunken">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#1F2937]">
                 <div
                   className={`h-full rounded-full transition-[width] duration-700 ease-out ${
                     visibleJob.status === "error" ? "bg-crimson" : visibleJob.status === "done" ? "bg-emerald" : "bg-gradient-to-r from-electric to-gold"
@@ -688,7 +705,7 @@ export function ProjectCanvas() {
           </div>
 
           {localFallbackSteps.length > 0 && (
-            <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-secondary">
+            <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-secondary shrink-0">
               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
               <span>
                 <span className="font-semibold text-white">Reduced quality:</span> {localFallbackSteps.length} step
@@ -702,7 +719,7 @@ export function ProjectCanvas() {
             <RevisePanel job={visibleJob} onRevised={setJob} />
           )}
 
-          <div className="relative h-[34rem] border-t border-[#333333] bg-[#0B1220]">
+          <div className="relative flex-1 min-h-[30rem] border-t border-[#333333] bg-[#0B1220]">
             <ReactFlow
               key={visibleJob.id}
               nodes={graph.nodes}
@@ -721,7 +738,6 @@ export function ProjectCanvas() {
               proOptions={{ hideAttribution: true }}
             >
               <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="#333333" />
-              <Controls showInteractive={false} />
             </ReactFlow>
             {selectedStep && <StepPanel step={selectedStep} onClose={() => setSelectedStepId(null)} />}
           </div>
@@ -730,5 +746,26 @@ export function ProjectCanvas() {
 
       {showFinal && visibleJob?.finalOutput && <FinalPlanModal job={visibleJob} onClose={() => setShowFinal(false)} onUpdated={setJob} />}
     </section>
+  );
+}
+
+export function ProjectInspectorDrawer({
+  isOpen,
+  onClose,
+  jobId,
+  initialShowFinal = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  jobId?: string | null;
+  initialShowFinal?: boolean;
+}) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative flex flex-col h-full max-h-[92vh] w-full max-w-7xl rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <ProjectCanvas initialJobId={jobId} onClose={onClose} initialShowFinal={initialShowFinal} />
+      </div>
+    </div>
   );
 }
