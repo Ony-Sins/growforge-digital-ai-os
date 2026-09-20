@@ -73,6 +73,21 @@ export interface McpServerRow {
   hasCredential: boolean;
   catalogId?: string;
   authHeader?: string;
+  origin?: "catalog" | "custom" | "byo-mcp";
+}
+
+/** Catalog-token and manual-connect flows never set `origin` on the
+ *  backend def (see mcp/store.ts) — only the BYO-MCP auto-discovery drawer
+ *  does. `catalogId` presence is what actually distinguishes a curated
+ *  catalog entry from the freeform "Add a custom MCP server" form. */
+function originBadge(server: McpServerRow): { label: string; className: string } {
+  if (server.origin === "byo-mcp") {
+    return { label: "BYO-MCP", className: "bg-electric/10 text-electric border-electric/30" };
+  }
+  if (server.catalogId) {
+    return { label: "Catalog", className: "bg-emerald/10 text-emerald border-emerald/30" };
+  }
+  return { label: "Custom", className: "bg-[#1F2937] text-secondary border-[#333333]" };
 }
 
 export interface DepartmentOption {
@@ -388,6 +403,7 @@ export function IntegrationsHub() {
               {/* Connected MCP Servers */}
               {filteredServers.map((server) => {
                 const brand = server.catalogId ? CONNECTOR_BRAND_ICONS[server.catalogId] : null;
+                const badge = originBadge(server);
                 return (
                   <div
                     key={server.id}
@@ -409,9 +425,12 @@ export function IntegrationsHub() {
                           <h3 className="text-xs font-semibold text-white truncate group-hover:text-electric transition-colors">
                             {server.name}
                           </h3>
-                          <div className="mt-0.5 flex items-center gap-1.5">
+                          <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
                             <span className="rounded bg-[#0B1220] border border-[#333333] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase">
                               MCP {server.transport}
+                            </span>
+                            <span className={`rounded border px-1.5 py-0.2 text-[9px] font-bold uppercase ${badge.className}`}>
+                              {badge.label}
                             </span>
                             <span className="flex items-center gap-1 text-[10px] font-medium text-emerald">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" />
