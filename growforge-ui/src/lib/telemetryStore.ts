@@ -95,6 +95,23 @@ class TelemetryStore {
     };
   }
 
+  public getEmptySnapshot(): TelemetrySnapshot {
+    return {
+      executionState: "idle",
+      activeJobId: null,
+      activeNodeId: null,
+      activeLobe: "neural_core",
+      activeAction: null,
+      progressPct: 0,
+      totalToolInvocations: 0,
+      successfulToolInvocations: 0,
+      connectedMcpCount: 0,
+      publicToolsCount: 0,
+      recentEvents: [],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   public emitEvent(event: Omit<TelemetryEvent, "id" | "timestamp">): TelemetryEvent {
     const fullEvent: TelemetryEvent = {
       ...event,

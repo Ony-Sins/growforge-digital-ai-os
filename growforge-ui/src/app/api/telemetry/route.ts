@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     if (isPublicPreviewVisitor(session)) {
-      return NextResponse.json(telemetryStore.getSnapshot(0, 0));
+      return NextResponse.json(telemetryStore.getEmptySnapshot());
     }
 
     const mcpServers = listMcpServers();

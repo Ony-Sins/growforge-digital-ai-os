@@ -329,7 +329,13 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
       - `7af33fa` fix(security): full audit — close public-preview data exposure everywhere
       - `f727818` security: close preview data-isolation gap on jobs/approvals/consultations/profile/attachments/router routes (item 46)
 
-**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45, 46) is now fully closed and live. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 47, 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
+48. **Telemetry public-preview data isolation closed — item 42 residual gap resolved (2026-09-21, 01:52, Antigravity).** Item 42 originally patched `/api/telemetry` to hide raw tool/server counts via `telemetryStore.getSnapshot(0, 0)`, but left open a known residual gap: `getSnapshot()` still returned the in-memory singleton's live state (`executionState`, `activeJobId`, `activeNodeId`, `activeLobe`, `activeAction`, `totalToolInvocations`, and full `recentEvents: [...]` event stream).
+    - **Fix**: Added `getEmptySnapshot()` on `TelemetryStore` (`telemetryStore.ts`) providing an entirely zeroed, isolated snapshot (`idle` execution state, `progressPct: 0`, `0` invocations, `null` active job/action, and empty `recentEvents: []`). Updated `/api/telemetry/route.ts` to return `telemetryStore.getEmptySnapshot()` whenever `isPublicPreviewVisitor(session)` is true.
+    - **Vercel serverless in-memory evaluation**: Under Vercel's Serverless Function architecture, warm containers are reused across sequential requests within their execution lifecycle. While different serverless instances have isolated memory spaces, sequential requests hitting the same warm worker (or any single-instance / pm2 deployment) share global state (e.g. `globalThis.__growforge_telemetry_store__`). Returning an explicitly empty snapshot guarantees zero telemetry and event leakage across sessions regardless of container reuse or deployment topology.
+    - **Verified**: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors (1 pre-existing warning), Next.js 16 production build (`npm run build`) succeeded across all 28/28 routes.
+    - **Not pushed.**
+
+**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45, 46, 48) is now fully closed. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 48, 47, 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
 
 ## 4. Known, accepted issues carried forward
 
@@ -341,8 +347,8 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 
 ## 5. Working tree state
 
-**Committed and pushed to `origin/master` (2026-09-21, 01:05, Antigravity). Vercel deploy confirmed green.**
-- Phase 4A (Local-First Runtime & Safe Tool Foundation) milestone committed and pushed cleanly.
+**Unpushed local commit (item 48) on top of pushed master (`ad7b8f9`, item 47).**
+- Telemetry public-preview data isolation gap completely resolved.
 - `growforge-ui` builds cleanly with 0 TypeScript and 0 ESLint errors.
 
 ## 6. Immediate next steps for whoever picks this up
