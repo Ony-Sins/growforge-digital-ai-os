@@ -389,41 +389,31 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Profile Overview Card — single Facebook-style header (cover photo +
-       *  avatar overlapping bottom-left, not FB's own bottom-center) so name
-       *  and avatar only appear once; the Personal Details card below no
-       *  longer duplicates them. */}
-      <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
-        {/* No overflow-hidden on the outer card — it also hosts the "View
-         *  memory stats" popover further down, which was getting silently
-         *  clipped to nothing by an ancestor's overflow-hidden. The cover
-         *  photo needs clipped corners, but the avatar below it *must*
-         *  overflow past this section's bottom edge on purpose — so only an
-         *  inner layer (image/gradient/buttons) gets overflow-hidden, not
-         *  this whole relatively-positioned section. */}
-        <div className="group relative h-40 w-full bg-gradient-to-br from-electric/15 to-gold/15 sm:h-52">
-          <div className="absolute inset-0 overflow-hidden rounded-t-xl">
+      {/* Profile Overview Card — Facebook-style obsidian header */}
+      <div className="rounded-2xl border border-[#333333] bg-[#0B1220] shadow-xl">
+        <div className="group relative h-40 w-full bg-gradient-to-br from-[#0078FF]/20 to-[#FFC432]/15 sm:h-52">
+          <div className="absolute inset-0 overflow-hidden rounded-t-2xl">
             {identity.coverPhotoUrl && (
               <Image src={identity.coverPhotoUrl} alt="Cover photo" fill className="object-cover" sizes="100vw" priority />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-navy/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-transparent to-transparent" />
 
             <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={coverUploading}
-                className="flex items-center gap-1.5 rounded-lg bg-navy/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220]/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md transition-colors hover:bg-[#111c34] disabled:cursor-not-allowed disabled:opacity-60 font-inter"
               >
-                {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
-                {identity.coverPhotoUrl ? "Change cover" : "Add cover photo"}
+                {coverUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5 text-electric" />}
+                <span>{identity.coverPhotoUrl ? "Change cover" : "Add cover photo"}</span>
               </button>
               {identity.coverPhotoUrl && (
                 <button
                   type="button"
                   onClick={handleCoverRemove}
                   disabled={coverUploading}
-                  className="rounded-lg bg-navy/70 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-crimson/80 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-xl border border-[#333333] bg-[#0B1220]/80 p-1.5 text-white backdrop-blur-md transition-colors hover:bg-crimson/80 disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label="Remove cover photo"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -439,15 +429,14 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
             />
           </div>
 
-          {/* Avatar — bottom-center of the cover, circular. Deliberately
-           *  outside the overflow-hidden layer above. */}
+          {/* Avatar — circular, bottom-center */}
           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 sm:-bottom-12">
             <button
               type="button"
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarUploading}
               title="Upload profile picture"
-              className="group/avatar relative block h-24 w-24 shrink-0 rounded-full shadow-lg ring-4 ring-white disabled:cursor-not-allowed sm:h-28 sm:w-28"
+              className="group/avatar relative block h-24 w-24 shrink-0 rounded-full shadow-2xl ring-4 ring-[#0B1220] disabled:cursor-not-allowed sm:h-28 sm:w-28"
             >
               {identity.avatarUrl ? (
                 <Image
@@ -458,11 +447,11 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                   className="h-24 w-24 rounded-full object-cover sm:h-28 sm:w-28"
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-electric to-gold text-2xl font-bold text-white sm:h-28 sm:w-28">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#0078FF] to-[#FFC432] text-2xl font-bold text-white sm:h-28 sm:w-28">
                   {user?.email?.slice(0, 2).toUpperCase() || "GF"}
                 </div>
               )}
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-navy/60 text-white opacity-0 transition-opacity group-hover/avatar:opacity-100">
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover/avatar:opacity-100">
                 {avatarUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
               </span>
             </button>
@@ -472,7 +461,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                 onClick={handleAvatarRemove}
                 disabled={avatarUploading}
                 aria-label="Remove profile picture"
-                className="absolute -right-1 top-0 rounded-full bg-white p-1 text-crimson shadow-sm ring-1 ring-border-metal transition-colors hover:bg-crimson/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className="absolute -right-1 top-0 rounded-full bg-[#111c34] p-1 text-crimson shadow-md ring-1 ring-[#333333] transition-colors hover:bg-crimson/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -489,7 +478,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
 
         <div className="px-6 pb-6 pt-14 text-center sm:pt-16">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <h1 className="font-heading text-lg font-bold text-navy">
+            <h1 className="font-heading text-lg font-bold text-white">
               {identity.fullName || user?.name || user?.email || "Operator Profile"}
             </h1>
           </div>
@@ -502,7 +491,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
             )}
             {identity.phone && (
               <a href={`tel:${identity.phone}`} title={identity.phone}>
-                <GlyphIconTile icon={Phone} hex="0EA5E9" title={identity.phone} size={36} />
+                <GlyphIconTile icon={Phone} hex="0078FF" title={identity.phone} size={36} />
               </a>
             )}
             {SOCIAL_PLATFORMS.filter((p) => identity.socials[p]).map((platform) => (
@@ -523,7 +512,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                 onClick={() => setShowAddSocialPopover((v) => !v)}
                 aria-label="Add or manage social links"
                 title="Add or manage social links"
-                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-border-metal-strong text-secondary transition-colors hover:border-electric hover:text-electric"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed border-[#333333] text-[#CCCCCC] transition-colors hover:border-electric hover:text-white"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -535,18 +524,18 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                     className="fixed inset-0 z-40 cursor-default"
                     onClick={() => setShowAddSocialPopover(false)}
                   />
-                  <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-xl border border-border-metal bg-white p-3 text-left shadow-2xl">
+                  <div className="absolute left-1/2 top-full z-50 mt-2 w-80 -translate-x-1/2 rounded-2xl border border-[#333333] bg-[#0B1220] p-4 text-left shadow-2xl text-white">
                     {Object.keys(identity.socials).length > 0 && (
-                      <ul className="mb-2 space-y-1.5">
+                      <ul className="mb-3 space-y-1.5">
                         {SOCIAL_PLATFORMS.filter((p) => identity.socials[p]).map((platform) => (
-                          <li key={platform} className="flex items-center gap-2 rounded-lg bg-sunken px-2 py-1.5">
+                          <li key={platform} className="flex items-center gap-2 rounded-xl bg-[#111c34] border border-[#333333] px-2.5 py-1.5">
                             <SocialIconTile platform={platform} size={24} />
-                            <span className="min-w-0 flex-1 truncate text-xs text-navy">{SOCIAL_LABELS[platform]}</span>
+                            <span className="min-w-0 flex-1 truncate text-xs text-white font-inter">{SOCIAL_LABELS[platform]}</span>
                             <button
                               type="button"
                               onClick={() => handleRemoveSocial(platform)}
                               aria-label={`Remove ${SOCIAL_LABELS[platform]}`}
-                              className="shrink-0 rounded-md p-1 text-muted hover:bg-crimson/10 hover:text-crimson"
+                              className="shrink-0 rounded-md p-1 text-[#CCCCCC] hover:bg-crimson/20 hover:text-crimson transition-colors"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -555,15 +544,15 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                       </ul>
                     )}
                     {SOCIAL_PLATFORMS.some((p) => !identity.socials[p]) && (
-                      <form onSubmit={handleAddSocial} className="space-y-2">
+                      <form onSubmit={handleAddSocial} className="space-y-2.5">
                         <select
                           value={newSocialPlatform}
                           onChange={(e) => setNewSocialPlatform(e.target.value as SocialPlatform | "")}
-                          className="w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+                          className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3 py-2 text-xs text-white outline-none focus:border-electric"
                         >
-                          <option value="">Choose a platform…</option>
+                          <option value="" className="bg-[#0B1220] text-[#CCCCCC]">Choose a platform…</option>
                           {SOCIAL_PLATFORMS.filter((p) => !identity.socials[p]).map((p) => (
-                            <option key={p} value={p}>
+                            <option key={p} value={p} className="bg-[#0B1220] text-white">
                               {SOCIAL_LABELS[p]}
                             </option>
                           ))}
@@ -572,19 +561,19 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                           type="url"
                           value={newSocialUrl}
                           onChange={(e) => setNewSocialUrl(e.target.value)}
-                          placeholder="Paste the profile URL"
-                          className="w-full rounded-lg border border-border-metal bg-white px-2.5 py-1.5 text-xs text-navy outline-none focus:border-electric/50"
+                          placeholder="Paste profile URL"
+                          className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric"
                         />
                         <button
                           type="submit"
                           disabled={!newSocialPlatform || !newSocialUrl.trim()}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-4 py-2 text-xs font-bold font-inter text-white shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          <Plus className="h-3.5 w-3.5" /> Add
+                          <Plus className="h-3.5 w-3.5" /> <span>Add Link →</span>
                         </button>
                       </form>
                     )}
-                    <p className="mt-2 text-[10px] text-muted">Changes save with the Personal Details Save button below.</p>
+                    <p className="mt-2 text-[10px] text-[#CCCCCC] font-inter">Changes save with the Personal Details Save button below.</p>
                   </div>
                 </>
               )}
@@ -595,29 +584,25 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
             <button
               type="button"
               onClick={() => setShowLocationPicker(true)}
-              className="flex items-center gap-1 text-xs text-secondary transition-colors hover:text-electric"
+              className="flex items-center gap-1.5 text-xs text-[#CCCCCC] transition-colors hover:text-electric font-inter"
             >
-              <MapPin className="h-3 w-3" />
-              {identity.location?.label || "Add location"}
+              <MapPin className="h-3.5 w-3.5 text-electric" />
+              <span>{identity.location?.label || "Add location"}</span>
             </button>
           </div>
 
           {identity.about && (
-            <p className="mx-auto mt-3 max-w-md text-sm text-secondary">{identity.about}</p>
+            <p className="mx-auto mt-3 max-w-md text-sm text-[#CCCCCC] font-inter leading-relaxed">{identity.about}</p>
           )}
 
-          {/* Shadow Memory stat counts — real, but hidden behind a click
-           *  rather than always-visible: they're a summary of the Writing
-           *  Style / Brand Tenets / Learned Nuances / Rejections cards
-           *  further down the page, and floated without that context they
-           *  just read as noise in the header. */}
+          {/* Shadow Memory stat counts */}
           <div className="relative mt-4 inline-block">
             <button
               type="button"
               onClick={() => setShowStatsPopover((v) => !v)}
-              className="flex items-center gap-1 text-xs text-secondary transition-colors hover:text-electric"
+              className="flex items-center gap-1 text-xs text-[#CCCCCC] transition-colors hover:text-white font-inter"
             >
-              View memory stats
+              <span>View memory stats</span>
               <ChevronRight className={`h-3 w-3 transition-transform ${showStatsPopover ? "rotate-90" : ""}`} />
             </button>
             {showStatsPopover && (
@@ -628,33 +613,33 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                   className="fixed inset-0 z-40 cursor-default"
                   onClick={() => setShowStatsPopover(false)}
                 />
-                <div className="absolute left-1/2 top-full z-50 mt-2 grid w-72 -translate-x-1/2 grid-cols-2 gap-2 rounded-xl border border-border-metal bg-white p-3 text-left shadow-2xl">
-                  <div className="col-span-2 flex items-center gap-2 border-b border-border-metal pb-2">
-                    <span className="rounded-full bg-navy/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-navy">
-                      {user?.role || "Employee"}
+                <div className="absolute left-1/2 top-full z-50 mt-2 grid w-72 -translate-x-1/2 grid-cols-2 gap-2.5 rounded-2xl border border-[#333333] bg-[#0B1220] p-4 text-left shadow-2xl text-white">
+                  <div className="col-span-2 flex items-center gap-2 border-b border-[#333333] pb-2.5">
+                    <span className="rounded-full bg-electric/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-electric border border-electric/30">
+                      {user?.role || "Owner"}
                     </span>
-                    <span className="flex items-center gap-1 rounded-full bg-emerald/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald">
+                    <span className="flex items-center gap-1 rounded-full bg-emerald/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald border border-emerald/30">
                       <CheckCircle2 className="h-3 w-3" /> Memory Active
                     </span>
                   </div>
-                  <div className="rounded-lg bg-sunken p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted">Brand Rules</p>
-                    <p className="mt-1 font-heading text-xl font-bold text-navy">{memory?.brandRules.length || 0}</p>
+                  <div className="rounded-xl bg-[#111c34] border border-[#333333] p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[#CCCCCC] font-inter">Brand Rules</p>
+                    <p className="mt-1 font-heading text-xl font-bold text-white">{memory?.brandRules.length || 0}</p>
                   </div>
-                  <div className="rounded-lg bg-sunken p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted">Strategic Prefs</p>
-                    <p className="mt-1 font-heading text-xl font-bold text-navy">
+                  <div className="rounded-xl bg-[#111c34] border border-[#333333] p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[#CCCCCC] font-inter">Strategic Prefs</p>
+                    <p className="mt-1 font-heading text-xl font-bold text-white">
                       {Object.keys(memory?.preferences || {}).length}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-sunken p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted">Learned Nuances</p>
+                  <div className="rounded-xl bg-[#111c34] border border-[#333333] p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[#CCCCCC] font-inter">Learned Nuances</p>
                     <p className="mt-1 font-heading text-xl font-bold text-electric">
                       {memory?.learnedObservations.length || 0}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-sunken p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted">Hard Rejections</p>
+                  <div className="rounded-xl bg-[#111c34] border border-[#333333] p-3">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[#CCCCCC] font-inter">Hard Rejections</p>
                     <p className="mt-1 font-heading text-xl font-bold text-crimson">
                       {memory?.explicitRejections.length || 0}
                     </p>
@@ -664,18 +649,18 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
             )}
           </div>
 
-        {saveSuccess && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald/10 px-3 py-2 text-xs font-medium text-emerald">
-            <CheckCircle2 className="h-4 w-4" />
-            Memory profile saved. Active in all future pipeline executions!
-          </div>
-        )}
-        {error && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-crimson/10 px-3 py-2 text-xs font-medium text-crimson">
-            <XCircle className="h-4 w-4" />
-            {error}
-          </div>
-        )}
+          {saveSuccess && (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-emerald/15 border border-emerald/30 px-3 py-2 text-xs font-medium text-emerald font-inter">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Memory profile saved. Active in all future pipeline executions!</span>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-crimson/15 border border-crimson/30 px-3 py-2 text-xs font-medium text-crimson font-inter">
+              <XCircle className="h-4 w-4" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -687,57 +672,56 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
         />
       )}
 
-      {/* Personal Details Card — editable fields only; avatar/cover/name now
-       *  live solely in the header above, not duplicated here. */}
-      <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
+      {/* Personal Details Card */}
+      <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-electric" />
-            <h2 className="font-heading text-sm font-semibold text-navy">Personal Details</h2>
+          <div className="flex items-center gap-2.5">
+            <Shield className="h-5 w-5 text-electric" />
+            <h2 className="font-heading text-sm font-semibold text-white">Personal Details</h2>
           </div>
           {isEditingIdentity ? (
             <button
               type="button"
               onClick={saveIdentity}
               disabled={identitySaving}
-              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-5 py-2 text-xs font-bold text-white shadow-lg shadow-[#0078FF]/20 hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 transition-all font-inter"
             >
               {identitySaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : identitySaved ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
-              {identitySaved ? "Saved" : identitySaving ? "Saving…" : "Save"}
+              <span>{identitySaved ? "Saved!" : identitySaving ? "Saving…" : "Save Details →"}</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => setIsEditingIdentity(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-sunken px-3 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-white hover:text-navy"
+              className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#111c34] px-4 py-2 text-xs font-medium text-[#CCCCCC] transition-colors hover:border-electric hover:text-white font-inter"
             >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
+              <Pencil className="h-3.5 w-3.5 text-electric" />
+              <span>Edit Details</span>
             </button>
           )}
         </div>
 
         {isEditingIdentity ? (
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">Full Name</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Full Name</label>
               <input
                 type="text"
                 value={identity.fullName}
                 onChange={(e) => setIdentity((prev) => ({ ...prev, fullName: e.target.value }))}
                 placeholder="e.g. Arif Md. Anjum Ony"
-                className="w-full rounded-lg border border-border-metal bg-sunken px-3 py-2 text-sm text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-inter"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">Designation</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Designation</label>
               <input
                 type="text"
                 list="designation-options"
                 value={identity.designation}
                 onChange={(e) => setIdentity((prev) => ({ ...prev, designation: e.target.value }))}
                 placeholder="e.g. Founder & CEO"
-                className="w-full rounded-lg border border-border-metal bg-sunken px-3 py-2 text-sm text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-inter"
               />
               <datalist id="designation-options">
                 {DESIGNATION_OPTIONS.map((d) => (
@@ -746,270 +730,275 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
               </datalist>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">Company Name</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Company Name</label>
               <input
                 type="text"
                 value={identity.companyName}
                 onChange={(e) => setIdentity((prev) => ({ ...prev, companyName: e.target.value }))}
                 placeholder="e.g. GrowForge Digital"
-                className="w-full rounded-lg border border-border-metal bg-sunken px-3 py-2 text-sm text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-inter"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">Phone Number</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Phone Number</label>
               <input
                 type="tel"
                 value={identity.phone ?? ""}
                 onChange={(e) => setIdentity((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="e.g. +880 1XXX-XXXXXX"
-                className="w-full rounded-lg border border-border-metal bg-sunken px-3 py-2 text-sm text-navy outline-none focus:border-electric/50"
+                className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-mono"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-secondary">About</label>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">About &amp; Bio</label>
               <textarea
                 value={identity.about}
                 onChange={(e) => setIdentity((prev) => ({ ...prev, about: e.target.value }))}
                 placeholder="A short bio — what you do, who you serve, what makes your approach different."
                 rows={3}
-                className="w-full resize-none rounded-lg border border-border-metal bg-sunken px-3 py-2 text-sm text-navy outline-none focus:border-electric/50"
+                className="w-full resize-none rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-inter leading-relaxed"
               />
             </div>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-secondary">Designation</p>
-              <p className="mt-1 text-sm text-navy">{identity.designation || "—"}</p>
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-[#333333] bg-[#111c34] p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Designation</p>
+              <p className="mt-1 text-xs font-semibold text-white font-inter">{identity.designation || "—"}</p>
             </div>
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-secondary">Company Name</p>
-              <p className="mt-1 text-sm text-navy">{identity.companyName || "—"}</p>
+            <div className="rounded-xl border border-[#333333] bg-[#111c34] p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Company Name</p>
+              <p className="mt-1 text-xs font-semibold text-white font-inter">{identity.companyName || "—"}</p>
             </div>
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-secondary">Phone Number</p>
-              <p className="mt-1 text-sm text-navy">{identity.phone || "—"}</p>
+            <div className="rounded-xl border border-[#333333] bg-[#111c34] p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">Phone Number</p>
+              <p className="mt-1 text-xs font-semibold text-white font-mono">{identity.phone || "—"}</p>
             </div>
           </div>
         )}
-
-        {/* Social links are managed from the "+" tile in the header above,
-         *  not duplicated here — see the Add/manage popover there. */}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Writing Style & Tone Card */}
-        <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-electric" />
-            <h2 className="font-heading text-sm font-semibold text-navy">Writing Style &amp; Tone</h2>
-          </div>
-          <p className="mt-1 text-xs text-secondary">
-            Dictates how the HQ Orchestrator and department agents phrase recommendations, deliverables, and briefs.
-          </p>
+        <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="h-5 w-5 text-electric" />
+              <h2 className="font-heading text-sm font-semibold text-white">Writing Style &amp; Tone</h2>
+            </div>
+            <p className="mt-1 text-xs text-[#CCCCCC] font-inter">
+              Dictates how the HQ Orchestrator and department agents phrase recommendations, deliverables, and briefs.
+            </p>
 
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {STYLE_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => setWritingStyle(preset.text)}
-                className="rounded-lg border border-border-metal bg-sunken px-2.5 py-1 text-[11px] font-medium text-secondary transition-colors hover:border-electric/40 hover:text-navy"
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {STYLE_PRESETS.map((preset) => (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => setWritingStyle(preset.text)}
+                  className="rounded-lg border border-[#333333] bg-[#111c34] px-2.5 py-1 text-[11px] font-medium text-[#CCCCCC] transition-colors hover:border-electric hover:text-white font-inter"
+                >
+                  {preset.name}
+                </button>
+              ))}
+            </div>
 
-          <textarea
-            value={writingStyle}
-            onChange={(e) => setWritingStyle(e.target.value)}
-            rows={4}
-            className="mt-3 w-full rounded-lg border border-border-metal bg-sunken/60 p-3 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
-            placeholder="Define writing tone, formatting rules, and stylistic nuances..."
-          />
+            <textarea
+              value={writingStyle}
+              onChange={(e) => setWritingStyle(e.target.value)}
+              rows={4}
+              className="mt-3.5 w-full rounded-xl border border-[#333333] bg-[#111c34] p-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric focus:ring-1 focus:ring-electric/30 font-inter leading-relaxed"
+              placeholder="Define writing tone, formatting rules, and stylistic nuances..."
+            />
+          </div>
 
           <button
             type="button"
             onClick={() => saveMemoryPatch({ writingStyle })}
             disabled={saving || writingStyle === memory?.writingStyle}
-            className="mt-3 flex items-center gap-1.5 rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-navy/90 disabled:opacity-50"
+            className="mt-4 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all font-inter self-start"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Save Style Profile
+            <span>Save Style Profile →</span>
           </button>
         </div>
 
         {/* Brand Rules Card */}
-        <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-gold" />
-            <h2 className="font-heading text-sm font-semibold text-navy">Core Brand Tenets &amp; Rules</h2>
-          </div>
-          <p className="mt-1 text-xs text-secondary">
-            Mandatory guidelines that must be applied across every client proposal and strategy document.
-          </p>
+        <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Shield className="h-5 w-5 text-gold" />
+              <h2 className="font-heading text-sm font-semibold text-white">Core Brand Tenets &amp; Rules</h2>
+            </div>
+            <p className="mt-1 text-xs text-[#CCCCCC] font-inter">
+              Mandatory guidelines that must be applied across every client proposal and strategy document.
+            </p>
 
-          <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
-            {memory?.brandRules.map((rule, idx) => (
-              <li
-                key={idx}
-                className="flex items-start justify-between gap-2 rounded-lg border border-border-metal bg-sunken/40 p-2.5 text-xs text-navy"
-              >
-                <span className="flex-1 leading-relaxed">• {rule}</span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteRule(idx)}
-                  className="rounded p-1 text-muted hover:bg-crimson/10 hover:text-crimson"
-                  title="Remove rule"
+            <ul className="mt-3.5 max-h-56 space-y-2 overflow-y-auto pr-1">
+              {memory?.brandRules.map((rule, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start justify-between gap-2 rounded-xl border border-[#333333] bg-[#111c34] p-3 text-xs text-white font-inter"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <span className="flex-1 leading-relaxed">• {rule}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRule(idx)}
+                    className="rounded p-1 text-[#CCCCCC] hover:bg-crimson/20 hover:text-crimson transition-colors"
+                    title="Remove rule"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          <form onSubmit={handleAddRule} className="mt-3 flex gap-2">
+          <form onSubmit={handleAddRule} className="mt-4 flex gap-2">
             <input
               type="text"
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
               placeholder="Add new brand tenet (e.g. Always include 90-day ROI projections)..."
-              className="flex-1 rounded-lg border border-border-metal bg-sunken/60 px-3 py-1.5 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
+              className="flex-1 rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
             />
             <button
               type="submit"
               disabled={!newRule.trim() || saving}
-              className="flex items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-4 py-2 text-xs font-bold text-white hover:brightness-110 disabled:opacity-50 transition-all font-inter"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <Plus className="h-3.5 w-3.5" /> <span>Add →</span>
             </button>
           </form>
         </div>
 
         {/* Learned Observations (Shadow Memory) */}
-        <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
-          <div className="flex items-center gap-2">
-            <Brain className="h-4 w-4 text-electric" />
-            <h2 className="font-heading text-sm font-semibold text-navy">
-              Learned Nuances (Shadow Memory)
-            </h2>
-          </div>
-          <p className="mt-1 text-xs text-secondary">
-            Patterns, operator habits, and revision nuances learned over time from your project feedback.
-          </p>
+        <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Brain className="h-5 w-5 text-electric" />
+              <h2 className="font-heading text-sm font-semibold text-white">
+                Learned Nuances (Shadow Memory)
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-[#CCCCCC] font-inter">
+              Patterns, operator habits, and revision nuances learned over time from your project feedback.
+            </p>
 
-          <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
-            {memory?.learnedObservations.map((obs, idx) => (
-              <li
-                key={idx}
-                className="flex items-start justify-between gap-2 rounded-lg border border-border-metal bg-sunken/40 p-2.5 text-xs text-navy"
-              >
-                <span className="flex-1 leading-relaxed">
-                  <span className="font-semibold text-electric">⚡ </span>
-                  {obs}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteObservation(idx)}
-                  className="rounded p-1 text-muted hover:bg-crimson/10 hover:text-crimson"
-                  title="Remove observation"
+            <ul className="mt-3.5 max-h-56 space-y-2 overflow-y-auto pr-1">
+              {memory?.learnedObservations.map((obs, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start justify-between gap-2 rounded-xl border border-[#333333] bg-[#111c34] p-3 text-xs text-white font-inter"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <span className="flex-1 leading-relaxed">
+                    <span className="font-semibold text-electric">⚡ </span>
+                    {obs}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteObservation(idx)}
+                    className="rounded p-1 text-[#CCCCCC] hover:bg-crimson/20 hover:text-crimson transition-colors"
+                    title="Remove observation"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          <form onSubmit={handleAddObservation} className="mt-3 flex gap-2">
+          <form onSubmit={handleAddObservation} className="mt-4 flex gap-2">
             <input
               type="text"
               value={newObservation}
               onChange={(e) => setNewObservation(e.target.value)}
               placeholder="Record observation (e.g. Prefers Meta Ads over LinkedIn for local pitches)..."
-              className="flex-1 rounded-lg border border-border-metal bg-sunken/60 px-3 py-1.5 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
+              className="flex-1 rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
             />
             <button
               type="submit"
               disabled={!newObservation.trim() || saving}
-              className="flex items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-4 py-2 text-xs font-bold text-white hover:brightness-110 disabled:opacity-50 transition-all font-inter"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <Plus className="h-3.5 w-3.5" /> <span>Add →</span>
             </button>
           </form>
         </div>
 
         {/* Explicit Rejections Card */}
-        <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-crimson" />
-            <h2 className="font-heading text-sm font-semibold text-navy">Explicit Constraints &amp; Rejections</h2>
-          </div>
-          <p className="mt-1 text-xs text-secondary">
-            Hard constraints and forbidden suggestions that agents must NEVER include in project plans.
-          </p>
+        <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Flame className="h-5 w-5 text-crimson" />
+              <h2 className="font-heading text-sm font-semibold text-white">Explicit Constraints &amp; Rejections</h2>
+            </div>
+            <p className="mt-1 text-xs text-[#CCCCCC] font-inter">
+              Hard constraints and forbidden suggestions that agents must NEVER include in project plans.
+            </p>
 
-          <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
-            {memory?.explicitRejections.map((rej, idx) => (
-              <li
-                key={idx}
-                className="flex items-start justify-between gap-2 rounded-lg border border-crimson/20 bg-crimson/5 p-2.5 text-xs text-navy"
-              >
-                <span className="flex-1 leading-relaxed text-crimson font-medium">⛔ {rej}</span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteRejection(idx)}
-                  className="rounded p-1 text-muted hover:bg-crimson/10 hover:text-crimson"
-                  title="Remove rejection"
+            <ul className="mt-3.5 max-h-56 space-y-2 overflow-y-auto pr-1">
+              {memory?.explicitRejections.map((rej, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start justify-between gap-2 rounded-xl border border-crimson/30 bg-crimson/10 p-3 text-xs text-white font-inter"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <span className="flex-1 leading-relaxed text-crimson font-medium">⛔ {rej}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRejection(idx)}
+                    className="rounded p-1 text-[#CCCCCC] hover:bg-crimson/20 hover:text-crimson transition-colors"
+                    title="Remove rejection"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          <form onSubmit={handleAddRejection} className="mt-3 flex gap-2">
+          <form onSubmit={handleAddRejection} className="mt-4 flex gap-2">
             <input
               type="text"
               value={newRejection}
               onChange={(e) => setNewRejection(e.target.value)}
               placeholder="Add forbidden rule (e.g. Never propose WordPress for enterprise builds)..."
-              className="flex-1 rounded-lg border border-border-metal bg-sunken/60 px-3 py-1.5 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
+              className="flex-1 rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-crimson font-inter"
             />
             <button
               type="submit"
               disabled={!newRejection.trim() || saving}
-              className="flex items-center gap-1 rounded-lg bg-crimson px-3 py-1.5 text-xs font-semibold text-white hover:bg-crimson/90 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-crimson px-4 py-2 text-xs font-bold text-white hover:bg-crimson/90 disabled:opacity-50 transition-all font-inter"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <Plus className="h-3.5 w-3.5" /> <span>Add →</span>
             </button>
           </form>
         </div>
       </div>
 
       {/* Strategic Preferences Card */}
-      <div className="bg-white shadow-sm border border-slate-100 rounded-xl p-5">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-electric" />
-          <h2 className="font-heading text-sm font-semibold text-navy">Strategic Operator Preferences</h2>
+      <div className="bg-[#0B1220] shadow-xl border border-[#333333] rounded-2xl p-6">
+        <div className="flex items-center gap-2.5">
+          <Target className="h-5 w-5 text-electric" />
+          <h2 className="font-heading text-sm font-semibold text-white">Strategic Operator Preferences</h2>
         </div>
-        <p className="mt-1 text-xs text-secondary">
+        <p className="mt-1 text-xs text-[#CCCCCC] font-inter">
           Default baseline parameters injected into research questions and financial models.
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(memory?.preferences || {}).map(([key, val]) => (
-            <div key={key} className="flex flex-col justify-between rounded-lg border border-border-metal bg-sunken/40 p-3">
+            <div key={key} className="flex flex-col justify-between rounded-xl border border-[#333333] bg-[#111c34] p-3.5">
               <div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#CCCCCC] font-inter">
                   {key.replace(/_/g, " ")}
                 </span>
-                <p className="mt-1 text-xs font-medium text-navy">{val}</p>
+                <p className="mt-1 text-xs font-medium text-white font-inter">{val}</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleDeletePref(key)}
-                className="mt-2 self-end text-[11px] text-muted hover:text-crimson"
+                className="mt-2 self-end text-[11px] text-[#CCCCCC] hover:text-crimson transition-colors font-inter"
               >
                 Delete
               </button>
@@ -1017,27 +1006,27 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
           ))}
         </div>
 
-        <form onSubmit={handleAddPref} className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr_auto]">
+        <form onSubmit={handleAddPref} className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-[1fr_2fr_auto]">
           <input
             type="text"
             value={newPrefKey}
             onChange={(e) => setNewPrefKey(e.target.value)}
             placeholder="Key (e.g. ad_platform)"
-            className="rounded-lg border border-border-metal bg-sunken/60 px-3 py-1.5 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
+            className="rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
           />
           <input
             type="text"
             value={newPrefVal}
             onChange={(e) => setNewPrefVal(e.target.value)}
             placeholder="Value (e.g. Meta Ads & Google Ads combined)"
-            className="rounded-lg border border-border-metal bg-sunken/60 px-3 py-1.5 text-xs text-navy outline-none focus:border-electric/50 focus:bg-white"
+            className="rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
           />
           <button
             type="submit"
             disabled={!newPrefKey.trim() || !newPrefVal.trim() || saving}
-            className="flex items-center justify-center gap-1 rounded-lg bg-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-5 py-2 text-xs font-bold text-white hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all font-inter"
           >
-            <Plus className="h-3.5 w-3.5" /> Add Preference
+            <Plus className="h-3.5 w-3.5" /> <span>Add Preference →</span>
           </button>
         </form>
       </div>

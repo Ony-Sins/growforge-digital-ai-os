@@ -181,13 +181,13 @@ export function NodeWorkflowCanvas() {
               className={`group absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 outline-none`}
               style={{ left: pct(HUB.x, VIEW_W), top: pct(HUB.y, VIEW_H) }}
             >
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-md border border-slate-100 transition-transform group-hover:scale-105">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-[#0B1220] shadow-md border border-[#333333] transition-transform group-hover:scale-105">
                 {/* Selection & status ring */}
                 <span
                   className={`absolute inset-0 rounded-2xl transition-all ${
                     selected === hub.id
-                      ? "ring-2 ring-gold/60 shadow-[0_0_24px_rgba(230,175,46,0.35)]"
-                      : "ring-1 ring-border-metal-strong"
+                      ? "ring-2 ring-gold/60 shadow-[0_0_24px_rgba(255,196,50,0.35)]"
+                      : "ring-1 ring-[#333333]"
                   }`}
                 />
                 <span className="relative h-12 w-12 drop-shadow-sm">
@@ -201,7 +201,7 @@ export function NodeWorkflowCanvas() {
                   />
                 </span>
               </div>
-              <span className="rounded-full bg-navy px-2.5 py-0.5 font-mono text-[10px] font-semibold text-on-navy shadow-sm">
+              <span className="rounded-full bg-[#111c34] border border-[#333333] px-2.5 py-0.5 font-mono text-[10px] font-semibold text-gold shadow-sm">
                 orchestrator
               </span>
             </button>
@@ -218,7 +218,7 @@ export function NodeWorkflowCanvas() {
                     ? "border-emerald ring-1 ring-emerald/20"
                     : agent.status === "error"
                       ? "border-crimson ring-1 ring-crimson/20"
-                      : "border-slate-200";
+                      : "border-[#333333]";
               return (
                 <button
                   key={agent.id}
@@ -233,18 +233,18 @@ export function NodeWorkflowCanvas() {
                   style={{ left: pct(l.x, VIEW_W), top: pct(l.y, VIEW_H) }}
                 >
                   <span
-                    className={`relative flex h-11 w-11 items-center justify-center rounded-xl border-2 bg-white shadow-sm transition-transform group-hover:scale-110 ${ring} ${
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-xl border-2 bg-[#111c34] shadow-sm transition-transform group-hover:scale-110 ${ring} ${
                       isSelected ? "glow-electric ring-2 ring-electric/40" : ""
                     }`}
                   >
-                    <Icon className="h-[18px] w-[18px] text-navy" strokeWidth={2} />
+                    <Icon className="h-[18px] w-[18px] text-electric" strokeWidth={2} />
                     {isAgentLocked(agent.id) && !canAccessAgent(agent.id) && (
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-navy ring-2 ring-white">
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#0B1220] ring-2 ring-[#333333]">
                         <Lock className="h-2.5 w-2.5 text-gold" />
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[96px] truncate rounded-full bg-white shadow-sm border border-slate-100 px-2 py-0.5 text-[10px] font-medium text-navy">
+                  <span className="max-w-[96px] truncate rounded-full bg-[#0B1220] shadow-sm border border-[#333333] px-2 py-0.5 text-[10px] font-medium text-navy">
                     {agent.name}
                   </span>
                 </button>

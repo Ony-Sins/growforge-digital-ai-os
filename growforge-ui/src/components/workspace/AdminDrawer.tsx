@@ -140,7 +140,7 @@ export function AdminDrawer() {
             <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {activeTab === "terminal" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-xl bg-white p-3.5 shadow-sm border border-slate-100">
+                  <div className="flex items-center justify-between rounded-xl bg-[#111c34] p-3.5 shadow-sm border border-[#333333]">
                     <div className="flex items-center gap-2 text-xs text-secondary">
                       <Zap className="h-4 w-4 text-electric" />
                       <span>Direct agent invocation &amp; JSON payload dispatcher</span>
@@ -153,7 +153,7 @@ export function AdminDrawer() {
 
               {activeTab === "logs" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-xl bg-white p-3.5 shadow-sm border border-slate-100">
+                  <div className="flex items-center justify-between rounded-xl bg-[#111c34] p-3.5 shadow-sm border border-[#333333]">
                     <div className="flex items-center gap-2 text-xs text-secondary">
                       <ScrollText className="h-4 w-4 text-emerald" />
                       <span>Live system stream with severity filtering</span>
@@ -175,7 +175,7 @@ function DiagnosticsPanel() {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+        <div className="rounded-xl bg-[#111c34] p-4 shadow-sm border border-[#333333]">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">Agent Network</p>
           <p className="mt-2 font-heading text-2xl font-bold text-navy">{agents.length} Online</p>
           <p className="mt-1 text-[11px] text-emerald flex items-center gap-1">
@@ -183,20 +183,20 @@ function DiagnosticsPanel() {
           </p>
         </div>
 
-        <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+        <div className="rounded-xl bg-[#111c34] p-4 shadow-sm border border-[#333333]">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">Encrypted Vault</p>
           <p className="mt-2 font-heading text-2xl font-bold text-navy">AES-256-GCM</p>
           <p className="mt-1 text-[11px] text-secondary">Master key authenticated</p>
         </div>
 
-        <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+        <div className="rounded-xl bg-[#111c34] p-4 shadow-sm border border-[#333333]">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">RBAC Policy</p>
           <p className="mt-2 font-heading text-2xl font-bold text-navy">Creator / Owner</p>
           <p className="mt-1 text-[11px] text-secondary">Strict job revision gate</p>
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm border border-slate-100">
+      <div className="rounded-xl bg-[#111c34] p-5 shadow-sm border border-[#333333]">
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-electric" />
           <h3 className="font-heading text-sm font-semibold text-navy">Security &amp; API Vault Status</h3>

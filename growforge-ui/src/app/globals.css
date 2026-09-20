@@ -1,30 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* Core surfaces — futuristic light / white HQ */
-  --color-bg-app: #f8fafc;      /* crisp white/silver backdrop */
-  --color-bg-surface: #ffffff;  /* solid card surface */
-  --color-bg-glass: rgba(255, 255, 255, 0.62); /* glassmorphism card fill */
-  --color-bg-glass-strong: rgba(255, 255, 255, 0.82);
-  --color-bg-sunken: rgba(11, 18, 32, 0.035); /* recessed panels on white */
-  --color-bg-code: #0b1220;     /* terminal / code surfaces stay navy for contrast */
+  /* GrowForge Official Brand Palette */
+  --color-bg-app: #0b1220;      /* Navy (Primary Base / Canvas) */
+  --color-bg-surface: #111c34;  /* Deep Navy Elevated Surface */
+  --color-bg-charcoal: #333333; /* Charcoal (Card Fill / Elevated Surfaces) */
+  --color-bg-black: #000000;    /* Black (Deep Scaffolding / Contrast) */
+  --color-bg-glass: rgba(17, 28, 52, 0.85); /* Glassmorphism card fill */
+  --color-bg-glass-strong: rgba(11, 18, 32, 0.95);
+  --color-bg-sunken: rgba(0, 0, 0, 0.55); /* Recessed panels */
+  --color-bg-code: #000000;
 
-  /* Metallic borders */
-  --color-border-metal: rgba(11, 18, 32, 0.08);
-  --color-border-metal-strong: rgba(11, 18, 32, 0.14);
+  /* Metallic & Brand Borders */
+  --color-border-metal: #333333;
+  --color-border-metal-strong: rgba(204, 204, 204, 0.25);
+  --color-border-silver: #cccccc;
 
-  /* Text */
-  --color-text-navy: #0b1220;
-  --color-text-secondary: #475569; /* slate-600 */
-  --color-text-muted: #94a3b8;     /* slate-400 */
-  --color-text-on-navy: #f8fafc;
+  /* Typography & Text */
+  --color-text-navy: #ffffff;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc; /* Silver subtext */
+  --color-text-muted: #94a3b8;
+  --color-text-on-navy: #ffffff;
 
-  /* Brand accents */
-  --color-accent-electric: #0078ff;
+  /* Brand Accents */
+  --color-accent-electric: #0078ff; /* Electric Blue (Primary Accent) */
   --color-accent-electric-soft: #4da2ff;
-  --color-accent-gold: #ffc432;
+  --color-accent-gold: #ffc432;     /* Gold (Secondary Energy / Accent) */
   --color-accent-gold-soft: #ffd970;
-  --color-accent-silver: #cccccc;
+  --color-accent-silver: #cccccc;   /* Silver (Subtext & Inactive Borders) */
+  --color-accent-charcoal: #333333; /* Charcoal (Card Fill / Elevated Surfaces) */
+  --color-accent-black: #000000;    /* Black (Deep Scaffolding / Contrast) */
 
   /* Status */
   --color-accent-emerald: #10b981;
@@ -39,6 +45,8 @@
 
   --color-app: var(--color-bg-app);
   --color-surface: var(--color-bg-surface);
+  --color-charcoal: var(--color-bg-charcoal);
+  --color-black: var(--color-bg-black);
   --color-glass: var(--color-bg-glass);
   --color-glass-strong: var(--color-bg-glass-strong);
   --color-sunken: var(--color-bg-sunken);
@@ -46,6 +54,7 @@
 
   --color-border-metal: var(--color-border-metal);
   --color-border-metal-strong: var(--color-border-metal-strong);
+  --color-border-silver: var(--color-border-silver);
 
   --color-navy: var(--color-text-navy);
   --color-secondary: var(--color-text-secondary);
@@ -63,15 +72,16 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
   background:
-    radial-gradient(ellipse 1200px 600px at 15% -10%, rgba(0, 120, 255, 0.07), transparent 60%),
+    radial-gradient(ellipse 1200px 600px at 15% -10%, rgba(0, 120, 255, 0.12), transparent 60%),
     radial-gradient(ellipse 900px 500px at 100% 0%, rgba(255, 196, 50, 0.08), transparent 55%),
-    var(--color-bg-app);
-  color: var(--color-text-navy);
+    #0b1220;
+  color: #ffffff;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 h1,
@@ -85,6 +95,17 @@ h6,
   letter-spacing: -0.01em;
 }
 
+p,
+span,
+label,
+input,
+textarea,
+select,
+button,
+.font-body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
 code,
 pre,
 kbd,
@@ -92,44 +113,69 @@ kbd,
   font-family: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-/* Glassmorphism card with a subtle metallic border */
+/* Glassmorphism obsidian card with charcoal borders */
 .glass-card {
-  background: var(--color-bg-glass);
-  border: 1px solid var(--color-border-metal);
+  background: rgba(17, 28, 52, 0.75);
+  border: 1px solid #333333;
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.6) inset,
-    0 12px 32px -20px rgba(11, 18, 32, 0.25);
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 12px 32px -20px rgba(0, 0, 0, 0.6);
 }
 
 .glass-card-strong {
-  background: var(--color-bg-glass-strong);
-  border: 1px solid var(--color-border-metal-strong);
+  background: rgba(11, 18, 32, 0.92);
+  border: 1px solid #333333;
   backdrop-filter: blur(24px) saturate(150%);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 16px 40px -22px rgba(11, 18, 32, 0.28);
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 16px 40px -22px rgba(0, 0, 0, 0.7);
+}
+
+/* Standardized Primary CTA Button: Rounded pill container with Electric Blue to Gold gradient */
+.btn-primary-pill {
+  border-radius: 9999px;
+  background-image: linear-gradient(to right, #0078ff, #ffc432);
+  color: #ffffff;
+  font-weight: 700;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  padding: 0.625rem 1.25rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 120, 255, 0.25);
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary-pill:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-primary-pill:active {
+  transform: scale(0.97);
 }
 
 /* Neon glow accents */
 .glow-electric {
-  box-shadow: 0 0 0 1px rgba(0, 120, 255, 0.28), 0 0 24px rgba(0, 120, 255, 0.28);
+  box-shadow: 0 0 0 1px rgba(0, 120, 255, 0.4), 0 0 24px rgba(0, 120, 255, 0.35);
 }
 
 .glow-gold {
-  box-shadow: 0 0 0 1px rgba(255, 196, 50, 0.35), 0 0 24px rgba(255, 196, 50, 0.32);
+  box-shadow: 0 0 0 1px rgba(255, 196, 50, 0.45), 0 0 24px rgba(255, 196, 50, 0.35);
 }
 
 .glow-crimson {
-  box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.28), 0 0 20px rgba(225, 29, 72, 0.28);
+  box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.35), 0 0 20px rgba(225, 29, 72, 0.3);
 }
 
 /* Thin scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border-metal-strong) transparent;
+  scrollbar-color: #333333 transparent;
 }
 
 *::-webkit-scrollbar {
@@ -138,7 +184,7 @@ kbd,
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: var(--color-border-metal-strong);
+  background-color: #333333;
   border-radius: 9999px;
 }
 

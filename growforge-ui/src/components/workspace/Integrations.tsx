@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Brain,
   CheckCircle2,
   Globe,
   Key,
@@ -18,51 +17,16 @@ import {
   Zap,
 } from "lucide-react";
 import type { CustomMcpPlugin, DetectedMcpTool } from "@/lib/mcp/pluginRegistry";
-import type { BrainLobe } from "@/lib/telemetryStore";
-
-const LOBE_OPTIONS: Array<{ id: BrainLobe; label: string; description: string; color: string }> = [
-  {
-    id: "neural_core",
-    label: "Neural Core (Executive & Planning)",
-    description: "Multi-agent coordination, synthesis, and memory vault.",
-    color: "#3b82f6",
-  },
-  {
-    id: "creative_strategy",
-    label: "Creative Strategy & Marketing",
-    description: "Brand narrative, positioning, and strategy automation.",
-    color: "#8b5cf6",
-  },
-  {
-    id: "growth_expansion",
-    label: "Growth & Business Development",
-    description: "Pipeline acquisition, outbound sales, and CRM sync.",
-    color: "#10b981",
-  },
-  {
-    id: "analytics_governance",
-    label: "Analytics & Finance Operations",
-    description: "Financial modeling, market research, and QA gates.",
-    color: "#f59e0b",
-  },
-  {
-    id: "performance_media",
-    label: "Performance & Paid Media",
-    description: "Meta & Google Ads campaign management and creative angles.",
-    color: "#ec4899",
-  },
-];
 
 export function Integrations({ className = "" }: { className?: string }) {
   const [plugins, setPlugins] = useState<CustomMcpPlugin[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Form State
+  // Form State: Simple Endpoint URL + optional Auth Token inputs
   const [name, setName] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [targetLobe, setTargetLobe] = useState<BrainLobe>("neural_core");
 
   // Connection/Detection State
   const [testing, setTesting] = useState(false);
@@ -109,7 +73,6 @@ export function Integrations({ className = "" }: { className?: string }) {
           name: name.trim(),
           serverUrl: serverUrl.trim(),
           apiKey: apiKey.trim() || undefined,
-          targetLobe,
         }),
       });
 
@@ -162,20 +125,20 @@ export function Integrations({ className = "" }: { className?: string }) {
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-cyan-500/30 bg-[#030712]/90 p-5 backdrop-blur-xl shadow-xl shadow-cyan-950/20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#333333] bg-[#0B1220] p-5 backdrop-blur-xl shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/30">
-            <Plug className="h-6 w-6 animate-pulse" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-electric/15 text-electric ring-1 ring-electric/30">
+            <Plug className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="font-heading text-base font-semibold text-slate-100 flex items-center gap-2">
+            <h2 className="font-heading text-base font-semibold text-white flex items-center gap-2">
               BYO-MCP Plugin Hub
-              <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-bold text-cyan-400 ring-1 ring-cyan-500/30">
-                <Sparkles className="h-3 w-3" /> Live Detection
+              <span className="inline-flex items-center gap-1 rounded-full bg-electric/15 px-2 py-0.5 text-[10px] font-bold text-electric ring-1 ring-electric/30">
+                <Sparkles className="h-3 w-3" /> Auto-Bound Broker
               </span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Connect external Model Context Protocol (MCP) servers via SSE/HTTP and dynamically inject tools into the 3D Neural Brain.
+            <p className="text-xs text-[#CCCCCC] mt-0.5 font-inter">
+              Connect external Model Context Protocol (MCP) servers via SSE/HTTP. Safe tool broker auto-binds discovered capabilities across the agent network.
             </p>
           </div>
         </div>
@@ -186,101 +149,94 @@ export function Integrations({ className = "" }: { className?: string }) {
             setIsDrawerOpen(true);
             setTestResult(null);
           }}
-          className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 hover:brightness-110 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-5 py-2.5 text-xs font-bold font-inter text-white shadow-lg shadow-[#0078FF]/20 hover:brightness-110 active:scale-95 transition-all shrink-0"
         >
           <Plus className="h-4 w-4" />
-          Add Custom MCP Server
+          <span>Add Custom MCP Server →</span>
         </button>
       </div>
 
       {/* Connected Plugins List */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Server className="h-3.5 w-3.5 text-cyan-400" /> Connected Custom MCP Servers ({plugins.length})
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#CCCCCC] flex items-center gap-1.5 font-inter">
+            <Server className="h-3.5 w-3.5 text-electric" /> Connected Custom MCP Servers ({plugins.length})
           </h3>
           <button
             type="button"
             onClick={() => void loadPlugins()}
-            className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-400 transition-colors"
+            className="flex items-center gap-1 text-[11px] text-[#CCCCCC] hover:text-electric transition-colors"
           >
             <RefreshCw className="h-3 w-3" /> Refresh
           </button>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/40 p-8">
-            <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+          <div className="flex items-center justify-center rounded-2xl border border-[#333333] bg-[#111c34]/50 p-8">
+            <Loader2 className="h-5 w-5 animate-spin text-electric" />
           </div>
         ) : plugins.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center">
-            <Plug className="h-8 w-8 text-slate-600 mb-2 opacity-60" />
-            <p className="text-sm font-medium text-slate-300">No custom MCP servers connected yet</p>
-            <p className="text-xs text-slate-500 max-w-sm mt-1">
-              Click &quot;Add Custom MCP Server&quot; to connect any SSE or HTTP endpoint and auto-discover its tool catalog.
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#333333] bg-[#111c34]/40 p-10 text-center">
+            <Plug className="h-8 w-8 text-[#CCCCCC]/60 mb-2 opacity-60" />
+            <p className="text-sm font-medium text-white font-inter">No custom MCP servers connected yet</p>
+            <p className="text-xs text-[#CCCCCC] max-w-sm mt-1 font-inter">
+              Click &quot;Add Custom MCP Server →&quot; to connect any SSE or HTTP endpoint and auto-discover its tool catalog.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {plugins.map((plugin) => {
-              const lobeInfo = LOBE_OPTIONS.find((l) => l.id === plugin.targetLobe) || LOBE_OPTIONS[0];
-              return (
-                <div
-                  key={plugin.id}
-                  className="group relative rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg backdrop-blur-md hover:border-cyan-500/40 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-3 w-3 rounded-full bg-emerald animate-pulse shadow-sm shadow-emerald/50" />
-                      <div>
-                        <h4 className="font-heading text-sm font-semibold text-slate-100">{plugin.name}</h4>
-                        <p className="text-[11px] font-mono text-slate-400 mt-0.5 flex items-center gap-1 truncate max-w-[220px]">
-                          <Globe className="h-3 w-3 shrink-0 text-slate-500" /> {plugin.serverUrl}
-                        </p>
-                      </div>
+            {plugins.map((plugin) => (
+              <div
+                key={plugin.id}
+                className="group relative rounded-2xl border border-[#333333] bg-[#0B1220] p-4 shadow-lg backdrop-blur-md hover:border-electric/50 transition-all"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 rounded-full bg-emerald animate-pulse shadow-sm shadow-emerald/50" />
+                    <div>
+                      <h4 className="font-heading text-sm font-semibold text-white">{plugin.name}</h4>
+                      <p className="text-[11px] font-mono text-[#CCCCCC] mt-0.5 flex items-center gap-1 truncate max-w-[220px]">
+                        <Globe className="h-3 w-3 shrink-0 text-slate-500" /> {plugin.serverUrl}
+                      </p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => void handleDeletePlugin(plugin.id)}
-                      title="Disconnect MCP server"
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-crimson/15 hover:text-crimson transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
 
-                  {/* Lobe Badge */}
-                  <div className="mt-3 flex items-center gap-2 border-t border-slate-800/80 pt-3">
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium text-slate-100"
-                      style={{ backgroundColor: `${lobeInfo.color}25`, borderColor: `${lobeInfo.color}50` }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: lobeInfo.color }} />
-                      {lobeInfo.label.split(" (")[0]}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {plugin.detectedTools.length} {plugin.detectedTools.length === 1 ? "tool" : "tools"} detected
-                    </span>
-                  </div>
-
-                  {/* Discovered Tools Chips */}
-                  {plugin.detectedTools.length > 0 && (
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {plugin.detectedTools.map((tool) => (
-                        <span
-                          key={tool.name}
-                          className="inline-flex items-center gap-1 rounded bg-cyan-950/40 px-2 py-0.5 font-mono text-[10px] text-cyan-300 border border-cyan-500/20"
-                        >
-                          <Zap className="h-2.5 w-2.5 text-cyan-400" />
-                          {tool.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleDeletePlugin(plugin.id)}
+                    title="Disconnect MCP server"
+                    className="rounded-lg p-1.5 text-[#CCCCCC] hover:bg-crimson/15 hover:text-crimson transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              );
-            })}
+
+                <div className="mt-3 flex items-center gap-2 border-t border-[#333333] pt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium text-white bg-electric/15 border border-electric/30">
+                    <span className="h-1.5 w-1.5 rounded-full bg-electric" />
+                    Auto-Bound
+                  </span>
+                  <span className="text-[10px] text-[#CCCCCC] font-inter">
+                    {plugin.detectedTools.length} {plugin.detectedTools.length === 1 ? "tool" : "tools"} detected
+                  </span>
+                </div>
+
+                {/* Discovered Tools Chips */}
+                {plugin.detectedTools.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {plugin.detectedTools.map((tool) => (
+                      <span
+                        key={tool.name}
+                        className="inline-flex items-center gap-1 rounded bg-[#111c34] px-2 py-0.5 font-mono text-[10px] text-sky-300 border border-[#333333]"
+                      >
+                        <Zap className="h-2.5 w-2.5 text-electric" />
+                        {tool.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -288,22 +244,22 @@ export function Integrations({ className = "" }: { className?: string }) {
       {/* Add Custom MCP Server Drawer / Modal */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[#030712] p-6 text-slate-100 shadow-2xl shadow-cyan-950/40 animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] p-6 text-white shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-center justify-between border-b border-[#333333] pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/30">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-electric/15 text-electric ring-1 ring-electric/30">
                   <Plug className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-base font-semibold text-slate-100">Add Custom MCP Server</h3>
-                  <p className="text-xs text-slate-400">Discover and bind tools to the 3D Neural Brain</p>
+                  <h3 className="font-heading text-base font-semibold text-white">Add Custom MCP Server</h3>
+                  <p className="text-xs text-[#CCCCCC] font-inter">Discover and auto-bind tools via the safe tool broker</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+                className="rounded-lg p-1 text-[#CCCCCC] hover:bg-[#333333] hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -313,8 +269,8 @@ export function Integrations({ className = "" }: { className?: string }) {
             <form onSubmit={handleTestAndConnect} className="mt-4 space-y-4">
               {/* Server Name */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Server Name <span className="text-cyan-400">*</span>
+                <label className="block text-xs font-semibold text-[#CCCCCC] mb-1.5 font-inter">
+                  Server Name <span className="text-electric">*</span>
                 </label>
                 <input
                   type="text"
@@ -322,14 +278,14 @@ export function Integrations({ className = "" }: { className?: string }) {
                   placeholder="e.g. Postgres DB MCP or Custom CRM Engine"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-cyan-500/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                  className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-electric focus:outline-none focus:ring-1 focus:ring-electric/30"
                 />
               </div>
 
               {/* Endpoint URL */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Endpoint URL (SSE or HTTP) <span className="text-cyan-400">*</span>
+                <label className="block text-xs font-semibold text-[#CCCCCC] mb-1.5 font-inter">
+                  Endpoint URL (SSE or HTTP) <span className="text-electric">*</span>
                 </label>
                 <input
                   type="url"
@@ -337,44 +293,23 @@ export function Integrations({ className = "" }: { className?: string }) {
                   placeholder="https://mcp.internal.acme.com/sse or http://localhost:8000/sse"
                   value={serverUrl}
                   onChange={(e) => setServerUrl(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-cyan-500/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 font-mono"
+                  className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-electric focus:outline-none focus:ring-1 focus:ring-electric/30 font-mono"
                 />
               </div>
 
               {/* Optional Auth Token */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[#CCCCCC] mb-1.5 flex items-center justify-between font-inter">
                   <span>Bearer Token / API Key <span className="text-slate-500 font-normal">(Optional)</span></span>
-                  <Key className="h-3 w-3 text-slate-400" />
+                  <Key className="h-3 w-3 text-[#CCCCCC]" />
                 </label>
                 <input
                   type="password"
                   placeholder="Secret token or API key for Authorization header"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-cyan-500/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 font-mono"
+                  className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-electric focus:outline-none focus:ring-1 focus:ring-electric/30 font-mono"
                 />
-              </div>
-
-              {/* Target Cognitive Brain Lobe */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
-                  <Brain className="h-3.5 w-3.5 text-cyan-400" /> Target Cognitive Lobe
-                </label>
-                <select
-                  value={targetLobe}
-                  onChange={(e) => setTargetLobe(e.target.value as BrainLobe)}
-                  className="w-full rounded-xl border border-slate-800 bg-[#030712] px-3.5 py-2.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
-                >
-                  {LOBE_OPTIONS.map((lobe) => (
-                    <option key={lobe.id} value={lobe.id} className="bg-[#030712] text-slate-100">
-                      {lobe.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Orbiting somas and axon splines will attach to this cognitive department in the 3D Neural Brain.
-                </p>
               </div>
 
               {/* Feedback State */}
@@ -412,28 +347,28 @@ export function Integrations({ className = "" }: { className?: string }) {
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#333333]">
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-[#CCCCCC] hover:bg-[#333333] hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={testing || !name.trim() || !serverUrl.trim()}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-xs font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all"
+                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#0078FF] to-[#FFC432] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#0078FF]/20 hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all font-inter"
                 >
                   {testing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Probing & Auto-Detecting...
+                      Probing &amp; Auto-Detecting...
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
-                      Test & Auto-Detect
+                      Test &amp; Auto-Detect →
                     </>
                   )}
                 </button>
@@ -445,4 +380,3 @@ export function Integrations({ className = "" }: { className?: string }) {
     </div>
   );
 }
-

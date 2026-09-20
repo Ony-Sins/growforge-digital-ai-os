@@ -227,20 +227,20 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
         {/* Page heading */}
         <div id="section-top" className={`flex flex-wrap items-end justify-between gap-3 rounded-xl ${flash("section-top")}`}>
           <div>
-            <h1 className="font-heading text-xl font-bold tracking-tight text-navy">
+            <h1 className="font-heading text-xl font-bold tracking-tight text-white">
               Agent Dashboard
             </h1>
-            <p className="mt-1 text-sm text-secondary">
+            <p className="mt-1 text-sm text-[#CCCCCC] font-inter">
               Live status across the GrowForge Digital agent roster.
             </p>
           </div>
           <button
             type="button"
             onClick={() => openAdminDrawer("logs")}
-            className="flex items-center gap-1.5 rounded-lg border border-border-metal bg-white/70 px-3 py-2 text-xs font-medium text-secondary backdrop-blur-xl transition-colors hover:border-electric/40 hover:text-electric"
+            className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#111c34]/80 px-3.5 py-2 text-xs font-medium text-[#CCCCCC] backdrop-blur-xl transition-colors hover:border-electric/50 hover:text-white"
           >
-            View all runs
-            <ArrowUpRight className="h-3.5 w-3.5" />
+            <span>View all runs</span>
+            <ArrowUpRight className="h-3.5 w-3.5 text-electric" />
           </button>
         </div>
 

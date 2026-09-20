@@ -38,16 +38,16 @@ export function Sidebar() {
   const agents = useLiveAgents();
 
   return (
-    <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-border-metal bg-white/70 backdrop-blur-xl">
+    <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-[#333333] bg-[#0B1220]/90 backdrop-blur-xl">
       {/* Brand — also the way home, same as the header's console crumb */}
-      <div className="flex h-18 items-center border-b border-border-metal px-3 py-3">
+      <div className="flex h-18 items-center border-b border-[#333333] px-3 py-3">
         <button
           type="button"
           onClick={() => setActiveView("dashboard")}
           title="Back to dashboard home"
-          className="flex w-full items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2 text-left transition-colors hover:bg-slate-50"
+          className="flex w-full items-center gap-3 bg-[#111c34] shadow-sm border border-[#333333] rounded-xl px-3 py-2 text-left transition-colors hover:bg-[#18233c]"
         >
-          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1220] border border-[#333333]">
             <Image
               src="/logo-mark.png"
               alt="GrowForge Digital"
@@ -124,8 +124,8 @@ export function Sidebar() {
          *  into Settings — configuration decisions, not everyday actions,
          *  so they don't need permanent sidebar real estate. See the
          *  "Interface & Access" card at the top of the Settings section. */}
-        <div className="flex items-center gap-3 bg-white shadow-sm border border-slate-100 rounded-xl px-3 py-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-mono text-xs font-semibold text-gold shadow-sm">
+        <div className="flex items-center gap-3 bg-[#111c34] shadow-sm border border-[#333333] rounded-xl px-3 py-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0B1220] border border-[#333333] font-mono text-xs font-semibold text-gold shadow-sm">
             GF
           </div>
           <div className="min-w-0 leading-tight">

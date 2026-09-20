@@ -64,11 +64,11 @@ const PRESETS: Preset[] = [
   },
   {
     label: "Local Ollama (Private)",
-    name: "Local Ollama Llama 3.2",
+    name: "Local Ollama (Qwen 2.5 7B)",
     baseUrl: "http://localhost:11434/v1",
-    modelName: "llama3.2:1b",
+    modelName: "qwen2.5:7b-instruct",
     providerType: "ollama",
-    taskRole: "utility",
+    taskRole: "general",
   },
   {
     label: "DeepSeek API",

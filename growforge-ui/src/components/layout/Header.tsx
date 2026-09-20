@@ -29,14 +29,14 @@ export function Header({ user }: { user: HeaderUser | null }) {
   const [notifOpen, setNotifOpen] = useState(false);
 
   return (
-    <header className="relative z-40 flex h-16 shrink-0 items-center gap-4 border-b border-border-metal bg-white/70 px-4 backdrop-blur-xl md:px-6">
+    <header className="relative z-40 flex h-16 shrink-0 items-center gap-4 border-b border-[#333333] bg-[#0B1220]/80 px-4 backdrop-blur-xl md:px-6">
       {/* Mobile brand mark (sidebar hidden below md) — clicking any brand
           element returns you to the dashboard home view. */}
       <button
         type="button"
         onClick={() => setActiveView("dashboard")}
         aria-label="Back to dashboard home"
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center bg-white shadow-sm border border-slate-100 rounded-xl p-1.5 transition-transform hover:scale-105 md:hidden"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center bg-[#111c34] shadow-sm border border-[#333333] rounded-xl p-1.5 transition-transform hover:scale-105 md:hidden"
       >
         <Image src="/logo-mark.png" alt="GrowForge Digital" fill className="object-contain p-1" sizes="40px" />
       </button>
