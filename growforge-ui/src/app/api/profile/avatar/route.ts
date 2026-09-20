@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { matchesImageSignature } from "@/lib/imageUpload";
 import { getUserMemory, updateUserMemory } from "@/lib/userMemory";
 
@@ -49,6 +49,12 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to upload a profile photo." },
+      { status: 403 },
+    );
   }
 
   let formData: FormData;
@@ -106,6 +112,12 @@ export async function DELETE() {
   const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to remove your profile photo." },
+      { status: 403 },
+    );
   }
 
   const hash = hashForEmail(session.user.email);

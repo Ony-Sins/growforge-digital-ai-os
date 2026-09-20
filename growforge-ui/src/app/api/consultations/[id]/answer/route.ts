@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { answerConsultation, getConsultation } from "@/lib/consultationStore";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to answer an agent consultation." },
+      { status: 403 },
+    );
+  }
 
   const { id } = await params;
   if (!getConsultation(id)) return NextResponse.json({ error: "Consultation not found." }, { status: 404 });

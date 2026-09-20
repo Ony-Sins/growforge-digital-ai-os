@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { getJob } from "@/lib/jobStore";
 import { reviseJob } from "@/lib/orchestrator";
 
@@ -8,6 +8,12 @@ export const runtime = "nodejs";
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to revise a project." },
+      { status: 403 },
+    );
+  }
 
   const { id } = await params;
   const existing = getJob(id);

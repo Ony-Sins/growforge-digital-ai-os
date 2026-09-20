@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { listJobSummaries } from "@/lib/jobStore";
 import { createAndStartJob } from "@/lib/orchestrator";
 
@@ -10,12 +10,20 @@ export const runtime = "nodejs";
 export async function GET() {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  // Preview visitors must not see the owner's real job titles / client briefs.
+  if (isPublicPreviewVisitor(session)) return NextResponse.json({ jobs: [] });
   return NextResponse.json({ jobs: listJobSummaries() });
 }
 
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to launch a real project." },
+      { status: 403 },
+    );
+  }
 
   let body: { brief?: string };
   try {

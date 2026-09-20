@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import {
   getUserMemory,
   updateUserMemory,
@@ -15,6 +15,12 @@ export async function GET() {
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
+  // Preview visitors must not see the owner's personal name, company,
+  // social handles, or writing-style preferences.
+  if (isPublicPreviewVisitor(session)) {
+    const empty = getUserMemory("preview@growforge.local");
+    return NextResponse.json({ memory: empty });
+  }
 
   const memory = getUserMemory(session.user.email);
   return NextResponse.json({ memory });
@@ -24,6 +30,12 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to update your profile." },
+      { status: 403 },
+    );
   }
 
   let body: Partial<UserMemory>;
@@ -110,6 +122,12 @@ export async function DELETE() {
   const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to reset your profile." },
+      { status: 403 },
+    );
   }
 
   const reset = clearUserMemory(session.user.email);

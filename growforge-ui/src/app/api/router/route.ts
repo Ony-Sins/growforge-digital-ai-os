@@ -15,7 +15,7 @@ import {
 } from "@/lib/llm";
 import type { Agent } from "@/lib/agents";
 import { createAndStartJob } from "@/lib/orchestrator";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -29,16 +29,29 @@ function availableKeys(): Record<CloudProvider, boolean> {
 /** Current strategy + which provider(s) it would try, for the chat UI's switcher. */
 export async function GET() {
   const strategy = getStrategy();
+  const session = await getSession();
+  // Hide which specific providers have keys configured — that reveals the
+  // owner's subscription/setup state to an anonymous preview visitor.
+  const keys = isPublicPreviewVisitor(session)
+    ? Object.fromEntries((Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((p) => [p, false])) as Record<CloudProvider, boolean>
+    : availableKeys();
   return NextResponse.json({
     strategy,
     providerOrder: providerOrder(strategy),
-    availableKeys: availableKeys(),
+    availableKeys: keys,
   });
 }
 
 /** Live strategy switcher — changes take effect immediately, for this
  *  server process, without a restart. Not persisted across restarts. */
 export async function PATCH(req: Request) {
+  const session = await getSession();
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to change the routing strategy." },
+      { status: 403 },
+    );
+  }
   let body: { strategy?: string };
   try {
     body = await req.json();
@@ -306,6 +319,13 @@ function synthesizeBriefFromConversation(history: ChatMessage[], message: string
 }
 
 export async function POST(req: Request) {
+  const pSession = await getSession();
+  if (isPublicPreviewVisitor(pSession)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to use the AI assistant." },
+      { status: 403 },
+    );
+  }
   let body: RouterRequestBody;
   try {
     body = await req.json();

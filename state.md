@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 00:35, Claude Code. Completed a full audit of every credential/connector/MCP/vault/telemetry route for the public-preview data-exposure gap (items 42/44) — a second security review flagging exactly the files predicted as unaudited prompted doing the whole surface at once rather than reacting file-by-file. Fixed 9 more route files (delete/modify of existing servers and connectors, the owner's real n8n host URL leaking plus a real network probe firing on request, per-agent credential visibility) — see §3 item 45 for the full list, including one route that needed a nuanced partial fix rather than a blanket block since it also serves a legitimate anonymous health-check flow. **Previous, 00:26**: closed the write-side gap on the first 3 routes (item 44). **Previous, 00:20**: fixed the original read-side leak + a widespread `bg-navy`-renders-white bug across 15 files (items 42-43). **Previous, 00:05**: fixed the Higgsfield image-gen client (item 41).
+> **Last updated:** 2026-09-21, 00:53, Antigravity. Closed the remaining public-preview data-isolation gap across jobs, approvals, consultations, profile, attachments, and router routes — see §3 item 46. **Previous, 00:35, Claude Code**: full credential/connector/MCP/vault/telemetry audit (item 45). **Previous, 00:26, Claude Code**: write-side gap on first 3 routes (item 44). **Previous, 00:20, Claude Code**: original read-side leak + bg-navy bug (items 42-43).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -293,7 +293,24 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
     - **Verified**: `tsc`/`lint`/`build` clean across all changes.
     - **Deliberately not audited this pass** (different risk category — business/job data, not credentials): `/api/jobs*`, `/api/approvals*`, `/api/consultations*`, `/api/profile/*`, `/api/attachments`, `/api/router`. Worth a look eventually but not the same severity as what's now fixed.
 
-**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45) is now closed enough to move on from. If job/approval/profile data-exposure ever gets flagged, item 45's "not audited" list is where to start. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 45, 44, 42, 41, and 38 before assuming anything about current state.**
+46. **Business-data route preview isolation — the "not audited" list from item 45 fully closed (2026-09-21, 00:53, Antigravity).** Item 45 deliberately deferred one class of routes (business/job data, not credentials) as lower-severity. This pass completes that deferred work across all 6 areas:
+    - **`/api/jobs` (GET)** — returns empty `{ jobs: [] }` for preview visitors; the job list is the real client brief titles, enough to reveal who the owner is working with.
+    - **`/api/jobs` (POST), `/api/jobs/[id]/approve` (POST), `/api/jobs/[id]/revise` (POST)** — 403 block. Launching, approving, or revising a real job triggers real LLM pipeline work on the owner's API quota and mutates the job store.
+    - **`/api/jobs/[id]` (GET)** — returns a 404 stub for preview visitors; individual job content includes the full client brief and every department's output.
+    - **`/api/approvals` (GET)** — empty list; pending HITL contexts contain real job/client detail.
+    - **`/api/approvals/[id]/decide` (POST)** — 403; deciding an approval advances a live running job.
+    - **`/api/consultations` (GET)** — empty list; agent clarification questions are scoped to a real running job's context.
+    - **`/api/consultations/[id]/answer` (POST), `/api/consultations/[id]/reject` (POST)** — 403; answering or redirecting feeds a real live agent.
+    - **`/api/profile/memory` (GET)** — returns a fresh default-empty UserMemory for the preview email instead of the owner's real name, company, social handles, and writing-style preferences.
+    - **`/api/profile/memory` (POST/DELETE), `/api/profile/avatar` (POST/DELETE), `/api/profile/cover` (POST/DELETE)** — 403 for all three; all write to disk or the in-memory store keyed to the owner's email.
+    - **`/api/attachments` (POST)** — 403; file processing calls a vision LLM and burns the owner's API quota.
+    - **`/api/router` (GET)** — `availableKeys` (which specific providers have API keys configured) replaced with an all-false map; `strategy` and `providerOrder` are non-sensitive and still returned.
+    - **`/api/router` (PATCH/POST)** — 403 for both; PATCH changes the server-global LLM strategy, POST launches real jobs and calls LLM.
+    - **Not touched**: anything already fixed in items 42/44/45 (MCP, vault, connectors, telemetry). Also not touched: `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `vaultMatcher.ts`, `imageGen.ts`, `growforge-ui/STATE.md`.
+    - **Verified**: `tsc` 0 errors, `lint` 0 errors (1 pre-existing `react-hooks/exhaustive-deps` warning in `ProfileDashboard.tsx` — unrelated, not introduced here), `build` clean 28/28 routes.
+    - **Not pushed.**
+
+**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45, 46) is now fully closed. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
 
 ## 4. Known, accepted issues carried forward
 

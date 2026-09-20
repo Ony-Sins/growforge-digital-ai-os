@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { processAttachment, formatAttachmentsForPrompt, MAX_ATTACHMENT_BYTES, type AttachmentResult } from "@/lib/attachments";
 import { getStrategy } from "@/lib/llm";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -16,6 +16,14 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  // Processing attachments calls a vision LLM on the server — burns the
+  // owner's API quota. Block for preview visitors.
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to upload attachments." },
+      { status: 403 },
+    );
+  }
 
   let formData: FormData;
   try {
