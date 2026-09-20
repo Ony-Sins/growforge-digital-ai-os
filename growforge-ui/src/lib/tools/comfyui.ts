@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import type { Tool } from "@/lib/tools";
+import { generateImageWithByoFallback } from "@/lib/imageGen";
 
 /**
  * ComfyUI local image generation (https://github.com/comfyanonymous/ComfyUI)
@@ -182,8 +183,9 @@ async function generateImage(promptText: string): Promise<{ ok: boolean; output:
 
 export const comfyuiTool: Tool = {
   name: "generate_image",
-  description: "Generates an image from a text description, locally and free, using ComfyUI. Returns a URL to the generated image under /generated/images/. Slow on modest GPUs — expect 10-30s.",
-  usage: `{ "prompt": "string — a visual description, max ${MAX_PROMPT_LENGTH} characters" }`,
+  description:
+    "Generates an image from a text description using BYO cloud capability keys (ChatGPT DALL-E 3, Gemini Imagen 3, or Higgsfield) when configured in Settings or agent vault, or falls back to local ComfyUI. Returns a URL to the generated image under /generated/images/.",
+  usage: `{ "prompt": "string — a visual description, max ${MAX_PROMPT_LENGTH} characters", "agentId": "string (optional) — calling agent ID for per-agent BYO key lookup" }`,
   requiresApproval: false,
   async execute(args) {
     const prompt = typeof args.prompt === "string" ? args.prompt.trim() : "";
@@ -191,10 +193,17 @@ export const comfyuiTool: Tool = {
     if (prompt.length > MAX_PROMPT_LENGTH) {
       return { ok: false, output: `Prompt is too long (${prompt.length} chars) — keep it under ${MAX_PROMPT_LENGTH}.` };
     }
-    if (!isConfigured()) return { ok: false, output: setupInstructions() };
+
+    const agentId = typeof args.agentId === "string" ? args.agentId : typeof args.agent === "string" ? args.agent : undefined;
+
+    const localFallback = async (p: string) => {
+      if (!isConfigured()) return { ok: false, output: setupInstructions() };
+      return await generateImage(p);
+    };
 
     try {
-      return await generateImage(prompt);
+      const result = await generateImageWithByoFallback(prompt, agentId, localFallback);
+      return { ok: result.ok, output: result.output };
     } catch (err) {
       return { ok: false, output: `Image generation failed: ${err instanceof Error ? err.message : String(err)}` };
     }

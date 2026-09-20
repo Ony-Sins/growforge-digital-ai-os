@@ -13,7 +13,7 @@ import {
   removeSecret,
 } from "@/lib/serverVault";
 
-export type TaskRole = "general" | "planning" | "coding" | "utility";
+export type TaskRole = "general" | "planning" | "coding" | "utility" | "image";
 export type ProviderType =
   | "openai-compatible"
   | "ollama"

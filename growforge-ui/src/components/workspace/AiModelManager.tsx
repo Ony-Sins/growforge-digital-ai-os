@@ -102,6 +102,30 @@ const PRESETS: Preset[] = [
     providerType: "openrouter",
     taskRole: "general",
   },
+  {
+    label: "OpenAI DALL-E 3 (Image)",
+    name: "OpenAI DALL-E 3",
+    baseUrl: "https://api.openai.com/v1",
+    modelName: "dall-e-3",
+    providerType: "openai-compatible",
+    taskRole: "image",
+  },
+  {
+    label: "Google Imagen 3 (Image)",
+    name: "Google Imagen 3",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    modelName: "imagen-3.0-generate-002",
+    providerType: "gemini",
+    taskRole: "image",
+  },
+  {
+    label: "Higgsfield AI (Image)",
+    name: "Higgsfield AI",
+    baseUrl: "https://api.higgsfield.ai/v1",
+    modelName: "higgsfield-v1",
+    providerType: "custom",
+    taskRole: "image",
+  },
 ];
 
 const TASK_ROLE_LABELS: Record<TaskRole, { label: string; color: string }> = {
@@ -109,6 +133,7 @@ const TASK_ROLE_LABELS: Record<TaskRole, { label: string; color: string }> = {
   planning: { label: "Planning", color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25" },
   coding: { label: "Coding", color: "bg-emerald/10 text-emerald border-emerald/25" },
   utility: { label: "Utility", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25" },
+  image: { label: "Image Gen", color: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/25" },
 };
 
 export function AiModelManager() {
@@ -709,6 +734,7 @@ export function AiModelManager() {
                     <option value="planning">Strategic Planning (HQ & PM)</option>
                     <option value="coding">Code Generation (AI Systems)</option>
                     <option value="utility">Fast Utility & Triage (Router & QA)</option>
+                    <option value="image">Image Generation (DALL-E / Imagen / Higgsfield)</option>
                   </select>
                 </div>
 

@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 14:27, Antigravity. **Antigravity, 14:27**: Vault Library real-time search verification — verified that the search input in `VaultLibraryOverlay.tsx` actively, synchronously filters the 279-agent capability catalog on each keystroke across all search dimensions (name, summary, category, filename ID, and declared tool list). Filtered results dynamically drive card grid rendering, active filter count tags, category badge indicators, and zero-match empty state with instant filter reset. Verified 100% clean (`tsc`, `lint`, Next.js 16 build 28/28 routes). Committed locally, no git push. **Previous:** Vault Library overlay browser `1072b86` (Antigravity, 14:18); Vault capability catalog extraction `269309d` (Antigravity, 14:08).
+> **Last updated:** 2026-09-20, 14:34, Antigravity. **Antigravity, 14:34**: Per-agent BYO capability keys for image generation — added per-agent and system-wide BYO capability keys for image generation (OpenAI DALL-E 3, Google Imagen 3, and Higgsfield AI) using the existing AES-256-GCM server vault / AI model store pattern with zero new storage abstractions. Responsible agents prioritize agent vault keys, then system vault keys, then environment variables, with graceful automatic fallback to the existing free local ComfyUI tool when cloud keys are unavailable. Added image presets and task role badge to `AiModelManager.tsx`, Higgsfield brand icon support in `aiBrandIcons.ts`, and verified cleanly (`tsc`, `lint`, Next.js 16 build 28/28 routes). Committed locally, no git push. **Previous:** Vault Library search verification `7a3a8e9` (Antigravity, 14:27); Vault Library overlay browser `1072b86` (Antigravity, 14:18); Vault capability catalog extraction `269309d` (Antigravity, 14:08).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,14 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Per-Agent BYO Capability Keys for Image Generation (2026-09-20, 14:34, Antigravity):**
+  - **BYO Image Generation Engine (`src/lib/imageGen.ts`):** Implemented multi-provider image generation pipeline supporting OpenAI (DALL-E 3), Google Gemini (Imagen 3 / `imagen-3.0-generate-002`), and Higgsfield AI (`https://api.higgsfield.ai/v1`). Images are persisted to `public/generated/images/` and served at `/generated/images/{id}.png`.
+  - **Zero-New-Storage Reusability:** Leveraged existing `serverVault.ts` AES-256-GCM encryption under both per-agent IDs and `SYSTEM_VAULT_ID` (`__system__`), as well as `aiModelStore.ts` with `taskRole: "image"`. Reused established patterns without inventing new storage layers.
+  - **Hierarchical Key Resolution & ComfyUI Fallback (`comfyui.ts`):** Key lookup checks: (1) Agent-specific vault keys -> (2) System vault keys -> (3) Stored AI model connector with `image` role -> (4) Environment variables (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `HIGGSFIELD_API_KEY`). If no cloud keys are provided or cloud requests fail, automatically falls back to the existing free local ComfyUI tool graph.
+  - **UI Model Connector Integration (`AiModelManager.tsx` & `aiBrandIcons.ts`):** Added `"image"` to `TaskRole`, added brand-styled Pink `"Image Gen"` badge to `TASK_ROLE_LABELS`, added 1-click presets for `OpenAI DALL-E 3`, `Google Imagen 3`, and `Higgsfield AI`, added SVG icon styling for Higgsfield, and updated endpoint testing in `llm.ts` to verify keys without wasting image tokens.
+  - **Scope Isolation:** Kept untouched: `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `WebLlmIndicator.tsx`, `VaultLibraryOverlay.tsx`, and `growforge-ui/STATE.md`.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) clean across 28/28 routes.
 
 - **Vault Library Search Verification & Audit (2026-09-20, 14:27, Antigravity):**
   - **Live Search Verification (`VaultLibraryOverlay.tsx`):** Confirmed and verified that the search input in `VaultLibraryOverlay.tsx` operates synchronously via reactive React state (`searchQuery` input hook -> `filteredAgents` memoization). Matches across 5 distinct dimensions: agent name, summary text, category slug, filename/ID, and explicit tool dependencies.

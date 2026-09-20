@@ -85,6 +85,14 @@ export const AI_BRAND_ICONS: Record<string, AiBrandIcon> = {
     textClass: "text-blue-600",
     path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.66-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z",
   },
+  higgsfield: {
+    title: "Higgsfield AI",
+    hex: "EC4899",
+    bgClass: "bg-pink-500/10",
+    borderClass: "border-pink-500/20",
+    textClass: "text-pink-500",
+    path: "M12 2L2 7l10 5 10-5-10-5zm0 9l-10-5v6l10 5 10-5v-6l-10 5zm0 6l-10-5v6l10 5 10-5v-6l-10 5z",
+  },
   custom: {
     title: "AI Engine",
     hex: "7C3AED",
@@ -108,6 +116,9 @@ export function getAiBrandIcon(
   const normModel = (modelName || "").toLowerCase();
   const normUrl = (baseUrl || "").toLowerCase();
 
+  if (normType.includes("higgsfield") || normModel.includes("higgsfield") || normUrl.includes("higgsfield")) {
+    return AI_BRAND_ICONS.higgsfield;
+  }
   if (normType.includes("anthropic") || normModel.includes("claude") || normUrl.includes("anthropic")) {
     return AI_BRAND_ICONS.anthropic;
   }
@@ -132,7 +143,7 @@ export function getAiBrandIcon(
   if (normModel.includes("llama") || normType.includes("meta")) {
     return AI_BRAND_ICONS.meta;
   }
-  if (normType.includes("openai") || normModel.includes("gpt") || normModel.includes("o1") || normModel.includes("o3") || normUrl.includes("openai")) {
+  if (normType.includes("openai") || normModel.includes("gpt") || normModel.includes("dall-e") || normModel.includes("o1") || normModel.includes("o3") || normUrl.includes("openai")) {
     return AI_BRAND_ICONS.openai;
   }
 

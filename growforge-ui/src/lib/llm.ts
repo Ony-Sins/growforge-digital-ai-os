@@ -518,13 +518,33 @@ export async function testCustomModel(config: {
       return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
     }
 
+    // Higgsfield API format
+    if (cleanUrl.includes("higgsfield.ai") || model.includes("higgsfield")) {
+      const res = await fetch("https://api.higgsfield.ai/v1/models", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${config.apiKey || ""}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const latency = Date.now() - start;
+      if (!res.ok && res.status !== 404 && res.status !== 405) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false, message: `Higgsfield error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
     // Google Gemini API format
     if (config.providerType === "gemini" || cleanUrl.includes("generativelanguage.googleapis.com")) {
-      const url = `${cleanUrl}/models/${model}:generateContent?key=${config.apiKey || ""}`;
+      const isImagen = model.includes("imagen");
+      const url = isImagen
+        ? `${cleanUrl}/models?key=${config.apiKey || ""}`
+        : `${cleanUrl}/models/${model}:generateContent?key=${config.apiKey || ""}`;
       const res = await fetch(url, {
-        method: "POST",
+        method: isImagen ? "GET" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: isImagen ? undefined : JSON.stringify({
           contents: [{ role: "user", parts: [{ text: "ping" }] }],
           generationConfig: { maxOutputTokens: 16 },
         }),
@@ -533,6 +553,21 @@ export async function testCustomModel(config: {
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
         return { ok: false, message: `Gemini error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
+    // DALL-E image models: test with GET /models to verify credentials without generating images
+    if (model.includes("dall-e")) {
+      const modelsEndpoint = cleanUrl.endsWith("/v1") ? `${cleanUrl}/models` : `${cleanUrl}/v1/models`;
+      const res = await fetch(modelsEndpoint, {
+        method: "GET",
+        headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return { ok: false, message: `OpenAI error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
       }
       return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
     }
