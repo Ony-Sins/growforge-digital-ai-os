@@ -2,6 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { setSecret, getSecretForServerUse, removeSecret, hasSecret } from "@/lib/serverVault";
 import { DEPARTMENTS } from "@/lib/departments";
+import type { BrainLobe } from "@/lib/telemetryStore";
+
+export interface DetectedMcpTool {
+  name: string;
+  description: string;
+  inputSchema?: unknown;
+}
 
 /**
  * Real MCP (Model Context Protocol) server configuration — separate from
@@ -44,6 +51,21 @@ export interface McpServerDef {
    *  `X-Api-Key`) require their own header rather than a bearer token. */
   authHeader?: string;
   createdAt: string;
+  /** "byo-mcp" = added through the self-serve auto-discovery drawer
+   *  (Integrations.tsx) rather than the curated catalog or the custom-server
+   *  form. Both are regular entries in this same store; this just tracks
+   *  provenance for UI badging and for the 3D brain's dynamic topology. */
+  origin?: "catalog" | "custom" | "byo-mcp";
+  /** byo-mcp only: which cognitive lobe this server's dynamic tendril nodes
+   *  attach to in NeuralBrainCanvas.tsx. */
+  targetLobe?: BrainLobe;
+  /** byo-mcp only: the tool list captured at connect time, so the UI and the
+   *  3D topology don't need a live probe just to render. Runtime dispatch
+   *  still goes through a fresh probe/call, same as every other server here. */
+  detectedTools?: DetectedMcpTool[];
+  status?: "connected" | "offline" | "error";
+  lastPing?: string;
+  errorMessage?: string;
 }
 
 export interface CreateMcpServerInput {
@@ -60,6 +82,10 @@ export interface CreateMcpServerInput {
   authHeader?: string;
   allowedDepartments?: string[];
   catalogId?: string;
+  origin?: "catalog" | "custom" | "byo-mcp";
+  targetLobe?: BrainLobe;
+  detectedTools?: DetectedMcpTool[];
+  status?: "connected" | "offline" | "error";
 }
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -107,6 +133,16 @@ export function getMcpServer(id: string): McpServerDef | undefined {
   return getStore().find((s) => s.id === id);
 }
 
+/** Only used by the byo-mcp connect flow, to update-in-place on a reconnect
+ *  rather than piling up duplicate entries for the same endpoint. */
+export function findMcpServerByUrl(url: string, origin?: McpServerDef["origin"]): McpServerDef | undefined {
+  return getStore().find((s) => s.url === url && (origin === undefined || s.origin === origin));
+}
+
+export function listMcpServersByOrigin(origin: McpServerDef["origin"]): McpServerDef[] {
+  return getStore().filter((s) => s.origin === origin);
+}
+
 /** Servers a given department is allowed to use — empty allowedDepartments
  *  on a server means every department, matching how "allow: []" reads in
  *  the office.config.json-style pattern this was inspired by (own
@@ -150,6 +186,11 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
     catalogId: input.catalogId,
     authHeader: input.transport === "http" ? input.authHeader?.trim() || undefined : undefined,
     createdAt: new Date().toISOString(),
+    origin: input.origin,
+    targetLobe: input.targetLobe,
+    detectedTools: input.detectedTools,
+    status: input.status,
+    lastPing: input.status ? new Date().toISOString() : undefined,
   };
 
   const store = getStore();
@@ -201,6 +242,13 @@ export function updateMcpServerDetails(
   if (Array.isArray(patch.allowedDepartments)) {
     def.allowedDepartments = patch.allowedDepartments.filter((d) => KNOWN_DEPARTMENT_IDS.has(d));
   }
+  if (patch.detectedTools !== undefined) def.detectedTools = patch.detectedTools;
+  if (patch.targetLobe !== undefined) def.targetLobe = patch.targetLobe;
+  if (patch.status !== undefined) {
+    def.status = patch.status;
+    def.lastPing = new Date().toISOString();
+  }
+  if (patch.errorMessage !== undefined) def.errorMessage = patch.errorMessage;
 
   persist(store);
 

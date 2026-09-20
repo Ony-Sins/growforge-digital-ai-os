@@ -13,7 +13,11 @@ import http from "node:http";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { GET as getMcpConnect, POST as postMcpConnect, DELETE as deleteMcpConnect } from "../src/app/api/mcp/connect/route";
+import {
+  handleListByoMcp as getMcpConnect,
+  handleConnectByoMcp as postMcpConnect,
+  handleDisconnectByoMcp as deleteMcpConnect,
+} from "../src/app/api/mcp/connect/route";
 import { POST as postGemini } from "../src/app/api/gemini/route";
 import { getDefaultTools } from "../src/lib/tools";
 import { dispatchSafeTool } from "../src/lib/security/toolBroker";

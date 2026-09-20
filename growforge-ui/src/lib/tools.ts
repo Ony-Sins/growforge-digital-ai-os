@@ -9,12 +9,12 @@ import { n8nTool } from "@/lib/tools/n8n";
 import { n8nTemplateTool } from "@/lib/tools/n8nTemplateIngestor";
 import { transferTaskTool } from "@/lib/tools/transferTask";
 import { completeDirectiveTool } from "@/lib/tools/completeDirective";
-import { mcpServersForDepartment } from "@/lib/mcp/store";
+import { mcpServersForDepartment, listMcpServersByOrigin } from "@/lib/mcp/store";
 import { probeMcpServer, callMcpTool } from "@/lib/mcp/client";
 import { getExecutablePublicApiTools } from "@/lib/apiCatalog";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import { scrubSecrets } from "@/lib/security/toolBroker";
-import { pluginRegistry } from "@/lib/mcp/pluginRegistry";
+import { callCustomMcpTool } from "@/lib/mcp/pluginRegistry";
 
 export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nTemplateTool };
 
@@ -334,13 +334,36 @@ async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
   return perServer.flat();
 }
 
+/** Tools from every connected byo-mcp server (see mcp/store.ts's
+ *  `origin: "byo-mcp"` entries and pluginRegistry.ts's invocation logic) —
+ *  available to every department, unscoped, same as before the store
+ *  consolidation. Uses the tool list captured at connect time rather than a
+ *  live probe per call, since that's what the BYO-MCP UI's "detected tools"
+ *  already reflects. */
+function byoMcpTools(): Tool[] {
+  const servers = listMcpServersByOrigin("byo-mcp").filter((s) => (s.status ?? "connected") === "connected");
+  const tools: Tool[] = [];
+  for (const server of servers) {
+    for (const t of server.detectedTools ?? []) {
+      tools.push({
+        name: t.name,
+        description: `[BYO-MCP: ${server.name}] ${t.description || t.name}`,
+        usage: typeof t.inputSchema === "object" ? JSON.stringify(t.inputSchema) : t.description || "{}",
+        requiresApproval: true,
+        execute: (args: Record<string, unknown>) => callCustomMcpTool(server, t.name, args),
+      });
+    }
+  }
+  return tools;
+}
+
 /** The tool set available to an agent right now — rebuilt per call so a
  *  newly added connector or MCP server shows up without a restart. Pass
  *  the department id to also include the real MCP tools that department is
  *  allowed to use (see mcp/store.ts's per-department allow list). */
 export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
   const mcpTools = departmentId ? await mcpToolsForDepartment(departmentId) : [];
-  const customMcpTools = pluginRegistry.getCustomTools() as Tool[];
+  const customMcpTools = byoMcpTools();
   const publicTools = getExecutablePublicApiTools() as Tool[];
   return [
     webSearchTool,

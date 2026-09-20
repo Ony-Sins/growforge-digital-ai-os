@@ -1,32 +1,50 @@
 /**
- * Dynamic "BYO-MCP" Plugin Registry
+ * BYO-MCP helpers — tool invocation and 3D Neural Brain topology generation
+ * for self-serve-connected MCP servers.
  *
- * Manages runtime custom MCP server registrations, detected tools,
- * dynamic tool dispatch, and dynamic 3D Neural Brain node/axon topology generation.
+ * Persistence itself lives in mcp/store.ts (the same vault-backed,
+ * department-scoped store the curated catalog and custom-server form use —
+ * see store.ts's `origin: "byo-mcp"` field). This module used to hold its
+ * own separate in-memory Map, which meant every BYO-MCP server vanished on
+ * a dev-server restart and its bearer token sat in plain memory instead of
+ * the encrypted vault. Consolidated 2026-09-20 so there's exactly one place
+ * MCP servers live, regardless of which UI added them.
  */
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { BrainLobe } from "@/lib/telemetryStore";
+import { getMcpCredential, type McpServerDef, type DetectedMcpTool } from "@/lib/mcp/store";
 
-export interface DetectedMcpTool {
-  name: string;
-  description: string;
-  inputSchema?: unknown;
-}
+export type { DetectedMcpTool };
 
+/** Frontend-facing shape Integrations.tsx renders — kept stable across the
+ *  store consolidation so that component needed zero changes. */
 export interface CustomMcpPlugin {
   id: string;
   name: string;
   serverUrl: string;
-  apiKey?: string;
   targetLobe: BrainLobe;
   detectedTools: DetectedMcpTool[];
   status: "connected" | "offline" | "error";
   connectedAt: string;
   lastPing?: string;
   errorMessage?: string;
+}
+
+export function toPluginShape(def: McpServerDef): CustomMcpPlugin {
+  return {
+    id: def.id,
+    name: def.name,
+    serverUrl: def.url ?? "",
+    targetLobe: def.targetLobe ?? "neural_core",
+    detectedTools: def.detectedTools ?? [],
+    status: def.status ?? "connected",
+    connectedAt: def.createdAt,
+    lastPing: def.lastPing,
+    errorMessage: def.errorMessage,
+  };
 }
 
 export interface DynamicBrainNode {
@@ -62,61 +80,47 @@ const LOBE_PARENT_MAP: Record<BrainLobe, { parentId: string; center: [number, nu
   performance_media: { parentId: "dept:meta-ads", center: [60, -20, 35], hemisphere: "right" },
 };
 
-/**
- * Invoke a tool on a registered BYO-MCP custom server.
- */
+/** Invoke a tool on a connected byo-mcp server. Tries SSE first (most
+ *  BYO-style MCP servers speak this), falls back to Streamable HTTP —
+ *  broader compatibility than mcp/client.ts's catalog path, which is why
+ *  this stays a separate function rather than folding into callMcpTool. */
 export async function callCustomMcpTool(
-  plugin: CustomMcpPlugin,
+  server: McpServerDef,
   toolName: string,
   args: Record<string, unknown>
 ): Promise<{ ok: boolean; output: string }> {
-  const urlObj = new URL(plugin.serverUrl);
-  const headers: Record<string, string> = {
-    "User-Agent": "GrowForge-BYO-MCP/1.0",
-  };
-  if (plugin.apiKey) {
-    headers["Authorization"] = plugin.apiKey.startsWith("Bearer ") ? plugin.apiKey : `Bearer ${plugin.apiKey}`;
+  if (!server.url) return { ok: false, output: "Server has no URL configured." };
+  const urlObj = new URL(server.url);
+  const { bearerToken } = getMcpCredential(server.id);
+  const headers: Record<string, string> = { "User-Agent": "GrowForge-BYO-MCP/1.0" };
+  if (bearerToken) {
+    headers["Authorization"] = bearerToken.startsWith("Bearer ") ? bearerToken : `Bearer ${bearerToken}`;
   }
 
-  // 1. Try SSEClientTransport
-  try {
-    const sseTransport = new SSEClientTransport(urlObj, {
-      requestInit: { headers },
-    });
-    const client = new Client({ name: "growforge-byo-mcp-invoker", version: "1.0.0" }, { capabilities: {} });
-    await client.connect(sseTransport);
-    const res = await client.callTool({ name: toolName, arguments: args });
-    await client.close().catch(() => {});
-
+  const extractText = (rawRes: unknown) => {
+    const res = rawRes as { content?: unknown; isError?: boolean };
     const contentArr = Array.isArray(res.content) ? res.content : [];
     const texts = contentArr
       .filter((c: unknown) => typeof c === "object" && c !== null && "type" in c && (c as { type: string }).type === "text")
       .map((c: unknown) => (c as { type: "text"; text: string }).text);
+    return { ok: !res.isError, output: texts.join("\n") || (res.isError ? "Tool execution failed" : "Tool executed successfully") };
+  };
 
-    return {
-      ok: !res.isError,
-      output: texts.join("\n") || (res.isError ? "Tool execution failed" : "Tool executed successfully"),
-    };
+  try {
+    const sseTransport = new SSEClientTransport(urlObj, { requestInit: { headers } });
+    const client = new Client({ name: "growforge-byo-mcp-invoker", version: "1.0.0" }, { capabilities: {} });
+    await client.connect(sseTransport);
+    const res = await client.callTool({ name: toolName, arguments: args });
+    await client.close().catch(() => {});
+    return extractText(res);
   } catch {
-    // 2. Fallback to StreamableHTTPClientTransport
     try {
-      const httpTransport = new StreamableHTTPClientTransport(urlObj, {
-        requestInit: { headers },
-      });
+      const httpTransport = new StreamableHTTPClientTransport(urlObj, { requestInit: { headers } });
       const client = new Client({ name: "growforge-byo-mcp-invoker", version: "1.0.0" }, { capabilities: {} });
       await client.connect(httpTransport);
       const res = await client.callTool({ name: toolName, arguments: args });
       await client.close().catch(() => {});
-
-      const contentArr = Array.isArray(res.content) ? res.content : [];
-      const texts = contentArr
-        .filter((c: unknown) => typeof c === "object" && c !== null && "type" in c && (c as { type: string }).type === "text")
-        .map((c: unknown) => (c as { type: "text"; text: string }).text);
-
-      return {
-        ok: !res.isError,
-        output: texts.join("\n") || (res.isError ? "Tool execution failed" : "Tool executed successfully"),
-      };
+      return extractText(res);
     } catch (err) {
       return {
         ok: false,
@@ -126,128 +130,57 @@ export async function callCustomMcpTool(
   }
 }
 
-class PluginRegistry {
-  private plugins = new Map<string, CustomMcpPlugin>();
+/** Dynamic 3D brain nodes/axons for every connected byo-mcp server's
+ *  detected tools. Takes the already-loaded server list rather than reading
+ *  its own state, so it always reflects the single mcp/store.ts source. */
+export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes: DynamicBrainNode[]; axons: DynamicBrainAxon[] } {
+  const nodes: DynamicBrainNode[] = [];
+  const axons: DynamicBrainAxon[] = [];
 
-  public list(): CustomMcpPlugin[] {
-    return Array.from(this.plugins.values());
-  }
+  const active = byoMcpServers.filter((s) => (s.status ?? "connected") === "connected" && s.detectedTools?.length);
 
-  public get(id: string): CustomMcpPlugin | undefined {
-    return this.plugins.get(id);
-  }
+  active.forEach((server, pIdx) => {
+    const parentInfo = LOBE_PARENT_MAP[server.targetLobe ?? "neural_core"] || LOBE_PARENT_MAP.neural_core;
+    const baseCenter = parentInfo.center;
+    const tools = server.detectedTools ?? [];
 
-  public save(data: Omit<CustomMcpPlugin, "id" | "connectedAt"> & { id?: string }): CustomMcpPlugin {
-    const id = data.id || `mcp-custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const plugin: CustomMcpPlugin = {
-      ...data,
-      id,
-      connectedAt: data.id && this.plugins.has(data.id) ? this.plugins.get(data.id)!.connectedAt : new Date().toISOString(),
-      lastPing: new Date().toISOString(),
-    };
-    this.plugins.set(id, plugin);
-    return plugin;
-  }
+    tools.forEach((tool, tIdx) => {
+      const totalTools = tools.length;
+      const angle = (tIdx / Math.max(totalTools, 1)) * Math.PI * 2 + pIdx * 0.6;
+      const radius = 26 + (tIdx % 2) * 8;
 
-  public delete(id: string): boolean {
-    return this.plugins.delete(id);
-  }
+      const posX = baseCenter[0] + Math.cos(angle) * radius;
+      const posY = baseCenter[1] + Math.sin(angle) * (radius * 0.75) + ((tIdx % 3) - 1) * 6;
+      const posZ = baseCenter[2] + Math.sin(angle * 1.5) * 14;
 
-  public getCustomTools(): Array<{
-    name: string;
-    description: string;
-    usage: string;
-    requiresApproval: boolean;
-    execute: (args: Record<string, unknown>) => Promise<{ ok: boolean; output: string }>;
-  }> {
-    const tools: Array<{
-      name: string;
-      description: string;
-      usage: string;
-      requiresApproval: boolean;
-      execute: (args: Record<string, unknown>) => Promise<{ ok: boolean; output: string }>;
-    }> = [];
+      const nodeId = `mcp-node:${server.id}:${tool.name}`;
 
-    const activePlugins = Array.from(this.plugins.values()).filter((p) => p.status === "connected");
-    for (const plugin of activePlugins) {
-      for (const t of plugin.detectedTools) {
-        tools.push({
-          name: t.name,
-          description: `[BYO-MCP: ${plugin.name}] ${t.description || t.name}`,
-          usage: typeof t.inputSchema === "object" ? JSON.stringify(t.inputSchema) : (t.description || "{}"),
-          requiresApproval: true,
-          execute: async (args: Record<string, unknown>) => {
-            return callCustomMcpTool(plugin, t.name, args);
-          },
-        });
-      }
-    }
-    return tools;
-  }
+      nodes.push({
+        id: nodeId,
+        name: tool.name,
+        role: `Custom MCP Tool (${server.name})`,
+        kind: "tendril",
+        lobe: server.targetLobe ?? "neural_core",
+        hemisphere: parentInfo.hemisphere,
+        position: [posX, posY, posZ],
+        size: 4,
+        color: "#06b6d4",
+        emissive: "#22d3ee",
+        description: tool.description || `Dynamic tool discovered on ${server.url}`,
+        tools: [tool.name],
+        pluginId: server.id,
+      });
 
-  public generateDynamicTopology(): { nodes: DynamicBrainNode[]; axons: DynamicBrainAxon[] } {
-    const nodes: DynamicBrainNode[] = [];
-    const axons: DynamicBrainAxon[] = [];
-
-    const activePlugins = Array.from(this.plugins.values()).filter((p) => p.status === "connected");
-
-    activePlugins.forEach((plugin, pIdx) => {
-      const parentInfo = LOBE_PARENT_MAP[plugin.targetLobe] || LOBE_PARENT_MAP.neural_core;
-      const baseCenter = parentInfo.center;
-
-      // Group detected tools into orbiting tendril soma clusters
-      plugin.detectedTools.forEach((tool, tIdx) => {
-        const totalTools = plugin.detectedTools.length;
-        const angle = (tIdx / Math.max(totalTools, 1)) * Math.PI * 2 + pIdx * 0.6;
-        const radius = 26 + (tIdx % 2) * 8;
-
-        const posX = baseCenter[0] + Math.cos(angle) * radius;
-        const posY = baseCenter[1] + Math.sin(angle) * (radius * 0.75) + ((tIdx % 3) - 1) * 6;
-        const posZ = baseCenter[2] + Math.sin(angle * 1.5) * 14;
-
-        const nodeId = `mcp-node:${plugin.id}:${tool.name}`;
-
-        nodes.push({
-          id: nodeId,
-          name: tool.name,
-          role: `Custom MCP Tool (${plugin.name})`,
-          kind: "tendril",
-          lobe: plugin.targetLobe,
-          hemisphere: parentInfo.hemisphere,
-          position: [posX, posY, posZ],
-          size: 4,
-          color: "#06b6d4",       // Cyan bioluminescent tone
-          emissive: "#22d3ee",    // High-glow cyan
-          description: tool.description || `Dynamic tool discovered on ${plugin.serverUrl}`,
-          tools: [tool.name],
-          pluginId: plugin.id,
-        });
-
-        // Add connecting axon spline back to parent lobe
-        axons.push({
-          id: `ax-${parentInfo.parentId}-${nodeId}`,
-          source: parentInfo.parentId,
-          target: nodeId,
-          color: "#06b6d4",
-          curveOffset: [
-            Math.cos(angle) * 8,
-            Math.sin(angle) * 8,
-            ((tIdx % 2) === 0 ? 6 : -6),
-          ],
-          isDynamic: true,
-        });
+      axons.push({
+        id: `ax-${parentInfo.parentId}-${nodeId}`,
+        source: parentInfo.parentId,
+        target: nodeId,
+        color: "#06b6d4",
+        curveOffset: [Math.cos(angle) * 8, Math.sin(angle) * 8, tIdx % 2 === 0 ? 6 : -6],
+        isDynamic: true,
       });
     });
+  });
 
-    return { nodes, axons };
-  }
-}
-
-declare global {
-  var __growforge_custom_mcp_plugins__: PluginRegistry | undefined;
-}
-
-export const pluginRegistry = globalThis.__growforge_custom_mcp_plugins__ ?? new PluginRegistry();
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__growforge_custom_mcp_plugins__ = pluginRegistry;
+  return { nodes, axons };
 }

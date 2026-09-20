@@ -2,11 +2,26 @@ import { NextResponse } from "next/server";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { pluginRegistry, type DetectedMcpTool } from "@/lib/mcp/pluginRegistry";
+import { getSession } from "@/lib/session";
+import {
+  createMcpServer,
+  updateMcpServerDetails,
+  deleteMcpServer,
+  findMcpServerByUrl,
+  listMcpServersByOrigin,
+  type DetectedMcpTool,
+} from "@/lib/mcp/store";
+import { callCustomMcpTool, generateDynamicTopology, toPluginShape } from "@/lib/mcp/pluginRegistry";
 import { isSafeOutboundUrl, scrubSecrets } from "@/lib/security/toolBroker";
 import { telemetryStore, type BrainLobe } from "@/lib/telemetryStore";
 
 export const runtime = "nodejs";
+
+async function requireAuth() {
+  const session = await getSession();
+  if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
+  return { ok: true as const };
+}
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
@@ -83,22 +98,27 @@ async function connectAndDiscoverTools(serverUrl: string, apiKey?: string): Prom
 }
 
 /**
- * GET: Retrieve all registered BYO-MCP plugins and dynamic topology.
+ * Business logic behind GET/POST/DELETE, split out from the auth-gated route
+ * handlers below so it can be called directly — by the route handlers after
+ * they've checked the session, and by scripts/test-mcp-gemini-e2e.ts, which
+ * invokes route logic outside a real Next.js request (where next/headers'
+ * request-scoped APIs, which getSession() relies on, aren't available).
+ * The auth boundary itself (requireAuth) is intentionally NOT exercised by
+ * that test — it's a one-line session check, not business logic worth
+ * duplicating a real HTTP+cookies test harness for.
  */
-export async function GET() {
-  const plugins = pluginRegistry.list();
-  const topology = pluginRegistry.generateDynamicTopology();
+
+export function handleListByoMcp() {
+  const servers = listMcpServersByOrigin("byo-mcp");
+  const topology = generateDynamicTopology(servers);
   return NextResponse.json({
     ok: true,
-    plugins,
+    plugins: servers.map(toPluginShape),
     topology,
   });
 }
 
-/**
- * POST: Connect to a custom MCP server, discover its tools, and register it.
- */
-export async function POST(req: Request) {
+export async function handleConnectByoMcp(req: Request) {
   try {
     const body = await req.json();
     const { name, serverUrl, apiKey, targetLobe = "neural_core" } = body;
@@ -133,23 +153,38 @@ export async function POST(req: Request) {
     // 1. Probe & auto-detect tools
     const detectedTools = await connectAndDiscoverTools(serverUrl, apiKey);
 
-    // 2. Persist in BYO-MCP registry
-    const plugin = pluginRegistry.save({
-      name: name.trim(),
-      serverUrl: serverUrl.trim(),
-      apiKey: apiKey ? scrubSecrets(apiKey) : undefined,
-      targetLobe: validLobe,
-      detectedTools,
-      status: "connected",
-    });
+    // 2. Persist to the shared MCP store (vault-encrypted bearer token,
+    //    survives a dev-server/pm2 restart) — update in place on reconnect.
+    const trimmedUrl = serverUrl.trim();
+    const existing = findMcpServerByUrl(trimmedUrl, "byo-mcp");
+    const def = existing
+      ? updateMcpServerDetails(existing.id, {
+          name: name.trim(),
+          url: trimmedUrl,
+          bearerToken: apiKey?.trim() || undefined,
+          targetLobe: validLobe,
+          detectedTools,
+          status: "connected",
+        })!
+      : await createMcpServer({
+          name: name.trim(),
+          transport: "http",
+          url: trimmedUrl,
+          bearerToken: apiKey?.trim() || undefined,
+          allowedDepartments: [],
+          origin: "byo-mcp",
+          targetLobe: validLobe,
+          detectedTools,
+          status: "connected",
+        });
 
     // 3. Emit real-time telemetry so target brain lobe and somas light up
-    telemetryStore.setExecutionState("processing", { nodeId: `mcp:${plugin.id}` });
+    telemetryStore.setExecutionState("processing", { nodeId: `mcp:${def.id}` });
     telemetryStore.emitEvent({
       type: "tool_invoked",
       lobe: validLobe,
-      nodeId: `mcp:${plugin.id}`,
-      label: `BYO-MCP Registered: ${plugin.name}`,
+      nodeId: `mcp:${def.id}`,
+      label: `BYO-MCP Registered: ${def.name}`,
       details: `Discovered ${detectedTools.length} tools (${detectedTools.map((t) => t.name).slice(0, 3).join(", ")}${
         detectedTools.length > 3 ? "..." : ""
       })`,
@@ -160,11 +195,11 @@ export async function POST(req: Request) {
       telemetryStore.setExecutionState("idle");
     }, 1200);
 
-    const topology = pluginRegistry.generateDynamicTopology();
+    const topology = generateDynamicTopology(listMcpServersByOrigin("byo-mcp"));
 
     return NextResponse.json({
       ok: true,
-      plugin,
+      plugin: toPluginShape(def),
       detectedTools,
       topology,
     });
@@ -174,10 +209,7 @@ export async function POST(req: Request) {
   }
 }
 
-/**
- * DELETE: Unregister a custom MCP plugin.
- */
-export async function DELETE(req: Request) {
+export function handleDisconnectByoMcp(req: Request) {
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
 
@@ -185,11 +217,36 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ ok: false, error: "Plugin id is required." }, { status: 400 });
   }
 
-  const deleted = pluginRegistry.delete(id);
-  const topology = pluginRegistry.generateDynamicTopology();
+  deleteMcpServer(id);
+  const topology = generateDynamicTopology(listMcpServersByOrigin("byo-mcp"));
 
   return NextResponse.json({
-    ok: deleted,
+    ok: true,
     topology,
   });
 }
+
+/** GET: list every byo-mcp server and the dynamic 3D brain topology generated from them. */
+export async function GET() {
+  const gate = await requireAuth();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  return handleListByoMcp();
+}
+
+/** POST: connect to a custom MCP server, discover its tools, and persist it
+ *  in the shared mcp/store.ts (vault-encrypted credential, survives
+ *  restarts). Re-posting the same URL updates that entry in place. */
+export async function POST(req: Request) {
+  const gate = await requireAuth();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  return handleConnectByoMcp(req);
+}
+
+/** DELETE: unregister a byo-mcp server (also clears its vault credential). */
+export async function DELETE(req: Request) {
+  const gate = await requireAuth();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  return handleDisconnectByoMcp(req);
+}
+
+export { callCustomMcpTool };
