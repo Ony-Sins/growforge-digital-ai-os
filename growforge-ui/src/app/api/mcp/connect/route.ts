@@ -8,6 +8,7 @@ import {
   updateMcpServerDetails,
   deleteMcpServer,
   findMcpServerByUrl,
+  getMcpServer,
   listMcpServersByOrigin,
   type DetectedMcpTool,
 } from "@/lib/mcp/store";
@@ -215,6 +216,14 @@ export function handleDisconnectByoMcp(req: Request) {
 
   if (!id) {
     return NextResponse.json({ ok: false, error: "Plugin id is required." }, { status: 400 });
+  }
+
+  // Scope this endpoint to only the byo-mcp entries it owns — without this
+  // check, any id (including a catalog or custom-server entry from a
+  // different origin) could be deleted through this route.
+  const existing = getMcpServer(id);
+  if (!existing || existing.origin !== "byo-mcp") {
+    return NextResponse.json({ ok: false, error: "Plugin not found." }, { status: 404 });
   }
 
   deleteMcpServer(id);
