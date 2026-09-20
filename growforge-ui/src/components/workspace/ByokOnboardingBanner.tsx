@@ -100,7 +100,7 @@ export function ByokOnboardingBanner() {
       : "No runnable AI provider is detected. Start Ollama locally for private, no-token-cost execution, or add and test your own cloud API key.";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-electric/30 bg-gradient-to-r from-navy via-navy to-slate-900 p-4 sm:p-5 text-white shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="relative overflow-hidden rounded-2xl border border-electric/30 bg-gradient-to-r from-app via-app to-slate-900 p-4 sm:p-5 text-white shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Decorative ambient background glow */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-electric/15 blur-3xl" />
       <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-gold/10 blur-3xl" />

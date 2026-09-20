@@ -79,7 +79,7 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
           departments are always a target only. */}
       {(isHub || isDept) && <Handle type="target" position={Position.Top} className="!opacity-0" />}
       <div
-        className={`flex ${size} items-center justify-center rounded-full border-2 bg-navy/90 backdrop-blur-sm transition-transform ${glow} ${
+        className={`flex ${size} items-center justify-center rounded-full border-2 bg-app/90 backdrop-blur-sm transition-transform ${glow} ${
           selected ? "scale-110" : "hover:scale-105"
         }`}
       >
@@ -92,7 +92,7 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
         )}
       </div>
       <span
-        className={`max-w-[6.5rem] truncate rounded-full bg-navy/80 px-2 py-0.5 text-center font-mono text-[10px] backdrop-blur-sm ${
+        className={`max-w-[6.5rem] truncate rounded-full bg-app/80 px-2 py-0.5 text-center font-mono text-[10px] backdrop-blur-sm ${
           isHub ? "font-bold text-electric" : isDept ? "font-semibold text-gold" : "text-emerald/90"
         }`}
       >
@@ -238,7 +238,7 @@ function InspectorPanel({
   }
 
   return (
-    <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-sm flex-col border-l border-electric/20 bg-navy/95 shadow-2xl backdrop-blur-xl">
+    <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-sm flex-col border-l border-electric/20 bg-app/95 shadow-2xl backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-electric/20 p-4">
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -369,7 +369,7 @@ export function AIBrainCanvas() {
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-electric/20 bg-navy shadow-[0_0_60px_-15px_rgba(0,120,255,0.35)]">
+    <section className="overflow-hidden rounded-2xl border border-electric/20 bg-app shadow-[0_0_60px_-15px_rgba(0,120,255,0.35)]">
       <div className="flex items-center gap-3 border-b border-electric/20 px-5 py-4">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-electric/15 text-electric">
           <Brain className="h-[18px] w-[18px]" />

@@ -15,7 +15,7 @@ export function Markdown({ content, size = "sm" }: { content: string; size?: "sm
           code: ({ className, children, ...props }) => {
             const isBlock = /language-/.test(className ?? "");
             return isBlock ? (
-              <code className="block overflow-x-auto rounded-lg bg-navy px-3 py-2 font-mono text-xs text-white/90" {...props}>
+              <code className="block overflow-x-auto rounded-lg bg-app px-3 py-2 font-mono text-xs text-white/90" {...props}>
                 {children}
               </code>
             ) : (

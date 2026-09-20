@@ -46,7 +46,7 @@ export function AdminDrawer() {
   if (!isAdminDrawerOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-navy/40 backdrop-blur-sm transition-opacity">
+    <div className="fixed inset-0 z-50 flex justify-end bg-app/40 backdrop-blur-sm transition-opacity">
       {/* Backdrop click to close */}
       <div className="fixed inset-0" onClick={closeAdminDrawer} aria-hidden="true" />
 
@@ -59,13 +59,13 @@ export function AdminDrawer() {
         {/* Header */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-border-metal bg-white/80 px-6 backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-navy text-gold shadow-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-app text-gold shadow-sm">
               <Shield className="h-5 w-5" />
             </span>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-heading text-sm font-bold text-navy">Admin &amp; Dev Console</h2>
-                <span className="rounded-full bg-navy/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-navy">
+                <span className="rounded-full bg-app/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-navy">
                   {role === "owner" ? "Owner Mode" : "Employee Mode"}
                 </span>
               </div>
@@ -97,7 +97,7 @@ export function AdminDrawer() {
                 }}
                 className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === "terminal"
-                    ? "bg-navy text-white shadow-sm"
+                    ? "bg-app text-white shadow-sm"
                     : "text-secondary hover:bg-white hover:text-navy"
                 }`}
               >
@@ -112,7 +112,7 @@ export function AdminDrawer() {
                 }}
                 className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === "logs"
-                    ? "bg-navy text-white shadow-sm"
+                    ? "bg-app text-white shadow-sm"
                     : "text-secondary hover:bg-white hover:text-navy"
                 }`}
               >
@@ -127,7 +127,7 @@ export function AdminDrawer() {
                 }}
                 className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === "diagnostics"
-                    ? "bg-navy text-white shadow-sm"
+                    ? "bg-app text-white shadow-sm"
                     : "text-secondary hover:bg-white hover:text-navy"
                 }`}
               >

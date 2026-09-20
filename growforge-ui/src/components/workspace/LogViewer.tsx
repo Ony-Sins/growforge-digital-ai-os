@@ -175,7 +175,7 @@ export function LogViewer() {
             aria-label="Log limit"
           >
             {LIMIT_OPTIONS.map((n) => (
-              <option key={n} value={n} className="bg-navy text-white">
+              <option key={n} value={n} className="bg-app text-white">
                 {n} lines
               </option>
             ))}

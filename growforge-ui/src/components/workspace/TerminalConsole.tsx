@@ -289,7 +289,7 @@ export function TerminalConsole() {
         </div>
 
         {/* Shell-style command bar */}
-        <div className="flex items-center gap-2 rounded-lg border border-border-metal-strong bg-navy px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border border-border-metal-strong bg-app px-3 py-2">
           <ChevronRight className="h-4 w-4 shrink-0 text-electric" />
           <input
             ref={commandInputRef}

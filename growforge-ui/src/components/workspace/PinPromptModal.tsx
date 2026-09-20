@@ -49,7 +49,7 @@ export function PinPromptModal() {
         type="button"
         aria-label="Dismiss"
         onClick={handleClose}
-        className="absolute inset-0 bg-navy/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-app/40 backdrop-blur-sm"
       />
       <form
         onSubmit={handleSubmit}

@@ -393,7 +393,7 @@ function FinalPlanModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-navy/60 backdrop-blur-sm" />
+      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-app/60 backdrop-blur-sm" />
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[#0B1220] border border-[#333333] shadow-2xl">
         <div className="flex items-center gap-3 border-b border-[#333333] bg-[#111827] px-6 py-5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold ring-1 ring-gold/30">

@@ -263,7 +263,7 @@ export function NodeWorkflowCanvas() {
       >
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-            activeAgent.hub ? "bg-navy" : "bg-sunken"
+            activeAgent.hub ? "bg-app" : "bg-sunken"
           }`}
         >
           {activeAgent.hub ? (

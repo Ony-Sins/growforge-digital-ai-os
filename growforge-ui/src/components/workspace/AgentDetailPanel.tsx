@@ -184,7 +184,7 @@ export function AgentDetailPanel() {
         type="button"
         aria-label="Close agent details"
         onClick={closeAgentPanel}
-        className="absolute inset-0 bg-navy/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-app/30 backdrop-blur-sm"
       />
 
       {/* Slide-over panel */}
@@ -192,7 +192,7 @@ export function AgentDetailPanel() {
         <div className="flex items-center gap-3 border-b border-border-metal px-5 py-4">
           <span
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-              agent?.hub ? "bg-navy" : "bg-sunken"
+              agent?.hub ? "bg-app" : "bg-sunken"
             }`}
           >
             <Icon className={`h-5 w-5 ${agent?.hub ? "text-gold" : "text-electric"}`} />

@@ -106,7 +106,7 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
   const Icon = agent ? (ICONS[agent.icon] ?? Bot) : Bot;
   return (
     <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#333333] bg-[#111827] px-3 py-2.5">
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${agent?.hub ? "bg-navy" : "bg-sunken"}`}>
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${agent?.hub ? "bg-app" : "bg-sunken"}`}>
         <Icon className={`h-4 w-4 ${agent?.hub ? "text-gold" : "text-electric"}`} />
       </span>
       <div className="min-w-0 flex-1">
@@ -824,7 +824,7 @@ export function ChatView() {
             type="button"
             aria-label="Dismiss"
             onClick={handoffBusy ? undefined : handleCancelHandoff}
-            className="absolute inset-0 bg-navy/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-app/60 backdrop-blur-sm"
           />
           <div className="glass-card-strong relative w-full max-w-sm rounded-2xl border border-[#333333] p-6 shadow-2xl bg-[#0B1220]">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold/15 to-electric/15 text-gold ring-1 ring-[#333333]">

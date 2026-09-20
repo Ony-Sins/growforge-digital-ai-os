@@ -44,7 +44,7 @@ export function InterfaceAccessCard() {
               type="button"
               onClick={() => setUiMode("advanced")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                uiMode === "advanced" ? "bg-navy text-gold" : "bg-transparent text-muted hover:text-navy"
+                uiMode === "advanced" ? "bg-app text-gold" : "bg-transparent text-muted hover:text-navy"
               }`}
             >
               Advanced
@@ -71,7 +71,7 @@ export function InterfaceAccessCard() {
               type="button"
               onClick={() => setRole("owner")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                role === "owner" ? "bg-navy text-gold" : "bg-transparent text-muted hover:text-navy"
+                role === "owner" ? "bg-app text-gold" : "bg-transparent text-muted hover:text-navy"
               }`}
             >
               Owner

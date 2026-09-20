@@ -497,7 +497,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                               <span className="font-heading text-sm font-semibold text-white truncate">
                                 {deptName}
                               </span>
-                              <span className="rounded bg-navy/60 px-1.5 py-0.5 text-[10px] font-medium text-muted border border-[#333333]">
+                              <span className="rounded bg-app/60 px-1.5 py-0.5 text-[10px] font-medium text-muted border border-[#333333]">
                                 {KIND_LABELS[step.kind] || step.kind}
                               </span>
                               {step.provider && (
@@ -506,7 +506,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                                 </span>
                               )}
                               {step.instructionsHash && (
-                                <span className="rounded bg-navy px-1.5 py-0.5 text-[9px] font-mono text-secondary border border-[#333333]">
+                                <span className="rounded bg-app px-1.5 py-0.5 text-[9px] font-mono text-secondary border border-[#333333]">
                                   #{step.instructionsHash}
                                 </span>
                               )}

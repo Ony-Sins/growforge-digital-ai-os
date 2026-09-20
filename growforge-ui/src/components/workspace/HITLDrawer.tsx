@@ -439,7 +439,7 @@ export function HITLDrawer() {
       {/* ── Backdrop ── */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-navy/10 backdrop-blur-[2px]"
+          className="fixed inset-0 z-40 bg-app/10 backdrop-blur-[2px]"
           onClick={() => setOpen(false)}
         />
       )}

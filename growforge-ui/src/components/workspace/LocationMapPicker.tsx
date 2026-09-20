@@ -99,7 +99,7 @@ export function LocationMapPicker({ initial, onConfirm, onClose }: LocationMapPi
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy/40 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-app/40 p-4 backdrop-blur-sm">
       <div className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-metal-strong bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-border-metal px-4 py-3">
           <div className="flex items-center gap-2">
