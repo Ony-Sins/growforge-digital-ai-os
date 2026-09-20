@@ -16,6 +16,8 @@ The user runs Claude Code (this session, typically via VS Code) alongside **Anti
 
 This is a guideline for judgment, not a hard gate — if the user asks this session to do broader work, do it. But when a task is ambiguous and touches this split, default to the lane above.
 
+**Current operating mode (started 2026-09-20, see state.md §3 for the full log):** Claude Code acts as auditor, QA, and prompt-writer — scoping each next step into a single bounded task, verifying what Antigravity reports back (spot-check real files/output, don't just trust the claim), and updating state.md — while Antigravity does the actual implementation. This continues until the remaining work is primarily UI polish, at which point Claude Code resumes direct implementation (its actual lane per the division above). If you're a fresh session reading this: check state.md's most recent entries to see whether this mode is still active before assuming the default division of labor above applies as-is.
+
 ## `state.md` is the only handoff file — keep it that way
 
 - `growforge-ui/STATE.md` (uppercase, inside `growforge-ui/`) is **deprecated**. It used to be a second, independently-maintained handoff doc and diverged badly from the real one before being retired on 2026-09-20 (see `state.md` §3 item 33 for the full story). It now just points back here. Never write real content into it again — if you see it drifting back into use, that's a bug to flag, not a pattern to continue.
