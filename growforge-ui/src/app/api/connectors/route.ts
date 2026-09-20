@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { createConnector, listConnectors, type AuthMode } from "@/lib/connectorStore";
 
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
-  return NextResponse.json({ connectors: listConnectors() });
+  const connectors = isPublicPreviewVisitor(gate.session) ? [] : listConnectors();
+  return NextResponse.json({ connectors });
 }
 
 interface CreateBody {

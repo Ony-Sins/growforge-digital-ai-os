@@ -61,3 +61,17 @@ export async function getSession(): Promise<Session | null> {
 
   return null;
 }
+
+/** True for an anonymous PUBLIC_PREVIEW_MODE visitor — never the real owner
+ *  (real Google login) and never the dev-local bypass. Earlier work made
+ *  every authenticated session (including this one) able to freely *read*
+ *  connected MCP servers, vault/provider status, and Brain telemetry
+ *  (state.md §16, 2026-09-19) — reasonable for a real logged-in employee,
+ *  but combined with this synthetic no-login session it meant any stranger
+ *  visiting the public Vercel URL saw the owner's actual connected agents
+ *  and credentials-configured state. Read routes exposing that data must
+ *  check this and return an empty/demo shape instead of the real one for
+ *  this session, rather than gating on `role` alone. */
+export function isPublicPreviewVisitor(session: Session | null): boolean {
+  return session?.user?.email === "preview@growforge.local";
+}

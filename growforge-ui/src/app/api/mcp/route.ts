@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { createMcpServer, listMcpServers, type McpTransport } from "@/lib/mcp/store";
 import { DEPARTMENTS } from "@/lib/departments";
 
@@ -8,14 +8,18 @@ export const runtime = "nodejs";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  // A public-preview visitor gets an empty, non-configured view — the
+  // owner's real connected servers must never render for an anonymous
+  // stranger with a free session (see isPublicPreviewVisitor's doc comment).
+  const servers = isPublicPreviewVisitor(gate.session) ? [] : listMcpServers();
   return NextResponse.json({
-    servers: listMcpServers(),
+    servers,
     departments: DEPARTMENTS.map((d) => ({ id: d.id, name: d.name, summary: d.summary })),
   });
 }

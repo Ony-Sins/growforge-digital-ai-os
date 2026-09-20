@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import {
   CLOUD_PROVIDERS,
   SYSTEM_VAULT_ID,
@@ -19,12 +19,25 @@ export const runtime = "nodejs";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+
+  // A public-preview visitor must see an unconfigured, empty state, never
+  // the owner's real provider/vault/model configuration — see
+  // isPublicPreviewVisitor's doc comment for why.
+  if (isPublicPreviewVisitor(gate.session)) {
+    const providers = (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((id) => ({
+      id,
+      label: CLOUD_PROVIDERS[id].label,
+      source: "none" as const,
+      configured: false,
+    }));
+    return NextResponse.json({ providers, models: [], strategy: getStrategy(), routingChains: ROUTE_CHAINS });
+  }
 
   // Standard legacy providers for compatibility
   const providers = (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((id) => {
