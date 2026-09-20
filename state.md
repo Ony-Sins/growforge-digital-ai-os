@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 15:00, Claude Code. Declared the current collaboration mode explicitly (Claude Code = auditor/QA/prompt-writer, Antigravity = implementer, until mostly-UI work remains — now in `CLAUDE.md` so it survives a session switch) and reconciled why 279-agent work resumed after Phase 2 said "stick with 7" (not a deviation — Phase 4 item 4 always specified this, see `docs/ROADMAP.md`'s amendment log). See §3 items 39-40. **Previous, 14:52, Antigravity**: standalone vault agent matcher (`vaultMatcher.ts`) — pure keyword/n-gram scoring over the 279-agent catalog, no dispatch wiring yet. **Previous, 14:48, Claude Code**: MCP origin badges on the Installed tab.
+> **Last updated:** 2026-09-20, 15:12, Antigravity. Built Master Cross-Agent Findings View (`MasterFindingsView.tsx`) — consolidated multi-department dossier rolling up outputs, research citations, rule hashes, and QA audits into one view with Markdown export. **Previous, 15:00, Claude Code**: Declared collaboration mode and reconciled 279-agent activation roadmap. **Previous, 14:52, Antigravity**: standalone vault agent matcher (`vaultMatcher.ts`).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,18 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Master Cross-Agent Findings & Audit Rollup View (2026-09-20, 15:12, Antigravity):**
+  - **Consolidated Multi-Department Findings View (`MasterFindingsView.tsx`):** Built a comprehensive cross-agent findings view that rolls up every department's real completed job output, research citations, rule hashes, and QA audit states from `jobStore.ts` into a single unified dossier.
+  - **3 Interactive View Modes:**
+    1. *Rollup Dossier:* Grouped executive view with collapsable accordion cards for every specialist department, research phase, reconciliation, QA audit, and final proposal. Features individual section copying and full dossier Markdown export & download (`.md`).
+    2. *Department Grid:* 2-column comparative layout displaying simultaneous department technical outputs, models, and execution summaries.
+    3. *Audit & Provenance Ledger:* Transparent governance ledger recording department ID, activity prompt, rule hash (`instructionsHash`), LLM engine footprint (`provider`), and live verified web research citations (`sources`).
+  - **Live Real-Data Executive Metric Strip:** Aggregates real job metrics only — active participating departments, verified research citations with external links, aggregate deliverable word count, QA audit approval state, multi-model engine footprint, and governance state. Zero invented metrics.
+  - **Search & Department Filtering:** Real-time client-side search across all department outputs and stage activity briefs, with quick filter pills for specific kinds (`plan`, `research`, `department`, `reconcile`, `qa`, `final`).
+  - **Project Canvas Integration (`ProjectCanvas.tsx`):** Added a "Master Findings" button to the active project header bar and a direct findings switch in `FinalPlanModal`, opening the consolidated view modal seamlessly over any completed or active job.
+  - **Scope Isolation:** Kept untouched: `orchestrator.ts`'s dispatch logic, `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `vaultMatcher.ts`, and `growforge-ui/STATE.md`.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) clean across 28/28 routes.
 
 - **Standalone Vault Agent Matcher (2026-09-20, 14:52, Antigravity):**
   - **Deterministic Scoring Engine (`src/lib/vaultMatcher.ts`):** Implemented a standalone matching function `matchVaultAgents(query: string, limit = 15)` and `matchVaultAgentsWithScore(query: string, limit = 15)` that ranks all 279 entries in `src/data/vaultCapabilities.json` against job briefs or task requirements.

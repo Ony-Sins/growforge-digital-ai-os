@@ -26,6 +26,7 @@ import {
   FolderOpen,
   Globe,
   History,
+  Layers,
   Loader2,
   Megaphone,
   MessageSquarePlus,
@@ -44,6 +45,7 @@ import {
 import type { Job, JobStep, JobSummary, StepStatus } from "@/lib/jobStore";
 import { Markdown } from "@/components/ui/Markdown";
 import { useAppState } from "@/lib/appState";
+import { MasterFindingsView } from "@/components/workspace/MasterFindingsView";
 
 const DEPT_ICONS: Record<string, LucideIcon> = {
   "sales-bd": Target,
@@ -344,7 +346,17 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
   );
 }
 
-function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => void; onUpdated: (job: Job) => void }) {
+function FinalPlanModal({
+  job,
+  onClose,
+  onUpdated,
+  onOpenMasterFindings,
+}: {
+  job: Job;
+  onClose: () => void;
+  onUpdated: (job: Job) => void;
+  onOpenMasterFindings?: () => void;
+}) {
   const { role } = useAppState();
   const [copied, setCopied] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -403,6 +415,15 @@ function FinalPlanModal({ job, onClose, onUpdated }: { job: Job; onClose: () => 
               )}
             </div>
           </div>
+          {onOpenMasterFindings && (
+            <button
+              type="button"
+              onClick={onOpenMasterFindings}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-electric/30 bg-electric/10 px-3 py-1.5 text-xs font-medium text-electric hover:bg-electric/20 transition-colors"
+            >
+              <Layers className="h-3.5 w-3.5" /> Master Findings
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigator.clipboard.writeText(content).then(() => setCopied(true))}
@@ -479,6 +500,7 @@ export function ProjectCanvas({
   const [job, setJob] = useState<Job | null>(null);
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [showFinal, setShowFinal] = useState(initialShowFinal);
+  const [showMasterFindings, setShowMasterFindings] = useState(false);
   const [jobsMenuOpen, setJobsMenuOpen] = useState(false);
 
   const currentId = initialJobId ?? activeJobId ?? jobs[0]?.id ?? null;
@@ -546,6 +568,15 @@ export function ProjectCanvas({
             Brief → HQ → research → departments → team review → QA → final plan. Click any node to inspect agent output.
           </p>
         </div>
+        {visibleJob && (visibleJob.status === "done" || visibleJob.steps.some((s) => s.output)) && (
+          <button
+            type="button"
+            onClick={() => setShowMasterFindings(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-electric/40 bg-electric/15 hover:bg-electric/25 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-colors"
+          >
+            <Layers className="h-4 w-4 text-electric" /> Master Findings
+          </button>
+        )}
         {visibleJob?.status === "done" && visibleJob.finalOutput && (
           <button
             type="button"
@@ -744,7 +775,27 @@ export function ProjectCanvas({
         </>
       )}
 
-      {showFinal && visibleJob?.finalOutput && <FinalPlanModal job={visibleJob} onClose={() => setShowFinal(false)} onUpdated={setJob} />}
+      {showFinal && visibleJob?.finalOutput && (
+        <FinalPlanModal
+          job={visibleJob}
+          onClose={() => setShowFinal(false)}
+          onUpdated={setJob}
+          onOpenMasterFindings={() => {
+            setShowFinal(false);
+            setShowMasterFindings(true);
+          }}
+        />
+      )}
+      {showMasterFindings && visibleJob && (
+        <MasterFindingsView
+          job={visibleJob}
+          onClose={() => setShowMasterFindings(false)}
+          onOpenFinalPlan={() => {
+            setShowMasterFindings(false);
+            setShowFinal(true);
+          }}
+        />
+      )}
     </section>
   );
 }
