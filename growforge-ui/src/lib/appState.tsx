@@ -96,6 +96,13 @@ interface AppStateValue {
   openAgentRoster: () => void;
   closeAgentRoster: () => void;
 
+  /** Vault Library overlay — master reference catalog of all 279 vault agents,
+   *  searchable/filterable by category, tier, and tools. Follows the same
+   *  overlay pattern as Settings/Admin Drawer/User Profile/Roster. */
+  isVaultLibraryOpen: boolean;
+  openVaultLibrary: () => void;
+  closeVaultLibrary: () => void;
+
   pinPromptTarget: PinPromptTarget;
   requestAgentUnlock: (agentId: string) => void;
   requestOwnerUnlock: () => void;
@@ -179,6 +186,7 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
     initialLocation?.panel === "settings" && initialLocation?.tab ? initialLocation.tab : "account",
   );
   const [isAgentRosterOpen, setIsAgentRosterOpen] = useState(() => initialLocation?.panel === "roster");
+  const [isVaultLibraryOpen, setIsVaultLibraryOpen] = useState(() => initialLocation?.panel === "vault");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [chatViewMode, setChatViewMode] = useState<"docked" | "maximized">("docked");
@@ -279,6 +287,19 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
     });
   }, []);
 
+  const openVaultLibrary = useCallback(() => {
+    setIsVaultLibraryOpen(true);
+    writeLocationParams({ panel: "vault" });
+  }, []);
+
+  const closeVaultLibrary = useCallback(() => {
+    setIsVaultLibraryOpen(false);
+    setActiveViewState((current) => {
+      writeLocationParams({ view: current === "chat" ? undefined : current });
+      return current;
+    });
+  }, []);
+
   const setActiveView = useCallback(
     (view: ActiveView) => {
       if (view === "terminal") {
@@ -301,11 +322,15 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
         openAgentRoster();
         return;
       }
+      if (view === "vault") {
+        openVaultLibrary();
+        return;
+      }
       setActiveViewState(view);
       setActiveViewToken((t) => t + 1);
       writeLocationParams({ view: view === "chat" ? undefined : view });
     },
-    [openAdminDrawer, openUserProfile, openSettings, openAgentRoster],
+    [openAdminDrawer, openUserProfile, openSettings, openAgentRoster, openVaultLibrary],
   );
 
   const openJob = useCallback(
@@ -388,6 +413,9 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       isAgentRosterOpen,
       openAgentRoster,
       closeAgentRoster,
+      isVaultLibraryOpen,
+      openVaultLibrary,
+      closeVaultLibrary,
       pinPromptTarget,
       requestAgentUnlock,
       requestOwnerUnlock,
@@ -430,6 +458,9 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       isAgentRosterOpen,
       openAgentRoster,
       closeAgentRoster,
+      isVaultLibraryOpen,
+      openVaultLibrary,
+      closeVaultLibrary,
       pinPromptTarget,
       requestAgentUnlock,
       requestOwnerUnlock,

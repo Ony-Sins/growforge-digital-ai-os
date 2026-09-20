@@ -18,6 +18,7 @@ import { ProjectInspectorDrawer } from "@/components/workspace/ProjectCanvas";
 import { SettingsOverlay } from "@/components/workspace/SettingsOverlay";
 import { SystemHealth } from "@/components/workspace/SystemHealth";
 import { UserProfileOverlay } from "@/components/workspace/UserProfileOverlay";
+import { VaultLibraryOverlay } from "@/components/workspace/VaultLibraryOverlay";
 import { ByokOnboardingBanner } from "@/components/workspace/ByokOnboardingBanner";
 import { useAppState, type ActiveView } from "@/lib/appState";
 
@@ -81,6 +82,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     openAdminDrawer,
     openUserProfile,
     openAgentRoster,
+    openVaultLibrary,
     chatViewMode,
     profileName,
   } = useAppState();
@@ -103,6 +105,10 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
       openAgentRoster();
       return;
     }
+    if (activeView === "vault") {
+      openVaultLibrary();
+      return;
+    }
     const id = sectionIdFor(activeView);
     if (!id) return;
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -110,7 +116,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     setFlashSection(id);
     const t = setTimeout(() => setFlashSection(null), 1000);
     return () => clearTimeout(t);
-  }, [activeView, activeViewToken, openUserProfile, openAgentRoster]);
+  }, [activeView, activeViewToken, openUserProfile, openAgentRoster, openVaultLibrary]);
 
   useEffect(() => {
     let cancelled = false;
@@ -405,6 +411,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
       <UserProfileOverlay user={user} />
       <SettingsOverlay />
       <AgentRosterOverlay />
+      <VaultLibraryOverlay />
     </main>
   );
 }

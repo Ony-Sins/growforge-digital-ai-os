@@ -21,15 +21,35 @@ interface FunnelStep {
   iconColor: string;
 }
 
-function FunnelCard({ step }: { step: FunnelStep }) {
+function FunnelCard({ step, onClick }: { step: FunnelStep; onClick?: () => void }) {
   const Icon = step.icon;
   return (
-    <div className="glass-card-strong flex min-w-0 flex-1 flex-col items-center rounded-2xl px-5 py-6 text-center">
+    <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`glass-card-strong flex min-w-0 flex-1 flex-col items-center rounded-2xl px-5 py-6 text-center transition-all ${
+        onClick
+          ? "cursor-pointer hover:-translate-y-0.5 hover:ring-1 hover:ring-electric/50"
+          : ""
+      }`}
+    >
       <span className={`flex h-12 w-12 items-center justify-center rounded-full ${step.tint}`}>
         <Icon className={`h-5 w-5 ${step.iconColor}`} />
       </span>
       <p className="mt-4 font-heading text-3xl font-bold text-navy">{step.value}</p>
       <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">{step.label}</p>
+      {onClick && (
+        <span className="mt-2 font-mono text-[10px] text-electric opacity-80 hover:opacity-100">
+          Browse →
+        </span>
+      )}
     </div>
   );
 }
@@ -64,7 +84,7 @@ function InterventionBanner({ blocked, onResolve }: { blocked: Agent[]; onResolv
 }
 
 export function ExecutiveFunnel() {
-  const { openAgentPanel } = useAppState();
+  const { openAgentPanel, openVaultLibrary, openAgentRoster, openAdminDrawer } = useAppState();
   const liveAgents = useLiveAgents();
   const [logsTotal, setLogsTotal] = useState(0);
 
@@ -95,11 +115,38 @@ export function ExecutiveFunnel() {
   const executingNow = liveAgents.filter((a) => a.status === "active").length;
   const blocked = liveAgents.filter((a) => a.status === "error");
 
-  const steps: FunnelStep[] = [
-    { label: "Vault Catalog (reference)", value: CATALOGED_AGENTS, icon: Library, tint: "bg-violet-100", iconColor: "text-violet-500" },
-    { label: "Provisioned Roster", value: provisionedRoster, icon: Bot, tint: "bg-sky-100", iconColor: "text-sky-500" },
-    { label: "Executing Now", value: executingNow, icon: Cpu, tint: "bg-amber-100", iconColor: "text-amber-500" },
-    { label: "Completed Runs", value: logsTotal, icon: CheckCircle2, tint: "bg-emerald-100", iconColor: "text-emerald-500" },
+  const steps: (FunnelStep & { onClick?: () => void })[] = [
+    {
+      label: "Vault Catalog (reference)",
+      value: CATALOGED_AGENTS,
+      icon: Library,
+      tint: "bg-violet-100",
+      iconColor: "text-violet-500",
+      onClick: openVaultLibrary,
+    },
+    {
+      label: "Provisioned Roster",
+      value: provisionedRoster,
+      icon: Bot,
+      tint: "bg-sky-100",
+      iconColor: "text-sky-500",
+      onClick: openAgentRoster,
+    },
+    {
+      label: "Executing Now",
+      value: executingNow,
+      icon: Cpu,
+      tint: "bg-amber-100",
+      iconColor: "text-amber-500",
+    },
+    {
+      label: "Completed Runs",
+      value: logsTotal,
+      icon: CheckCircle2,
+      tint: "bg-emerald-100",
+      iconColor: "text-emerald-500",
+      onClick: () => openAdminDrawer("logs"),
+    },
   ];
 
   return (
@@ -117,7 +164,7 @@ export function ExecutiveFunnel() {
           // the card and arrow become direct flex siblings, so arrows sit
           // truly *between* cards without a wrapper skewing their widths.
           <div key={step.label} className="contents">
-            <FunnelCard step={step} />
+            <FunnelCard step={step} onClick={step.onClick} />
             {i < steps.length - 1 && (
               <div className="hidden shrink-0 items-center justify-center lg:flex">
                 <ArrowRight className="h-5 w-5 text-muted" />
