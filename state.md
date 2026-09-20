@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 14:48, Claude Code. Added origin badges (BYO-MCP / Catalog / Custom) to the Installed tab's connector cards — small polish, see §3 item 37. Also confirmed NemoClaw needs a WSL2/Docker setup the user has to do themselves before it's a task for either tool, and flagged that 7 commits are now sitting unpushed (§3 item 38) — user's explicit choice to keep going rather than review/push yet. **Previous, 14:34, Antigravity**: per-agent BYO capability keys for image generation (OpenAI DALL-E 3, Google Imagen 3, Higgsfield AI) via the existing encrypted vault pattern, falling back to local ComfyUI when no cloud key is set. Before that: Vault Library search verification (14:27), Vault Library browser (14:18), vault capability catalog extraction (14:08) — all Antigravity.
+> **Last updated:** 2026-09-20, 14:52, Antigravity. **Antigravity, 14:52**: Standalone Vault Agent Matcher (`src/lib/vaultMatcher.ts`) — implemented a pure deterministic semantic/keyword scoring engine for all 279 cataloged vault agents with multi-field weighting (name, summary, category, tools, slug), n-gram phrase matching, coverage boosting, and domain synonym normalization. Exports `matchVaultAgents(query, limit = 15)` and `matchVaultAgentsWithScore(query, limit = 15)` with inline usage examples. Pure function, zero side effects, zero external dependencies, no dispatch/routing wiring. Verified cleanly (`tsc`, `lint`, Next.js 16 build 28/28 routes). Committed locally, no git push. **Previous, 14:48, Claude Code**: Added origin badges to Installed tab's connector cards. **Previous, 14:34, Antigravity**: Per-agent BYO capability keys for image generation (OpenAI DALL-E 3, Google Imagen 3, Higgsfield AI) via encrypted vault with ComfyUI fallback.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,13 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Standalone Vault Agent Matcher (2026-09-20, 14:52, Antigravity):**
+  - **Deterministic Scoring Engine (`src/lib/vaultMatcher.ts`):** Implemented a standalone matching function `matchVaultAgents(query: string, limit = 15)` and `matchVaultAgentsWithScore(query: string, limit = 15)` that ranks all 279 entries in `src/data/vaultCapabilities.json` against job briefs or task requirements.
+  - **Multi-Field Weighted Signals:** Evaluates exact and token matches across agent name (highest weight), category, explicit tool dependencies (e.g. Figma, GitHub, Stripe, PostgreSQL), summary description, and ID slug. Includes consecutive 2-word/3-word phrase extraction, stop-word filtering, term coverage scaling (up to +80% bonus for matching multiple distinct brief requirements), and domain synonym/stem expansion clusters.
+  - **Pure & Self-Contained:** 100% deterministic pure functions with zero external dependencies and zero network calls. Decoupled from `orchestrator.ts` and dispatch logic. Includes comprehensive inline usage examples and TypeScript type exports (`VaultCapabilityRecord`, `VaultMatchResult`).
+  - **Scope Isolation:** Kept untouched: `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `WebLlmIndicator.tsx`, `VaultLibraryOverlay.tsx`, `IntegrationsHub.tsx`, and `growforge-ui/STATE.md`.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) clean across 28/28 routes.
 
 - **Per-Agent BYO Capability Keys for Image Generation (2026-09-20, 14:34, Antigravity):**
   - **BYO Image Generation Engine (`src/lib/imageGen.ts`):** Implemented multi-provider image generation pipeline supporting OpenAI (DALL-E 3), Google Gemini (Imagen 3 / `imagen-3.0-generate-002`), and Higgsfield AI (`https://api.higgsfield.ai/v1`). Images are persisted to `public/generated/images/` and served at `/generated/images/{id}.png`.
