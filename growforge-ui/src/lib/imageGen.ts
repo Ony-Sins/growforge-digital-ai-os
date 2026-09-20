@@ -267,65 +267,109 @@ async function generateViaGemini(prompt: string, apiKey: string): Promise<ImageG
   }
 }
 
+interface HiggsfieldRequestStatus {
+  status: string;
+  request_id: string;
+  status_url?: string;
+  cancel_url?: string;
+  error?: string | { message?: string } | null;
+  images?: Array<{ url: string }>;
+}
+
+const HIGGSFIELD_TERMINAL_FAILURE_STATUSES = new Set(["failed", "error", "cancelled", "canceled"]);
+
+/** Higgsfield's real API is job-based, not synchronous: submit returns a
+ *  request_id + status_url immediately, and the caller polls until the job
+ *  completes (or uses a webhook, not used here). Verified against
+ *  Higgsfield's own OpenAPI spec (docs.higgsfield.ai/docs/openapi.json) —
+ *  the earlier version of this function assumed a synchronous response
+ *  with an image_url in the same call, which does not match the real API
+ *  and would fail against it. */
+async function pollHiggsfieldStatus(statusUrl: string, apiKey: string, deadlineMs: number): Promise<HiggsfieldRequestStatus> {
+  let delayMs = 2000;
+  while (Date.now() < deadlineMs) {
+    const res = await fetch(statusUrl, {
+      headers: { Authorization: `Key ${apiKey}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Higgsfield status check failed (${res.status}): ${errText.slice(0, 300)}`);
+    }
+    const data = (await res.json()) as HiggsfieldRequestStatus;
+    if (data.images && data.images.length > 0) return data;
+    if (HIGGSFIELD_TERMINAL_FAILURE_STATUSES.has((data.status || "").toLowerCase())) {
+      const errMsg = typeof data.error === "string" ? data.error : data.error?.message;
+      throw new Error(errMsg || `Higgsfield job ${data.status}.`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    delayMs = Math.min(delayMs + 1000, 8000);
+  }
+  throw new Error("Higgsfield generation timed out waiting for the job to complete.");
+}
+
 /**
- * Generates an image using Higgsfield AI API.
+ * Generates an image using Higgsfield AI's "soul" text-to-image model.
+ * Job-based API: submit, then poll status until images are ready.
  */
 async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<ImageGenResult> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60_000);
-
+  const deadlineMs = Date.now() + 90_000;
   try {
-    const res = await fetch("https://api.higgsfield.ai/v1/image/generate", {
+    const submitRes = await fetch("https://api.higgsfield.ai/higgsfield-ai/soul/standard", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Key ${apiKey}`,
-        "x-api-key": apiKey,
       },
       body: JSON.stringify({
         prompt,
-        width: 1024,
-        height: 1024,
+        num_images: 1,
+        resolution: "2K",
+        aspect_ratio: "1:1",
       }),
-      signal: controller.signal,
+      signal: AbortSignal.timeout(15_000),
     });
 
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      return { ok: false, output: `Higgsfield AI failed (${res.status}): ${errText.slice(0, 300)}` };
+    if (!submitRes.ok) {
+      const errText = await submitRes.text().catch(() => "");
+      return { ok: false, output: `Higgsfield AI submit failed (${submitRes.status}): ${errText.slice(0, 300)}` };
     }
 
-    const data = await res.json();
-    const imageUrl = data?.image_url || data?.url || data?.data?.[0]?.url;
-    if (imageUrl) {
-      try {
-        const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(20_000) });
-        if (imgRes.ok) {
-          const buffer = Buffer.from(await imgRes.arrayBuffer());
-          const localUrl = saveImageBytes(buffer, "png");
-          return {
-            ok: true,
-            output: `Generated 1 image(s) via Higgsfield AI: ${localUrl}`,
-            providerUsed: "higgsfield",
-            imageUrl: localUrl,
-          };
-        }
-      } catch {
-        // return direct url if download fails
+    const submitData = (await submitRes.json()) as HiggsfieldRequestStatus;
+    if (HIGGSFIELD_TERMINAL_FAILURE_STATUSES.has((submitData.status || "").toLowerCase())) {
+      const errMsg = typeof submitData.error === "string" ? submitData.error : submitData.error?.message;
+      return { ok: false, output: errMsg || `Higgsfield job ${submitData.status} immediately.` };
+    }
+
+    const statusUrl = submitData.status_url || `https://api.higgsfield.ai/requests/${submitData.request_id}/status`;
+    const finalStatus = await pollHiggsfieldStatus(statusUrl, apiKey, deadlineMs);
+    const imageUrl = finalStatus.images?.[0]?.url;
+    if (!imageUrl) {
+      return { ok: false, output: "Higgsfield AI completed the job without returning an image URL." };
+    }
+
+    try {
+      const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(20_000) });
+      if (imgRes.ok) {
+        const buffer = Buffer.from(await imgRes.arrayBuffer());
+        const localUrl = saveImageBytes(buffer, "png");
+        return {
+          ok: true,
+          output: `Generated 1 image(s) via Higgsfield AI: ${localUrl}`,
+          providerUsed: "higgsfield",
+          imageUrl: localUrl,
+        };
       }
-      return {
-        ok: true,
-        output: `Generated 1 image(s) via Higgsfield AI: ${imageUrl}`,
-        providerUsed: "higgsfield",
-        imageUrl,
-      };
+    } catch {
+      // fall through to returning the direct URL below
     }
-
-    return { ok: false, output: "Higgsfield AI responded without image URL." };
+    return {
+      ok: true,
+      output: `Generated 1 image(s) via Higgsfield AI: ${imageUrl}`,
+      providerUsed: "higgsfield",
+      imageUrl,
+    };
   } catch (err) {
-    clearTimeout(timeoutId);
     return { ok: false, output: `Higgsfield AI error: ${err instanceof Error ? err.message : String(err)}` };
   }
 }
