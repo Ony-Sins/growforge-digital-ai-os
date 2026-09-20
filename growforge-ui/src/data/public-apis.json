@@ -1,0 +1,244 @@
+[
+  {
+    "id": "open-meteo",
+    "name": "Open-Meteo",
+    "category": "business",
+    "description": "Weather and forecast data useful for location planning, operations, and campaign timing.",
+    "baseUrl": "https://api.open-meteo.com/v1",
+    "docsUrl": "https://open-meteo.com/en/docs",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Free non-commercial access; review provider limits before production use.",
+    "tools": [
+      {
+        "name": "open_meteo_forecast",
+        "description": "Get a forecast for a latitude and longitude.",
+        "method": "GET",
+        "path": "/forecast",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number", "description": "Location latitude." },
+            "longitude": { "type": "number", "description": "Location longitude." },
+            "current": { "type": "string", "description": "Comma-separated current variables, for example temperature_2m." },
+            "daily": { "type": "string", "description": "Comma-separated daily variables." },
+            "timezone": { "type": "string", "description": "IANA timezone or auto." }
+          },
+          "required": ["latitude", "longitude"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "world-bank",
+    "name": "World Bank Indicators",
+    "category": "business",
+    "description": "Public economic and development indicators for market research and country comparisons.",
+    "baseUrl": "https://api.worldbank.org/v2",
+    "docsUrl": "https://datahelpdesk.worldbank.org/knowledgebase/articles/889392-about-the-indicators-api-documentation",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Public service; use pagination and cache repeated research queries.",
+    "tools": [
+      {
+        "name": "world_bank_indicator",
+        "description": "Fetch an indicator for one country and year range.",
+        "method": "GET",
+        "path": "/country/{country}/indicator/{indicator}",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "country": { "type": "string", "description": "ISO 3166-1 alpha-2 country code." },
+            "indicator": { "type": "string", "description": "World Bank indicator code." },
+            "date": { "type": "string", "description": "Year or year range such as 2015:2024." },
+            "format": { "type": "string", "enum": ["json", "xml"], "default": "json" }
+          },
+          "required": ["country", "indicator"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "rest-countries",
+    "name": "REST Countries",
+    "category": "business",
+    "description": "Country metadata for regional segmentation, localization, and market research.",
+    "baseUrl": "https://restcountries.com/v3.1",
+    "docsUrl": "https://restcountries.com/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Public endpoint; avoid high-volume polling and cache stable country metadata.",
+    "tools": [
+      {
+        "name": "country_lookup",
+        "description": "Look up country metadata by name, code, or region.",
+        "method": "GET",
+        "path": "/name/{name}",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Country name." },
+            "fullText": { "type": "boolean", "description": "Require an exact name match." }
+          },
+          "required": ["name"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "zippopotam",
+    "name": "Zippopotam.us",
+    "category": "data-validation",
+    "description": "Resolve postal codes to locality and administrative-region data.",
+    "baseUrl": "https://api.zippopotam.us",
+    "docsUrl": "https://api.zippopotam.us/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Community public service; validate results against a production address provider when required.",
+    "tools": [
+      {
+        "name": "postal_code_lookup",
+        "description": "Resolve a postal code for a country into places and regions.",
+        "method": "GET",
+        "path": "/{country}/{postalCode}",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "country": { "type": "string", "description": "ISO 3166-1 alpha-2 country code." },
+            "postalCode": { "type": "string", "description": "Postal or ZIP code." }
+          },
+          "required": ["country", "postalCode"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "ipify",
+    "name": "ipify",
+    "category": "data-validation",
+    "description": "Return the caller's public IP address for diagnostics and network-aware workflows.",
+    "baseUrl": "https://api.ipify.org",
+    "docsUrl": "https://www.ipify.org/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Public endpoint; use sparingly in diagnostics rather than as an identity system.",
+    "tools": [
+      {
+        "name": "get_public_ip",
+        "description": "Get the public IP address seen by the service.",
+        "method": "GET",
+        "path": "/",
+        "parameters": {
+          "type": "object",
+          "properties": { "format": { "type": "string", "enum": ["json", "text"], "default": "json" } }
+        }
+      }
+    ]
+  },
+  {
+    "id": "frankfurter",
+    "name": "Frankfurter",
+    "category": "finance",
+    "description": "Reference exchange rates and currency conversion from a public, keyless service.",
+    "baseUrl": "https://api.frankfurter.dev/v2",
+    "docsUrl": "https://frankfurter.dev/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Reference rates are not a trading or settlement feed; cache and disclose rate timing.",
+    "tools": [
+      {
+        "name": "convert_currency",
+        "description": "Convert an amount using the latest available reference rate.",
+        "method": "GET",
+        "path": "/rate/{base}/{quote}",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "base": { "type": "string", "description": "Three-letter base currency code." },
+            "quote": { "type": "string", "description": "Three-letter quote currency code." },
+            "amount": { "type": "number", "description": "Amount to convert." }
+          },
+          "required": ["base", "quote"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "coingecko-markets",
+    "name": "CoinGecko Markets",
+    "category": "finance",
+    "description": "Public cryptocurrency market data for lightweight research and monitoring.",
+    "baseUrl": "https://api.coingecko.com/api/v3",
+    "docsUrl": "https://docs.coingecko.com/reference/introduction",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Public/demo access is rate-limited; use caching and do not treat data as an execution feed.",
+    "tools": [
+      {
+        "name": "crypto_market_snapshot",
+        "description": "List market data for selected cryptocurrencies.",
+        "method": "GET",
+        "path": "/coins/markets",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "vs_currency": { "type": "string", "description": "Fiat or crypto quote currency, for example usd." },
+            "ids": { "type": "string", "description": "Comma-separated CoinGecko coin IDs." },
+            "per_page": { "type": "integer", "minimum": 1, "maximum": 250 }
+          },
+          "required": ["vs_currency"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "jina-reader",
+    "name": "Jina Reader",
+    "category": "web-scraping",
+    "description": "Convert a public URL into clean, model-friendly text for research and extraction.",
+    "baseUrl": "https://r.jina.ai/http://",
+    "docsUrl": "https://jina.ai/reader/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Unauthenticated use is rate-limited; respect target-site terms and robots policies.",
+    "tools": [
+      {
+        "name": "read_public_url",
+        "description": "Fetch a public web page and return its reader-friendly text representation.",
+        "method": "GET",
+        "path": "/{url}",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string", "format": "uri", "description": "Public HTTP or HTTPS URL to read." }
+          },
+          "required": ["url"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "allorigins",
+    "name": "AllOrigins",
+    "category": "web-scraping",
+    "description": "Fetch public resources through a CORS-friendly proxy for simple parsing workflows.",
+    "baseUrl": "https://api.allorigins.win",
+    "docsUrl": "https://allorigins.win/",
+    "auth": "none",
+    "https": true,
+    "rateLimitNote": "Community proxy with shared capacity; never send private URLs or sensitive data.",
+    "tools": [
+      {
+        "name": "fetch_public_resource",
+        "description": "Fetch a public URL through the raw AllOrigins endpoint.",
+        "method": "GET",
+        "path": "/raw",
+        "parameters": {
+          "type": "object",
+          "properties": { "url": { "type": "string", "format": "uri", "description": "Public resource URL." } },
+          "required": ["url"]
+        }
+      }
+    ]
+  }
+]

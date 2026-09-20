@@ -1,4 +1,4 @@
-import catalogData from "../../data/public-apis.json";
+import catalogData from "../data/public-apis.json";
 
 export const API_CATALOG_CATEGORIES = [
   "business",
