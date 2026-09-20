@@ -29,6 +29,8 @@ import type { LlmStrategy } from "@/lib/llm";
 import { useAppState } from "@/lib/appState";
 import type { HandoffSuggestion } from "@/lib/handoff";
 import { Markdown } from "@/components/ui/Markdown";
+import { generateWebLlmChat, isWebGpuSupported, type WebLlmProgressReport } from "@/lib/webLlm";
+import { WebLlmIndicator } from "@/components/workspace/WebLlmIndicator";
 
 interface RouterStatus {
   strategy: LlmStrategy;
@@ -146,6 +148,7 @@ export function ChatView() {
   const [handoffBusy, setHandoffBusy] = useState(false);
   const [pendingBrief, setPendingBrief] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<AttachmentUI[]>([]);
+  const [webLlmStatus, setWebLlmStatus] = useState<WebLlmProgressReport | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -304,6 +307,39 @@ export function ChatView() {
       const data = await res.json();
 
       if (!res.ok) {
+        // Lowest-priority fallback: if server router returned an error (e.g. no local Ollama or BYOK key),
+        // try in-browser WebLLM via WebGPU before showing error
+        if (isWebGpuSupported()) {
+          try {
+            setWebLlmStatus({ text: "Initializing in-browser Llama 3.2 1B (WebGPU)…", progress: 0 });
+            const webLlmResult = await generateWebLlmChat(
+              [...history, { role: "user", content: text }],
+              {
+                onProgress: (report) => {
+                  setWebLlmStatus(report);
+                },
+              }
+            );
+
+            const assistantId = nextId++;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: assistantId,
+                role: "assistant",
+                content: webLlmResult.reply,
+                timestamp: new Date().toISOString(),
+                provider: "web-llm (in-browser)",
+              },
+            ]);
+            setWebLlmStatus(null);
+            return;
+          } catch (webLlmErr) {
+            console.warn("WebLLM in-browser fallback failed:", webLlmErr);
+            setWebLlmStatus(null);
+          }
+        }
+
         setMessages((prev) => [
           ...prev,
           {
@@ -354,6 +390,37 @@ export function ChatView() {
         setPendingHandoff({ handoff: data.handoff, messageId: assistantId });
       }
     } catch (err) {
+      if (isWebGpuSupported()) {
+        try {
+          setWebLlmStatus({ text: "Initializing in-browser Llama 3.2 1B (WebGPU)…", progress: 0 });
+          const webLlmResult = await generateWebLlmChat(
+            [...history, { role: "user", content: text }],
+            {
+              onProgress: (report) => {
+                setWebLlmStatus(report);
+              },
+            }
+          );
+
+          const assistantId = nextId++;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantId,
+              role: "assistant",
+              content: webLlmResult.reply,
+              timestamp: new Date().toISOString(),
+              provider: "web-llm (in-browser)",
+            },
+          ]);
+          setWebLlmStatus(null);
+          return;
+        } catch (webLlmErr) {
+          console.warn("WebLLM in-browser fallback failed:", webLlmErr);
+          setWebLlmStatus(null);
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
@@ -365,6 +432,7 @@ export function ChatView() {
       ]);
     } finally {
       setSending(false);
+      setWebLlmStatus(null);
       inputRef.current?.focus();
     }
   }
@@ -668,11 +736,19 @@ export function ChatView() {
         })}
 
         {sending && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-2xl border border-[#333333] bg-[#111827] px-4 py-3">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-electric" />
-              <span className="text-sm text-secondary">Thinking…</span>
-            </div>
+          <div className="flex flex-col gap-2 justify-start max-w-md">
+            {webLlmStatus ? (
+              <WebLlmIndicator
+                progressText={webLlmStatus.text}
+                progressPercent={webLlmStatus.progress}
+                isGenerating={webLlmStatus.progress === 100}
+              />
+            ) : (
+              <div className="flex items-center gap-2 rounded-2xl border border-[#333333] bg-[#111827] px-4 py-3">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-electric" />
+                <span className="text-sm text-secondary">Thinking…</span>
+              </div>
+            )}
           </div>
         )}
       </div>

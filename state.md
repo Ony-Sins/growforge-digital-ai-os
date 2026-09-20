@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 13:43, Claude Code (Fixed an IDOR on the BYO-MCP delete endpoint, caught by an automated security review of the previous commit — see §3 item 35. That previous commit consolidated a real MCP-server store fork: the "BYO-MCP" tab was persisting to a separate in-memory-only registry — no disk persistence, no vault-encrypted credentials, no auth check on its API route — while the mature "Installed" catalog used the real vault-backed `mcp/store.ts` (§3 item 34). Before that, same session: fixed a broken production build (`public-apis.json` was sitting in the gitignored `/data/` folder, silently failing every Vercel deploy since Phase 4A), reconciled 8 commits from a parallel Antigravity/Gemini workflow that never got logged here (§3 item 33), and retired the duplicate `growforge-ui/STATE.md`. Earlier: dynamic Ony greeting fallback, BYOK banner SSR hydration fix, floating HITL trigger brand restyling.)
+> **Last updated:** 2026-09-20, 13:58, Antigravity (Added client-side WebLLM (@mlc-ai/web-llm) fallback for zero-setup execution. Runs quantized Llama-3.2-1B-Instruct-q4f16 in browser via WebGPU as the lowest-priority fallback in the provider chain after local Ollama and BYOK. New engine loader `src/lib/webLlm.ts` and indicator component `src/components/workspace/WebLlmIndicator.tsx`, minimal non-intrusive wiring in `ChatView.tsx`. Verified 0 TypeScript errors, 0 ESLint errors, and Next.js 16 production build succeeded across 28/28 routes.)
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,13 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Client-Side WebLLM WebGPU Fallback (2026-09-20, 13:58, Antigravity):**
+  - **Zero-Setup WebLLM Engine (`src/lib/webLlm.ts`):** Added client-side in-browser LLM loader using `@mlc-ai/web-llm` targeting `Llama-3.2-1B-Instruct-q4f16_1-MLC`. Supports WebGPU capability detection, singleton engine lifecycle caching, dynamically loaded browser imports to prevent SSR interference, and progress callbacks.
+  - **Lowest-Priority Provider Chain Fallback (`ChatView.tsx`):** Wired into `ChatView.tsx` as a graceful fallback when server-side router fails or requires BYOK/local Ollama that is offline. Existing Ollama and BYOK cloud routes remain primary and untouched.
+  - **Visual In-Browser Progress Indicator (`WebLlmIndicator.tsx`):** Added brand-styled indicator displaying downloading/compiling shader progress and generating state.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) succeeded with 28/28 routes generated.
+  - **Scope Isolation:** Kept untouched: `toolBroker.ts`, `humanizerEngine.ts`, and `growforge-ui/STATE.md`.
 
 - **UX Polish, SSR Hydration & Floating Trigger Restyling (2026-09-20):**
   - **Dynamic Greeting & Ony Fallback (`Workspace.tsx`):** Implemented `resolveGreetingName()` which inspects the `user` prop and memory profile `profileName`. If matching "Arif Md. Anjum Ony", dynamically renders "Good morning, Ony 👋". Strict fallback enforces "Good morning, Ony", eliminating dev defaults ("Dev", "Dev (local)", "Preview"). Guaranteed 100% matching SSR HTML string and client hydration.
