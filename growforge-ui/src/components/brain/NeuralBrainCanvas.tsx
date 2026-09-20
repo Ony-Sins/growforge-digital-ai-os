@@ -332,7 +332,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const dynamicGroupRef = useRef<THREE.Group | null>(null);
 
   // Persistent Camera Target (allows panning Up/Down/Left/Right into lobes)
-  const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 10, 0));
+  const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, -5, 0));
 
   const meshesRef = useRef<Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>>(new Map());
   const particleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
@@ -386,11 +386,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     // 1. Scene setup
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.fog = new THREE.FogExp2(0x030712, 0.0022);
+    scene.fog = new THREE.FogExp2(0x030712, 0.002);
 
-    // 2. Camera setup with persistent target
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1200);
-    camera.position.set(0, 40, 220);
+    // 2. Camera setup with persistent target — fully framed graph & somas without bottom clipping
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 1500);
+    camera.position.set(0, 0, 275);
+    cameraTargetRef.current.set(0, -5, 0);
     camera.lookAt(cameraTargetRef.current);
     cameraRef.current = camera;
 
@@ -861,8 +862,8 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   // Reset Camera View & Brain Rotation (Explicit user action only)
   const handleResetView = () => {
     if (cameraRef.current) {
-      cameraRef.current.position.set(0, 40, 220);
-      cameraTargetRef.current.set(0, 10, 0);
+      cameraRef.current.position.set(0, 0, 275);
+      cameraTargetRef.current.set(0, -5, 0);
       cameraRef.current.lookAt(cameraTargetRef.current);
     }
     if (brainGroupRef.current) {
@@ -874,10 +875,10 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
   return (
     <div
-      className={`relative w-full overflow-hidden bg-[#030712] text-slate-100 transition-all duration-300 ${
+      className={`relative w-full h-full overflow-hidden bg-[#030712] text-slate-100 transition-all duration-300 ${
         isFullscreen
           ? "fixed inset-0 z-50 w-screen h-screen overflow-hidden rounded-none m-0 p-0"
-          : "h-[580px] rounded-2xl border border-cyan-500/30 shadow-2xl"
+          : "inset-0 w-full h-full"
       } ${className}`}
     >
       {/* True Edge-to-Edge 3D WebGL Canvas Container */}
