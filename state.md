@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 00:53, Antigravity. Closed the remaining public-preview data-isolation gap across jobs, approvals, consultations, profile, attachments, and router routes — see §3 item 46. **Previous, 00:35, Claude Code**: full credential/connector/MCP/vault/telemetry audit (item 45). **Previous, 00:26, Claude Code**: write-side gap on first 3 routes (item 44). **Previous, 00:20, Claude Code**: original read-side leak + bg-navy bug (items 42-43).
+> **Last updated:** 2026-09-21, 01:05, Antigravity. Pushed 16 unpushed commits to origin/master; Vercel deploy completed successfully — see §3 item 47. **Previous, 00:53, Antigravity**: closed business-data preview isolation (item 46). **Previous, 00:35, Claude Code**: full credential/connector audit (item 45).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -310,7 +310,26 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
     - **Verified**: `tsc` 0 errors, `lint` 0 errors (1 pre-existing `react-hooks/exhaustive-deps` warning in `ProfileDashboard.tsx` — unrelated, not introduced here), `build` clean 28/28 routes.
     - **Not pushed.**
 
-**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45, 46) is now fully closed. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
+47. **Pushed 16 commits to origin/master; Vercel deploy ✅ (2026-09-21, 01:05, Antigravity).** All state.md items 38–46 (everything accumulated since the last push) sent to GitHub in one batch. Commit range: `ef33b55..f727818`. Vercel GitHub integration auto-deployed; GitHub commit-status API confirmed `state: "success"`, description `"Deployment has completed"`. Deployment record URL: `https://vercel.com/arif-md-anjum-onys-projects/growforge-digital-ai-os/749PaRzCgjmWocCRy9bg5ZLiySm1`. Browser automation was unavailable (Playwright CDN returned 404 for the win32 driver during this session), so the deploy status was confirmed via the GitHub Statuses API instead — the Vercel bot status is the canonical source of truth.
+    - **Commits shipped (oldest → newest):**
+      - `fa85231` feat(ai): client-side WebLLM Llama 3.2 1B fallback via WebGPU
+      - `f259caf` feat(security): add universal humanizer/anti-slop middleware
+      - `269309d` feat(data): extract 279 vault agent capability records into vaultCapabilities.json
+      - `1072b86` feat(ui): Vault Library overlay — searchable and filterable browser for 279 vault agents
+      - `716a11d` docs(state): record Vault Library search filtering verification
+      - `fe878b3` feat(ai): per-agent BYO image generation capability keys with ComfyUI fallback
+      - `9700036` feat(ui): badge MCP entries by origin (BYO-MCP / Catalog / Custom)
+      - `3a168b1` feat(vault): standalone vault agent matcher for brief relevance scoring
+      - `1b699e6` docs: declare operating mode, reconcile 279-vs-7 agent confusion
+      - `12dd3ac` feat(jobs): master cross-agent findings and audit rollup panel
+      - `c13e218` fix(ai): rewrite Higgsfield image-gen client against the real API
+      - `81c7c01` fix(security): stop leaking owner's connected data to public-preview visitors
+      - `626577d` fix(ui): stop bg-navy/from-navy/via-navy/to-navy rendering white
+      - `546d91e` fix(security): block writes from public-preview visitors, not just reads
+      - `7af33fa` fix(security): full audit — close public-preview data exposure everywhere
+      - `f727818` security: close preview data-isolation gap on jobs/approvals/consultations/profile/attachments/router routes (item 46)
+
+**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt — the credential/data-exposure firefighting (items 42, 44, 45, 46) is now fully closed and live. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Read items 47, 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
 
 ## 4. Known, accepted issues carried forward
 
@@ -322,7 +341,7 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
 
 ## 5. Working tree state
 
-**Committed and pushed to `origin/master` (2026-09-20).**
+**Committed and pushed to `origin/master` (2026-09-21, 01:05, Antigravity). Vercel deploy confirmed green.**
 - Phase 4A (Local-First Runtime & Safe Tool Foundation) milestone committed and pushed cleanly.
 - `growforge-ui` builds cleanly with 0 TypeScript and 0 ESLint errors.
 
