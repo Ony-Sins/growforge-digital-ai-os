@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { getAgent } from "@/lib/agentStore";
 import { listProviders, purgeAgent, setSecret } from "@/lib/serverVault";
 
@@ -11,13 +11,15 @@ import { listProviders, purgeAgent, setSecret } from "@/lib/serverVault";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
-/** Never returns key material — provider names only. */
+/** Never returns key material — provider names only. Still hidden from a
+ *  public-preview visitor since it reveals which providers are configured. */
 export async function GET(_req: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) return NextResponse.json({ providers: [] });
 
   const { agentId } = await params;
   if (!getAgent(agentId)) return NextResponse.json({ error: `Unknown agent: ${agentId}` }, { status: 404 });
@@ -33,6 +35,9 @@ interface SetSecretBody {
 export async function POST(req: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { agentId } = await params;
   if (!getAgent(agentId)) return NextResponse.json({ error: `Unknown agent: ${agentId}` }, { status: 404 });
@@ -66,6 +71,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
 export async function DELETE(_req: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { agentId } = await params;
   purgeAgent(agentId);

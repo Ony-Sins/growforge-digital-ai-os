@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { deleteConnector, getConnector, updateConnector, type CreateConnectorInput } from "@/lib/connectorStore";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { id } = await params;
   deleteConnector(id);
@@ -14,6 +17,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { id } = await params;
   if (!getConnector(id)) return NextResponse.json({ error: "Connector not found." }, { status: 404 });

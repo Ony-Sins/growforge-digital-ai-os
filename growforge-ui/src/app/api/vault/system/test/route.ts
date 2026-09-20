@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { CLOUD_PROVIDERS, testProvider, testCustomModel, type CloudProvider } from "@/lib/llm";
 import { getAiModel, getAiModelApiKey, updateAiModelTestStatus } from "@/lib/aiModelStore";
 
@@ -24,8 +24,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
-  // 1. Test by modelId (existing saved model)
+  // 1. Test by modelId (existing saved model) -- uses the owner's real
+  // stored credentials, so a public-preview visitor can't trigger this.
+  // Case 2 below (inline baseUrl+modelName, e.g. the onboarding banner's
+  // local-Ollama health check) uses no stored secret and stays open --
+  // blocking it would break that legitimate anonymous health check.
   if (body.modelId) {
+    if (isPublicPreviewVisitor(session)) {
+      return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+    }
     const model = getAiModel(body.modelId);
     if (!model) {
       return NextResponse.json({ ok: false, message: "Model not found." }, { status: 404 });
@@ -54,9 +61,12 @@ export async function POST(req: Request) {
     return NextResponse.json(result);
   }
 
-  // 3. Test standard legacy provider
+  // 3. Test standard legacy provider -- also uses the owner's stored/env key.
   const provider = body.provider;
   if (provider && provider in CLOUD_PROVIDERS) {
+    if (isPublicPreviewVisitor(session)) {
+      return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+    }
     const result = await testProvider(provider as CloudProvider);
     return NextResponse.json(result);
   }

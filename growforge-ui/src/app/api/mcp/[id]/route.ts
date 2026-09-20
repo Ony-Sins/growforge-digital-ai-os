@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { deleteMcpServer, updateMcpServerDetails, getMcpServer } from "@/lib/mcp/store";
 
 export const runtime = "nodejs";
@@ -7,12 +7,15 @@ export const runtime = "nodejs";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { id } = await params;
   deleteMcpServer(id);
@@ -23,6 +26,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { id } = await params;
   if (!getMcpServer(id)) return NextResponse.json({ error: "Server not found." }, { status: 404 });

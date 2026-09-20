@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { hasSecret, setSecret, removeSecret, getSecretForServerUse } from "@/lib/serverVault";
 
@@ -21,13 +21,21 @@ const DEFAULT_HOST = process.env.N8N_HOST || "http://localhost:5678";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
 }
 
 /** Returns which credentials are configured (never the values themselves). */
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  // The stored host is a real URL (often the owner's private n8n instance
+  // address) -- not a secret, but still not something a stranger should see.
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({
+      host: { value: DEFAULT_HOST, source: "default" },
+      apiKey: { configured: false, source: "none" },
+    });
+  }
 
   const hostConfigured = hasSecret(SYSTEM_VAULT_ID, N8N_HOST_KEY);
   const apiKeyConfigured = hasSecret(SYSTEM_VAULT_ID, N8N_APIKEY_KEY);
@@ -61,6 +69,9 @@ interface N8nConfigBody {
 export async function POST(req: Request) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   let body: N8nConfigBody;
   try {
@@ -113,6 +124,9 @@ export async function POST(req: Request) {
 export async function DELETE() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   removeSecret(SYSTEM_VAULT_ID, N8N_HOST_KEY);
   removeSecret(SYSTEM_VAULT_ID, N8N_APIKEY_KEY);

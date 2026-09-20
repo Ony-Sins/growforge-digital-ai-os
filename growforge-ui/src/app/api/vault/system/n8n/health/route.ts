@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { getSecretForServerUse } from "@/lib/serverVault";
 
@@ -23,6 +23,11 @@ export async function GET() {
   const session = await getSession();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+  // Reveals the owner's real n8n host URL and triggers a real outbound
+  // probe -- not for a public-preview visitor.
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({ status: "offline", latencyMs: 0, host: DEFAULT_HOST, detail: "Public preview." });
   }
 
   // Resolve the host: vault → env → default

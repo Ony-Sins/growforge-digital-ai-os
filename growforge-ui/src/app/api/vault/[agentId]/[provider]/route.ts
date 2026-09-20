@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import { listProviders, removeSecret } from "@/lib/serverVault";
 
 export async function DELETE(
@@ -8,6 +8,9 @@ export async function DELETE(
 ) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
 
   const { agentId, provider } = await params;
   removeSecret(agentId, decodeURIComponent(provider));
