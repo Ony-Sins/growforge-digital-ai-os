@@ -43,14 +43,14 @@ export function UserProfileOverlay({ user }: { user: UserProfileOverlayUser | nu
       {/* Top Bar with brand-styled tabs */}
       <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[#333333] bg-[#0B1220]/95 px-4 backdrop-blur-xl md:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#111827] p-1">
+          <div className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220]/90 p-1">
             <button
               type="button"
               onClick={() => openUserProfile("brain")}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-all ${
                 userProfileTab === "brain"
-                  ? "bg-[#0078FF] text-white shadow-sm"
-                  : "bg-[#111827] text-white border border-[#333333] hover:border-[#0078FF]"
+                  ? "bg-[#0078FF] text-white font-sora font-semibold shadow-lg shadow-[#0078FF]/20"
+                  : "text-[#CCCCCC] hover:text-white hover:bg-[#1F2937]"
               }`}
             >
               <Brain className="h-3.5 w-3.5" /> AI Brain
@@ -58,10 +58,10 @@ export function UserProfileOverlay({ user }: { user: UserProfileOverlayUser | nu
             <button
               type="button"
               onClick={() => openUserProfile("profile")}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-all ${
                 userProfileTab === "profile"
-                  ? "bg-[#0078FF] text-white shadow-sm"
-                  : "bg-[#111827] text-white border border-[#333333] hover:border-[#0078FF]"
+                  ? "bg-[#0078FF] text-white font-sora font-semibold shadow-lg shadow-[#0078FF]/20"
+                  : "text-[#CCCCCC] hover:text-white hover:bg-[#1F2937]"
               }`}
             >
               <User className="h-3.5 w-3.5" /> Profile
@@ -69,14 +69,14 @@ export function UserProfileOverlay({ user }: { user: UserProfileOverlayUser | nu
           </div>
 
           {userProfileTab === "brain" && (
-            <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#111827] p-1 text-[11px]">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220]/90 p-1 text-[11px]">
               <button
                 type="button"
                 onClick={() => setBrainMode("3d")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all ${
                   brainMode === "3d"
-                    ? "bg-[#0078FF] text-white shadow-sm"
-                    : "bg-[#111827] text-[#CCCCCC] border border-[#333333] hover:border-[#0078FF] hover:text-white"
+                    ? "bg-[#0078FF] text-white font-sora font-semibold shadow-lg shadow-[#0078FF]/20"
+                    : "text-[#CCCCCC] hover:text-white hover:bg-[#1F2937]"
                 }`}
               >
                 <Brain className="h-3 w-3 text-sky-400" /> 3D Neural View
@@ -84,10 +84,10 @@ export function UserProfileOverlay({ user }: { user: UserProfileOverlayUser | nu
               <button
                 type="button"
                 onClick={() => setBrainMode("2d")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium transition-colors ${
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all ${
                   brainMode === "2d"
-                    ? "bg-[#0078FF] text-white shadow-sm"
-                    : "bg-[#111827] text-[#CCCCCC] border border-[#333333] hover:border-[#0078FF] hover:text-white"
+                    ? "bg-[#0078FF] text-white font-sora font-semibold shadow-lg shadow-[#0078FF]/20"
+                    : "text-[#CCCCCC] hover:text-white hover:bg-[#1F2937]"
                 }`}
               >
                 <Network className="h-3 w-3 text-emerald-400" /> 2D Flow Map
@@ -101,7 +101,7 @@ export function UserProfileOverlay({ user }: { user: UserProfileOverlayUser | nu
             type="button"
             onClick={closeUserProfile}
             aria-label="Close User Profile"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#333333] bg-[#111827] text-[#CCCCCC] hover:border-[#0078FF] hover:text-white transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#333333] bg-[#0B1220]/90 text-[#CCCCCC] hover:border-[#0078FF] hover:text-white transition-all"
           >
             <X className="h-4 w-4" />
           </button>

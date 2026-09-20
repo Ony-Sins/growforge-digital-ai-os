@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { useTelemetry } from "@/lib/useTelemetry";
 import type { BrainLobe } from "@/lib/telemetryStore";
 import {
@@ -328,6 +329,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
   const brainGroupRef = useRef<THREE.Group | null>(null);
   const dynamicGroupRef = useRef<THREE.Group | null>(null);
 
@@ -518,35 +520,29 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     particleSystemsRef.current = particleSystems;
 
-    // 8. Interactive Panning, Rotation & Raycasting Controls
+    // 8. OrbitControls with exact boundary parameters
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minDistance = 150;
+    controls.maxDistance = 1000;
+    controls.enablePan = true;
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.copy(cameraTargetRef.current);
+    controls.update();
+    controlsRef.current = controls;
+
+    // Raycasting for interactive hover and click node selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    let isDragging = false;
-    let dragMode: "rotate" | "pan" | null = null;
-    let prevX = 0;
-    let prevY = 0;
-    let totalDragDist = 0;
-    const rotateSensitivity = 0.006;
-
-    const onContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-    };
+    let isDown = false;
+    let downX = 0;
+    let downY = 0;
 
     const onPointerDown = (e: PointerEvent) => {
-      isDragging = true;
-      prevX = e.clientX;
-      prevY = e.clientY;
-      totalDragDist = 0;
-
-      // Right-Click (2), Middle-Click (1), or Shift + Left-Click -> Pan Mode
-      if (e.button === 2 || e.button === 1 || e.shiftKey) {
-        dragMode = "pan";
-        if (container) container.style.cursor = "move";
-      } else if (e.button === 0) {
-        dragMode = "rotate";
-        if (container) container.style.cursor = "grabbing";
-      }
+      isDown = true;
+      downX = e.clientX;
+      downY = e.clientY;
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -554,43 +550,6 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const rect = container.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      if (isDragging) {
-        const deltaX = e.clientX - prevX;
-        const deltaY = e.clientY - prevY;
-        prevX = e.clientX;
-        prevY = e.clientY;
-        totalDragDist += Math.abs(deltaX) + Math.abs(deltaY);
-
-        if (dragMode === "pan") {
-          // Horizontal & Vertical Camera Panning
-          const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-          const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-
-          const distanceToTarget = camera.position.distanceTo(cameraTargetRef.current);
-          const panFactor = Math.max(distanceToTarget, 30) * 0.0014;
-          const panX = -deltaX * panFactor;
-          const panY = deltaY * panFactor;
-
-          camera.position.addScaledVector(right, panX);
-          camera.position.addScaledVector(up, panY);
-          cameraTargetRef.current.addScaledVector(right, panX);
-          cameraTargetRef.current.addScaledVector(up, panY);
-          camera.lookAt(cameraTargetRef.current);
-
-          container.style.cursor = "move";
-          return;
-        }
-
-        if (dragMode === "rotate") {
-          // Unclamped 360° direct object rotation
-          brainGroup.rotation.y += deltaX * rotateSensitivity;
-          brainGroup.rotation.x += deltaY * rotateSensitivity;
-
-          container.style.cursor = "grabbing";
-          return;
-        }
-      }
 
       // Hover Raycasting
       raycaster.setFromCamera(mouse, camera);
@@ -610,15 +569,14 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       }
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: PointerEvent) => {
       if (!container) return;
-      const wasDragging = isDragging;
-      const currentMode = dragMode;
-      isDragging = false;
-      dragMode = null;
+      const wasDown = isDown;
+      isDown = false;
 
-      // Click node selection
-      if (wasDragging && currentMode === "rotate" && totalDragDist < 6) {
+      // Click node selection if not dragging
+      const dist = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
+      if (wasDown && dist < 6) {
         raycaster.setFromCamera(mouse, camera);
         const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.mesh);
         const intersects = raycaster.intersectObjects(meshesToTest);
@@ -630,28 +588,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
           setSelectedNode(found);
         }
       }
-
-      container.style.cursor = hoveredNodeRef.current ? "pointer" : "default";
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      // Zoom relative to current panned target
-      const zoomFactor = e.deltaY * 0.18;
-      const viewDir = new THREE.Vector3().subVectors(camera.position, cameraTargetRef.current);
-      const currentDist = viewDir.length();
-      const newDist = Math.min(Math.max(currentDist + zoomFactor, 35), 650);
-      viewDir.setLength(newDist);
-      camera.position.copy(cameraTargetRef.current).add(viewDir);
-      camera.lookAt(cameraTargetRef.current);
     };
 
     const dom = renderer.domElement;
-    dom.addEventListener("contextmenu", onContextMenu);
     dom.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
-    dom.addEventListener("wheel", onWheel, { passive: false });
 
     // 9. Animation Loop
     let animationFrameId: number;
@@ -666,6 +608,11 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         brainGroup.rotation.y += 0.0012;
       }
       brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
+
+      // Update OrbitControls smooth damping
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
 
       // Update static & dynamic action potential particles
       const allParticleSystems = [
@@ -741,11 +688,10 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       window.removeEventListener("resize", handleResize);
-      dom.removeEventListener("contextmenu", onContextMenu);
       dom.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      dom.removeEventListener("wheel", onWheel);
+      controls.dispose();
       renderer.dispose();
       if (container && dom) {
         container.removeChild(dom);
@@ -861,10 +807,11 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
   // Reset Camera View & Brain Rotation (Explicit user action only)
   const handleResetView = () => {
-    if (cameraRef.current) {
+    if (cameraRef.current && controlsRef.current) {
       cameraRef.current.position.set(0, 0, 275);
       cameraTargetRef.current.set(0, -5, 0);
-      cameraRef.current.lookAt(cameraTargetRef.current);
+      controlsRef.current.target.copy(cameraTargetRef.current);
+      controlsRef.current.update();
     }
     if (brainGroupRef.current) {
       brainGroupRef.current.rotation.set(0, 0, 0);

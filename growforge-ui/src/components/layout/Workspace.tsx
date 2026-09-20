@@ -190,7 +190,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
           {/* Directive Input Command Bar */}
           <form
             onSubmit={(e) => handleDirectiveSubmit(e)}
-            className="relative flex items-center rounded-2xl border border-[#333333] bg-[#111827] p-1.5 shadow-xl transition-all focus-within:border-electric/70 focus-within:ring-2 focus-within:ring-electric/20"
+            className="relative flex items-center rounded-2xl border border-[#333333] bg-[#0B1220]/80 backdrop-blur-xl p-1.5 shadow-2xl transition-all focus-within:border-electric/70 focus-within:ring-2 focus-within:ring-electric/20"
           >
             <div className="flex items-center pl-3 text-electric">
               <Sparkles className="h-4 w-4" />
@@ -205,20 +205,20 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
             <button
               type="submit"
               disabled={isSubmittingDirective || !directiveText.trim()}
-              className="btn-primary-cta shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs font-bold transition-all disabled:opacity-40"
+              className="btn-primary-cta shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs transition-all disabled:opacity-40"
             >
               {isSubmittingDirective ? (
                 <span className="animate-spin text-sm">↻</span>
               ) : (
                 <Send className="h-3.5 w-3.5" />
               )}
-              <span className="hidden sm:inline">Dispatch Team</span>
+              <span className="hidden sm:inline">Dispatch Team →</span>
             </button>
           </form>
 
           {/* Starter Prompt Chips */}
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <span className="text-[11px] font-medium text-muted">Quick directives:</span>
+            <span className="font-inter text-xs text-[#CCCCCC]">Quick directives:</span>
             {STARTER_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
@@ -226,7 +226,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                 onClick={() => {
                   setDirectiveText(prompt);
                 }}
-                className="rounded-lg border border-[#333333] bg-[#111827]/80 px-2.5 py-1 text-[11px] text-[#CCCCCC] transition-colors hover:border-electric hover:bg-electric/10 hover:text-white"
+                className="rounded-lg border border-[#333333] bg-[#0B1220]/75 backdrop-blur-sm px-2.5 py-1 font-inter text-xs text-[#CCCCCC] transition-colors hover:border-electric hover:bg-electric/10 hover:text-white"
               >
                 {prompt}
               </button>
@@ -235,16 +235,16 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
         </div>
 
         {/* 2. Compact 2-Column "Active Pipelines" Card Grid */}
-        <div id="section-projects" className={`space-y-2.5 ${flash("section-projects")}`}>
+        <div id="section-projects" className={`space-y-3 ${flash("section-projects")}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-electric" />
-              <h2 className="font-heading text-xs font-semibold uppercase tracking-wider text-white">Active Pipelines</h2>
+              <h2 className="font-sora font-bold text-white tracking-tight text-xs uppercase">Active Pipelines</h2>
             </div>
             <button
               type="button"
               onClick={() => openInspector(jobs[0]?.id)}
-              className="flex items-center gap-1 text-xs font-medium text-electric hover:underline"
+              className="flex items-center gap-1 font-inter text-xs font-medium text-electric hover:underline"
             >
               <span>Explore All Pipelines</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -253,8 +253,8 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Card 1: Active Execution Pipeline */}
-            <div className="glass-card rounded-2xl border border-[#333333] bg-[#111827] p-4 md:p-5 shadow-lg flex flex-col justify-between space-y-3.5 hover:border-electric/40 transition-colors">
-              <div className="space-y-2.5">
+            <div className="rounded-2xl border border-[#333333] bg-[#0B1220]/75 backdrop-blur-xl hover:border-[#0078FF]/40 p-5 shadow-2xl transition-all flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -265,12 +265,12 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                       <span className="rounded bg-electric/15 px-2 py-0.5 font-mono text-[10px] font-bold text-electric uppercase">
                         {liveRunningJob ? "Executing Live" : "In Progress"}
                       </span>
-                      <span className="flex items-center gap-1 text-[11px] text-muted">
-                        <Clock className="h-3 w-3" />
+                      <span className="flex items-center gap-1 font-inter text-xs text-[#CCCCCC]">
+                        <Clock className="h-3 w-3 text-[#CCCCCC]" />
                         1h 14m elapsed
                       </span>
                     </div>
-                    <h3 className="font-heading text-sm md:text-base font-bold text-white">
+                    <h3 className="font-sora text-sm md:text-base font-bold text-white">
                       {liveRunningJob?.title || "P&E Flooring Solutions — Automated Web Deployment"}
                     </h3>
                   </div>
@@ -280,14 +280,14 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] text-[#CCCCCC]">
+                  <div className="flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
                     <span className="flex items-center gap-1">
                       <Users className="h-3.5 w-3.5 text-electric" />
                       <span>3 agents active</span>
                     </span>
-                    <span className="text-muted">HQ Strategy · Web Dev · Meta Ads</span>
+                    <span className="font-inter text-xs text-[#CCCCCC]">HQ Strategy · Web Dev · Meta Ads</span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1F2937]">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#1F2937]">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-electric to-gold transition-all duration-500"
                       style={{ width: liveRunningJob ? `${liveRunningJob.percent}%` : "68%" }}
@@ -297,13 +297,13 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
               </div>
 
               <div className="pt-2 border-t border-[#333333]/60 flex items-center justify-between">
-                <p className="text-[11px] text-muted truncate max-w-[180px] sm:max-w-xs">
+                <p className="font-inter text-xs text-[#CCCCCC] truncate max-w-[180px] sm:max-w-xs">
                   {liveRunningJob ? "Autonomous cross-department review in progress" : "Deploying frontend codebase and syncing analytics"}
                 </p>
                 <button
                   type="button"
                   onClick={() => openInspector(liveRunningJob?.id || jobs[0]?.id, false)}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220] px-3 py-1.5 text-xs font-semibold text-white hover:border-electric hover:bg-electric/10 transition-colors shrink-0"
+                  className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220] px-3.5 py-1.5 font-inter text-xs font-semibold text-white hover:border-electric hover:bg-electric/10 transition-colors shrink-0"
                 >
                   <span>Inspect Execution Graph</span>
                   <ArrowUpRight className="h-3.5 w-3.5 text-electric" />
@@ -312,8 +312,8 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
             </div>
 
             {/* Card 2: Completed Growth Strategy */}
-            <div className="glass-card rounded-2xl border border-[#333333] bg-[#111827] p-4 md:p-5 shadow-lg flex flex-col justify-between space-y-3.5 hover:border-emerald/40 transition-colors">
-              <div className="space-y-2.5">
+            <div className="rounded-2xl border border-[#333333] bg-[#0B1220]/75 backdrop-blur-xl hover:border-[#0078FF]/40 p-5 shadow-2xl transition-all flex flex-col justify-between space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -321,12 +321,12 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                       <span className="rounded bg-emerald/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald uppercase">
                         Verified & Ready
                       </span>
-                      <span className="flex items-center gap-1 text-[11px] text-muted">
+                      <span className="flex items-center gap-1 font-inter text-xs text-[#CCCCCC]">
                         <CheckCircle2 className="h-3 w-3 text-emerald" />
                         8 departments finished
                       </span>
                     </div>
-                    <h3 className="font-heading text-sm md:text-base font-bold text-white">
+                    <h3 className="font-sora text-sm md:text-base font-bold text-white">
                       {liveDoneJob?.title || "Drug Store Launch in Dhaka"}
                     </h3>
                   </div>
@@ -334,27 +334,27 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] text-[#CCCCCC]">
+                  <div className="flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
                     <span className="flex items-center gap-1">
                       <Trophy className="h-3.5 w-3.5 text-gold" />
                       <span>Executive Blueprint Ready</span>
                     </span>
-                    <span className="text-muted">Sales · Marketing · Ops · QA</span>
+                    <span className="font-inter text-xs text-[#CCCCCC]">Sales · Marketing · Ops · QA</span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#1F2937]">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#1F2937]">
                     <div className="h-full rounded-full bg-emerald transition-all duration-500 w-full" />
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[#333333]/60 flex items-center justify-between">
-                <p className="text-[11px] text-muted truncate max-w-[180px] sm:max-w-xs">
+                <p className="font-inter text-xs text-[#CCCCCC] truncate max-w-[180px] sm:max-w-xs">
                   Full multi-department strategy verified with live research
                 </p>
                 <button
                   type="button"
                   onClick={() => openInspector(liveDoneJob?.id || jobs.find((j) => j.status === "done")?.id, true)}
-                  className="btn-primary-cta flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-transform hover:scale-105 shrink-0"
+                  className="btn-primary-cta flex items-center gap-1.5 px-3.5 py-1.5 text-xs transition-transform hover:scale-105 shrink-0"
                 >
                   <Trophy className="h-3.5 w-3.5" />
                   <span>View Final Plan →</span>

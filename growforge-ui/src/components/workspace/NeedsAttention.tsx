@@ -14,14 +14,14 @@ export function NeedsAttention() {
   const total = pending.approvals + pending.consultations + pending.unapprovedPlans;
 
   return (
-    <div className="glass-card flex h-full flex-col justify-between rounded-2xl border border-[#333333] bg-[#111827] p-4 text-white shadow-lg">
+    <div className="bg-[#0B1220]/75 backdrop-blur-xl border border-[#333333] hover:border-[#0078FF]/40 rounded-2xl p-5 shadow-2xl transition-all flex h-full flex-col justify-between">
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-heading text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 font-sora text-xs font-bold uppercase tracking-tight text-white">
             <ShieldAlert className="h-4 w-4 text-crimson" /> Needs Attention
           </h2>
           {total > 0 ? (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-crimson px-2 text-[11px] font-bold text-white shadow">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-crimson px-2 font-mono text-[11px] font-bold text-white shadow">
               {total}
             </span>
           ) : (
@@ -32,20 +32,20 @@ export function NeedsAttention() {
         </div>
 
         {total === 0 ? (
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#333333]/60 bg-[#0B1220]/70 p-3 text-xs text-[#CCCCCC]">
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#333333]/60 bg-[#0B1220]/80 p-3 font-inter text-xs text-[#CCCCCC]">
             <CheckCircle2 className="h-4 w-4 text-emerald shrink-0" />
             <span>All systems nominal — zero human-in-the-loop blockers.</span>
           </div>
         ) : (
           <ul className="mt-3 space-y-2">
             {pending.approvals > 0 && (
-              <li className="rounded-xl border border-gold/30 bg-gold/10 p-2.5 text-xs text-[#CCCCCC]">
+              <li className="rounded-xl border border-gold/30 bg-gold/10 p-2.5 font-inter text-xs text-[#CCCCCC]">
                 <span className="font-bold text-gold">{pending.approvals}</span> real-action approval
                 {pending.approvals === 1 ? "" : "s"} waiting — see the gold banner above.
               </li>
             )}
             {pending.consultations > 0 && (
-              <li className="rounded-xl border border-electric/30 bg-electric/10 p-2.5 text-xs text-[#CCCCCC]">
+              <li className="rounded-xl border border-electric/30 bg-electric/10 p-2.5 font-inter text-xs text-[#CCCCCC]">
                 <span className="font-bold text-electric">{pending.consultations}</span> operator question
                 {pending.consultations === 1 ? "" : "s"} waiting — check the HITL drawer.
               </li>
@@ -55,7 +55,7 @@ export function NeedsAttention() {
                 <button
                   type="button"
                   onClick={() => setActiveView("workflows")}
-                  className="flex w-full items-center justify-between rounded-xl border border-[#333333] bg-[#0B1220] p-2.5 text-left text-xs text-[#CCCCCC] transition-colors hover:border-electric hover:text-white"
+                  className="flex w-full items-center justify-between rounded-xl border border-[#333333] bg-[#0B1220] p-2.5 text-left font-inter text-xs text-[#CCCCCC] transition-colors hover:border-electric hover:text-white"
                 >
                   <span>
                     <span className="font-bold text-white">{pending.unapprovedPlans}</span> plan
@@ -69,9 +69,9 @@ export function NeedsAttention() {
         )}
       </div>
 
-      <div className="mt-3 pt-2 border-t border-[#333333]/50 flex items-center justify-between text-[11px] text-muted">
+      <div className="mt-4 pt-2.5 border-t border-[#333333]/60 flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
         <span>HITL Operational Queue</span>
-        <span className="font-mono text-[10px]">Real-time Polling</span>
+        <span className="font-mono text-[10px] text-[#CCCCCC]">Real-time Polling</span>
       </div>
     </div>
   );

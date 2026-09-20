@@ -149,11 +149,11 @@ kbd,
 /* Standardized Primary CTA Button: Rounded pill container with Electric Blue to Gold gradient */
 .btn-primary-cta,
 .btn-primary-pill {
-  border-radius: 9999px;
-  background: linear-gradient(90deg, #0078ff 0%, #ffc432 100%);
-  color: #ffffff;
-  font-weight: 700;
-  font-family: var(--font-sora), sans-serif;
+  border-radius: 9999px !important;
+  background: linear-gradient(90deg, #0078ff 0%, #ffc432 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-family: var(--font-sora), ui-sans-serif, system-ui, sans-serif !important;
   padding: 0.625rem 1.25rem;
   box-shadow: 0 10px 25px -5px rgba(0, 120, 255, 0.25);
   transition: all 0.2s ease-in-out;

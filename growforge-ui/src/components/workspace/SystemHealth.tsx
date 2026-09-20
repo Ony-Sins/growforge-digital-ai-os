@@ -107,10 +107,10 @@ export function SystemHealth() {
   }, []);
 
   return (
-    <div className="glass-card flex h-full flex-col justify-between rounded-2xl border border-[#333333] bg-[#111827] p-4 text-white shadow-lg">
+    <div className="bg-[#0B1220]/75 backdrop-blur-xl border border-[#333333] hover:border-[#0078FF]/40 rounded-2xl p-5 shadow-2xl transition-all flex h-full flex-col justify-between">
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-heading text-sm font-semibold text-white">
+          <h2 className="flex items-center gap-2 font-sora text-xs font-bold uppercase tracking-tight text-white">
             <HeartPulse className="h-4 w-4 text-electric" /> Connected Ecosystem Status
           </h2>
           <span className="rounded-md bg-electric/15 px-2 py-0.5 font-mono text-[10px] font-bold text-electric uppercase">
@@ -121,7 +121,7 @@ export function SystemHealth() {
           {rows.map((row) => (
             <li
               key={row.label}
-              className="flex items-center justify-between gap-2 rounded-xl border border-[#333333] bg-[#0B1220] px-3 py-2 text-xs"
+              className="flex items-center justify-between gap-2 rounded-xl border border-[#333333] bg-[#0B1220]/80 px-3 py-2 font-inter text-xs"
             >
               <span className="font-medium text-[#CCCCCC]">{row.label}</span>
               <span
@@ -130,7 +130,7 @@ export function SystemHealth() {
                     ? "text-emerald"
                     : row.status === "warn"
                       ? "text-crimson"
-                      : "text-muted"
+                      : "text-[#CCCCCC]"
                 }`}
               >
                 {row.status === "ok" && <CheckCircle2 className="h-3.5 w-3.5" />}
@@ -143,9 +143,9 @@ export function SystemHealth() {
         </ul>
       </div>
 
-      <div className="mt-3 pt-2 border-t border-[#333333]/50 flex items-center justify-between text-[11px] text-muted">
+      <div className="mt-4 pt-2.5 border-t border-[#333333]/60 flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
         <span>Autonomous Infrastructure</span>
-        <span className="font-mono text-[10px]">Auto-Syncing</span>
+        <span className="font-mono text-[10px] text-[#CCCCCC]">Auto-Syncing</span>
       </div>
     </div>
   );
