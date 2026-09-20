@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-20, 14:18, Antigravity. **Antigravity, 14:18**: Vault Library overlay browser — built a read-only searchable, filterable browser for all 279 cataloged agents in `src/data/vaultCapabilities.json` (`VaultLibraryOverlay.tsx`). Integrated into `AppStateContext` (`isVaultLibraryOpen`, `openVaultLibrary`, `closeVaultLibrary`, `?panel=vault` deep link) and reachable via Sidebar navigation (`Overview -> Vault Library`), Workspace `activeView === "vault"`, and Executive Funnel's "Vault Catalog (reference)" interactive step card. Features live search across name/skills/summary/tools, dynamic category filtering across all domains, approval tier filtering (127 read-only vs 152 action-gated), tool-usage filtering (109 with tools vs 170 pure reasoning), multi-criteria sorting, and detail modal inspector with role descriptions and approval tier guidance. Pure browsing only (no orchestrator or dispatch wiring). Stripped UTF-8 BOM from JSON for clean Turbopack bundling. Verified 100% clean (`tsc`, `lint`, Next.js 16 build 28/28 routes). Committed locally, no git push. **Previous:** Vault capability data catalog extraction `269309d` (Antigravity, 14:08); client-side WebLLM fallback `fa85231` (Antigravity, 13:58).
+> **Last updated:** 2026-09-20, 14:27, Antigravity. **Antigravity, 14:27**: Vault Library real-time search verification — verified that the search input in `VaultLibraryOverlay.tsx` actively, synchronously filters the 279-agent capability catalog on each keystroke across all search dimensions (name, summary, category, filename ID, and declared tool list). Filtered results dynamically drive card grid rendering, active filter count tags, category badge indicators, and zero-match empty state with instant filter reset. Verified 100% clean (`tsc`, `lint`, Next.js 16 build 28/28 routes). Committed locally, no git push. **Previous:** Vault Library overlay browser `1072b86` (Antigravity, 14:18); Vault capability catalog extraction `269309d` (Antigravity, 14:08).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,13 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-20)
+
+- **Vault Library Search Verification & Audit (2026-09-20, 14:27, Antigravity):**
+  - **Live Search Verification (`VaultLibraryOverlay.tsx`):** Confirmed and verified that the search input in `VaultLibraryOverlay.tsx` operates synchronously via reactive React state (`searchQuery` input hook -> `filteredAgents` memoization). Matches across 5 distinct dimensions: agent name, summary text, category slug, filename/ID, and explicit tool dependencies.
+  - **Facet Interactivity:** Confirmed seamless combination of search input queries with category dropdowns, approval tier filters (`read-only` vs `needs-approval-to-act`), and tool-usage filters (`with-tools` vs `no-tools`).
+  - **UX Polish:** Active search displays one-click clear button (`X`), dynamic count ribbon (`Showing N of 279 cataloged agents`), and clean empty state with single-click reset.
+  - **Scope Isolation:** Kept untouched: `toolBroker.ts`, `humanizerEngine.ts`, `webLlm.ts`, `WebLlmIndicator.tsx`, and `growforge-ui/STATE.md`.
+  - **Verification:** TypeScript 0 errors (`npx tsc --noEmit`), ESLint 0 errors (`npm run lint`), Next.js 16 production build (`npm run build`) succeeded across 28/28 routes.
 
 - **Vault Library Browser Overlay (2026-09-20, 14:18, Antigravity):**
   - **Read-Only Vault Library Overlay (`VaultLibraryOverlay.tsx`):** Built a searchable, filterable interface displaying the 279 cataloged agents from `src/data/vaultCapabilities.json`. Follows the established app overlay pattern in `src/lib/appState.tsx` (`isVaultLibraryOpen`, `openVaultLibrary`, `closeVaultLibrary`, `?panel=vault` deep linking).
