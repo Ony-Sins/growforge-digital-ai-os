@@ -269,7 +269,7 @@ export function LogViewer() {
                     </span>
                     {restricted ? (
                       <span className="flex min-w-0 flex-1 items-center gap-1.5 break-words text-white/30">
-                        <Lock className="h-3 w-3 shrink-0" /> Restricted — unlock this agent to view
+                        <Lock className="h-3 w-3 shrink-0" /> Restricted: unlock this agent to view
                       </span>
                     ) : (
                       <span className={`min-w-0 flex-1 break-words ${style.text}`}>{log.message}</span>

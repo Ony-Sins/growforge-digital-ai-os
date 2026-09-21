@@ -127,7 +127,7 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
 }
 
 const WELCOME_CONTENT =
-  "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language — any language — and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
+  "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language (in any language), and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
 
 export function ChatView() {
   const { role, unlockedAgentIds, requestAgentUnlock, openJob, chatViewMode, setChatViewMode, activeView, activeViewToken } =
@@ -253,7 +253,7 @@ export function ChatView() {
   function buildAttachmentContext(): string | undefined {
     const ready = attachments.filter((a) => a.status === "done");
     if (ready.length === 0) return undefined;
-    return `The client attached ${ready.length} file${ready.length === 1 ? "" : "s"} — use this as real context, not as something to ask the client to re-explain:\n\n${ready
+    return `The client attached ${ready.length} file${ready.length === 1 ? "" : "s"}. Use this as real context, not as something to ask the client to re-explain:\n\n${ready
       .map((a) => `--- Attached file: ${a.name} (${a.kind}) ---\n${a.extractedText}`)
       .join("\n\n")}`;
   }
@@ -689,7 +689,7 @@ export function ChatView() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-white">{m.job.title}</span>
-                      <span className="block text-xs text-secondary">Sent to the team — watch it live</span>
+                      <span className="block text-xs text-secondary">Sent to the team · watch it live</span>
                     </span>
                     <span className="shrink-0 text-xs font-semibold text-electric">Open →</span>
                   </button>
@@ -717,7 +717,7 @@ export function ChatView() {
                     {m.handoffResolved ? (
                       <span>Hand-off to <span className="font-medium text-white">{m.handoff.targetAgentName}</span> resolved.</span>
                     ) : (
-                      <span>Suggested hand-off to <span className="font-medium text-white">{m.handoff.targetAgentName}</span> — see prompt above.</span>
+                      <span>Suggested hand-off to <span className="font-medium text-white">{m.handoff.targetAgentName}</span> (see prompt above).</span>
                     )}
                   </div>
                 )}

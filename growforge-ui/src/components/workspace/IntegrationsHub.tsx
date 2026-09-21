@@ -955,7 +955,7 @@ function McpInspectorModal({
               <div className={`flex items-start gap-2 rounded-lg p-2.5 text-xs border ${test.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"}`}>
                 {test.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
                 <div>
-                  <span className="font-medium">{test.ok ? `Connected — ${test.tools.length} tools discovered.` : test.error}</span>
+                  <span className="font-medium">{test.ok ? `Connected · ${test.tools.length} tools discovered.` : test.error}</span>
                 </div>
               </div>
             )}

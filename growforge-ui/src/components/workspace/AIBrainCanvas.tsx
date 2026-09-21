@@ -365,7 +365,7 @@ function InspectorPanel({
             <p className="mb-4">{department.summary}</p>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Connected tools</p>
             {scopedServers.length === 0 ? (
-              <p className="text-xs text-muted">No MCP connectors assigned yet — add one in Settings → Integrations.</p>
+              <p className="text-xs text-muted">No MCP connectors assigned yet. Add one in Settings → Integrations.</p>
             ) : (
               <ul className="space-y-1.5">
                 {scopedServers.map((s) => (
@@ -525,7 +525,7 @@ export function AIBrainCanvas() {
         <div className="min-w-0 flex-1">
           <h2 className="font-heading text-base font-semibold text-white">AI Brain</h2>
           <p className="text-xs text-secondary">
-            The real shape of your operating system — HQ, active departments, and connected capability tools. Click a node to inspect it.
+            The real shape of your operating system: HQ, active departments, and connected capability tools. Click a node to inspect it.
           </p>
         </div>
       </div>

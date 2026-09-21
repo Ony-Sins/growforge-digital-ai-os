@@ -1183,9 +1183,9 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                         key={idx}
                         className="flex items-start justify-between gap-2 rounded-xl border border-[#333333] bg-[#0B1220] p-2.5 text-xs text-white font-inter"
                       >
-                        <span className="flex-1 leading-relaxed">
-                          <span className="font-semibold text-electric">⚡ </span>
-                          {obs}
+                        <span className="flex-1 leading-relaxed flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-electric shrink-0" />
+                          <span>{obs}</span>
                         </span>
                         <button
                           type="button"
@@ -1237,7 +1237,10 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                         key={idx}
                         className="flex items-start justify-between gap-2 rounded-xl border border-crimson/30 bg-crimson/10 p-2.5 text-xs text-white font-inter"
                       >
-                        <span className="flex-1 leading-relaxed text-crimson font-medium">⛔ {rej}</span>
+                        <span className="flex-1 leading-relaxed text-crimson font-medium flex items-center gap-1.5">
+                          <XCircle className="h-3.5 w-3.5 text-crimson shrink-0" />
+                          <span>{rej}</span>
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleDeleteRejection(idx)}

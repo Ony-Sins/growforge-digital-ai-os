@@ -701,3 +701,66 @@ Separated the cumulative working tree changes into three distinct, logical commi
   - `GET /api/mcp` → `servers: []` (the `departments` array returned is the static 8-department catalog, same for every visitor, not user-specific data — expected, not a leak)
 - **This closes item 56/57's Brain-fabricated-nodes bug for real**, verified against the actual live site rather than assumed from a green deploy status. The original bug was caught the same way (the user's own incognito screenshot) — held to the same standard on the way out.
 
+## 20. Emoji Removal & Em-Dash Overuse Reduction Across UI Copy (2026-09-21, 19:40, Antigravity)
+
+### 1. Emoji Removal / Replacement Across 5 Files
+Removed all 10 raw keyboard emoji instances across the 5 target UI files, substituting appropriate Lucide icons or clean text badges where semantic meaning was needed:
+- **`Workspace.tsx`**: Removed decorative `👋` wave emoji from hero greeting (`"Good morning, {displayName}"`).
+- **`ProfileDashboard.tsx`**:
+  - Replaced `⚡` bullet in observation list with `<Sparkles className="h-3.5 w-3.5 text-electric shrink-0" />`.
+  - Replaced `⛔` in explicit constraints list with `<XCircle className="h-3.5 w-3.5 text-crimson shrink-0" />`.
+- **`TerminalConsole.tsx`**:
+  - Replaced `🔒` in locked error message with clean prose (`"Agent ${selectedAgentId} is locked. Enter its security key to run it."`).
+  - Replaced `🔒` prefix in `<option>` dropdown with textual badge indicator `"[Locked] "`.
+- **`VaultLibraryOverlay.tsx`**:
+  - Replaced fallback `"🤖"` emoji in grid card and modal inspector headers with `<Bot className="text-white/80" />` Lucide component.
+- **`HITLDrawer.tsx`**:
+  - Cleaned doc comment actions (`✅`, `✏️`, `🔀` removed).
+
+### 2. Em-Dash Overuse Reduction
+Applied the project's anti-slop punctuation standard (`humanizerEngine.ts` / `router/route.ts`) to hardcoded UI strings across components, eliminating stock-AI em-dash sentence joiners in favor of natural periods, colons, parentheses, and middle dots:
+- **`HITLDrawer.tsx`**:
+  - `"Invalid JSON — fix the payload before approving."` $\rightarrow$ `"Invalid JSON. Fix the payload before approving."`
+  - `"Edit the JSON above — your changes will be sent..."` $\rightarrow$ `"Edit the JSON above. Your changes will be sent..."`
+  - `"Redirect directive — agent will change course"` $\rightarrow$ `"Redirect directive · agent will change course"`
+  - `"e.g. Skip HubSpot sync — write to Google Sheets..."` $\rightarrow$ `"e.g. Skip HubSpot sync; write to Google Sheets..."`
+- **`Header.tsx`**:
+  - Notification aria label: `${pendingCount} pending — approvals...` $\rightarrow$ `${pendingCount} pending: approvals...`
+  - `"Nothing pending — you're all caught up."` $\rightarrow$ `"Nothing pending. You're all caught up."`
+  - Approval waiting copy: `"... waiting — see the gold banner..."` $\rightarrow$ `"... waiting (see the gold banner at the top of the screen)."`
+- **`ChatView.tsx`**:
+  - Welcome banner: `"Describe a project in plain language — any language — and I'll ask..."` $\rightarrow$ `"Describe a project in plain language (in any language), and I'll ask..."`
+  - Attachment context: `"attached ${ready.length} files — use this as real context..."` $\rightarrow$ `"attached ${ready.length} files. Use this as real context..."`
+  - Action card: `"Sent to the team — watch it live"` $\rightarrow$ `"Sent to the team · watch it live"`
+  - Handoff badge: `"... to ${m.handoff.targetAgentName} — see prompt above."` $\rightarrow$ `"... to ${m.handoff.targetAgentName} (see prompt above)."`
+- **`ProjectCanvas.tsx`**:
+  - Revision input hint: `"The job is still running — your change reaches..."` $\rightarrow$ `"The job is still running. Your change reaches..."`
+  - Queue banner: `"Queued — applying to every step..."` $\rightarrow$ `"Queued: applying to every step..."`
+  - Revision item timestamp: `<time> — ${r.message}` $\rightarrow$ `<time> · ${r.message}`
+  - Approval status: `"Pending owner approval — switch to Owner view..."` $\rightarrow$ `"Pending owner approval. Switch to Owner view..."`
+  - Empty state: `"Describe a project to the AI Assistant — for example, ..."` $\rightarrow$ `"Describe a project to the AI Assistant (for example, ...)"`
+- **`TerminalConsole.tsx`**:
+  - Hand-off log: `"↔ hand-off suggested: ... — ${reason}"` $\rightarrow$ `"Hand-off suggested: ... · ${reason}"`
+  - Switch note: `"Agent switched to ... below — press Run..."` $\rightarrow$ `"Agent switched to ... below. Press Run..."`
+  - Dropdown options: `"${a.name} — ${a.status}"` $\rightarrow$ `"${a.name} · ${a.status}"`
+- **`NeedsAttention.tsx`**:
+  - `"All systems nominal — zero blockers."` $\rightarrow$ `"All systems nominal: zero human-in-the-loop blockers."`
+  - `"... waiting — see the gold banner..."` $\rightarrow$ `"... waiting (see the gold banner above)."`
+- **`NodeWorkflowCanvas.tsx`**:
+  - `"Live orchestration graph — select a node..."` $\rightarrow$ `"Live orchestration graph. Select a node to inspect its link."`
+- **`IntegrationsHub.tsx`**:
+  - `"Connected — ${count} tools discovered."` $\rightarrow$ `"Connected · ${count} tools discovered."`
+- **`InterfaceAccessCard.tsx`**:
+  - `"starts in Simple mode as Employee — the clean, everyday view."` $\rightarrow$ `"starts in Simple mode as Employee (the clean, everyday view)."`
+- **`LogViewer.tsx`**:
+  - `"Restricted — unlock this agent to view"` $\rightarrow$ `"Restricted: unlock this agent to view"`
+- **`AIBrainCanvas.tsx`**:
+  - `"No MCP connectors assigned yet — add one..."` $\rightarrow$ `"No MCP connectors assigned yet. Add one in Settings → Integrations."`
+  - `"The real shape of your operating system — HQ..."` $\rightarrow$ `"The real shape of your operating system: HQ, active departments, and connected capability tools."`
+
+### 3. Verification
+- `npx tsc --noEmit`: Clean (0 errors).
+- `npm run lint`: Clean (0 errors).
+- Zero data files (`vaultCapabilities.json`, agent markdown files) modified.
+
+

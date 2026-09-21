@@ -34,20 +34,20 @@ export function NeedsAttention() {
         {total === 0 ? (
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-[#333333]/60 bg-[#0B1220]/80 p-3 font-inter text-xs text-[#CCCCCC]">
             <CheckCircle2 className="h-4 w-4 text-emerald shrink-0" />
-            <span>All systems nominal — zero human-in-the-loop blockers.</span>
+            <span>All systems nominal: zero human-in-the-loop blockers.</span>
           </div>
         ) : (
           <ul className="mt-3 space-y-2">
             {pending.approvals > 0 && (
               <li className="rounded-xl border border-gold/30 bg-gold/10 p-2.5 font-inter text-xs text-[#CCCCCC]">
                 <span className="font-bold text-gold">{pending.approvals}</span> real-action approval
-                {pending.approvals === 1 ? "" : "s"} waiting — see the gold banner above.
+                {pending.approvals === 1 ? "" : "s"} waiting (see the gold banner above).
               </li>
             )}
             {pending.consultations > 0 && (
               <li className="rounded-xl border border-electric/30 bg-electric/10 p-2.5 font-inter text-xs text-[#CCCCCC]">
                 <span className="font-bold text-electric">{pending.consultations}</span> operator question
-                {pending.consultations === 1 ? "" : "s"} waiting — check the HITL drawer.
+                {pending.consultations === 1 ? "" : "s"} waiting (check the HITL drawer).
               </li>
             )}
             {pending.unapprovedPlans > 0 && (

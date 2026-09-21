@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import {
   AlertCircle,
   BookOpen,
+  Bot,
   Boxes,
   Info,
   Library,
@@ -343,10 +344,10 @@ export function VaultLibraryOverlay() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg shadow-sm border border-white/10"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg shadow-sm border border-white/10 text-white"
                             style={{ backgroundColor: `${agent.color}20` }}
                           >
-                            {agent.emoji || "🤖"}
+                            {agent.emoji || <Bot className="h-4.5 w-4.5 text-white/80" />}
                           </span>
                           <div className="min-w-0">
                             <h3 className="font-heading text-sm font-semibold text-white truncate group-hover:text-[#0078FF] transition-colors">
@@ -435,10 +436,10 @@ export function VaultLibraryOverlay() {
             <div className="flex items-center justify-between border-b border-[#333333] bg-[#0E1726] px-6 py-4">
               <div className="flex items-center gap-3">
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl shadow-sm border border-white/10"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl shadow-sm border border-white/10 text-white"
                   style={{ backgroundColor: `${selectedAgent.color}25` }}
                 >
-                  {selectedAgent.emoji || "🤖"}
+                  {selectedAgent.emoji || <Bot className="h-6 w-6 text-white/80" />}
                 </span>
                 <div>
                   <h2 className="font-heading text-lg font-bold text-white flex items-center gap-2">

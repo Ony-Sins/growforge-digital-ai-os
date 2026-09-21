@@ -294,7 +294,7 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
         <form onSubmit={submit} className="space-y-2">
           <p className="text-xs text-secondary">
             {job.status === "running"
-              ? "The job is still running — your change reaches every step that hasn't started yet."
+              ? "The job is still running. Your change reaches every step that hasn't started yet."
               : "HQ will decide exactly which departments need to redo their work, and only redo those."}
           </p>
           <div className="flex gap-2">
@@ -323,7 +323,7 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
       )}
       {justQueued && !open && (
         <p className="mt-1.5 text-xs text-emerald">
-          {wasRunning ? "Queued — applying to every step that hasn't started yet." : "Got it — redoing the affected departments now."}
+          {wasRunning ? "Queued: applying to every step that hasn't started yet." : "Got it: redoing the affected departments now."}
         </p>
       )}
 
@@ -335,7 +335,7 @@ function RevisePanel({ job, onRevised }: { job: Job; onRevised: (job: Job) => vo
           <ul className="mt-1.5 space-y-1 pl-4">
             {job.revisions.map((r) => (
               <li key={r.id} className="text-[11px] text-secondary">
-                <span className="text-muted">{new Date(r.createdAt).toLocaleTimeString()}</span> — {r.message}{" "}
+                <span className="text-muted">{new Date(r.createdAt).toLocaleTimeString()}</span> · {r.message}{" "}
                 <span className="text-muted">({r.effect === "reran" ? `redid ${r.redoneSteps?.length ?? 0} steps` : "queued"})</span>
               </li>
             ))}
@@ -477,7 +477,7 @@ function FinalPlanModal({
             <p className="text-xs text-secondary">
               {job.approvedAt
                 ? `Approved by ${job.approvedBy ?? "an owner"} on ${new Date(job.approvedAt).toLocaleString()}.`
-                : "Pending owner approval — switch to Owner view to approve or request changes."}
+                : "Pending owner approval. Switch to Owner view to approve or request changes."}
             </p>
           )}
         </div>
@@ -703,7 +703,7 @@ export function ProjectCanvas({
           <p className="font-heading text-sm font-semibold text-white">{currentId ? "Loading project…" : "No projects yet"}</p>
           {!currentId && (
             <p className="max-w-md text-sm text-secondary">
-              Describe a project to the AI Assistant — for example, <em>&quot;my client just started a roofing business and needs a full growth plan&quot;</em>. It will ask a few questions, confirm, then send it to the team. You&apos;ll watch every department work here.
+              Describe a project to the AI Assistant (for example, <em>&quot;my client just started a roofing business and needs a full growth plan&quot;</em>). It will ask a few questions, confirm, then send it to the team. You&apos;ll watch every department work here.
             </p>
           )}
         </div>
@@ -718,7 +718,7 @@ export function ProjectCanvas({
                     ? `${activeStep.label}: ${activeStep.activity}`
                     : "Working…"
                   : visibleJob.status === "done"
-                    ? `Completed in ${formatDuration(visibleJob.createdAt, visibleJob.finishedAt)} · ${visibleJob.verified ? "research-backed" : "unverified — no live research"}`
+                    ? `Completed in ${formatDuration(visibleJob.createdAt, visibleJob.finishedAt)} · ${visibleJob.verified ? "research-backed" : "unverified (no live research)"}`
                     : visibleJob.error ?? "Failed"}
               </p>
             </div>

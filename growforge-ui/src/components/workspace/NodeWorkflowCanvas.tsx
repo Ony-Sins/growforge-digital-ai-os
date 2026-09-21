@@ -96,7 +96,7 @@ export function NodeWorkflowCanvas() {
             Agent Network Canvas
           </h2>
           <p className="text-xs text-secondary">
-            Live orchestration graph — select a node to inspect its link.
+            Live orchestration graph. Select a node to inspect its link.
           </p>
         </div>
         <div className="flex items-center gap-4 text-[11px] font-medium text-secondary">

@@ -199,7 +199,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                 </span>
               </div>
               <h1 className="mt-1 font-heading text-2xl md:text-3xl font-bold tracking-tight text-white">
-                Good morning, {displayName} 👋
+                Good morning, {displayName}
               </h1>
               <p className="mt-0.5 text-xs md:text-sm text-[#CCCCCC] font-inter">
                 Issue an executive directive or monitor active autonomous multi-agent pipelines below.

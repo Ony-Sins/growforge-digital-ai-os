@@ -32,9 +32,9 @@ import type { PendingConsultation } from "@/lib/consultationStore";
  *   - Preset answer option pills
  *   - An optional editable JSON payload panel (if the agent surfaces args)
  *   - Three operator actions:
- *       ✅ Approve — sends the answer/payload back to resume execution
- *       ✏️  Edit & Resume — lets the operator mutate the payload JSON then approve
- *       🔀 Redirect — posts a redirect directive telling the agent to change course
+ *       - Approve: sends the answer/payload back to resume execution
+ *       - Edit & Resume: lets the operator mutate the payload JSON then approve
+ *       - Redirect: posts a redirect directive telling the agent to change course
  *
  * Mounts as a fixed right-side slide-over. Shows a notification dot on the
  * collapsed trigger button whenever new pending consultations arrive.
@@ -85,7 +85,7 @@ function ConsultationCard({ c, onDismiss }: ConsultationCardProps) {
       try {
         JSON.parse(payloadText);
       } catch {
-        setPayloadError("Invalid JSON — fix the payload before approving.");
+        setPayloadError("Invalid JSON. Fix the payload before approving.");
         return;
       }
     }
@@ -239,7 +239,7 @@ function ConsultationCard({ c, onDismiss }: ConsultationCardProps) {
                 </p>
               )}
               <p className="mt-1 text-[10px] text-muted">
-                Edit the JSON above — your changes will be sent with the approval.
+                Edit the JSON above. Your changes will be sent with the approval.
               </p>
             </div>
           )}
@@ -283,7 +283,7 @@ function ConsultationCard({ c, onDismiss }: ConsultationCardProps) {
               value={customAnswer}
               onChange={(e) => setCustomAnswer(e.target.value)}
               rows={3}
-              placeholder="e.g. Yes, prioritise Meta Ads with a £500 test budget…"
+              placeholder="e.g. Yes, prioritise Meta Ads with a £500 test budget..."
               disabled={busy}
               className="w-full rounded-lg border border-border-metal bg-white/90 px-3 py-2 text-xs text-navy placeholder:text-muted resize-none focus:border-electric focus:outline-none disabled:opacity-50"
             />
@@ -313,14 +313,14 @@ function ConsultationCard({ c, onDismiss }: ConsultationCardProps) {
         {mode === "redirect" && (
           <div className="flex flex-col gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-crimson">
-              Redirect directive — agent will change course
+              Redirect directive · agent will change course
             </p>
             <textarea
               ref={textareaRef}
               value={redirectText}
               onChange={(e) => setRedirectText(e.target.value)}
               rows={3}
-              placeholder="e.g. Skip HubSpot sync — write to Google Sheets instead…"
+              placeholder="e.g. Skip HubSpot sync; write to Google Sheets instead..."
               disabled={busy}
               className="w-full rounded-lg border border-crimson/30 bg-white/90 px-3 py-2 text-xs text-navy placeholder:text-muted resize-none focus:border-crimson focus:outline-none disabled:opacity-50"
             />

@@ -81,8 +81,8 @@ export function Header({ user }: { user: HeaderUser | null }) {
           <button
             type="button"
             onClick={() => setNotifOpen((v) => !v)}
-            aria-label={pendingCount > 0 ? `${pendingCount} pending — approvals, consultations, or plans waiting on you` : "No pending items"}
-            title={pendingCount > 0 ? `${pendingCount} pending — approvals, consultations, or plans waiting on you` : "No pending items"}
+            aria-label={pendingCount > 0 ? `${pendingCount} pending: approvals, consultations, or plans waiting on you` : "No pending items"}
+            title={pendingCount > 0 ? `${pendingCount} pending: approvals, consultations, or plans waiting on you` : "No pending items"}
             className="relative rounded-lg p-2 text-[#CCCCCC] transition-colors hover:bg-[#111827] hover:text-white"
           >
             <Bell className="h-[18px] w-[18px]" />
@@ -97,17 +97,17 @@ export function Header({ user }: { user: HeaderUser | null }) {
               <button type="button" aria-label="Close notifications" className="fixed inset-0 z-40 cursor-default" onClick={() => setNotifOpen(false)} />
               <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-[#333333] bg-[#0B1220] p-2 shadow-2xl">
                 {pendingCount === 0 ? (
-                  <p className="px-2 py-3 text-center text-xs text-secondary">Nothing pending — you&apos;re all caught up.</p>
+                  <p className="px-2 py-3 text-center text-xs text-secondary">Nothing pending. You&apos;re all caught up.</p>
                 ) : (
                   <ul className="space-y-1">
                     {pending.approvals > 0 && (
                       <li className="rounded-lg px-2 py-2 text-xs text-secondary">
-                        <span className="font-semibold text-white">{pending.approvals}</span> real-action approval{pending.approvals === 1 ? "" : "s"} waiting — see the gold banner at the top of the screen.
+                        <span className="font-semibold text-white">{pending.approvals}</span> real-action approval{pending.approvals === 1 ? "" : "s"} waiting (see the gold banner at the top of the screen).
                       </li>
                     )}
                     {pending.consultations > 0 && (
                       <li className="rounded-lg px-2 py-2 text-xs text-secondary">
-                        <span className="font-semibold text-white">{pending.consultations}</span> operator question{pending.consultations === 1 ? "" : "s"} waiting — check the HITL drawer.
+                        <span className="font-semibold text-white">{pending.consultations}</span> operator question{pending.consultations === 1 ? "" : "s"} waiting: check the HITL drawer.
                       </li>
                     )}
                     {pending.unapprovedPlans > 0 && (

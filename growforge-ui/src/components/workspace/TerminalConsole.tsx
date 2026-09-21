@@ -143,7 +143,7 @@ export function TerminalConsole() {
     if (dispatching || !selectedAgentId) return;
 
     if (isAgentLocked(selectedAgentId) && !canAccessAgent(selectedAgentId)) {
-      pushLine("error", `🔒 ${selectedAgentId} is locked — enter its security key to run it.`);
+      pushLine("error", `Agent ${selectedAgentId} is locked. Enter its security key to run it.`);
       requestAgentUnlock(selectedAgentId);
       return;
     }
@@ -178,11 +178,11 @@ export function TerminalConsole() {
       if (data.status === "hand-off") {
         pushLine(
           "info",
-          `↔ hand-off suggested: ${data.targetAgentName} (${data.targetAgentId}) — ${data.reason}`,
+          `Hand-off suggested: ${data.targetAgentName} (${data.targetAgentId}) · ${data.reason}`,
         );
         pushLine(
           "system",
-          `Agent switched to ${data.targetAgentName} below — press Run to dispatch there, or switch back to run ${selectedAgentId} anyway.`,
+          `Agent switched to ${data.targetAgentName} below. Press Run to dispatch there, or switch back to run ${selectedAgentId} anyway.`,
         );
         setSelectedAgentId(data.targetAgentId);
         return;
@@ -263,8 +263,8 @@ export function TerminalConsole() {
             >
               {agents.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {isAgentLocked(a.id) && !canAccessAgent(a.id) ? "🔒 " : ""}
-                  {a.name} — {a.status}
+                  {isAgentLocked(a.id) && !canAccessAgent(a.id) ? "[Locked] " : ""}
+                  {a.name} · {a.status}
                 </option>
               ))}
             </select>

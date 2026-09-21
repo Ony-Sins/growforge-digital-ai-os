@@ -19,7 +19,7 @@ export function InterfaceAccessCard() {
         <h2 className="font-heading text-sm font-semibold text-navy">Interface & Access</h2>
       </div>
       <p className="mb-4 text-xs text-secondary">
-        Every new session starts in Simple mode as Employee — the clean, everyday view. Switch to Advanced here to
+        Every new session starts in Simple mode as Employee (the clean, everyday view). Switch to Advanced here to
         reveal developer-facing surfaces (the Admin Drawer, raw connector/automation config, per-department access
         controls) anywhere in the app; switch to Owner to unlock owner-only actions.
       </p>
