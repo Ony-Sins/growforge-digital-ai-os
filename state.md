@@ -662,5 +662,36 @@ Removed restrictive "Owner-only" permission gates across settings and interface 
 - `npm run lint` inside `growforge-ui/`: passed with 0 errors.
 - Verified that no hardcoded, synthetic, or fake nodes remain in either 3D or 2D canvas components.
 
+## 18. Multi-Commit Push, Security Audit Catch, and Live Deployment Verification (2026-09-21, 19:27, Antigravity)
+
+### 1. Pre-Push Security Audit & Data-Isolation Regression Catch
+- **The Issue Found:** While auditing the capability-key topology generation, identified that `emptyByoMcpResponse()` in `src/app/api/mcp/connect/route.ts` was calling `generateDynamicTopology([])`. Because `generateDynamicTopology()` was expanded to read real configured image keys (`resolveImageKeys()`) and configured AI models (`listAiModels()`) unconditionally, an anonymous or public-preview visitor session would have received the owner's capability keys in their dynamic topology response.
+- **The Fix:** Repaired `emptyByoMcpResponse()` to return a static hardcoded literal `{ ok: true, plugins: [], topology: { nodes: [], axons: [] } }`, ensuring public preview visitors strictly receive zero owner credentials or nodes.
+- **Pre-Push Validation:** Ran `npm run lint` and `npx tsc --noEmit` across `growforge-ui/` (both passed with 0 errors).
+
+### 2. Grouped Commits Pushed to `origin/master`
+Separated the cumulative working tree changes into three distinct, logical commits:
+1. **`f0f328b` — `feat(orchestration): add Laya vault dispatch POC and per-department specialist routing`**
+   - Added `src/lib/vaultDispatch.ts` for per-department specialist agent selection via `@receptron/laya`.
+   - Added standalone evaluation scripts `scripts/laya-poc.ts` and `scripts/test-vault-dispatch-real-jobs.ts`.
+   - Wired non-intrusive log-only dispatch observation into `orchestrator.ts`.
+   - Updated `package.json` and `package-lock.json` with `@receptron/laya`.
+2. **`c7fc326` — `fix(brain): eliminate fake placeholder nodes, wire capability keys and active-only department rendering, secure preview topology`**
+   - Cleaned `NeuralBrainCanvas.tsx` to structural minimum (`hq` node only; deleted fabricated HubSpot/Notion/Meteo nodes).
+   - Hooked `useTelemetry()` to render department nodes only during active processing (`activeLobe` match), hiding them completely when idle.
+   - Wired real capability keys and configured AI models into `src/lib/mcp/pluginRegistry.ts`.
+   - Applied matching active-only department filtering and capability key support to 2D flow map in `AIBrainCanvas.tsx`.
+   - Hardened `src/app/api/mcp/connect/route.ts` against public-preview data leakage.
+3. **`91a7bae` — `docs: update ROADMAP, CLAUDE standards, and state log for Phase 4/5 deliverables`**
+   - Updated `CLAUDE.md` with the expanded documentation standard (documenting problem diagnosis, rejected ideas, and verification methods).
+   - Updated `docs/ROADMAP.md` with procedural brain layout constraints and confirmed Imagen visual reference.
+   - Updated `state.md` with §17 and §18 handoff logs.
+
+### 3. Live Deployment Confirmation
+- Pushed commits `f9b8351..91a7bae` to `origin/master`.
+- Monitored Vercel deployment via GitHub Commit Statuses API (`https://api.github.com/repos/Ony-Sins/growforge-digital-ai-os/commits/91a7bae/statuses`).
+- Confirmed status transitioned from `pending` to **`success`** (`Deployment has completed`, target URL: `https://vercel.com/arif-md-anjum-onys-projects/growforge-digital-ai-os/Emyd1X13HpcUuuKnurqmbYj9oqaX`).
+
+
 
 
