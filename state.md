@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 15:13, Antigravity. Pushed all changes (items 48–51) to origin/master; Vercel deployment confirmed green (commit 45db079) — see §0 and §3 item 52.
+> **Last updated:** 2026-09-21, 17:10, Antigravity. Rescoped Laya from whole-job router to per-department specialist picker (`src/lib/vaultDispatch.ts`, `orchestrator.ts`, `test-vault-dispatch-real-jobs.ts`) — see §0 and §3 item 55.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -10,6 +10,32 @@
 ---
 
 ## 0. Latest confirmed checkpoint (2026-09-21)
+
+- **Laya System-1 Per-Department Specialist Dispatcher Rescoping (2026-09-21, 17:10, Antigravity):**
+  - **Narrowed Dispatch Question (`src/lib/vaultDispatch.ts`):** Rescoped `selectVaultAgent(brief, departmentId)` to answer "Which specialist within this assigned department should execute this deliverable?" rather than attempting to pick 1 global winner across 8 departments.
+  - **Department Category Mapping (`DEPARTMENT_VAULT_CATEGORIES`):** Mapped all 28 catalog categories across 207 vault agents to the 8 core departments:
+    * *Clean/Direct Mappings:* `sales-bd` (`sales`, `business`), `marketing` (`marketing`, `research`), `meta-ads` (`paid`), `finance-ops` (`finance`, `accounts`, `chief`, `operations`, `supply`), `client-success` (`project`, `customer`, `support`, `hr`, `report`), `web-design` (`design`), `web-dev` (`engineering`).
+    * *Ambiguous/Grouped Mappings (explicitly disclosed):* `specialized` (17 agents) and `data`/`identity`/`zk` mapped under `ai-automation`; `product` mapped under `sales-bd`; `testing` and `security` mapped under `web-dev`.
+  - **Additive Per-Department Observability (`src/lib/orchestrator.ts`):** In `runPlan()`, iterated through HQ's assigned departments, calling `selectVaultAgent(briefText, a.departmentId)` and emitting `[vaultDispatch]` observation logs per assigned department. Active pipeline control-flow and execution remain untouched (log-only).
+  - **Real Historical Jobs Benchmark (`scripts/test-vault-dispatch-real-jobs.ts`):** Evaluated 30 total department assignments across all 9 real jobs in `data/jobs.json`:
+    * 100.0% category filter sanity match (30/30).
+    * Direct Dispatch Band (>=85%): 9/30 (30.0%) — e.g. `ai-automation` -> `specialized-workflow-architect` (100.0%), `sales-bd` -> `sales-proposal-strategist` (98.4%-99.9%), `marketing` -> `marketing-pr-communications-manager` (95.4%-99.8%), `web-dev` -> `engineering-drupal-performance` (93.1%), `client-success` -> `customer-success-manager` (100.0%).
+    * Confirm/HITL Band (50-85%): 2/30 (6.7%) — e.g. `sales-bd` (50.5%), `marketing` (50.0%).
+    * Escalate to LLM Band (<50%): 19/30 (63.3%) — predominantly `meta-ads` and `finance-ops` where candidate probabilities were distributed across multiple closely related specialist roles (e.g. PPC strategist vs tracking specialist), correctly signaling ambiguity to fall back to LLM review.
+    * Overall average confidence: 51.6%; average latency: 3,486ms on local CPU.
+  - **Verification:** `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors / 0 warnings.
+
+- **Laya System-1 Decision Model Dispatch Proof-of-Concept (2026-09-21, 16:09, Antigravity):**
+  - **Standalone Package & Runtime (`@receptron/laya`):** Verified npm package name `@receptron/laya` (v0.1.1) running ONNX Runtime on Node 20 / Windows. Model weights (~1.7 GB fp32 ModernBERT + decision head) downloaded from Hugging Face (`receptron/laya-onnx`) and cached locally.
+  - **Benchmark Script (`scripts/laya-poc.ts`):** Evaluated single-pass multimodal inference across 16 real candidate agent records from `src/data/vaultCapabilities.json` (mix of strategy, paid media, SEO, growth, design, finance, and technical distractors) against 8 real/realistic client job briefs.
+  - **Accuracy & Confidence Results:**
+    * 7/8 exact ground-truth matches (87.5% accuracy). Correctly mapped: Pharma launch -> `business-strategist` (99.5%), Pet DTC -> `marketing-growth-hacker` (99.5%), Flooring contractor -> `sales-offer-lead-gen-strategist` (99.9%), Miami cleaning PPC -> `paid-media-ppc-strategist` (86.7%), Brand redesign -> `design-brand-guardian` (100.0%), SaaS financial model -> `finance-financial-analyst` (100.0%), n8n CRM webhook -> `automation-governance-architect` (100.0%).
+    * Only failure mode: Klaviyo 5-part email nurture flow selected `automation-governance-architect` (56.9%) over `marketing-growth-hacker` (34.3%) and `marketing-email-strategist` (8.6%) due to heavy "automated workflow" lexical weighting (confidence was significantly lower, flagging ambiguity).
+    * Average top-1 confidence: 92.8%.
+    * Average inference latency: 1,896ms on local CPU.
+    * Evaluated simultaneous single-pass outputs: `choice` (assigned agent) + `score` (task complexity 1.2-1.9/3) + `noul` (financial review probability 84.4% on financial brief vs 8.9% on email).
+  - **Scope Isolation:** Kept 100% isolated to standalone `scripts/laya-poc.ts`. Zero wiring into `orchestrator.ts`, HQ dispatch, or live application code.
+  - **Verification:** `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors / 0 warnings.
 
 - **Avatar Remove Hover-Gating & Static UI Copy Humanization Audit (2026-09-21, 05:32, Antigravity):**
   - **Avatar Remove Hover/Focus Gating (`ProfileDashboard.tsx`):** Fixed unconditionally visible delete X button on the profile picture. Wrapped in `group/avatar` and applied `opacity-0 group-hover/avatar:opacity-100 focus-visible:opacity-100 transition-opacity` so the remove button only reveals on hover or keyboard focus, eliminating permanent visual noise over operator photos.
@@ -401,7 +427,71 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
     - **Vercel deployment status**: polled GitHub commit status API for `45db079b563d8bc1574d9d928c56ef3714d82f2c` — transitioned `pending` → `success` (`Deployment has completed`, target URL: `https://vercel.com/arif-md-anjum-onys-projects/growforge-digital-ai-os/DaYB73a5mReYS7dgk2X4g8UNi8ES`).
     - **Working tree & branch clean**: `origin/master` fully up to date with zero remaining unpushed commits.
 
-**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt. **All known public-preview data-isolation gaps are now closed** (items 42, 44, 45, 46, 48, 51). The profile-page redesign (item 49's layout, built by Antigravity) was rejected by the user as too LinkedIn-shaped/generic-CRUD — needs a fundamentally different frame ("AI briefing/debrief screen," not "profile page") before another attempt; user does not want to look at it right now. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed.
+53. **Laya System-1 Decision Model POC for Vault Agent Dispatch (`@receptron/laya`) (2026-09-21, 16:09, Antigravity).**
+    - **Package & Environment**: Verified npm package `@receptron/laya` (v0.1.1). Successfully runs with `onnxruntime-node` (v1.30.0) on Node 20 / Windows. Model weights (~1.7 GB fp32 ModernBERT backbone + decision head) downloaded from Hugging Face (`receptron/laya-onnx`) and cached locally.
+    - **Proof-of-Concept Script (`scripts/laya-poc.ts`)**: Built a standalone benchmark script taking 16 real candidate agent records from `src/data/vaultCapabilities.json` and evaluating single-pass multimodal inference across 8 client briefs (real jobs from `data/jobs.json` + realistic scenarios).
+    - **Accuracy & Findings**:
+      * **Exact Match Accuracy**: 7/8 (87.5%). Correctly picked: Pharma store launch -> `business-strategist` (99.5%), Pet DTC -> `marketing-growth-hacker` (99.5%), Flooring lead gen -> `sales-offer-lead-gen-strategist` (99.9%), Miami cleaning PPC -> `paid-media-ppc-strategist` (86.7%), Brand redesign -> `design-brand-guardian` (100.0%), SaaS financial model -> `finance-financial-analyst` (100.0%), n8n CRM webhook -> `automation-governance-architect` (100.0%).
+      * **Failure Case**: Klaviyo 5-part email nurture flow selected `automation-governance-architect` (56.9%) over `marketing-growth-hacker` (34.3%) and `marketing-email-strategist` (8.6%) due to heavy "automated workflow" lexical weighting. Notably, the model expressed low confidence (56.9%), signaling ambiguity.
+      * **Confidence Distribution**: Average top-1 confidence was 92.8% (clear separation on distinct briefs, lower confidence on lexically mixed briefs).
+      * **Inference Latency**: Average 1,896ms per query on local CPU (evaluating `choice` + `score` + `noul` questions in a single forward pass).
+    - **Zero App Wiring**: Fully contained in `scripts/laya-poc.ts`. No changes made to `orchestrator.ts`, HQ dispatch, or live application code.
+    - **Verification**: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors / 0 warnings.
+
+54. **Laya System-1 Vault Agent Dispatch — Step 1 Log-Only Observability (2026-09-21, 16:16, Antigravity).**
+    - **Staged Implementation (`src/lib/vaultDispatch.ts` & `src/lib/orchestrator.ts`)**: Built `selectVaultAgent(brief)` which takes a client brief, runs `matchVaultAgents(brief, 16)` as a fast candidate pre-filter, and applies Laya's ONNX runtime decision head to pick the single best specialist agent with calibrated probabilities.
+    - **Calibrated Routing Bands**:
+      * `confidence >= 0.85`: `"direct"` (would dispatch directly without full LLM prompt)
+      * `0.50 <= confidence < 0.85`: `"confirm"` (would confirm/HITL)
+      * `confidence < 0.50`: `"escalate"` (would escalate to full LLM router)
+    - **Observability in `orchestrator.ts`**: Called `selectVaultAgent()` additively inside `runPlan()` right after HQ assigns departments. Emits structured `[vaultDispatch]` observation logs with zero control-flow or execution changes.
+    - **Evaluation on 9 Real Historical Jobs (`scripts/test-vault-dispatch-real-jobs.ts`)**:
+      * 9/9 jobs placed into the `direct` dispatch band (average confidence 98.2%).
+      * Accurately routed:
+        - Job 1 (Drug Store Launch in Dhaka): `business-strategist` (99.3% confidence, complexity 1.33/3.00, review prob 36.7%).
+        - Jobs 2, 4, 5, 6 (n8n test ping workflows): `specialized-workflow-architect` (99.6%–99.9% confidence, complexity 1.05–1.30/3.00).
+        - Job 3 (Test ping activation): `testing-test-automation-engineer` (92.0% confidence).
+        - Job 7 (Pet accessory growth plan): `sales-offer-lead-gen-strategist` (95.3% confidence).
+        - Jobs 8 & 9 (Flooring solutions & Miami cleaning): `business-strategist` (98.5% & 100.0% confidence).
+    - **Step 2 Safeguard**: Real execution wiring remains intentionally unbuilt pending review.
+    - **Verification**: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors / 0 warnings.
+
+55. **Laya System-1 Rescoped: Per-Department Specialist Picker (2026-09-21, 17:10, Antigravity).**
+    - **Problem Addressed**: GrowForge jobs run across 5-6 core departments concurrently. Selecting 1 global agent out of an unscoped 16-candidate pool did not match real multi-department execution and had no domain-grounded benchmark.
+    - **Scoped Candidate Filtering (`src/lib/vaultDispatch.ts`)**:
+      * Added `DEPARTMENT_VAULT_CATEGORIES` mapping all 28 categories across 207 cataloged agents into the 8 core departments:
+        - `sales-bd` -> `["sales", "business", "product"]` (17 agents)
+        - `marketing` -> `["marketing", "research"]` (37 agents)
+        - `meta-ads` -> `["paid"]` (7 agents)
+        - `finance-ops` -> `["finance", "accounts", "chief", "operations", "supply"]` (9 agents)
+        - `client-success` -> `["project", "customer", "hr", "report", "support"]` (17 agents)
+        - `web-design` -> `["design", "technical"]` (11 agents)
+        - `web-dev` -> `["engineering", "security", "testing"]` (85 agents)
+        - `ai-automation` -> `["automation", "agentic", "agents", "data", "identity", "zk", "specialized"]` (24 agents)
+      * Category mapping disclosure: `specialized`, `zk`, `identity`, and `data` were grouped under `ai-automation` (some `specialized-*` roles are niche regional consulting); `product` grouped under `sales-bd`; `testing` and `security` grouped under `web-dev`.
+      * Implemented `getDepartmentScopedCandidates(brief, departmentId, limit)` filtering the 207 catalog to matching categories and scoring via `vaultMatcher`.
+      * Updated `selectVaultAgent(brief, departmentId)` to tailor the question per department: *"Which specialist from the {deptName} department should execute this project deliverable?"*.
+    - **Additive Orchestrator Instrumentation (`src/lib/orchestrator.ts`)**: In `runPlan()`, iterated through HQ's assigned departments and invoked `selectVaultAgent(briefText, a.departmentId)`, logging per-department recommendations via `logVaultDispatchRecommendation(job.id, rec, a.departmentId)`. Zero control-flow changes.
+    - **Real Historical Jobs Benchmark (`scripts/test-vault-dispatch-real-jobs.ts`)**:
+      * Evaluated 30 total department assignments across all 9 real historical jobs in `data/jobs.json`.
+      * Category sanity match: 30/30 (100.0%) were filtered into the valid categories corresponding to their departments.
+      * Direct Dispatch Band (>=85%): 9/30 (30.0%) — e.g. `ai-automation` -> `specialized-workflow-architect` (100.0% on n8n ops), `sales-bd` -> `sales-proposal-strategist` (98.4%-99.9%), `marketing` -> `marketing-pr-communications-manager` (95.4%-99.8%), `web-dev` -> `engineering-drupal-performance` (93.1%), `client-success` -> `customer-success-manager` (100.0%).
+      * Confirm/HITL Band (50-85%): 2/30 (6.7%) — e.g. `sales-bd` (50.5%), `marketing` (50.0%).
+      * Escalate to LLM Band (<50%): 19/30 (63.3%) — largely in `meta-ads` and `finance-ops` where candidate probabilities split between closely competing niche specialists (e.g. PPC strategist vs tracking specialist vs paid search), accurately signaling uncertainty to fall back to LLM review.
+      * Overall average confidence: 51.6%; average latency: 3,486ms on local CPU.
+    - **Verification**: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors / 0 warnings.
+
+56. **Real bug found: the AI Brain shows fabricated "connected" nodes to every visitor — not a data-isolation gap, UI theater (2026-09-21, 17:29, Claude Code).**
+    - **What the user reported**: opened the live Vercel site in a genuinely fresh incognito window (confirmed explicitly — this wasn't a same-browser/logged-in-as-owner mistake), and the AI Brain (both `2D Flow Map` and `3D Neural View`) looked "exactly like mine" — i.e. identical to what the real owner sees on their own machine. Screenshots provided showed the 2D view rendering HQ + all 8 departments, and the 3D view rendering ~10-11 glowing nodes with connecting lines. Separately: a real Higgsfield API key was stored in the server vault (item 41) but never appeared as a new Brain node or anywhere in Settings → Plugins.
+    - **What I checked first, and ruled out**: given items 42-51's whole public-preview data-isolation saga, the obvious hypothesis was "another missed `isPublicPreviewVisitor` gap, same as `mcp/connect` in item 51." Audited `NeuralBrainCanvas.tsx`'s actual fetch calls directly — it only calls `/api/mcp/connect`, `/api/mcp`, and (via `useTelemetry`) `/api/telemetry` — all three already confirmed gated in prior sessions. This hypothesis was **wrong**; ruling it out is what led to the real cause instead of stopping at "should already be fixed."
+    - **The real cause, found by reading the component's own static data**: `NeuralBrainCanvas.tsx`'s `INITIAL_NODES` constant (~line 55) hardcodes four fake nodes as plain static data, not fetched from anywhere — `mcp:hubspot`, `mcp:notion`, `tool:open-meteo`, `tool:world-bank` — rendered identically for literally every visitor regardless of whether they've connected anything. This is why the incognito session "looked exactly like" the owner's: both are seeing the same fabricated placeholder data, not real connection state. This is the exact "UI theater" failure class Phase 0 (2026-09-16) was built specifically to eliminate ("nothing claims to be real when it isn't") — it regressed back in during Phase 5's Brain build without being caught, because nobody had compared a genuinely fresh session against the owner's until now.
+    - **Confirms the Higgsfield symptom is the same root cause, not a separate bug**: `dynamicTopology.nodes` (the only real, fetch-driven node source, confirmed via code read to correctly merge into `allNodes` at line ~322) is populated *only* from BYO-MCP server registrations (`/api/mcp/connect`'s topology). Higgsfield was stored as a raw vault secret via `setSecret(SYSTEM_VAULT_ID, "higgsfield", ...)`, never as an MCP server — so it structurally cannot appear as a Brain node through the only real mechanism that exists, independent of who's viewing. Checked Settings too: `Higgsfield` only appears in `AiModelManager.tsx` as a static preset label (form-field option), not as a real "is this actually configured" indicator anywhere — confirms there is currently no real UI surface reflecting capability-key connection state at all, for anyone, owner included.
+    - **Reframing, since this changes what "fix" even means here**: this was never actually a privacy leak (nothing owner-private was exposed — the fake nodes are the same generic HubSpot/Notion/weather/World-Bank placeholders for everyone). It's a **feature-completeness gap**: the "Brain grows as you connect real things" concept the user described wanting was never actually wired end-to-end — only BYO-MCP servers partially feed it, catalog/vault/capability-key connections (Higgsfield, and by extension any future BYO image-gen/LLM key) don't feed it at all.
+    - **Not yet fixed.** Real next step, not yet scoped into a prompt: (1) delete the 4 hardcoded fake nodes from `INITIAL_NODES` outright — no fabricated data should render for anyone; (2) extend the real dynamic-node mechanism beyond BYO-MCP servers to cover configured capability keys (image-gen providers like Higgsfield, and per-agent BYO keys generally) so the Brain and Settings → Plugins both reflect real state; (3) decide whether the 8 static department nodes should also start hidden until a user has actually run a job (per the user's stated mental model: "new users should have empty, just the main core and nothing connected") or stay as permanent structural nodes since departments aren't really "connected" user data the same way a plugin is — this is a real product decision, not obvious either way, flag for the user before building.
+    - **Separately, per explicit user instruction this session**: the standing `state.md` documentation rule was expanded in `CLAUDE.md` — entries must now capture the reasoning chain (what was tried/ruled out, why a plan changed), not just the final outcome. This entry is written to that standard as the first example of it.
+    - **Also this session**: generated an Imagen reference image for the "replace the node-and-line pipeline visual" idea raised earlier (three concepts: mission-control timeline, orbital/particle, progress-capillary stack) — user's reaction: Concept 2 (orbital/particle, "a lot like the solar system") is the front-runner, but all three are acceptable directions. Recorded as a preference for when that work is actually scoped — not started, queued behind this Brain fix.
+
+**Next up:** Fix the fabricated Brain nodes (item 56) — this is now higher priority than Laya Step 2, since it's actively showing fake data in production. Review Step 1/1b's Laya evaluation data before proceeding to Step 2 (wiring picks into real agent execution). Vault routing step 3 execution-wiring and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop) are both still unscoped/unbuilt. **All known public-preview data-isolation gaps are closed** (items 42, 44, 45, 46, 48, 51) — item 56 confirmed this is a *different* class of bug (fabricated data, not leaked data), don't re-conflate them. The profile-page redesign (item 49's layout) was rejected by the user as too LinkedIn-shaped/generic-CRUD — needs a fundamentally different frame ("AI briefing/debrief screen," not "profile page") before another attempt; user does not want to look at it right now. The pipeline-visual replacement (no node/line-graph aesthetic) has a preferred direction (orbital/particle) but isn't scoped yet. Real, widespread UI-copy issues also flagged and confirmed via direct grep, not yet fixed: 10 raw keyboard-emoji characters across 5 files, 107 em-dash instances across 31 files. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed.
 
 ## 4. Known, accepted issues carried forward
 
@@ -541,5 +631,36 @@ Removed restrictive "Owner-only" permission gates across settings and interface 
 3. **Verification:**
    - TypeScript compilation (`npx tsc --noEmit`): 0 errors.
    - Next.js 16 production build (`npm run build`): Completed successfully with 25/25 static & dynamic routes generated.
+
+## 17. AI Brain Real Active Connections & Dynamic Topology Wiring (2026-09-21, 18:02, Antigravity)
+
+### 1. The Actual Problem Found & Checked
+- **Fabricated Placeholder Nodes:** `NeuralBrainCanvas.tsx`'s `INITIAL_NODES` contained static, hardcoded placeholder data (`mcp:hubspot`, `mcp:notion`, `tool:open-meteo`, `tool:world-bank`) that rendered unconditionally for all visitors, giving a false impression of active external connections.
+- **Persistent Idle Departments:** Both the 3D Neural Brain (`NeuralBrainCanvas.tsx`) and the 2D Flow Map (`AIBrainCanvas.tsx`) rendered all 8 department nodes permanently around HQ, sitting static and dim when idle rather than reflecting actual real-time orchestration.
+- **Missing Capability-Key & AI Model Representation:** `dynamicTopology.nodes` in `pluginRegistry.ts` only fetched BYO-MCP servers from `mcp/store.ts`. Real configured capability keys (such as Higgsfield via `resolveImageKeys()`) and configured AI models (from `aiModelStore.ts` / `listAiModels()`) were unrepresented in the Brain topology.
+
+### 2. Implementation & Design Decisions
+- **Outright Deletion of Fake Nodes:**
+  - Removed all placeholder nodes (`mcp:hubspot`, `mcp:notion`, `tool:open-meteo`, `tool:world-bank`) and static department nodes from `INITIAL_NODES` in `NeuralBrainCanvas.tsx`. `INITIAL_NODES` now strictly contains the true structural minimum: the central `hq` core node.
+- **Dynamic Active-Only Department Rendering:**
+  - Department nodes now render *only* when a job is actively processing (`telemetry.executionState === "processing"`) and the department's mapped lobe matches `telemetry.activeLobe`. When idle, departments completely disappear from the Brain.
+  - Reused the established department-to-lobe taxonomy (`DEPARTMENT_LOBE_MAP` matching `DEPARTMENT_VAULT_CATEGORIES` and `LOBE_COLORS`):
+    - `sales-bd`, `client-success` $\rightarrow$ `growth_expansion`
+    - `marketing`, `web-design` $\rightarrow$ `creative_strategy`
+    - `meta-ads` $\rightarrow$ `performance_media`
+    - `finance-ops`, `research`, `qa` $\rightarrow$ `analytics_governance`
+    - `web-dev`, `ai-automation` $\rightarrow$ `neural_core`
+- **Real Capability-Key & AI Model Dynamic Topology (`src/lib/mcp/pluginRegistry.ts`):**
+  - Updated `generateDynamicTopology()` to automatically query `resolveImageKeys()` for real configured image generation keys (e.g. Higgsfield, node `cap:higgsfield` on `performance_media` lobe) and `listAiModels()` for configured AI model providers (e.g. `cap:model:${id}` on `neural_core`).
+  - Gated by `isPublicPreviewVisitor`: anonymous/preview visitors receive an empty dynamic topology, while authentic owners see their real configured tools and models.
+- **2D Flow Map Parity (`src/components/workspace/AIBrainCanvas.tsx`):**
+  - Hooked `useTelemetry()` into `AIBrainCanvas.tsx`. Idle departments are filtered out (`activeDepartments = []`), rendering only the active department(s) matching `telemetry.activeLobe` when `executionState === "processing"`.
+  - Added support for dynamic capability keys and AI models (`DynamicTopologyNode[]`) fetched alongside real MCP servers, rendering with distinctive icons, glows, and full inspection details in `InspectorPanel`.
+
+### 3. Verification
+- `npx tsc --noEmit` inside `growforge-ui/`: passed with 0 errors.
+- `npm run lint` inside `growforge-ui/`: passed with 0 errors.
+- Verified that no hardcoded, synthetic, or fake nodes remain in either 3D or 2D canvas components.
+
 
 
