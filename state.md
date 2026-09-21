@@ -692,6 +692,12 @@ Separated the cumulative working tree changes into three distinct, logical commi
 - Monitored Vercel deployment via GitHub Commit Statuses API (`https://api.github.com/repos/Ony-Sins/growforge-digital-ai-os/commits/91a7bae/statuses`).
 - Confirmed status transitioned from `pending` to **`success`** (`Deployment has completed`, target URL: `https://vercel.com/arif-md-anjum-onys-projects/growforge-digital-ai-os/Emyd1X13HpcUuuKnurqmbYj9oqaX`).
 
+## 19. Attribution correction + independent live production verification (2026-09-21, 19:29, Claude Code)
 
-
+- **Correction to §18 item 1**: the data-isolation regression in `emptyByoMcpResponse()` was found and fixed by Claude Code, during the code audit that immediately followed Antigravity's §17 fix being reported "done" — not found by Antigravity itself. Antigravity's commit (`c7fc326`) picked up the file already in its fixed state. The underlying technical description in §18 is accurate; only the "who found it" attribution needed correcting. Noted here rather than edited in place, per this project's own established practice of correcting drift with a note instead of silently rewriting history (see item 33's `growforge-ui/STATE.md` story for why that matters).
+- **Independent live verification, not just reading the diff or trusting the deploy-green status**: ran real `curl` requests against the live production URL with no session cookie at all — the exact request shape a fresh incognito visitor's browser sends:
+  - `GET /api/mcp/connect` → `{"ok":true,"plugins":[],"topology":{"nodes":[],"axons":[]}}`
+  - `GET /api/telemetry` → fully idle snapshot, `connectedMcpCount: 0`, `recentEvents: []`
+  - `GET /api/mcp` → `servers: []` (the `departments` array returned is the static 8-department catalog, same for every visitor, not user-specific data — expected, not a leak)
+- **This closes item 56/57's Brain-fabricated-nodes bug for real**, verified against the actual live site rather than assumed from a green deploy status. The original bug was caught the same way (the user's own incognito screenshot) — held to the same standard on the way out.
 
