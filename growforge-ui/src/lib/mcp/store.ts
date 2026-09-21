@@ -63,7 +63,7 @@ export interface McpServerDef {
    *  3D topology don't need a live probe just to render. Runtime dispatch
    *  still goes through a fresh probe/call, same as every other server here. */
   detectedTools?: DetectedMcpTool[];
-  status?: "connected" | "offline" | "error";
+  status?: "connected" | "offline" | "error" | "disconnected" | "archived";
   lastPing?: string;
   errorMessage?: string;
 }
@@ -85,7 +85,7 @@ export interface CreateMcpServerInput {
   origin?: "catalog" | "custom" | "byo-mcp";
   targetLobe?: BrainLobe;
   detectedTools?: DetectedMcpTool[];
-  status?: "connected" | "offline" | "error";
+  status?: "connected" | "offline" | "error" | "disconnected" | "archived";
 }
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -215,6 +215,16 @@ export function deleteMcpServer(id: string): void {
   persist(store);
   removeSecret(vaultAgentId(id), "auth");
   removeSecret(vaultAgentId(id), "env");
+}
+
+/** Disconnects/archives an MCP server so it no longer renders in the Brain, while keeping its vault credentials on file. */
+export function archiveMcpServer(id: string): McpServerDef | undefined {
+  return updateMcpServerDetails(id, { status: "disconnected" });
+}
+
+/** Reactivates a disconnected/archived MCP server. */
+export function reactivateMcpServer(id: string): McpServerDef | undefined {
+  return updateMcpServerDetails(id, { status: "connected" });
 }
 
 export function updateMcpServerDepartments(id: string, allowedDepartments: string[]): McpServerDef | undefined {

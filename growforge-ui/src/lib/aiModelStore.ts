@@ -33,6 +33,7 @@ export interface StoredAiModel {
   isPrimary?: boolean;
   source: "vault" | "env" | "local" | "custom";
   createdAt: string;
+  status?: "active" | "archived" | "disconnected";
   lastTestedAt?: string;
   lastLatencyMs?: number;
   lastStatus?: "ok" | "error";
@@ -172,7 +173,9 @@ export function listAiModels(): ClientAiModel[] {
     const hasVaultSecret = hasSecret(SYSTEM_VAULT_ID, secretKey);
     const isCloudProvider = m.providerType in CLOUD_PROVIDERS;
     const hasEnvKey = isCloudProvider ? Boolean(process.env[CLOUD_PROVIDERS[m.providerType as CloudProvider]?.envKey]) : false;
-    const isConfigured = m.providerType === "ollama" ? true : hasVaultSecret || hasEnvKey;
+    const isConfigured = m.status === "archived" || m.status === "disconnected"
+      ? false
+      : (m.providerType === "ollama" ? true : hasVaultSecret || hasEnvKey);
 
     let source = m.source;
     if (hasVaultSecret) source = "vault";
@@ -181,6 +184,7 @@ export function listAiModels(): ClientAiModel[] {
 
     return {
       ...m,
+      status: m.status ?? (isConfigured ? "active" : "disconnected"),
       source,
       hasApiKey: hasVaultSecret || hasEnvKey,
       isConfigured,
@@ -234,6 +238,7 @@ export function saveAiModel(
     taskRole: modelInput.taskRole || "general",
     isPrimary: Boolean(modelInput.isPrimary),
     source: apiKey ? "vault" : (existingIdx >= 0 ? models[existingIdx].source : modelInput.source || "custom"),
+    status: modelInput.status ?? (existingIdx >= 0 ? (models[existingIdx].status === "archived" && apiKey ? "active" : models[existingIdx].status ?? "active") : "active"),
     createdAt: existingIdx >= 0 ? models[existingIdx].createdAt : new Date().toISOString(),
     lastTestedAt: existingIdx >= 0 ? models[existingIdx].lastTestedAt : undefined,
     lastLatencyMs: existingIdx >= 0 ? models[existingIdx].lastLatencyMs : undefined,
@@ -266,8 +271,30 @@ export function saveAiModel(
   return {
     ...updated,
     hasApiKey: hasVaultSecret || Boolean(apiKey),
-    isConfigured: updated.providerType === "ollama" ? true : hasVaultSecret,
+    isConfigured: updated.status === "archived" || updated.status === "disconnected" ? false : (updated.providerType === "ollama" ? true : hasVaultSecret),
   };
+}
+
+/** Disconnects/archives an AI model connector so it stops rendering on the Brain, but preserves its vault credential. */
+export function archiveAiModel(id: string): boolean {
+  const models = loadModelsFile();
+  const target = models.find((m) => m.id === id);
+  if (!target) return false;
+
+  target.status = "archived";
+  saveModelsFile(models);
+  return true;
+}
+
+/** Reactivates a disconnected/archived AI model connector. */
+export function reactivateAiModel(id: string): boolean {
+  const models = loadModelsFile();
+  const target = models.find((m) => m.id === id);
+  if (!target) return false;
+
+  target.status = "active";
+  saveModelsFile(models);
+  return true;
 }
 
 export function deleteAiModel(id: string): boolean {

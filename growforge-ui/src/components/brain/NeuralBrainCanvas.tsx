@@ -17,7 +17,9 @@ import {
   Zap,
   X,
   Move,
+  Trash2,
 } from "lucide-react";
+import { NodeDeleteConfirmModal, type DeletableNodeType } from "@/components/workspace/NodeDeleteConfirmModal";
 
 export interface BrainNode {
   id: string;
@@ -241,6 +243,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     nodes: [],
     axons: [],
   });
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    type: DeletableNodeType;
+    endpoint: string;
+  } | null>(null);
 
   const loadDynamicTopology = useCallback(async () => {
     try {
@@ -258,6 +266,54 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       // Non-blocking
     }
   }, []);
+
+  async function handleConfirmDelete(keepCredentialsOnFile: boolean) {
+    if (!deleteTarget) return;
+    try {
+      const res = await fetch(deleteTarget.endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keepOnFile: keepCredentialsOnFile }),
+      });
+      if (res.ok) {
+        await loadDynamicTopology();
+        setSelectedNode(null);
+        setHoveredNode(null);
+        setDeleteTarget(null);
+      }
+    } catch (err) {
+      console.error("[NeuralBrainCanvas] failed to disconnect/remove node:", err);
+    }
+  }
+
+  function handleRequestDelete(active: BrainNode) {
+    if (active.id === "cap:higgsfield") {
+      setDeleteTarget({
+        id: "higgsfield",
+        name: "Higgsfield AI",
+        type: "capability_key",
+        endpoint: "/api/vault/system/higgsfield",
+      });
+    } else if (active.id.startsWith("cap:model:")) {
+      const modelId = active.id.replace(/^cap:model:/, "");
+      setDeleteTarget({
+        id: modelId,
+        name: active.name,
+        type: "ai_model",
+        endpoint: `/api/vault/system/${encodeURIComponent(modelId)}`,
+      });
+    } else if (active.id.startsWith("mcp-node:") || active.kind === "tendril" || active.kind === "connector") {
+      const serverId = active.id.startsWith("mcp-node:")
+        ? active.id.split(":")[1]
+        : (active as unknown as { pluginId?: string }).pluginId || active.id;
+      setDeleteTarget({
+        id: serverId,
+        name: active.name,
+        type: "byo_mcp",
+        endpoint: `/api/mcp/connect?id=${encodeURIComponent(serverId)}`,
+      });
+    }
+  }
 
   useEffect(() => {
     const initialTimer = setTimeout(() => {
@@ -811,7 +867,6 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       brainGroupRef.current.rotation.set(0, 0, 0);
     }
     setSelectedNode(null);
-    selectedNodeRef.current = null;
   };
 
   return (
@@ -998,10 +1053,34 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
                     )}
                   </div>
                 )}
+
+                {/* Remove / Disconnect Action for dynamic connectors and tendrils */}
+                {(active.kind === "connector" || active.kind === "tendril") && (
+                  <div className="pt-2 border-t border-slate-800 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleRequestDelete(active)}
+                      className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-[11px] font-medium text-red-400 hover:bg-red-500/20 hover:border-red-500/50 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" /> Remove
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })()}
         </div>
+      )}
+
+      {/* Shared Node Deletion / Credential Retention Modal */}
+      {deleteTarget && (
+        <NodeDeleteConfirmModal
+          isOpen={Boolean(deleteTarget)}
+          nodeName={deleteTarget.name}
+          nodeType={deleteTarget.type}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleConfirmDelete}
+        />
       )}
     </div>
   );

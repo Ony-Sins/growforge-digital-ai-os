@@ -8,7 +8,8 @@ import {
   type CloudProvider,
 } from "@/lib/llm";
 import { hasSecret, setSecret } from "@/lib/serverVault";
-import { listAiModels, saveAiModel, type TaskRole, type ProviderType } from "@/lib/aiModelStore";
+import { listAiModels, saveAiModel, type TaskRole, type ProviderType, type StoredAiModel } from "@/lib/aiModelStore";
+import { reactivateCapability } from "@/lib/capabilityStore";
 import { ROUTE_CHAINS } from "@/lib/model-router";
 
 export const runtime = "nodejs";
@@ -72,6 +73,7 @@ interface SaveModelRequestBody {
   apiKey?: string;
   taskRole?: TaskRole;
   isPrimary?: boolean;
+  status?: StoredAiModel["status"];
 
   // Legacy provider key update structure
   provider?: string;
@@ -104,6 +106,7 @@ export async function POST(req: Request) {
           modelName: body.modelName,
           taskRole: body.taskRole || "general",
           isPrimary: body.isPrimary,
+          status: body.status,
         },
         body.apiKey
       );
@@ -119,12 +122,13 @@ export async function POST(req: Request) {
   // Handle legacy provider key update
   const provider = body.provider?.trim();
   const value = body.value?.trim();
-  if (provider && provider in CLOUD_PROVIDERS) {
+  if (provider && (provider in CLOUD_PROVIDERS || provider === "higgsfield" || provider === "higgsfield_ai")) {
     if (!value) {
       return NextResponse.json({ error: "value is required." }, { status: 400 });
     }
     try {
       setSecret(SYSTEM_VAULT_ID, provider, value);
+      reactivateCapability(provider);
       return NextResponse.json({ ok: true });
     } catch (err) {
       return NextResponse.json(

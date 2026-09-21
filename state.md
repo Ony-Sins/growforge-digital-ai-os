@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 17:10, Antigravity. Rescoped Laya from whole-job router to per-department specialist picker (`src/lib/vaultDispatch.ts`, `orchestrator.ts`, `test-vault-dispatch-real-jobs.ts`) — see §0 and §3 item 55.
+> **Last updated:** 2026-09-21, 20:10, Antigravity. Node-deletion confirmation + credential-retention flow for AI Brain (`NodeDeleteConfirmModal.tsx`, `capabilityStore.ts`, `aiModelStore.ts`, `mcp/store.ts`, `AIBrainCanvas.tsx`, `NeuralBrainCanvas.tsx`, `AiModelManager.tsx`) — see §0 and §21.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -762,5 +762,47 @@ Applied the project's anti-slop punctuation standard (`humanizerEngine.ts` / `ro
 - `npx tsc --noEmit`: Clean (0 errors).
 - `npm run lint`: Clean (0 errors).
 - Zero data files (`vaultCapabilities.json`, agent markdown files) modified.
+
+## 21. Node-Deletion Confirmation & Credential-Retention Flow (2026-09-21, 20:10, Antigravity)
+
+### 1. Context & Motivation
+- **Prior State:** In the 2D Flow Map (`AIBrainCanvas.tsx`), clicking delete on an MCP server called `DELETE /api/mcp/${server.id}` immediately with zero confirmation. The 3D Canvas (`NeuralBrainCanvas.tsx`) lacked any user-triggered delete interaction. Furthermore, newly introduced capability-key nodes (Higgsfield AI, configured AI models) had no deletion/disconnection mechanism at all.
+- **Requirement:** A unified, shared confirmation dialog for both 2D and 3D Brain views presenting two distinct, clear choices:
+  1. *"Keep credentials on file"* (disconnect node from Brain and dynamic topology, but retain vault-encrypted secrets for 1-click reactivation in Settings).
+  2. *"Remove completely"* (permanently purge server/model configuration and destroy vault secrets).
+
+### 2. Architecture & Data-Layer Design Decisions
+- **Unified Archived / Disconnected State Pattern:**
+  - **MCP Servers (`src/lib/mcp/store.ts`):** Extended `McpServerDef` status union to include `"disconnected" | "archived"`. Added `archiveMcpServer(id)` and `reactivateMcpServer(id)`. When "keep on file" is selected, the server's status is set to `"disconnected"`, preserving the row and encrypted credentials in `serverVault.ts` (`mcp:${id}`). "Remove completely" executes the full `deleteMcpServer(id)` purge.
+  - **Capability Keys (`src/lib/capabilityStore.ts`):** Created a lightweight capability status store (`data/capability_status.json`) exposing `isCapabilityActive(id)`, `archiveCapability(id)`, and `reactivateCapability(id)`. This brings non-MCP capability keys (like Higgsfield) into the exact same lifecycle without modifying the underlying secret vault structure.
+  - **AI Model Connectors (`src/lib/aiModelStore.ts`):** Extended `StoredAiModel` with `status?: "active" | "archived" | "disconnected"`. Added `archiveAiModel(id)` and `reactivateAiModel(id)`. Updated `listAiModels()` such that archived models return `isConfigured: false` to avoid active routing while remaining visible for reactivation.
+- **Strict "Active-Only Renders in Brain" Invariant (`src/lib/mcp/pluginRegistry.ts`):**
+  - Updated `generateDynamicTopology()` to filter out any MCP server with `status === "disconnected" | "archived"`, ignore capability keys where `!isCapabilityActive(key)`, and ignore models where `status === "archived" | "disconnected"`. Disconnected/archived items never render as somas/tendrils in the Brain.
+- **Backend API Routes & Authorization Hardening:**
+  - `DELETE /api/mcp/[id]`: Supports `?keepOnFile=true` (or body `{ keepOnFile: true }`) to archive via `archiveMcpServer(id)`, otherwise calls `deleteMcpServer(id)`. Gated by `isPublicPreviewVisitor(session) -> 403`.
+  - `DELETE /api/mcp/connect`: Disconnect handler supports `keepOnFile` for BYO MCP servers. Gated by `isPublicPreviewVisitor(session) -> 403`.
+  - `DELETE /api/vault/system/[provider]`: Supports `?keepOnFile=true` to archive capability keys (`archiveCapability(provider)`) or AI models (`archiveAiModel(id)`), or permanently purges vault secrets when `keepOnFile` is false. Gated by `isPublicPreviewVisitor(session) -> 403`.
+  - `POST /api/vault/system`: Automatically reactivates capability status when new credentials are saved. Gated by `isPublicPreviewVisitor(session) -> 403`.
+
+### 3. UI Implementation
+- **Shared Confirmation Dialog (`src/components/workspace/NodeDeleteConfirmModal.tsx`):**
+  - Displays plain, explicit consequence copy: `"Remove [Node Name]? You'll need to manually reconnect [Node Type] again to use it."`
+  - Two distinct cards:
+    - **Keep credentials on file:** Amber badge, explains that credentials remain encrypted and can be reactivated in Settings.
+    - **Remove completely:** Crimson badge, explains that secrets will be permanently deleted and re-entry is required.
+  - Includes loading spinners, Cancel button, backdrop blur, and keyboard `Escape` dismissal.
+- **2D Flow Map Integration (`src/components/workspace/AIBrainCanvas.tsx`):**
+  - Inspector panel now renders a "Disconnect / Remove" button for both MCP servers and capability keys (Higgsfield, AI Models).
+  - Triggers `NodeDeleteConfirmModal` and dispatches to the corresponding API route with optimistic state refresh.
+- **3D Neural Brain Integration (`src/components/brain/NeuralBrainCanvas.tsx`):**
+  - Selecting a connector or tendril node opens the inspector overlay with a prominent "Remove" action.
+  - Wires `NodeDeleteConfirmModal` and dispatches deletion/archival, triggering immediate live WebGL graph reload.
+- **Settings Reactivation (`src/components/workspace/AiModelManager.tsx`):**
+  - Displays an "ARCHIVED" pill for disconnected models and provides a 1-click "Reactivate" button to restore active status without re-entering API keys.
+
+### 4. Verification
+- `npx tsc --noEmit` in `growforge-ui/`: Passed with 0 errors.
+- `npm run lint` in `growforge-ui/`: Passed with 0 errors / 0 warnings.
+- Public preview visitor authorization checks verified across all touched mutation routes.
 
 

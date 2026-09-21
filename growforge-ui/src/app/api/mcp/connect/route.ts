@@ -6,6 +6,7 @@ import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import {
   createMcpServer,
   updateMcpServerDetails,
+  archiveMcpServer,
   deleteMcpServer,
   findMcpServerByUrl,
   getMcpServer,
@@ -223,9 +224,22 @@ export async function handleConnectByoMcp(req: Request) {
   }
 }
 
-export function handleDisconnectByoMcp(req: Request) {
+export async function handleDisconnectByoMcp(req: Request) {
   const url = new URL(req.url);
-  const id = url.searchParams.get("id");
+  let id = url.searchParams.get("id");
+  let keepOnFile = url.searchParams.get("keepOnFile") === "true";
+
+  if (!id) {
+    try {
+      const body = await req.json();
+      if (body?.id) {
+        id = body.id;
+        if (typeof body.keepOnFile === "boolean") keepOnFile = body.keepOnFile;
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (!id) {
     return NextResponse.json({ ok: false, error: "Plugin id is required." }, { status: 400 });
@@ -239,11 +253,17 @@ export function handleDisconnectByoMcp(req: Request) {
     return NextResponse.json({ ok: false, error: "Plugin not found." }, { status: 404 });
   }
 
-  deleteMcpServer(id);
+  if (keepOnFile) {
+    archiveMcpServer(id);
+  } else {
+    deleteMcpServer(id);
+  }
+
   const topology = generateDynamicTopology(listMcpServersByOrigin("byo-mcp"));
 
   return NextResponse.json({
     ok: true,
+    archived: keepOnFile,
     topology,
   });
 }

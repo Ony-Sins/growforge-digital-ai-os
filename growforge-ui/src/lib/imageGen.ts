@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { getSecretForServerUse } from "@/lib/serverVault";
 import { listAiModels, getAiModelApiKey } from "@/lib/aiModelStore";
+import { isCapabilityActive } from "@/lib/capabilityStore";
 
 export interface ImageGenResult {
   ok: boolean;
@@ -92,7 +93,7 @@ export function resolveImageKeys(agentId?: string): AvailableImageKeys {
     if (geminiKey && source === "none") source = "system_vault";
   }
 
-  if (!higgsfieldKey) {
+  if (!higgsfieldKey && isCapabilityActive("higgsfield")) {
     higgsfieldKey =
       getSecretForServerUse(SYSTEM_VAULT_ID, "higgsfield") ||
       getSecretForServerUse(SYSTEM_VAULT_ID, "higgsfield_ai");
@@ -112,7 +113,7 @@ export function resolveImageKeys(agentId?: string): AvailableImageKeys {
           } else if (!geminiKey && (m.providerType === "gemini" || m.modelName.includes("imagen") || m.baseUrl.includes("generativelanguage"))) {
             geminiKey = key;
             if (source === "none") source = "system_vault";
-          } else if (!higgsfieldKey && (m.modelName.includes("higgsfield") || m.baseUrl.includes("higgsfield"))) {
+          } else if (!higgsfieldKey && isCapabilityActive("higgsfield") && (m.modelName.includes("higgsfield") || m.baseUrl.includes("higgsfield"))) {
             higgsfieldKey = key;
             if (source === "none") source = "system_vault";
           }
@@ -132,7 +133,7 @@ export function resolveImageKeys(agentId?: string): AvailableImageKeys {
     geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null;
     if (source === "none") source = "env";
   }
-  if (!higgsfieldKey && process.env.HIGGSFIELD_API_KEY) {
+  if (!higgsfieldKey && isCapabilityActive("higgsfield") && process.env.HIGGSFIELD_API_KEY) {
     higgsfieldKey = process.env.HIGGSFIELD_API_KEY;
     if (source === "none") source = "env";
   }

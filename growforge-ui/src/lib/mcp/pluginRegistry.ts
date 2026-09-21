@@ -18,6 +18,7 @@ import type { BrainLobe } from "@/lib/telemetryStore";
 import { getMcpCredential, type McpServerDef, type DetectedMcpTool } from "@/lib/mcp/store";
 import { resolveImageKeys } from "@/lib/imageGen";
 import { listAiModels } from "@/lib/aiModelStore";
+import { isCapabilityActive } from "@/lib/capabilityStore";
 
 export type { DetectedMcpTool };
 
@@ -29,7 +30,7 @@ export interface CustomMcpPlugin {
   serverUrl: string;
   targetLobe: BrainLobe;
   detectedTools: DetectedMcpTool[];
-  status: "connected" | "offline" | "error";
+  status: "connected" | "offline" | "error" | "disconnected" | "archived";
   connectedAt: string;
   lastPing?: string;
   errorMessage?: string;
@@ -140,7 +141,13 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
   const axons: DynamicBrainAxon[] = [];
 
   // 1. Active BYO-MCP Servers & Discovered Tools
-  const active = byoMcpServers.filter((s) => (s.status ?? "connected") === "connected" && s.detectedTools?.length);
+  const active = byoMcpServers.filter(
+    (s) =>
+      (s.status ?? "connected") === "connected" &&
+      s.status !== "disconnected" &&
+      s.status !== "archived" &&
+      s.detectedTools?.length
+  );
 
   active.forEach((server, pIdx) => {
     const parentInfo = LOBE_PARENT_MAP[server.targetLobe ?? "neural_core"] || LOBE_PARENT_MAP.neural_core;
@@ -188,7 +195,7 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
   // 2. Real Capability Keys: Higgsfield (Generative Video & Creative Asset Key)
   try {
     const imageKeys = resolveImageKeys();
-    if (imageKeys.higgsfieldKey) {
+    if (imageKeys.higgsfieldKey && isCapabilityActive("higgsfield")) {
       const higgsfieldNodeId = "cap:higgsfield";
       nodes.push({
         id: higgsfieldNodeId,
@@ -221,7 +228,9 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
 
   // 3. Real Capability Keys: Configured AI Models (OpenAI, Gemini, Claude, Groq, Ollama, Custom)
   try {
-    const configuredModels = listAiModels().filter((m) => m.isConfigured);
+    const configuredModels = listAiModels().filter(
+      (m) => m.isConfigured && m.status !== "archived" && m.status !== "disconnected"
+    );
     configuredModels.forEach((model, mIdx) => {
       const modelLobe: BrainLobe =
         model.taskRole === "image"

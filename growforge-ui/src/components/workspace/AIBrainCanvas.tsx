@@ -16,6 +16,7 @@ import "@xyflow/react/dist/style.css";
 import { Brain, CheckCircle2, Key, Loader2, Plug, ShieldCheck, Sparkles, Trash2, X, XCircle } from "lucide-react";
 import { useTelemetry } from "@/lib/useTelemetry";
 import type { BrainLobe } from "@/lib/telemetryStore";
+import { NodeDeleteConfirmModal, type DeletableNodeType } from "./NodeDeleteConfirmModal";
 
 interface DepartmentInfo {
   id: string;
@@ -32,6 +33,7 @@ interface McpServerInfo {
   url?: string;
   allowedDepartments: string[];
   hasCredential: boolean;
+  status?: string;
 }
 
 interface DynamicTopologyNode {
@@ -254,7 +256,7 @@ function InspectorPanel({
   testResult,
   onTested,
   onClose,
-  onChanged,
+  onRequestDelete,
 }: {
   selection: { kind: BrainNodeKind; id: string };
   departments: DepartmentInfo[];
@@ -263,10 +265,9 @@ function InspectorPanel({
   testResult: { ok: boolean; tools?: { name: string }[]; error?: string } | null;
   onTested: (serverId: string, result: { ok: boolean; tools?: { name: string }[]; error?: string }) => void;
   onClose: () => void;
-  onChanged: () => void;
+  onRequestDelete: (target: { id: string; name: string; type: DeletableNodeType; endpoint: string }) => void;
 }) {
   const [testing, setTesting] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   const server = selection.kind === "connector" ? servers.find((s) => s.id === selection.id) : undefined;
   const capability = selection.kind === "capability" ? capabilities.find((c) => c.id === selection.id) : undefined;
@@ -284,17 +285,33 @@ function InspectorPanel({
     }
   }
 
-  async function handleDelete() {
+  function handleDeleteServer() {
     if (!server) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, { method: "DELETE" });
-      if (res.ok) {
-        onChanged();
-        onClose();
-      }
-    } finally {
-      setBusy(false);
+    onRequestDelete({
+      id: server.id,
+      name: server.name,
+      type: "mcp_server",
+      endpoint: `/api/mcp/${encodeURIComponent(server.id)}`,
+    });
+  }
+
+  function handleDeleteCapability() {
+    if (!capability) return;
+    if (capability.type === "ai_model") {
+      const modelId = capability.id.replace(/^cap:model:/, "");
+      onRequestDelete({
+        id: modelId,
+        name: capability.label,
+        type: "ai_model",
+        endpoint: `/api/vault/system/${encodeURIComponent(modelId)}`,
+      });
+    } else {
+      onRequestDelete({
+        id: "higgsfield",
+        name: capability.label,
+        type: "capability_key",
+        endpoint: "/api/vault/system/higgsfield",
+      });
     }
   }
 
@@ -390,7 +407,7 @@ function InspectorPanel({
             {capability.tools && capability.tools.length > 0 && (
               <>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Exposed Tools / Endpoints</p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-1.5 mb-4">
                   {capability.tools.map((t) => (
                     <li key={t} className="flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1.5 text-xs text-purple-200">
                       <Sparkles className="h-3 w-3 text-purple-400" />
@@ -400,6 +417,15 @@ function InspectorPanel({
                 </ul>
               </>
             )}
+            <div>
+              <button
+                type="button"
+                onClick={handleDeleteCapability}
+                className="flex items-center gap-1.5 rounded-lg border border-crimson/30 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-crimson hover:bg-crimson/20 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </button>
+            </div>
           </>
         )}
 
@@ -423,9 +449,8 @@ function InspectorPanel({
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
-                disabled={busy}
-                className="flex items-center gap-1.5 rounded-lg border border-crimson/30 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-crimson hover:bg-crimson/20 disabled:opacity-50"
+                onClick={handleDeleteServer}
+                className="flex items-center gap-1.5 rounded-lg border border-crimson/30 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-crimson hover:bg-crimson/20 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Remove
               </button>
@@ -452,6 +477,12 @@ export function AIBrainCanvas() {
   const [servers, setServers] = useState<McpServerInfo[]>([]);
   const [capabilities, setCapabilities] = useState<DynamicTopologyNode[]>([]);
   const [selection, setSelection] = useState<{ kind: BrainNodeKind; id: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    type: DeletableNodeType;
+    endpoint: string;
+  } | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [testResults, setTestResults] = useState<Record<string, ConnectorTestResult>>({});
 
@@ -465,7 +496,9 @@ export function AIBrainCanvas() {
       if (mcpRes.ok) {
         const data = await mcpRes.json();
         setAllDepartments(Array.isArray(data.departments) ? data.departments : []);
-        setServers(Array.isArray(data.servers) ? data.servers : []);
+        const rawServers: McpServerInfo[] = Array.isArray(data.servers) ? data.servers : [];
+        // Only active/connected servers render as Brain nodes
+        setServers(rawServers.filter((s) => s.status !== "disconnected" && s.status !== "archived"));
       }
 
       if (connectRes.ok) {
@@ -476,6 +509,24 @@ export function AIBrainCanvas() {
       }
     } finally {
       setLoaded(true);
+    }
+  }
+
+  async function handleConfirmDelete(keepCredentialsOnFile: boolean) {
+    if (!deleteTarget) return;
+    try {
+      const res = await fetch(deleteTarget.endpoint, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keepOnFile: keepCredentialsOnFile }),
+      });
+      if (res.ok) {
+        await refresh();
+        setSelection(null);
+        setDeleteTarget(null);
+      }
+    } catch (err) {
+      console.error("[AIBrainCanvas] failed to disconnect/remove node:", err);
     }
   }
 
@@ -564,10 +615,21 @@ export function AIBrainCanvas() {
             testResult={selection.kind === "connector" ? testResults[selection.id] ?? null : null}
             onTested={(serverId, result) => setTestResults((prev) => ({ ...prev, [serverId]: result }))}
             onClose={() => setSelection(null)}
-            onChanged={refresh}
+            onRequestDelete={(target) => setDeleteTarget(target)}
           />
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {deleteTarget && (
+        <NodeDeleteConfirmModal
+          isOpen={Boolean(deleteTarget)}
+          nodeName={deleteTarget.name}
+          nodeType={deleteTarget.type}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </section>
   );
 }

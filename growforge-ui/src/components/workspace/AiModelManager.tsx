@@ -16,6 +16,7 @@ import {
   Zap,
   X,
   SlidersHorizontal,
+  ShieldCheck,
 } from "lucide-react";
 import { getAiBrandIcon } from "@/lib/aiBrandIcons";
 import type { ClientAiModel, TaskRole, ProviderType } from "@/lib/aiModelStore";
@@ -342,6 +343,31 @@ export function AiModelManager() {
     }
   }
 
+  async function handleReactivateModel(model: ClientAiModel) {
+    setTestingId(model.id);
+    try {
+      const res = await fetch("/api/vault/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: model.id,
+          name: model.name,
+          baseUrl: model.baseUrl,
+          modelName: model.modelName,
+          taskRole: model.taskRole,
+          isPrimary: model.isPrimary,
+          providerType: model.providerType,
+          status: "active",
+        }),
+      });
+      if (res.ok) {
+        await loadData();
+      }
+    } finally {
+      setTestingId(null);
+    }
+  }
+
   async function handleUpdateStrategy(newStrategy: string) {
     try {
       const res = await fetch("/api/router", {
@@ -434,6 +460,11 @@ export function AiModelManager() {
                               PRIMARY
                             </span>
                           )}
+                          {(m.status === "archived" || m.status === "disconnected") && (
+                            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-400 border border-amber-500/30">
+                              ARCHIVED
+                            </span>
+                          )}
                           <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium border ${roleConfig.color}`}>
                             {roleConfig.label}
                           </span>
@@ -456,6 +487,19 @@ export function AiModelManager() {
 
                     {/* Right-aligned Test Button & Controls */}
                     <div className="flex items-center gap-2 ml-auto">
+                      {(m.status === "archived" || m.status === "disconnected") && (
+                        <button
+                          type="button"
+                          onClick={() => handleReactivateModel(m)}
+                          disabled={isTesting || isDeleting}
+                          title="Reactivate this model connector in the Brain"
+                          className="flex items-center gap-1 rounded-md border border-electric/40 bg-electric/15 px-2.5 py-1 text-xs font-semibold text-electric hover:bg-electric/25 transition-colors disabled:opacity-50"
+                        >
+                          {isTesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                          <span>Reactivate</span>
+                        </button>
+                      )}
+
                       {/* Live Test Latency Feedback */}
                       {test && (
                         <div
