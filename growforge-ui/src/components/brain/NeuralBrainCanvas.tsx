@@ -53,7 +53,7 @@ const LOBE_COLORS: Record<BrainLobe, { main: string; emissive: string; label: st
 };
 
 const INITIAL_NODES: BrainNode[] = [
-  // 1. Central Core
+  // 1. Central Core — the single true structural minimum
   {
     id: "hq",
     name: "GrowForge HQ Core",
@@ -69,11 +69,31 @@ const INITIAL_NODES: BrainNode[] = [
     tools: ["orchestrator", "router", "memory_vault"],
     metrics: { throughput: "100%", latency: "24ms", reliability: "99.9%" },
   },
+];
 
-  // 2. Left Hemisphere (Strategy, Analytics, Research, QA)
-  {
+const INITIAL_AXONS: BrainAxon[] = [];
+
+/** Canonical 3D definitions for departments and engine nodes.
+ *  Only rendered dynamically when executionState === "processing" and their mapped lobe is active. */
+export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
+  "dept:sales-bd": {
+    id: "dept:sales-bd",
+    name: "Revenue & Business Development",
+    role: "Pipeline & Deal Acquisition",
+    kind: "department",
+    lobe: "growth_expansion",
+    hemisphere: "right",
+    position: [65, 30, 25],
+    size: 7,
+    color: "#10b981",
+    emissive: "#34d399",
+    description: "Cold outreach, lead qualification, CRM synchronization, and pipeline closing sequences.",
+    tools: ["Outreach Engine"],
+    metrics: { throughput: "Active", latency: "210ms" },
+  },
+  "dept:marketing": {
     id: "dept:marketing",
-    name: "Marketing & Strategy",
+    name: "Marketing & Brand Strategy",
     role: "Brand Positioning & Messaging",
     kind: "department",
     lobe: "creative_strategy",
@@ -86,7 +106,22 @@ const INITIAL_NODES: BrainNode[] = [
     tools: ["Voice DNA", "Audience Profiler"],
     metrics: { throughput: "Active", latency: "310ms" },
   },
-  {
+  "dept:meta-ads": {
+    id: "dept:meta-ads",
+    name: "Paid Media & Performance",
+    role: "Performance Campaign Execution",
+    kind: "department",
+    lobe: "performance_media",
+    hemisphere: "right",
+    position: [60, -20, 35],
+    size: 7,
+    color: "#ec4899",
+    emissive: "#f472b6",
+    description: "Ad creative variations, ROAS optimization, budget allocation, and audience retargeting.",
+    tools: ["Campaign Engine"],
+    metrics: { throughput: "Scaled", latency: "490ms" },
+  },
+  "dept:finance-ops": {
     id: "dept:finance-ops",
     name: "Finance & Operations",
     role: "Capital Allocation & Unit Economics",
@@ -98,10 +133,70 @@ const INITIAL_NODES: BrainNode[] = [
     color: "#f59e0b",
     emissive: "#fbbf24",
     description: "P&L projections, break-even analysis, runway modeling, and risk mitigation.",
-    tools: ["World Bank Tool", "Unit Economics Engine"],
+    tools: ["Unit Economics Engine"],
     metrics: { throughput: "Calibrated", latency: "180ms" },
   },
-  {
+  "dept:client-success": {
+    id: "dept:client-success",
+    name: "Client Success & PM",
+    role: "Retention & Delivery Operations",
+    kind: "department",
+    lobe: "growth_expansion",
+    hemisphere: "right",
+    position: [45, -55, -20],
+    size: 6,
+    color: "#14b8a6",
+    emissive: "#5eead4",
+    description: "Onboarding workflows, health scores, recurring touchpoints, and project sequencing.",
+    tools: ["Project Tracker"],
+    metrics: { throughput: "Nominal", latency: "140ms" },
+  },
+  "dept:web-design": {
+    id: "dept:web-design",
+    name: "Digital Design & UX",
+    role: "UX Architecture & Visual Direction",
+    kind: "department",
+    lobe: "creative_strategy",
+    hemisphere: "left",
+    position: [-70, 15, -35],
+    size: 6.5,
+    color: "#6366f1",
+    emissive: "#818cf8",
+    description: "Website/landing page structure, conversion design, and visual styling.",
+    tools: ["Design System"],
+    metrics: { throughput: "Active", latency: "240ms" },
+  },
+  "dept:web-dev": {
+    id: "dept:web-dev",
+    name: "Web Development & Engineering",
+    role: "Technical Implementation & Systems",
+    kind: "department",
+    lobe: "neural_core",
+    hemisphere: "left",
+    position: [-45, -55, -20],
+    size: 6.5,
+    color: "#06b6d4",
+    emissive: "#22d3ee",
+    description: "Website builds, technical SEO, performance tuning, and frontend/backend infrastructure.",
+    tools: ["Code Sandbox"],
+    metrics: { throughput: "Active", latency: "160ms" },
+  },
+  "dept:ai-automation": {
+    id: "dept:ai-automation",
+    name: "AI Systems & Automation",
+    role: "Workflow & n8n Integration",
+    kind: "department",
+    lobe: "neural_core",
+    hemisphere: "center",
+    position: [0, 45, -30],
+    size: 7,
+    color: "#3b82f6",
+    emissive: "#60a5fa",
+    description: "Automations, CRM workflows, n8n integrations, and AI tool orchestration.",
+    tools: ["n8n Manager"],
+    metrics: { throughput: "Active", latency: "120ms" },
+  },
+  research: {
     id: "research",
     name: "Live Research Engine",
     role: "Market & Sourced Intelligence",
@@ -112,11 +207,11 @@ const INITIAL_NODES: BrainNode[] = [
     size: 6.5,
     color: "#38bdf8",
     emissive: "#7dd3fc",
-    description: "Google live fact retrieval, competitor price benchmarking, and regulatory discovery.",
-    tools: ["Google Search", "DuckDuckGo Fallback", "Open-Meteo"],
+    description: "Live web research, competitor pricing, and market demand intelligence.",
+    tools: ["Search Engine"],
     metrics: { throughput: "Real-time", latency: "420ms" },
   },
-  {
+  qa: {
     id: "qa",
     name: "QA & Evidence Gate",
     role: "Strategic Integrity Auditor",
@@ -128,154 +223,10 @@ const INITIAL_NODES: BrainNode[] = [
     color: "#eab308",
     emissive: "#fde047",
     description: "Evidence gating, hallucination defense, sanity validation, and QA verification.",
-    tools: ["Claim Validator", "Reality Checker"],
+    tools: ["Claim Validator"],
     metrics: { throughput: "Enforced", latency: "95ms" },
   },
-
-  // 3. Right Hemisphere (Sales, Performance Media, Client Success, GTM)
-  {
-    id: "dept:sales-bd",
-    name: "Sales & Outbound BD",
-    role: "Pipeline & Deal Acquisition",
-    kind: "department",
-    lobe: "growth_expansion",
-    hemisphere: "right",
-    position: [65, 30, 25],
-    size: 7,
-    color: "#10b981",
-    emissive: "#34d399",
-    description: "Cold outreach, lead qualification, CRM synchronization, and pipeline closing sequences.",
-    tools: ["HubSpot MCP", "Outreach Engine"],
-    metrics: { throughput: "Streaming", latency: "210ms" },
-  },
-  {
-    id: "dept:meta-ads",
-    name: "Paid Media & Meta Ads",
-    role: "Performance Campaign Execution",
-    kind: "department",
-    lobe: "performance_media",
-    hemisphere: "right",
-    position: [60, -20, 35],
-    size: 7,
-    color: "#ec4899",
-    emissive: "#f472b6",
-    description: "Ad creative variations, ROAS optimization, budget allocation, and audience retargeting.",
-    tools: ["ComfyUI", "Whisper", "Piper Voice"],
-    metrics: { throughput: "Scaled", latency: "490ms" },
-  },
-  {
-    id: "dept:client-success",
-    name: "Client Success & Onboarding",
-    role: "Retention & Expansion Operations",
-    kind: "department",
-    lobe: "growth_expansion",
-    hemisphere: "right",
-    position: [45, -55, -20],
-    size: 6,
-    color: "#14b8a6",
-    emissive: "#5eead4",
-    description: "Onboarding workflows, health scores, recurring touchpoints, and account retention.",
-    tools: ["Notion Sync", "Slack MCP"],
-    metrics: { throughput: "Nominal", latency: "140ms" },
-  },
-  {
-    id: "dept:strategy",
-    name: "Executive GTM Strategy",
-    role: "High-Leverage Strategic Orchestration",
-    kind: "department",
-    lobe: "creative_strategy",
-    hemisphere: "right",
-    position: [70, 15, -35],
-    size: 6.5,
-    color: "#6366f1",
-    emissive: "#818cf8",
-    description: "Offer design, high-ticket pricing, market positioning, and full funnel architecture.",
-    tools: ["Funnel Simulator", "Pricing Architect"],
-    metrics: { throughput: "Synthesized", latency: "260ms" },
-  },
-
-  // 4. Peripheral Tendrils & Custom Tool Nodes
-  {
-    id: "mcp:hubspot",
-    name: "HubSpot CRM Connector",
-    role: "Live CRM Data Pipeline",
-    kind: "connector",
-    lobe: "growth_expansion",
-    hemisphere: "right",
-    position: [92, 42, 35],
-    size: 3.5,
-    color: "#fb923c",
-    emissive: "#fdba74",
-    description: "Official HubSpot Protocol connector with contact management and deal pipeline tools.",
-    tools: ["hubspot_get_contacts", "hubspot_create_deal"],
-  },
-  {
-    id: "mcp:notion",
-    name: "Notion Knowledge Base",
-    role: "Vault & Shared Memory",
-    kind: "connector",
-    lobe: "growth_expansion",
-    hemisphere: "right",
-    position: [68, -65, -35],
-    size: 3.5,
-    color: "#f87171",
-    emissive: "#fca5a5",
-    description: "Notion workspace synchronization for client documents and strategy notes.",
-    tools: ["notion_search_pages", "notion_append_block"],
-  },
-  {
-    id: "tool:open-meteo",
-    name: "Open-Meteo Weather API",
-    role: "Environmental Planning",
-    kind: "tendril",
-    lobe: "analytics_governance",
-    hemisphere: "left",
-    position: [-95, 25, -45],
-    size: 3.5,
-    color: "#38bdf8",
-    emissive: "#7dd3fc",
-    description: "Zero-auth forecast tool used for regional campaign timing and location planning.",
-    tools: ["open_meteo_forecast"],
-  },
-  {
-    id: "tool:world-bank",
-    name: "World Bank Indicator API",
-    role: "Macroeconomic Intelligence",
-    kind: "tendril",
-    lobe: "analytics_governance",
-    hemisphere: "left",
-    position: [-85, -38, 45],
-    size: 3.5,
-    color: "#fbbf24",
-    emissive: "#fef08a",
-    description: "Zero-auth public economic and development indicator database.",
-    tools: ["world_bank_indicator"],
-  },
-];
-
-const INITIAL_AXONS: BrainAxon[] = [
-  // Core to Departments
-  { id: "ax-hq-marketing", source: "hq", target: "dept:marketing", color: "#8b5cf6", curveOffset: [-10, 15, 10] },
-  { id: "ax-hq-finance", source: "hq", target: "dept:finance-ops", color: "#f59e0b", curveOffset: [-15, -10, 15] },
-  { id: "ax-hq-research", source: "hq", target: "research", color: "#38bdf8", curveOffset: [-20, 10, -15] },
-  { id: "ax-hq-qa", source: "hq", target: "qa", color: "#eab308", curveOffset: [-10, -25, -10] },
-  { id: "ax-hq-sales", source: "hq", target: "dept:sales-bd", color: "#10b981", curveOffset: [10, 15, 10] },
-  { id: "ax-hq-meta", source: "hq", target: "dept:meta-ads", color: "#ec4899", curveOffset: [15, -10, 15] },
-  { id: "ax-hq-cs", source: "hq", target: "dept:client-success", color: "#14b8a6", curveOffset: [10, -25, -10] },
-  { id: "ax-hq-strat", source: "hq", target: "dept:strategy", color: "#6366f1", curveOffset: [20, 10, -15] },
-
-  // Inter-Hemispheric Bridges (Corpus Callosum)
-  { id: "ax-bridge-mkt-sales", source: "dept:marketing", target: "dept:sales-bd", color: "#818cf8", curveOffset: [0, 45, 30], isInterHemisphere: true },
-  { id: "ax-bridge-fin-meta", source: "dept:finance-ops", target: "dept:meta-ads", color: "#f472b6", curveOffset: [0, -35, 45], isInterHemisphere: true },
-  { id: "ax-bridge-res-strat", source: "research", target: "dept:strategy", color: "#38bdf8", curveOffset: [0, 30, -50], isInterHemisphere: true },
-  { id: "ax-bridge-qa-cs", source: "qa", target: "dept:client-success", color: "#2dd4bf", curveOffset: [0, -60, -30], isInterHemisphere: true },
-
-  // Department to Tendril / Connector
-  { id: "ax-sales-hubspot", source: "dept:sales-bd", target: "mcp:hubspot", color: "#10b981", curveOffset: [10, 5, 5] },
-  { id: "ax-cs-notion", source: "dept:client-success", target: "mcp:notion", color: "#14b8a6", curveOffset: [10, -8, -5] },
-  { id: "ax-res-meteo", source: "research", target: "tool:open-meteo", color: "#38bdf8", curveOffset: [-10, 5, -5] },
-  { id: "ax-fin-worldbank", source: "dept:finance-ops", target: "tool:world-bank", color: "#f59e0b", curveOffset: [-10, -5, 5] },
-];
+};
 
 export function NeuralBrainCanvas({ className = "" }: { className?: string } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -319,7 +270,50 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     };
   }, [loadDynamicTopology]);
 
-  const allNodes = useMemo(() => [...INITIAL_NODES, ...dynamicTopology.nodes], [dynamicTopology.nodes]);
+  // Department nodes appear ONLY when actively executing a job matching their lobe/id
+  const activeDepartmentNodes = useMemo(() => {
+    if (telemetry.executionState !== "processing") {
+      return [];
+    }
+    const nodes: BrainNode[] = [];
+    const activeLobe = telemetry.activeLobe;
+    const activeNodeId = telemetry.activeNodeId;
+
+    Object.values(DEPARTMENT_NODE_DEFINITIONS).forEach((dept) => {
+      const isLobeMatch = activeLobe && dept.lobe === activeLobe;
+      const isNodeMatch = activeNodeId && (dept.id === activeNodeId || dept.id === `dept:${activeNodeId}`);
+      if (isLobeMatch || isNodeMatch) {
+        nodes.push(dept);
+      }
+    });
+    return nodes;
+  }, [telemetry.executionState, telemetry.activeLobe, telemetry.activeNodeId]);
+
+  const activeDepartmentAxons = useMemo(() => {
+    return activeDepartmentNodes.map((dept) => ({
+      id: `ax-hq-${dept.id}`,
+      source: "hq",
+      target: dept.id,
+      color: dept.color,
+      curveOffset: [
+        dept.position[0] * 0.2,
+        dept.position[1] * 0.2,
+        dept.position[2] * 0.2,
+      ] as [number, number, number],
+    }));
+  }, [activeDepartmentNodes]);
+
+  const allDynamicNodes = useMemo(
+    () => [...activeDepartmentNodes, ...dynamicTopology.nodes],
+    [activeDepartmentNodes, dynamicTopology.nodes]
+  );
+
+  const allDynamicAxons = useMemo(
+    () => [...activeDepartmentAxons, ...dynamicTopology.axons],
+    [activeDepartmentAxons, dynamicTopology.axons]
+  );
+
+  const allNodes = useMemo(() => [...INITIAL_NODES, ...allDynamicNodes], [allDynamicNodes]);
   const nodeMapRef = useRef<Map<string, BrainNode>>(new Map(allNodes.map((n) => [n.id, n])));
   useEffect(() => {
     nodeMapRef.current = new Map(allNodes.map((n) => [n.id, n]));
@@ -715,15 +709,15 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     }
 
     // Clean up dynamic entries in meshesRef and dynamicParticleSystemsRef
-    dynamicTopology.nodes.forEach((node) => {
+    allDynamicNodes.forEach((node) => {
       meshesRef.current.delete(node.id);
     });
     dynamicParticleSystemsRef.current = [];
 
-    if (dynamicTopology.nodes.length === 0) return;
+    if (allDynamicNodes.length === 0) return;
 
     // Build Dynamic Somas
-    dynamicTopology.nodes.forEach((node) => {
+    allDynamicNodes.forEach((node) => {
       const geometry = new THREE.SphereGeometry(node.size, 32, 32);
       const material = new THREE.MeshStandardMaterial({
         color: new THREE.Color(node.color),
@@ -757,7 +751,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     // Build Dynamic Axons
     const dynamicParticles: { curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[] = [];
 
-    dynamicTopology.axons.forEach((axon) => {
+    allDynamicAxons.forEach((axon) => {
       const sourceNode = nodeMapRef.current.get(axon.source);
       const targetNode = nodeMapRef.current.get(axon.target);
       if (!sourceNode || !targetNode) return;
@@ -803,7 +797,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
 
     dynamicParticleSystemsRef.current = dynamicParticles;
-  }, [dynamicTopology, createHaloTexture]);
+  }, [allDynamicNodes, allDynamicAxons, createHaloTexture]);
 
   // Reset Camera View & Brain Rotation (Explicit user action only)
   const handleResetView = () => {

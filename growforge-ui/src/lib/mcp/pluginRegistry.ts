@@ -16,6 +16,8 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { BrainLobe } from "@/lib/telemetryStore";
 import { getMcpCredential, type McpServerDef, type DetectedMcpTool } from "@/lib/mcp/store";
+import { resolveImageKeys } from "@/lib/imageGen";
+import { listAiModels } from "@/lib/aiModelStore";
 
 export type { DetectedMcpTool };
 
@@ -131,12 +133,13 @@ export async function callCustomMcpTool(
 }
 
 /** Dynamic 3D brain nodes/axons for every connected byo-mcp server's
- *  detected tools. Takes the already-loaded server list rather than reading
- *  its own state, so it always reflects the single mcp/store.ts source. */
+ *  detected tools and every real configured capability key (Higgsfield, BYO AI models).
+ *  Zero synthetic/fake data — only real, currently-true configured connections. */
 export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes: DynamicBrainNode[]; axons: DynamicBrainAxon[] } {
   const nodes: DynamicBrainNode[] = [];
   const axons: DynamicBrainAxon[] = [];
 
+  // 1. Active BYO-MCP Servers & Discovered Tools
   const active = byoMcpServers.filter((s) => (s.status ?? "connected") === "connected" && s.detectedTools?.length);
 
   active.forEach((server, pIdx) => {
@@ -172,8 +175,8 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
       });
 
       axons.push({
-        id: `ax-${parentInfo.parentId}-${nodeId}`,
-        source: parentInfo.parentId,
+        id: `ax-hq-${nodeId}`,
+        source: "hq",
         target: nodeId,
         color: "#06b6d4",
         curveOffset: [Math.cos(angle) * 8, Math.sin(angle) * 8, tIdx % 2 === 0 ? 6 : -6],
@@ -181,6 +184,100 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
       });
     });
   });
+
+  // 2. Real Capability Keys: Higgsfield (Generative Video & Creative Asset Key)
+  try {
+    const imageKeys = resolveImageKeys();
+    if (imageKeys.higgsfieldKey) {
+      const higgsfieldNodeId = "cap:higgsfield";
+      nodes.push({
+        id: higgsfieldNodeId,
+        name: "Higgsfield AI",
+        role: "Generative Video & Image Engine",
+        kind: "connector",
+        lobe: "performance_media",
+        hemisphere: "right",
+        position: [80, -22, 40],
+        size: 5,
+        color: "#ec4899",
+        emissive: "#f472b6",
+        description: `Direct API capability key for AI video and campaign creative generation (${imageKeys.source}).`,
+        tools: ["generate_higgsfield_image", "generate_higgsfield_video"],
+        pluginId: "higgsfield",
+      });
+
+      axons.push({
+        id: "ax-hq-cap-higgsfield",
+        source: "hq",
+        target: higgsfieldNodeId,
+        color: "#ec4899",
+        curveOffset: [18, -12, 14],
+        isDynamic: true,
+      });
+    }
+  } catch {
+    // Non-blocking if vault cannot be reached
+  }
+
+  // 3. Real Capability Keys: Configured AI Models (OpenAI, Gemini, Claude, Groq, Ollama, Custom)
+  try {
+    const configuredModels = listAiModels().filter((m) => m.isConfigured);
+    configuredModels.forEach((model, mIdx) => {
+      const modelLobe: BrainLobe =
+        model.taskRole === "image"
+          ? "performance_media"
+          : model.taskRole === "utility"
+            ? "analytics_governance"
+            : "neural_core";
+
+      const parentInfo = LOBE_PARENT_MAP[modelLobe] || LOBE_PARENT_MAP.neural_core;
+      const angle = (mIdx / Math.max(configuredModels.length, 1)) * Math.PI * 2;
+      const radius = 32 + (mIdx % 2) * 10;
+      const posX = parentInfo.center[0] + Math.cos(angle) * radius;
+      const posY = parentInfo.center[1] + Math.sin(angle) * 14 + 10;
+      const posZ = parentInfo.center[2] + Math.sin(angle * 1.5) * 16;
+
+      const providerColors: Record<string, { color: string; emissive: string }> = {
+        openai: { color: "#10a37f", emissive: "#34d399" },
+        "openai-compatible": { color: "#10a37f", emissive: "#34d399" },
+        anthropic: { color: "#d97706", emissive: "#fbbf24" },
+        gemini: { color: "#3b82f6", emissive: "#60a5fa" },
+        groq: { color: "#f97316", emissive: "#fdba74" },
+        ollama: { color: "#8b5cf6", emissive: "#a78bfa" },
+        openrouter: { color: "#06b6d4", emissive: "#22d3ee" },
+      };
+
+      const colorScheme = providerColors[model.providerType] || { color: "#38bdf8", emissive: "#7dd3fc" };
+      const modelNodeId = `cap:model:${model.id}`;
+
+      nodes.push({
+        id: modelNodeId,
+        name: model.name,
+        role: `AI Model Connector (${model.providerType})`,
+        kind: "connector",
+        lobe: modelLobe,
+        hemisphere: parentInfo.hemisphere,
+        position: [posX, posY, posZ],
+        size: 4.5,
+        color: colorScheme.color,
+        emissive: colorScheme.emissive,
+        description: `Configured ${model.providerType} AI model connector (${model.source} key, ${model.modelName}).`,
+        tools: [model.modelName],
+        pluginId: model.id,
+      });
+
+      axons.push({
+        id: `ax-hq-cap-${model.id}`,
+        source: "hq",
+        target: modelNodeId,
+        color: colorScheme.color,
+        curveOffset: [Math.cos(angle) * 10, Math.sin(angle) * 8, 8],
+        isDynamic: true,
+      });
+    });
+  } catch {
+    // Non-blocking if model store cannot be loaded
+  }
 
   return { nodes, axons };
 }

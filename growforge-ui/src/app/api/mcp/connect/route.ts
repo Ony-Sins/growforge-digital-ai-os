@@ -24,11 +24,17 @@ async function requireAuth() {
   return { ok: true as const, session };
 }
 
-/** Empty topology shape for a public-preview visitor — same zeroed structure
- *  generateDynamicTopology() returns for zero servers, so the Brain canvas
- *  renders its genuinely-empty state instead of erroring on a missing field. */
+/** Empty topology shape for a public-preview visitor. Deliberately a hardcoded
+ *  literal, NOT a call to generateDynamicTopology([]) — that function reads
+ *  the owner's real vault (resolveImageKeys) and real AI model config
+ *  (listAiModels) unconditionally, regardless of the byoMcpServers argument,
+ *  so calling it here would leak the owner's real Higgsfield/AI-provider
+ *  nodes to a preview visitor even with an empty server list. Found and
+ *  fixed 2026-09-21 while auditing the capability-key node fix that
+ *  introduced this — same class of bug as items 42-51, caught before it
+ *  reached a real incognito test. */
 function emptyByoMcpResponse() {
-  return { ok: true, plugins: [], topology: generateDynamicTopology([]) };
+  return { ok: true, plugins: [], topology: { nodes: [], axons: [] } };
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {

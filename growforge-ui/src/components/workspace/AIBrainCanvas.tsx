@@ -13,24 +13,9 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Brain, CheckCircle2, Loader2, Plug, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
-
-/**
- * AI Brain — a real, glowing graph of the actual operating system, not a
- * decorative illustration. Every node here maps to something genuinely
- * true right now: the 8 real departments (departments.ts) around a central
- * HQ hub, and the real MCP connectors (mcp/store.ts) each department is
- * actually allowed to use. No invented "35 subagents" tier — GrowForge's
- * real architecture doesn't have one, and this session spent a long time
- * ripping fake tiers/numbers out of the rest of the app; this isn't the
- * place to reintroduce one for the sake of a prettier picture.
- *
- * Deliberately 2D (@xyflow/react, already used by ProjectCanvas) rather
- * than the full 3D void/brain-mesh concept — see the roadmap: this proves
- * the interaction model first, cheaply, on a library already proven in
- * this codebase. A true 3D version is a possible later upgrade, not a
- * rewrite of this one.
- */
+import { Brain, CheckCircle2, Key, Loader2, Plug, ShieldCheck, Sparkles, Trash2, X, XCircle } from "lucide-react";
+import { useTelemetry } from "@/lib/useTelemetry";
+import type { BrainLobe } from "@/lib/telemetryStore";
 
 interface DepartmentInfo {
   id: string;
@@ -49,34 +34,61 @@ interface McpServerInfo {
   hasCredential: boolean;
 }
 
-type BrainNodeKind = "hub" | "department" | "connector";
+interface DynamicTopologyNode {
+  id: string;
+  label: string;
+  type: "mcp_server" | "mcp_tool" | "capability_key" | "ai_model";
+  status: "active" | "connected" | "standby";
+  lobe: BrainLobe;
+  tools?: string[];
+}
+
+type BrainNodeKind = "hub" | "department" | "connector" | "capability";
 
 interface BrainNodeData {
   kind: BrainNodeKind;
   label: string;
   connectorCount?: number;
+  departmentId?: string;
+  serverId?: string;
+  capabilityId?: string;
+  nodeType?: string;
+  summary?: string;
+  tools?: string[];
   [key: string]: unknown;
 }
 type BrainNode = Node<BrainNodeData, "brain">;
+
+const DEPARTMENT_LOBE_MAP: Record<string, BrainLobe> = {
+  "sales-bd": "growth_expansion",
+  "marketing": "creative_strategy",
+  "meta-ads": "performance_media",
+  "finance-ops": "analytics_governance",
+  "client-success": "growth_expansion",
+  "web-design": "creative_strategy",
+  "web-dev": "neural_core",
+  "ai-automation": "neural_core",
+  "research": "analytics_governance",
+  "qa": "analytics_governance",
+};
 
 function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
   const { kind, label } = data;
   const isHub = kind === "hub";
   const isDept = kind === "department";
+  const isCap = kind === "capability";
 
   const size = isHub ? "h-20 w-20" : isDept ? "h-14 w-14" : "h-9 w-9";
   const glow = isHub
     ? "shadow-[0_0_40px_10px_rgba(0,180,255,0.55)] border-electric"
     : isDept
       ? "shadow-[0_0_24px_6px_rgba(230,175,46,0.45)] border-gold"
-      : "shadow-[0_0_14px_3px_rgba(16,185,129,0.5)] border-emerald";
+      : isCap
+        ? "shadow-[0_0_16px_4px_rgba(168,85,247,0.55)] border-purple-400"
+        : "shadow-[0_0_14px_3px_rgba(16,185,129,0.5)] border-emerald";
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      {/* Edges run connector -> hub/department and hub -> department:
-          connectors are always a source only; hub is both (source for
-          hub->dept, target for an unrestricted connector's edge to it);
-          departments are always a target only. */}
       {(isHub || isDept) && <Handle type="target" position={Position.Top} className="!opacity-0" />}
       <div
         className={`flex ${size} items-center justify-center rounded-full border-2 bg-app/90 backdrop-blur-sm transition-transform ${glow} ${
@@ -87,13 +99,25 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
           <Brain className="h-8 w-8 text-electric" />
         ) : isDept ? (
           <ShieldCheck className="h-5 w-5 text-gold" />
+        ) : isCap ? (
+          data.nodeType === "ai_model" ? (
+            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+          ) : (
+            <Key className="h-3.5 w-3.5 text-pink-400" />
+          )
         ) : (
           <Plug className="h-3.5 w-3.5 text-emerald" />
         )}
       </div>
       <span
         className={`max-w-[6.5rem] truncate rounded-full bg-app/80 px-2 py-0.5 text-center font-mono text-[10px] backdrop-blur-sm ${
-          isHub ? "font-bold text-electric" : isDept ? "font-semibold text-gold" : "text-emerald/90"
+          isHub
+            ? "font-bold text-electric"
+            : isDept
+              ? "font-semibold text-gold"
+              : isCap
+                ? "text-purple-300 font-medium"
+                : "text-emerald/90"
         }`}
       >
         {label}
@@ -109,7 +133,11 @@ const HUB_ID = "hub";
 const DEPT_RADIUS = 260;
 const CONNECTOR_RADIUS = 130;
 
-function buildGraph(departments: DepartmentInfo[], servers: McpServerInfo[]): { nodes: BrainNode[]; edges: Edge[] } {
+function buildGraph(
+  departments: DepartmentInfo[],
+  servers: McpServerInfo[],
+  capabilityNodes: DynamicTopologyNode[]
+): { nodes: BrainNode[]; edges: Edge[] } {
   const nodes: BrainNode[] = [
     {
       id: HUB_ID,
@@ -147,13 +175,10 @@ function buildGraph(departments: DepartmentInfo[], servers: McpServerInfo[]): { 
     });
   });
 
-  // Connectors: scoped to specific departments orbit each one they're
-  // allowed for (one node can have edges to several departments); an
-  // unrestricted connector (allowedDepartments: []) orbits HQ directly,
-  // since "available everywhere" is best drawn as attached to the brain
-  // itself rather than arbitrarily picking one department to sit near.
+  // Connectors: scoped to specific active departments or orbiting HQ directly
   servers.forEach((server) => {
-    const targets = server.allowedDepartments.length > 0 ? server.allowedDepartments : [HUB_ID];
+    const activeTargets = server.allowedDepartments.filter((dId) => deptPositions.has(dId));
+    const targets = activeTargets.length > 0 ? activeTargets : [HUB_ID];
     const anchor = targets[0] === HUB_ID ? { x: 0, y: 0 } : (deptPositions.get(targets[0]) ?? { x: 0, y: 0 });
     const angleJitter = (hashString(server.id) % 360) * (Math.PI / 180);
     const x = anchor.x + Math.cos(angleJitter) * CONNECTOR_RADIUS;
@@ -179,6 +204,39 @@ function buildGraph(departments: DepartmentInfo[], servers: McpServerInfo[]): { 
     }
   });
 
+  // Real Capability Keys (e.g. Higgsfield, configured AI models)
+  capabilityNodes.forEach((cap, idx) => {
+    // Avoid duplicate nodes if already in servers
+    if (nodes.some((n) => n.id === cap.id)) return;
+
+    const angle = ((idx + 0.5) / Math.max(capabilityNodes.length, 1)) * Math.PI * 2;
+    const radius = 180;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+
+    nodes.push({
+      id: cap.id,
+      type: "brain",
+      position: { x, y },
+      data: {
+        kind: "capability",
+        label: cap.label,
+        capabilityId: cap.id,
+        nodeType: cap.type,
+        tools: cap.tools,
+      },
+      draggable: true,
+    });
+
+    edges.push({
+      id: `${cap.id}->${HUB_ID}`,
+      source: cap.id,
+      target: HUB_ID,
+      animated: true,
+      style: { stroke: "rgba(168,85,247,0.45)", strokeWidth: 1.5 },
+    });
+  });
+
   return { nodes, edges };
 }
 
@@ -192,6 +250,7 @@ function InspectorPanel({
   selection,
   departments,
   servers,
+  capabilities,
   testResult,
   onTested,
   onClose,
@@ -200,6 +259,7 @@ function InspectorPanel({
   selection: { kind: BrainNodeKind; id: string };
   departments: DepartmentInfo[];
   servers: McpServerInfo[];
+  capabilities: DynamicTopologyNode[];
   testResult: { ok: boolean; tools?: { name: string }[]; error?: string } | null;
   onTested: (serverId: string, result: { ok: boolean; tools?: { name: string }[]; error?: string }) => void;
   onClose: () => void;
@@ -209,6 +269,7 @@ function InspectorPanel({
   const [busy, setBusy] = useState(false);
 
   const server = selection.kind === "connector" ? servers.find((s) => s.id === selection.id) : undefined;
+  const capability = selection.kind === "capability" ? capabilities.find((c) => c.id === selection.id) : undefined;
   const department = selection.kind === "department" ? departments.find((d) => d.id === selection.id) : undefined;
   const scopedServers = department ? servers.filter((s) => s.allowedDepartments.length === 0 || s.allowedDepartments.includes(department.id)) : [];
 
@@ -237,23 +298,53 @@ function InspectorPanel({
     }
   }
 
+  const title =
+    selection.kind === "hub"
+      ? "GrowForge HQ"
+      : selection.kind === "department"
+        ? department?.name ?? "Department"
+        : selection.kind === "capability"
+          ? capability?.label ?? "Capability Key"
+          : server?.name ?? "MCP Connector";
+
+  const category =
+    selection.kind === "hub"
+      ? "Orchestrator"
+      : selection.kind === "department"
+        ? "Active Department"
+        : selection.kind === "capability"
+          ? capability?.type === "ai_model"
+            ? "Active AI Model"
+            : "Capability Key"
+          : "MCP Connector";
+
   return (
     <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-sm flex-col border-l border-electric/20 bg-app/95 shadow-2xl backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-electric/20 p-4">
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-            selection.kind === "hub" ? "bg-electric/15 text-electric" : selection.kind === "department" ? "bg-gold/15 text-gold" : "bg-emerald/15 text-emerald"
+            selection.kind === "hub"
+              ? "bg-electric/15 text-electric"
+              : selection.kind === "department"
+                ? "bg-gold/15 text-gold"
+                : selection.kind === "capability"
+                  ? "bg-purple-500/15 text-purple-400"
+                  : "bg-emerald/15 text-emerald"
           }`}
         >
-          {selection.kind === "hub" ? <Brain className="h-4 w-4" /> : selection.kind === "department" ? <ShieldCheck className="h-4 w-4" /> : <Plug className="h-4 w-4" />}
+          {selection.kind === "hub" ? (
+            <Brain className="h-4 w-4" />
+          ) : selection.kind === "department" ? (
+            <ShieldCheck className="h-4 w-4" />
+          ) : selection.kind === "capability" ? (
+            <Sparkles className="h-4 w-4" />
+          ) : (
+            <Plug className="h-4 w-4" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            {selection.kind === "hub" ? "Orchestrator" : selection.kind === "department" ? "Department" : "MCP Connector"}
-          </p>
-          <h3 className="font-heading text-sm font-semibold text-white">
-            {selection.kind === "hub" ? "GrowForge HQ" : department?.name ?? server?.name}
-          </h3>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{category}</p>
+          <h3 className="font-heading text-sm font-semibold text-white">{title}</h3>
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-white/10 hover:text-white">
           <X className="h-4 w-4" />
@@ -263,8 +354,9 @@ function InspectorPanel({
       <div className="flex-1 overflow-y-auto p-4 text-sm text-secondary">
         {selection.kind === "hub" && (
           <p>
-            {departments.length} departments · {servers.length} MCP connector{servers.length === 1 ? "" : "s"} connected.
-            Click a department or connector node to inspect it.
+            {departments.length > 0 ? `${departments.length} active department(s) running.` : "All departments currently idle (standby)."}
+            {" · "}
+            {servers.length + capabilities.length} active capability/tool connector(s).
           </p>
         )}
 
@@ -283,6 +375,30 @@ function InspectorPanel({
                   </li>
                 ))}
               </ul>
+            )}
+          </>
+        )}
+
+        {capability && (
+          <>
+            <p className="mb-2 text-xs text-muted">
+              {capability.type === "ai_model"
+                ? "Configured AI Model directly available to the neural orchestrator."
+                : "Real configured capability key connected to the neural brain."}
+            </p>
+            <p className="mb-4 text-xs font-mono text-purple-300">Status: {capability.status}</p>
+            {capability.tools && capability.tools.length > 0 && (
+              <>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Exposed Tools / Endpoints</p>
+                <ul className="space-y-1.5">
+                  {capability.tools.map((t) => (
+                    <li key={t} className="flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1.5 text-xs text-purple-200">
+                      <Sparkles className="h-3 w-3 text-purple-400" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </>
         )}
@@ -331,22 +447,33 @@ function InspectorPanel({
 type ConnectorTestResult = { ok: boolean; tools?: { name: string }[]; error?: string };
 
 export function AIBrainCanvas() {
-  const [departments, setDepartments] = useState<DepartmentInfo[]>([]);
+  const { telemetry } = useTelemetry();
+  const [allDepartments, setAllDepartments] = useState<DepartmentInfo[]>([]);
   const [servers, setServers] = useState<McpServerInfo[]>([]);
+  const [capabilities, setCapabilities] = useState<DynamicTopologyNode[]>([]);
   const [selection, setSelection] = useState<{ kind: BrainNodeKind; id: string } | null>(null);
   const [loaded, setLoaded] = useState(false);
-  // Keyed by server id so a connector's last real test result stays visible
-  // whenever that node is reselected — it only changes when that specific
-  // connector is re-tested, never just from switching nodes.
   const [testResults, setTestResults] = useState<Record<string, ConnectorTestResult>>({});
 
   async function refresh() {
     try {
-      const res = await fetch("/api/mcp");
-      if (!res.ok) return;
-      const data = await res.json();
-      setDepartments(Array.isArray(data.departments) ? data.departments : []);
-      setServers(Array.isArray(data.servers) ? data.servers : []);
+      const [mcpRes, connectRes] = await Promise.all([
+        fetch("/api/mcp"),
+        fetch("/api/mcp/connect"),
+      ]);
+
+      if (mcpRes.ok) {
+        const data = await mcpRes.json();
+        setAllDepartments(Array.isArray(data.departments) ? data.departments : []);
+        setServers(Array.isArray(data.servers) ? data.servers : []);
+      }
+
+      if (connectRes.ok) {
+        const connectData = await connectRes.json();
+        const nodes: DynamicTopologyNode[] = Array.isArray(connectData.nodes) ? connectData.nodes : [];
+        // Filter for capability keys and ai models (or MCP servers not already in servers)
+        setCapabilities(nodes.filter((n) => n.type === "capability_key" || n.type === "ai_model"));
+      }
     } finally {
       setLoaded(true);
     }
@@ -358,12 +485,33 @@ export function AIBrainCanvas() {
     return () => clearInterval(interval);
   }, []);
 
-  const graph = useMemo(() => buildGraph(departments, servers), [departments, servers]);
+  // Filter departments so they only appear when actively processing
+  const activeDepartments = useMemo(() => {
+    if (telemetry.executionState !== "processing" || !telemetry.activeLobe) {
+      return [];
+    }
+    return allDepartments.filter((d) => DEPARTMENT_LOBE_MAP[d.id] === telemetry.activeLobe);
+  }, [allDepartments, telemetry.executionState, telemetry.activeLobe]);
+
+  const graph = useMemo(
+    () => buildGraph(activeDepartments, servers, capabilities),
+    [activeDepartments, servers, capabilities]
+  );
+
   const nodesWithSelection = useMemo(
     () =>
       graph.nodes.map((n) => ({
         ...n,
-        selected: selection ? n.id === (selection.kind === "hub" ? HUB_ID : selection.kind === "department" ? `dept:${selection.id}` : `mcp:${selection.id}`) : false,
+        selected: selection
+          ? n.id ===
+            (selection.kind === "hub"
+              ? HUB_ID
+              : selection.kind === "department"
+                ? `dept:${selection.id}`
+                : selection.kind === "capability"
+                  ? selection.id
+                  : `mcp:${selection.id}`)
+          : false,
       })),
     [graph.nodes, selection],
   );
@@ -377,7 +525,7 @@ export function AIBrainCanvas() {
         <div className="min-w-0 flex-1">
           <h2 className="font-heading text-base font-semibold text-white">AI Brain</h2>
           <p className="text-xs text-secondary">
-            The real shape of your operating system — HQ, departments, and every connected MCP tool. Click a node to inspect it.
+            The real shape of your operating system — HQ, active departments, and connected capability tools. Click a node to inspect it.
           </p>
         </div>
       </div>
@@ -392,6 +540,7 @@ export function AIBrainCanvas() {
               const data = node.data as BrainNodeData;
               if (data.kind === "hub") setSelection({ kind: "hub", id: HUB_ID });
               else if (data.kind === "department") setSelection({ kind: "department", id: data.departmentId as string });
+              else if (data.kind === "capability") setSelection({ kind: "capability", id: data.capabilityId as string });
               else setSelection({ kind: "connector", id: data.serverId as string });
             }}
             onPaneClick={() => setSelection(null)}
@@ -409,8 +558,9 @@ export function AIBrainCanvas() {
           <InspectorPanel
             key={`${selection.kind}:${selection.id}`}
             selection={selection}
-            departments={departments}
+            departments={allDepartments}
             servers={servers}
+            capabilities={capabilities}
             testResult={selection.kind === "connector" ? testResults[selection.id] ?? null : null}
             onTested={(serverId, result) => setTestResults((prev) => ({ ...prev, [serverId]: result }))}
             onClose={() => setSelection(null)}
