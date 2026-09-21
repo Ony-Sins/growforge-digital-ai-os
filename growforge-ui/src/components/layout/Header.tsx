@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Bell, ChevronRight, CircuitBoard, LogOut, Search } from "lucide-react";
+import { Bell, ChevronRight, CircuitBoard, LogOut, Search, Sparkles } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { useAppState } from "@/lib/appState";
@@ -23,7 +23,7 @@ function initialsFor(user: HeaderUser | null): string {
 }
 
 export function Header({ user }: { user: HeaderUser | null }) {
-  const { setActiveView, avatarUrl } = useAppState();
+  const { setActiveView, avatarUrl, logoUrl, companyName } = useAppState();
   const pending = usePendingSummary();
   const pendingCount = pending.approvals + pending.consultations + pending.unapprovedPlans;
   const [notifOpen, setNotifOpen] = useState(false);
@@ -34,11 +34,15 @@ export function Header({ user }: { user: HeaderUser | null }) {
           element returns you to the dashboard home view. */}
       <button
         type="button"
-        onClick={() => setActiveView("dashboard")}
+        onClick={() => setActiveView(companyName || logoUrl ? "dashboard" : "profile")}
         aria-label="Back to dashboard home"
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center bg-[#111827] shadow-sm border border-[#333333] rounded-xl p-1.5 transition-transform hover:scale-105 md:hidden"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center bg-[#111827] shadow-sm border border-[#333333] rounded-xl p-1.5 transition-transform hover:scale-105 md:hidden overflow-hidden"
       >
-        <Image src="/logo-mark.png" alt="GrowForge Digital" fill className="object-contain p-1" sizes="40px" />
+        {logoUrl ? (
+          <Image src={logoUrl} alt={companyName || "Brand Logo"} fill className="object-contain p-1" sizes="40px" />
+        ) : (
+          <Sparkles className="h-5 w-5 text-electric" />
+        )}
       </button>
 
       {/* Breadcrumb — the brand/console crumb is a real way home */}

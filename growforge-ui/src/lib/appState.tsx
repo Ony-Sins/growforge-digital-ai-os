@@ -129,6 +129,16 @@ interface AppStateValue {
   profileName: string | null;
   setProfileName: (name: string | null) => void;
 
+  /** The operator's uploaded brand logo (UserMemory.profile.logoUrl),
+   *  shared here so Sidebar and Header always render the custom brand mark. */
+  logoUrl: string | null;
+  setLogoUrl: (url: string | null) => void;
+
+  /** The operator's company/brand name (UserMemory.profile.companyName),
+   *  shared here so Header, Sidebar, and Workspace display the real brand name. */
+  companyName: string | null;
+  setCompanyName: (name: string | null) => void;
+
   /** Simple/Advanced UI mode — default is Simple (everyday-user-friendly,
    *  no dev/technical surfaces). Advanced reveals the Admin Drawer button,
    *  raw connector/MCP config, and per-department access toggles — real
@@ -189,6 +199,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
   const [isVaultLibraryOpen, setIsVaultLibraryOpen] = useState(() => initialLocation?.panel === "vault");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const [chatViewMode, setChatViewMode] = useState<"docked" | "maximized">("docked");
   const [uiMode, setUiModeState] = useState<UiMode>("simple");
 
@@ -200,6 +212,10 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
         if (typeof url === "string" && url) setAvatarUrl(url);
         const name = data?.memory?.profile?.fullName;
         if (typeof name === "string" && name) setProfileName(name);
+        const logo = data?.memory?.profile?.logoUrl;
+        if (typeof logo === "string" && logo) setLogoUrl(logo);
+        const comp = data?.memory?.profile?.companyName;
+        if (typeof comp === "string" && comp) setCompanyName(comp);
       })
       .catch(() => {
         // no avatar or memory yet, or not reachable — Header/Workspace fall back to defaults
@@ -425,6 +441,10 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       setAvatarUrl,
       profileName,
       setProfileName,
+      logoUrl,
+      setLogoUrl,
+      companyName,
+      setCompanyName,
       chatViewMode,
       setChatViewMode,
       uiMode,
@@ -470,6 +490,10 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
       setAvatarUrl,
       profileName,
       setProfileName,
+      logoUrl,
+      setLogoUrl,
+      companyName,
+      setCompanyName,
       chatViewMode,
       setChatViewMode,
       uiMode,

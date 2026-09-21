@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { useAppState } from "@/lib/appState";
 import type { BrainLobe } from "@/lib/telemetryStore";
 import {
   Brain,
@@ -20,6 +21,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { NodeDeleteConfirmModal, type DeletableNodeType } from "@/components/workspace/NodeDeleteConfirmModal";
+import {
+  generateProceduralBrainShell,
+  calculateNodeBrainPosition,
+  type PointMetadata,
+} from "./brainGeometry";
 
 export interface BrainNode {
   id: string;
@@ -55,7 +61,7 @@ const LOBE_COLORS: Record<BrainLobe, { main: string; emissive: string; label: st
 };
 
 const INITIAL_NODES: BrainNode[] = [
-  // 1. Central Core — the single true structural minimum
+  // 1. Central Core — the single true structural minimum anchored in the midbrain
   {
     id: "hq",
     name: "GrowForge HQ Core",
@@ -63,9 +69,9 @@ const INITIAL_NODES: BrainNode[] = [
     kind: "core",
     lobe: "neural_core",
     hemisphere: "center",
-    position: [0, 10, 0],
-    size: 9,
-    color: "#3b82f6",
+    position: [0, 8, 10],
+    size: 8.5,
+    color: "#0078FF",
     emissive: "#60a5fa",
     description: "Multi-agent coordinator, plan synthesizer, and cross-department reconciler.",
     tools: ["orchestrator", "router", "memory_vault"],
@@ -75,7 +81,7 @@ const INITIAL_NODES: BrainNode[] = [
 
 const INITIAL_AXONS: BrainAxon[] = [];
 
-/** Canonical 3D definitions for departments and engine nodes.
+/** Canonical 3D definitions for departments and engine nodes positioned onto procedural shell anchors.
  *  Only rendered dynamically when executionState === "processing" and their mapped lobe is active. */
 export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   "dept:sales-bd": {
@@ -85,8 +91,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "growth_expansion",
     hemisphere: "right",
-    position: [65, 30, 25],
-    size: 7,
+    position: [48, 18, 24],
+    size: 6.8,
     color: "#10b981",
     emissive: "#34d399",
     description: "Cold outreach, lead qualification, CRM synchronization, and pipeline closing sequences.",
@@ -100,8 +106,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "creative_strategy",
     hemisphere: "left",
-    position: [-65, 30, 25],
-    size: 7,
+    position: [-48, 18, 24],
+    size: 6.8,
     color: "#8b5cf6",
     emissive: "#a78bfa",
     description: "Brand narrative, market differentiation, customer avatars, and go-to-market architecture.",
@@ -115,8 +121,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "performance_media",
     hemisphere: "right",
-    position: [60, -20, 35],
-    size: 7,
+    position: [46, -18, 28],
+    size: 6.8,
     color: "#ec4899",
     emissive: "#f472b6",
     description: "Ad creative variations, ROAS optimization, budget allocation, and audience retargeting.",
@@ -130,8 +136,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "analytics_governance",
     hemisphere: "left",
-    position: [-60, -25, 30],
-    size: 7,
+    position: [-46, -18, 22],
+    size: 6.8,
     color: "#f59e0b",
     emissive: "#fbbf24",
     description: "P&L projections, break-even analysis, runway modeling, and risk mitigation.",
@@ -145,8 +151,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "growth_expansion",
     hemisphere: "right",
-    position: [45, -55, -20],
-    size: 6,
+    position: [42, -32, -18],
+    size: 6.0,
     color: "#14b8a6",
     emissive: "#5eead4",
     description: "Onboarding workflows, health scores, recurring touchpoints, and project sequencing.",
@@ -160,7 +166,7 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "creative_strategy",
     hemisphere: "left",
-    position: [-70, 15, -35],
+    position: [-48, 20, -22],
     size: 6.5,
     color: "#6366f1",
     emissive: "#818cf8",
@@ -175,7 +181,7 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "neural_core",
     hemisphere: "left",
-    position: [-45, -55, -20],
+    position: [-42, -32, -18],
     size: 6.5,
     color: "#06b6d4",
     emissive: "#22d3ee",
@@ -190,9 +196,9 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "neural_core",
     hemisphere: "center",
-    position: [0, 45, -30],
-    size: 7,
-    color: "#3b82f6",
+    position: [0, 36, -12],
+    size: 6.8,
+    color: "#0078FF",
     emissive: "#60a5fa",
     description: "Automations, CRM workflows, n8n integrations, and AI tool orchestration.",
     tools: ["n8n Manager"],
@@ -205,7 +211,7 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "analytics_governance",
     hemisphere: "left",
-    position: [-70, 15, -35],
+    position: [-48, 22, -12],
     size: 6.5,
     color: "#38bdf8",
     emissive: "#7dd3fc",
@@ -220,8 +226,8 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     kind: "department",
     lobe: "analytics_governance",
     hemisphere: "left",
-    position: [-45, -55, -20],
-    size: 6,
+    position: [-36, -8, -42],
+    size: 6.0,
     color: "#eab308",
     emissive: "#fde047",
     description: "Evidence gating, hallucination defense, sanity validation, and QA verification.",
@@ -230,9 +236,18 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   },
 };
 
-export function NeuralBrainCanvas({ className = "" }: { className?: string } = {}) {
+export function NeuralBrainCanvas({
+  className = "",
+  userSeed,
+}: {
+  className?: string;
+  userSeed?: string;
+} = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { telemetry } = useTelemetry(2500);
+  const { profileName } = useAppState();
+
+  const activeUserSeed = userSeed || profileName || "growforge-default-operator";
 
   const [selectedNode, setSelectedNode] = useState<BrainNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<BrainNode | null>(null);
@@ -256,8 +271,22 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       if (res.ok) {
         const data = await res.json();
         if (data.topology) {
+          // Reposition dynamic nodes onto the procedural shell coordinates for this user
+          const positionedNodes = ((data.topology.nodes as BrainNode[]) || []).map((node) => {
+            const pos = calculateNodeBrainPosition(
+              node.id,
+              node.lobe || "neural_core",
+              node.hemisphere || "center",
+              activeUserSeed
+            );
+            return {
+              ...node,
+              position: pos,
+            };
+          });
+
           setDynamicTopology({
-            nodes: (data.topology.nodes as BrainNode[]) || [],
+            nodes: positionedNodes,
             axons: (data.topology.axons as BrainAxon[]) || [],
           });
         }
@@ -265,7 +294,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     } catch {
       // Non-blocking
     }
-  }, []);
+  }, [activeUserSeed]);
 
   async function handleConfirmDelete(keepCredentialsOnFile: boolean) {
     if (!deleteTarget) return;
@@ -339,22 +368,27 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const isLobeMatch = activeLobe && dept.lobe === activeLobe;
       const isNodeMatch = activeNodeId && (dept.id === activeNodeId || dept.id === `dept:${activeNodeId}`);
       if (isLobeMatch || isNodeMatch) {
-        nodes.push(dept);
+        // Adjust position with user seed
+        const seededPos = calculateNodeBrainPosition(dept.id, dept.lobe, dept.hemisphere, activeUserSeed);
+        nodes.push({
+          ...dept,
+          position: seededPos,
+        });
       }
     });
     return nodes;
-  }, [telemetry.executionState, telemetry.activeLobe, telemetry.activeNodeId]);
+  }, [telemetry.executionState, telemetry.activeLobe, telemetry.activeNodeId, activeUserSeed]);
 
   const activeDepartmentAxons = useMemo(() => {
     return activeDepartmentNodes.map((dept) => ({
       id: `ax-hq-${dept.id}`,
       source: "hq",
       target: dept.id,
-      color: dept.color,
+      color: "#FFC432", // Earned gold for actively executing department axons
       curveOffset: [
-        dept.position[0] * 0.2,
-        dept.position[1] * 0.2,
-        dept.position[2] * 0.2,
+        dept.position[0] * 0.25,
+        dept.position[1] * 0.25 + 6,
+        dept.position[2] * 0.25,
       ] as [number, number, number],
     }));
   }, [activeDepartmentNodes]);
@@ -383,12 +417,19 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   const brainGroupRef = useRef<THREE.Group | null>(null);
   const dynamicGroupRef = useRef<THREE.Group | null>(null);
 
-  // Persistent Camera Target (allows panning Up/Down/Left/Right into lobes)
-  const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, -5, 0));
+  // Persistent Camera Target
+  const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, -2, 0));
 
   const meshesRef = useRef<Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>>(new Map());
   const particleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
   const dynamicParticleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
+
+  // Ambient Procedural Point Shell Ref
+  const shellPointsRef = useRef<{
+    points: THREE.Points;
+    metadata: PointMetadata[];
+    baseColors: Float32Array;
+  } | null>(null);
 
   // Persistent interaction & state refs to avoid tearing down WebGL on state updates
   const isAutoRotatingRef = useRef(isAutoRotating);
@@ -427,7 +468,29 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     return texture;
   }, []);
 
-  // 1. Initial Scene Setup — Mounts ONLY ONCE (Zero Auto-Reset on Data Polls)
+  // Create soft circular particle texture for ambient points
+  const createParticleTexture = useCallback(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+    grad.addColorStop(0.35, "rgba(0, 160, 255, 0.85)");
+    grad.addColorStop(0.7, "rgba(0, 120, 255, 0.3)");
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
+
+  // 1. Initial Scene Setup — Mounts ONLY ONCE
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -438,12 +501,12 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     // 1. Scene setup
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.fog = new THREE.FogExp2(0x030712, 0.002);
+    scene.fog = new THREE.FogExp2(0x030712, 0.0022);
 
-    // 2. Camera setup with persistent target — fully framed graph & somas without bottom clipping
-    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 1500);
-    camera.position.set(0, 0, 275);
-    cameraTargetRef.current.set(0, -5, 0);
+    // 2. Camera setup with persistent target
+    const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 1500);
+    camera.position.set(0, 5, 260);
+    cameraTargetRef.current.set(0, -2, 0);
     camera.lookAt(cameraTargetRef.current);
     cameraRef.current = camera;
 
@@ -467,22 +530,49 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     dynamicGroupRef.current = dynamicGroup;
 
     // 5. Ambient & Point Lighting
-    const ambientLight = new THREE.AmbientLight(0x1e293b, 2.0);
+    const ambientLight = new THREE.AmbientLight(0x0a192f, 2.2);
     scene.add(ambientLight);
 
-    const coreLight = new THREE.PointLight(0x38bdf8, 3.5, 220);
-    coreLight.position.set(0, 10, 0);
+    const coreLight = new THREE.PointLight(0x0078FF, 3.8, 250);
+    coreLight.position.set(0, 10, 10);
     scene.add(coreLight);
 
-    const leftLight = new THREE.PointLight(0x8b5cf6, 2.4, 200);
-    leftLight.position.set(-65, 25, 25);
+    const leftLight = new THREE.PointLight(0x8b5cf6, 2.2, 220);
+    leftLight.position.set(-60, 20, 20);
     scene.add(leftLight);
 
-    const rightLight = new THREE.PointLight(0x10b981, 2.4, 200);
-    rightLight.position.set(65, 25, 25);
+    const rightLight = new THREE.PointLight(0x10b981, 2.2, 220);
+    rightLight.position.set(60, 20, 20);
     scene.add(rightLight);
 
-    // 6. Build Initial Static Neural Somas
+    // 6. LAYER 1: Ambient Procedural Point Shell (Structural Brain Silhouette)
+    const shellData = generateProceduralBrainShell(activeUserSeed, 3400);
+    const shellGeo = new THREE.BufferGeometry();
+    shellGeo.setAttribute("position", new THREE.BufferAttribute(shellData.positions, 3));
+    shellGeo.setAttribute("color", new THREE.BufferAttribute(shellData.colors, 3));
+
+    const particleTexture = createParticleTexture();
+
+    const shellMat = new THREE.PointsMaterial({
+      size: 2.3,
+      sizeAttenuation: true,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      map: particleTexture || undefined,
+    });
+
+    const shellPoints = new THREE.Points(shellGeo, shellMat);
+    brainGroup.add(shellPoints);
+    shellPointsRef.current = {
+      points: shellPoints,
+      metadata: shellData.metadata,
+      baseColors: new Float32Array(shellData.colors),
+    };
+
+    // 7. LAYER 2: Real Interactive Nodes (HQ Core & Static Base)
     const meshesMap = new Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>();
 
     INITIAL_NODES.forEach((node) => {
@@ -490,7 +580,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const material = new THREE.MeshStandardMaterial({
         color: new THREE.Color(node.color),
         emissive: new THREE.Color(node.emissive),
-        emissiveIntensity: node.kind === "core" ? 0.95 : 0.65,
+        emissiveIntensity: 0.95,
         roughness: 0.2,
         metalness: 0.85,
       });
@@ -506,7 +596,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         map: haloTex,
         blending: THREE.AdditiveBlending,
         transparent: true,
-        opacity: 0.75,
+        opacity: 0.8,
       });
       const halo = new THREE.Sprite(haloMat);
       const haloScale = node.size * 3.8;
@@ -518,7 +608,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     meshesRef.current = meshesMap;
 
-    // 7. Build Initial Static Axon Splines & Action Potential Particles
+    // 8. Build Initial Static Axon Splines & Action Potential Particles
     const staticNodeMap = new Map(INITIAL_NODES.map((n) => [n.id, n]));
     const particleSystems: { curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[] = [];
 
@@ -552,7 +642,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
       const particleMat = new THREE.PointsMaterial({
         color: new THREE.Color(0xffffff),
-        size: 2.2,
+        size: 2.4,
         blending: THREE.AdditiveBlending,
         transparent: true,
         opacity: 0.9,
@@ -570,10 +660,10 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     });
     particleSystemsRef.current = particleSystems;
 
-    // 8. OrbitControls with exact boundary parameters
+    // 9. OrbitControls with exact boundary parameters
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 150;
-    controls.maxDistance = 1000;
+    controls.minDistance = 140;
+    controls.maxDistance = 900;
     controls.enablePan = true;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -581,7 +671,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     controls.update();
     controlsRef.current = controls;
 
-    // Raycasting for interactive hover and click node selection
+    // Raycasting for interactive hover and click node selection (Layer 2 real nodes only)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
@@ -601,7 +691,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Hover Raycasting
+      // Hover Raycasting against real node meshes only (ignores ambient point shell)
       raycaster.setFromCamera(mouse, camera);
       const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.mesh);
       const intersects = raycaster.intersectObjects(meshesToTest);
@@ -645,7 +735,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
 
-    // 9. Animation Loop
+    // 10. Animation Loop
     let animationFrameId: number;
     const clock = new THREE.Clock();
 
@@ -657,7 +747,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       if (isAutoRotatingRef.current) {
         brainGroup.rotation.y += 0.0012;
       }
-      brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.8;
+      brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.6;
 
       // Update OrbitControls smooth damping
       if (controlsRef.current) {
@@ -683,33 +773,93 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         posAttr.needsUpdate = true;
       });
 
-      // Pulse bioluminescent halos & handle telemetry highlights
+      // Activity-Based Coloring: Ambient Point Shell & Earned Gold Lighting Rule
+      const currentTelemetry = telemetryRef.current;
+      const isProcessing = currentTelemetry.executionState === "processing";
+      const activeLobe = currentTelemetry.activeLobe;
+
+      if (shellPointsRef.current) {
+        const { points, metadata, baseColors } = shellPointsRef.current;
+        const colorAttr = points.geometry.attributes.color as THREE.BufferAttribute;
+        const colorsArr = colorAttr.array as Float32Array;
+        let colorNeedsUpdate = false;
+
+        for (let i = 0; i < metadata.length; i++) {
+          const meta = metadata[i];
+          const i3 = i * 3;
+          const baseR = baseColors[i3];
+          const baseG = baseColors[i3 + 1];
+          const baseB = baseColors[i3 + 2];
+
+          const isActiveLobe = isProcessing && activeLobe && meta.lobe === activeLobe;
+
+          if (isActiveLobe) {
+            // Earned Gold illumination pulse (#FFC432 -> R:1.0, G:0.77, B:0.20)
+            const wave = Math.sin(elapsedTime * 3.5 + meta.baseZ * 0.08) * 0.2 + 0.8;
+            const targetR = 1.0 * wave;
+            const targetG = 0.77 * wave;
+            const targetB = 0.20 * wave;
+
+            colorsArr[i3] += (targetR - colorsArr[i3]) * 0.14;
+            colorsArr[i3 + 1] += (targetG - colorsArr[i3 + 1]) * 0.14;
+            colorsArr[i3 + 2] += (targetB - colorsArr[i3 + 2]) * 0.14;
+            colorNeedsUpdate = true;
+          } else {
+            // Resting subtle biological breathing on electric blue
+            const restingWave = Math.sin(elapsedTime * 1.4 + meta.baseY * 0.04) * 0.12 + 0.94;
+            const targetR = baseR * restingWave;
+            const targetG = baseG * restingWave;
+            const targetB = baseB * restingWave;
+
+            if (Math.abs(colorsArr[i3] - targetR) > 0.008 || Math.abs(colorsArr[i3 + 1] - targetG) > 0.008) {
+              colorsArr[i3] += (targetR - colorsArr[i3]) * 0.08;
+              colorsArr[i3 + 1] += (targetG - colorsArr[i3 + 1]) * 0.08;
+              colorsArr[i3 + 2] += (targetB - colorsArr[i3 + 2]) * 0.08;
+              colorNeedsUpdate = true;
+            }
+          }
+        }
+
+        if (colorNeedsUpdate) {
+          colorAttr.needsUpdate = true;
+        }
+      }
+
+      // Pulse bioluminescent halos & handle telemetry highlights for real nodes
       const currentHoveredId = hoveredNodeRef.current?.id;
       const currentSelectedId = selectedNodeRef.current?.id;
       const currentFilter = filterLobeRef.current;
-      const currentTelemetry = telemetryRef.current;
 
       meshesRef.current.forEach(({ mesh, halo, baseSize }, id) => {
         const nodeObj = nodeMapRef.current.get(id);
         const isHovered = currentHoveredId === id;
         const isSelected = currentSelectedId === id;
         const isFiltered = currentFilter !== "all" && nodeObj?.lobe !== currentFilter;
+        const isActiveNode =
+          nodeObj &&
+          isProcessing &&
+          (currentTelemetry.activeNodeId === nodeObj.id || currentTelemetry.activeLobe === nodeObj.lobe);
 
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
           mesh.material.opacity = isFiltered ? 0.2 : 1;
           mesh.material.transparent = isFiltered;
+
+          // Earned gold emissive on active nodes
+          if (isActiveNode) {
+            mesh.material.emissive.set("#FFC432");
+            mesh.material.emissiveIntensity = 1.2;
+          } else {
+            mesh.material.emissive.set(nodeObj?.emissive || "#60a5fa");
+            mesh.material.emissiveIntensity = nodeObj?.kind === "core" ? 0.95 : 0.65;
+          }
         }
 
         const pulse = Math.sin(elapsedTime * 2 + baseSize) * 0.15 + 1;
         const scale = baseSize * (isHovered || isSelected ? 4.8 : 3.8) * pulse * (isFiltered ? 0.4 : 1);
         halo.scale.set(scale, scale, 1);
 
-        if (
-          nodeObj &&
-          currentTelemetry.activeLobe === nodeObj.lobe &&
-          currentTelemetry.executionState === "processing"
-        ) {
-          halo.scale.multiplyScalar(1.25);
+        if (isActiveNode) {
+          halo.scale.multiplyScalar(1.35);
         }
       });
 
@@ -718,7 +868,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
 
     animate();
 
-    // 10. True Edge-to-Edge Dynamic ResizeObserver
+    // 11. True Edge-to-Edge Dynamic ResizeObserver
     const handleResize = () => {
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth || window.innerWidth;
@@ -747,9 +897,9 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
         container.removeChild(dom);
       }
     };
-  }, [createHaloTexture]);
+  }, [createHaloTexture, createParticleTexture, activeUserSeed]);
 
-  // 2. Incremental Dynamic Topology Updates (Adds/Removes BYO-MCP nodes without resetting Camera/Zoom)
+  // 2. Incremental Dynamic Topology Updates (Adds/Removes BYO-MCP and capability nodes without resetting Camera/Zoom)
   useEffect(() => {
     const dynamicGroup = dynamicGroupRef.current;
     if (!dynamicGroup) return;
@@ -822,7 +972,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       const tubeMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(axon.color),
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.65,
       });
 
       const tubeMesh = new THREE.Mesh(tubeGeometry, tubeMaterial);
@@ -834,7 +984,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
       particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
       const particleMat = new THREE.PointsMaterial({
-        color: new THREE.Color(0x22d3ee),
+        color: new THREE.Color(axon.color === "#FFC432" ? 0xffea79 : 0x22d3ee),
         size: 2.8,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -858,8 +1008,8 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
   // Reset Camera View & Brain Rotation (Explicit user action only)
   const handleResetView = () => {
     if (cameraRef.current && controlsRef.current) {
-      cameraRef.current.position.set(0, 0, 275);
-      cameraTargetRef.current.set(0, -5, 0);
+      cameraRef.current.position.set(0, 5, 260);
+      cameraTargetRef.current.set(0, -2, 0);
       controlsRef.current.target.copy(cameraTargetRef.current);
       controlsRef.current.update();
     }
@@ -892,7 +1042,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
                 Obsidian Neural Brain
                 <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-400 ring-1 ring-inset ring-cyan-500/30">
                   <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                  Live WebGL
+                  Procedural Cortical WebGL
                 </span>
               </h2>
             </div>
@@ -939,7 +1089,7 @@ export function NeuralBrainCanvas({ className = "" }: { className?: string } = {
           <span
             className={`font-semibold capitalize ${
               telemetry.executionState === "processing"
-                ? "text-cyan-400"
+                ? "text-gold"
                 : telemetry.executionState === "blocked_approval"
                 ? "text-amber-400"
                 : telemetry.executionState === "error"

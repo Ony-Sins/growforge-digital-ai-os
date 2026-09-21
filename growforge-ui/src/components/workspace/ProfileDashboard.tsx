@@ -87,7 +87,18 @@ const SOCIAL_LABELS: Record<SocialPlatform, string> = {
   whatsappBusiness: "WhatsApp Business",
 };
 
-function renderCompanyLogo(companyName?: string) {
+function renderCompanyLogo(companyName?: string, logoUrl?: string) {
+  if (logoUrl) {
+    return (
+      <Image
+        src={logoUrl}
+        alt={companyName || "Brand Logo"}
+        width={24}
+        height={24}
+        className="h-5 w-5 object-contain"
+      />
+    );
+  }
   if (!companyName) {
     return <Building2 className="h-5 w-5 text-electric" />;
   }
@@ -152,7 +163,7 @@ const STYLE_PRESETS = [
 ];
 
 export function ProfileDashboard({ user }: ProfileDashboardProps) {
-  const { setAvatarUrl, setProfileName, setActiveView } = useAppState();
+  const { setAvatarUrl, setProfileName, setLogoUrl, setCompanyName, setActiveView } = useAppState();
   const [memory, setMemory] = useState<UserMemory | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -167,6 +178,8 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showMarketPicker, setShowMarketPicker] = useState(false);
   const [showStatsPopover, setShowStatsPopover] = useState(false);
@@ -187,7 +200,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
     if (typeof window !== "undefined") {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => setCopied(false), 2000);
     }
   }
 
@@ -206,6 +219,8 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
         const profile: UserProfileIdentity = data.memory.profile || emptyIdentity();
         setIdentity(profile);
         if (profile.fullName) setProfileName(profile.fullName);
+        if (profile.companyName) setCompanyName(profile.companyName);
+        if (profile.logoUrl) setLogoUrl(profile.logoUrl);
         setIsEditingIdentity(!(profile.fullName || profile.designation || profile.companyName || profile.about));
       }
     } catch (err) {
@@ -231,7 +246,9 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
         setMemory(data.memory);
         const profile: UserProfileIdentity = data.memory.profile || emptyIdentity();
         setIdentity(profile);
-        if (profile.fullName) setProfileName(profile.fullName);
+        setProfileName(profile.fullName || null);
+        setCompanyName(profile.companyName || null);
+        setLogoUrl(profile.logoUrl || null);
         setIdentitySaved(true);
         setIsEditingIdentity(false);
         setTimeout(() => setIdentitySaved(false), 3000);
@@ -324,6 +341,46 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
       setError(err instanceof Error ? err.message : "Failed to remove cover photo.");
     } finally {
       setCoverUploading(false);
+    }
+  }
+
+  async function handleLogoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setLogoUploading(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/profile/logo", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to upload brand logo.");
+      setIdentity((prev) => ({ ...prev, logoUrl: data.logoUrl }));
+      setMemory(data.memory);
+      setLogoUrl(data.logoUrl || null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload brand logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function handleLogoRemove() {
+    setLogoUploading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/profile/logo", { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to remove brand logo.");
+      const data = await res.json();
+      setIdentity((prev) => ({ ...prev, logoUrl: undefined }));
+      setMemory(data.memory);
+      setLogoUrl(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove brand logo.");
+    } finally {
+      setLogoUploading(false);
     }
   }
 
@@ -951,6 +1008,33 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                     />
                   </div>
                   <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] font-inter">Brand Logo</label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#333333] bg-[#111c34] text-white overflow-hidden">
+                        {renderCompanyLogo(identity.companyName, identity.logoUrl)}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={logoUploading}
+                        className="rounded-xl border border-[#333333] bg-[#111c34] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:border-electric hover:text-electric"
+                      >
+                        {logoUploading ? "Uploading..." : identity.logoUrl ? "Change Logo" : "Upload Logo"}
+                      </button>
+                      {identity.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={handleLogoRemove}
+                          disabled={logoUploading}
+                          className="rounded-xl border border-[#333333] bg-[#111c34] p-1.5 text-slate-400 transition-colors hover:bg-crimson/20 hover:text-crimson"
+                          title="Remove brand logo"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div>
                     <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] font-inter">Phone Number</label>
                     <input
                       type="tel"
@@ -988,16 +1072,43 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] font-inter px-1">Organization &amp; Credentials</p>
             
             {/* Company Card */}
-            <div className="flex items-center gap-3 rounded-xl border border-[#333333] bg-[#111c34]/60 p-2.5 transition-colors hover:border-[#444444]">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#333333] bg-[#0B1220] text-white shadow-sm overflow-hidden">
-                {renderCompanyLogo(identity.companyName)}
-              </div>
+            <div className="group/logo relative flex items-center gap-3 rounded-xl border border-[#333333] bg-[#111c34]/60 p-2.5 transition-colors hover:border-[#444444]">
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+                title="Upload brand logo"
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#333333] bg-[#0B1220] text-white shadow-sm overflow-hidden transition-all hover:border-electric"
+              >
+                {renderCompanyLogo(identity.companyName, identity.logoUrl)}
+                <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/60 text-white opacity-0 transition-opacity group-hover/logo:opacity-100">
+                  {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </span>
+              </button>
               <div className="min-w-0 flex-1 text-left">
                 <p className="truncate text-xs font-semibold text-white font-inter">
-                  {identity.companyName || "GrowForge Digital AI"}
+                  {identity.companyName || "No organization set"}
                 </p>
                 <p className="text-[10px] text-[#94a3b8] font-inter">Current Organization</p>
               </div>
+              {identity.logoUrl && (
+                <button
+                  type="button"
+                  onClick={handleLogoRemove}
+                  disabled={logoUploading}
+                  aria-label="Remove brand logo"
+                  className="rounded-lg border border-[#333333] bg-[#0B1220]/80 p-1 text-[#94a3b8] transition-colors hover:bg-crimson/20 hover:text-crimson opacity-0 group-hover/logo:opacity-100 focus-visible:opacity-100"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleLogoSelected}
+                className="sr-only"
+              />
             </div>
 
             {/* Academic Background / Education placeholder */}

@@ -10,6 +10,7 @@ import {
   MessageSquare,
   ScrollText,
   Settings,
+  Sparkles,
   Terminal,
   Workflow,
   Zap,
@@ -34,8 +35,12 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export function Sidebar() {
-  const { activeView, setActiveView } = useAppState();
+  const { activeView, setActiveView, logoUrl, companyName } = useAppState();
   const agents = useLiveAgents();
+
+  const brandInitials = companyName
+    ? companyName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "OP";
 
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-[#333333] bg-[#0B1220]/90 backdrop-blur-xl">
@@ -43,24 +48,30 @@ export function Sidebar() {
       <div className="flex h-18 items-center border-b border-[#333333] px-3 py-3">
         <button
           type="button"
-          onClick={() => setActiveView("dashboard")}
-          title="Back to dashboard home"
+          onClick={() => setActiveView(companyName || logoUrl ? "dashboard" : "profile")}
+          title={companyName ? "Back to dashboard home" : "Set up your brand profile"}
           className="flex w-full items-center gap-3 bg-[#111c34] shadow-sm border border-[#333333] rounded-xl px-3 py-2 text-left transition-colors hover:bg-[#18233c]"
         >
-          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1220] border border-[#333333]">
-            <Image
-              src="/logo-mark.png"
-              alt="GrowForge Digital"
-              fill
-              className="object-contain"
-              sizes="32px"
-              priority
-            />
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0B1220] border border-[#333333] overflow-hidden">
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt={companyName || "Brand Logo"}
+                fill
+                className="object-contain p-1"
+                sizes="32px"
+                priority
+              />
+            ) : (
+              <Sparkles className="h-4 w-4 text-electric" />
+            )}
           </span>
-          <div className="leading-tight">
-            <p className="font-heading text-sm font-bold tracking-wide text-navy">GrowForge</p>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted">
-              Digital AI OS
+          <div className="leading-tight min-w-0">
+            <p className="font-heading text-sm font-bold tracking-wide text-navy truncate">
+              {companyName || "Set up your brand"}
+            </p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted truncate">
+              {companyName ? "Digital AI OS" : "Click to configure"}
             </p>
           </div>
         </button>
@@ -126,10 +137,12 @@ export function Sidebar() {
          *  "Interface & Access" card at the top of the Settings section. */}
         <div className="flex items-center gap-3 bg-[#111c34] shadow-sm border border-[#333333] rounded-xl px-3 py-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0B1220] border border-[#333333] font-mono text-xs font-semibold text-gold shadow-sm">
-            GF
+            {brandInitials}
           </div>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-semibold text-navy">GrowForge Ops</p>
+            <p className="truncate text-sm font-semibold text-navy">
+              {companyName ? `${companyName} Ops` : "Operations"}
+            </p>
             <p className="truncate text-[11px] text-muted">
               {agents.length} agents
               {agents.some((a) => a.status === "active")

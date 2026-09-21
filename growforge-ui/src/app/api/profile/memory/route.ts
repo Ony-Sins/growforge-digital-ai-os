@@ -101,6 +101,9 @@ export async function POST(req: Request) {
       companyName: typeof p.companyName === "string" ? p.companyName.trim().slice(0, 200) : "",
       about: typeof p.about === "string" ? p.about.trim().slice(0, 2000) : "",
       phone: typeof p.phone === "string" && p.phone.trim() ? p.phone.trim().slice(0, 40) : undefined,
+      avatarUrl: typeof p.avatarUrl === "string" && p.avatarUrl ? p.avatarUrl : undefined,
+      coverPhotoUrl: typeof p.coverPhotoUrl === "string" && p.coverPhotoUrl ? p.coverPhotoUrl : undefined,
+      logoUrl: typeof p.logoUrl === "string" && p.logoUrl ? p.logoUrl : undefined,
       socials,
       // Explicitly set (even to undefined) rather than omitted — the merge
       // in updateUserMemory replaces this key wholesale from whatever's

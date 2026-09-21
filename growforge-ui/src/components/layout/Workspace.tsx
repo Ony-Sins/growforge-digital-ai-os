@@ -52,11 +52,11 @@ function sectionIdFor(view: ActiveView): string | null {
   }
 }
 
-function resolveGreetingName(userPropName?: string | null, memoryProfileName?: string | null): string {
+function resolveGreetingName(userPropName?: string | null, memoryProfileName?: string | null): string | null {
   const candidate = (memoryProfileName || userPropName || "").trim();
 
   if (!candidate || candidate.toLowerCase().startsWith("dev") || candidate.toLowerCase() === "preview") {
-    return "Ony";
+    return null;
   }
 
   if (
@@ -68,17 +68,16 @@ function resolveGreetingName(userPropName?: string | null, memoryProfileName?: s
 
   const first = candidate.split(/\s+/)[0];
   if (first.toLowerCase().startsWith("dev") || first.toLowerCase() === "preview") {
-    return "Ony";
+    return null;
   }
 
-  return first || "Ony";
+  return first || null;
 }
 
 export function Workspace({ user }: { user: WorkspaceUser | null }) {
   const {
     activeView,
     activeViewToken,
-    setActiveView,
     openAdminDrawer,
     openUserProfile,
     openAgentRoster,
@@ -109,6 +108,10 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
       openVaultLibrary();
       return;
     }
+    if (activeView === "profile") {
+      openUserProfile("profile");
+      return;
+    }
     const id = sectionIdFor(activeView);
     if (!id) return;
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -116,31 +119,35 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     setFlashSection(id);
     const t = setTimeout(() => setFlashSection(null), 1000);
     return () => clearTimeout(t);
-  }, [activeView, activeViewToken, openUserProfile, openAgentRoster, openVaultLibrary]);
+  }, [activeView, activeViewToken, openAgentRoster, openUserProfile, openVaultLibrary]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadJobs() {
+    let unmounted = false;
+    async function loadWorkspaceData() {
       try {
-        const res = await fetch("/api/jobs");
-        if (!res.ok || cancelled) return;
-        const data: { jobs: JobSummary[] } = await res.json();
-        if (!cancelled && Array.isArray(data.jobs)) {
-          setJobs(data.jobs);
+        const [jobsRes] = await Promise.all([
+          fetch("/api/jobs"),
+        ]);
+        if (!unmounted && jobsRes.ok) {
+          const jobsData = await jobsRes.json();
+          setJobs(Array.isArray(jobsData.jobs) ? jobsData.jobs : []);
         }
-      } catch {
-        // best-effort refresh
+      } catch (err) {
+        console.error("Failed to load workspace data:", err);
       }
     }
-    loadJobs();
-    const interval = setInterval(loadJobs, JOB_POLL_INTERVAL_MS);
+    loadWorkspaceData();
+    const interval = setInterval(loadWorkspaceData, JOB_POLL_INTERVAL_MS);
     return () => {
-      cancelled = true;
+      unmounted = true;
       clearInterval(interval);
     };
   }, []);
 
-  const flash = (id: string) => (flashSection === id ? "section-flash" : "");
+  const flash = (id: string) =>
+    flashSection === id
+      ? "ring-2 ring-electric/80 ring-offset-2 ring-offset-[#0B1220] transition-all duration-700"
+      : "";
 
   function openInspector(jobId?: string, showFinal: boolean = false) {
     setInspectorJobId(jobId ?? null);
@@ -148,32 +155,30 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     setInspectorOpen(true);
   }
 
-  async function handleDirectiveSubmit(e: React.FormEvent, customPrompt?: string) {
-    e?.preventDefault?.();
-    const promptToSend = customPrompt || directiveText.trim();
-    if (!promptToSend) return;
+  const handleDirectiveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directiveText.trim() || isSubmittingDirective) return;
     setIsSubmittingDirective(true);
     try {
-      const res = await fetch("/api/jobs", {
+      const res = await fetch("/api/directives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptToSend }),
+        body: JSON.stringify({ prompt: directiveText.trim() }),
       });
       if (res.ok) {
-        const data = await res.json();
         setDirectiveText("");
-        if (data.job?.id) {
-          openInspector(data.job.id, false);
+        const jobsRes = await fetch("/api/jobs");
+        if (jobsRes.ok) {
+          const jobsData = await jobsRes.json();
+          setJobs(Array.isArray(jobsData.jobs) ? jobsData.jobs : []);
         }
-      } else {
-        setActiveView("chat");
       }
-    } catch {
-      setActiveView("chat");
+    } catch (err) {
+      console.error("Failed to submit directive:", err);
     } finally {
       setIsSubmittingDirective(false);
     }
-  }
+  };
 
   const liveRunningJob = jobs.find((j) => j.status === "running");
   const liveDoneJob = jobs.find((j) => j.status === "done");
@@ -199,7 +204,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
                 </span>
               </div>
               <h1 className="mt-1 font-heading text-2xl md:text-3xl font-bold tracking-tight text-white">
-                Good morning, {displayName}
+                {displayName ? `Good morning, ${displayName}` : "Good morning"}
               </h1>
               <p className="mt-0.5 text-xs md:text-sm text-[#CCCCCC] font-inter">
                 Issue an executive directive or monitor active autonomous multi-agent pipelines below.

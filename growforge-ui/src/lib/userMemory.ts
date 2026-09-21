@@ -65,6 +65,9 @@ export interface UserProfileIdentity {
   avatarUrl?: string;
   /** Same pattern as avatarUrl, backed by POST/DELETE /api/profile/cover. */
   coverPhotoUrl?: string;
+  /** Same pattern as avatarUrl, backed by POST/DELETE /api/profile/logo.
+   *  Custom brand mark / company logo uploaded by the operator. */
+  logoUrl?: string;
   location?: ProfileLocation;
   phone?: string;
   targetMarketArea?: TargetMarketArea;

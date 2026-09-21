@@ -15,6 +15,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Brain, CheckCircle2, Key, Loader2, Plug, ShieldCheck, Sparkles, Trash2, X, XCircle } from "lucide-react";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { useAppState } from "@/lib/appState";
 import type { BrainLobe } from "@/lib/telemetryStore";
 import { NodeDeleteConfirmModal, type DeletableNodeType } from "./NodeDeleteConfirmModal";
 
@@ -74,20 +75,32 @@ const DEPARTMENT_LOBE_MAP: Record<string, BrainLobe> = {
   "qa": "analytics_governance",
 };
 
+/*
+ * Note on 2D vs 3D Layout Consistency:
+ * NeuralBrainCanvas.tsx renders a dense 3D procedural point-cloud cortical volume,
+ * while AIBrainCanvas.tsx projects the same dual-hemisphere functional topology into
+ * an interactive 2D schematic graph (left hemisphere, right hemisphere, central HQ core)
+ * using the same deterministic per-user seed for organic spatial offset.
+ */
+
 function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
-  const { kind, label } = data;
+  const { kind, label, isActive } = data;
   const isHub = kind === "hub";
   const isDept = kind === "department";
   const isCap = kind === "capability";
 
   const size = isHub ? "h-20 w-20" : isDept ? "h-14 w-14" : "h-9 w-9";
-  const glow = isHub
-    ? "shadow-[0_0_40px_10px_rgba(0,180,255,0.55)] border-electric"
-    : isDept
-      ? "shadow-[0_0_24px_6px_rgba(230,175,46,0.45)] border-gold"
-      : isCap
-        ? "shadow-[0_0_16px_4px_rgba(168,85,247,0.55)] border-purple-400"
-        : "shadow-[0_0_14px_3px_rgba(16,185,129,0.5)] border-emerald";
+  
+  // Earned Gold Rule: Active processing nodes glow in Gold (#FFC432)
+  const glow = isActive
+    ? "shadow-[0_0_35px_10px_rgba(255,196,50,0.65)] border-gold ring-2 ring-gold/40"
+    : isHub
+      ? "shadow-[0_0_40px_10px_rgba(0,180,255,0.55)] border-electric"
+      : isDept
+        ? "shadow-[0_0_24px_6px_rgba(0,120,255,0.35)] border-electric/60"
+        : isCap
+          ? "shadow-[0_0_16px_4px_rgba(168,85,247,0.55)] border-purple-400"
+          : "shadow-[0_0_14px_3px_rgba(16,185,129,0.5)] border-emerald";
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -100,7 +113,7 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
         {isHub ? (
           <Brain className="h-8 w-8 text-electric" />
         ) : isDept ? (
-          <ShieldCheck className="h-5 w-5 text-gold" />
+          <ShieldCheck className={`h-5 w-5 ${isActive ? "text-gold animate-pulse" : "text-electric"}`} />
         ) : isCap ? (
           data.nodeType === "ai_model" ? (
             <Sparkles className="h-3.5 w-3.5 text-purple-400" />
@@ -113,13 +126,15 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
       </div>
       <span
         className={`max-w-[6.5rem] truncate rounded-full bg-app/80 px-2 py-0.5 text-center font-mono text-[10px] backdrop-blur-sm ${
-          isHub
-            ? "font-bold text-electric"
-            : isDept
-              ? "font-semibold text-gold"
-              : isCap
-                ? "text-purple-300 font-medium"
-                : "text-emerald/90"
+          isActive
+            ? "font-bold text-gold ring-1 ring-gold/40"
+            : isHub
+              ? "font-bold text-electric"
+              : isDept
+                ? "font-semibold text-slate-200"
+                : isCap
+                  ? "text-purple-300 font-medium"
+                  : "text-emerald/90"
         }`}
       >
         {label}
@@ -132,65 +147,89 @@ function BrainNodeView({ data, selected }: NodeProps<BrainNode>) {
 const nodeTypes = { brain: BrainNodeView };
 
 const HUB_ID = "hub";
-const DEPT_RADIUS = 260;
-const CONNECTOR_RADIUS = 130;
 
 function buildGraph(
   departments: DepartmentInfo[],
   servers: McpServerInfo[],
-  capabilityNodes: DynamicTopologyNode[]
+  capabilityNodes: DynamicTopologyNode[],
+  userSeedKey = "growforge-default-operator",
+  activeLobe?: BrainLobe | null
 ): { nodes: BrainNode[]; edges: Edge[] } {
   const nodes: BrainNode[] = [
     {
       id: HUB_ID,
       type: "brain",
       position: { x: 0, y: 0 },
-      data: { kind: "hub", label: "GrowForge HQ" },
+      data: { kind: "hub", label: "GrowForge HQ", isActive: false },
       draggable: false,
     },
   ];
   const edges: Edge[] = [];
 
-  const deptCount = Math.max(departments.length, 1);
+  const seed = hashString(`gf-2d-graph-${userSeedKey}`);
   const deptPositions = new Map<string, { x: number; y: number }>();
 
+  // Dual-hemisphere positioning: Left Hemisphere (x < 0) vs Right Hemisphere (x > 0)
   departments.forEach((dept, i) => {
-    const angle = (i / deptCount) * Math.PI * 2 - Math.PI / 2;
-    const x = Math.cos(angle) * DEPT_RADIUS;
-    const y = Math.sin(angle) * DEPT_RADIUS;
-    deptPositions.set(dept.id, { x, y });
+    const lobe = DEPARTMENT_LOBE_MAP[dept.id] || "neural_core";
+    const isRight = lobe === "growth_expansion" || lobe === "performance_media";
+    const hSign = isRight ? 1 : -1;
+
+    // Organic hemispheric placement with deterministic user seed jitter
+    const angleJitter = ((seed + i * 37) % 100) / 100 - 0.5; // -0.5 to 0.5
+    const baseX = hSign * (210 + Math.abs(angleJitter) * 60);
+    const baseY = (i - (departments.length - 1) / 2) * 85 + angleJitter * 30;
+
+    deptPositions.set(dept.id, { x: baseX, y: baseY });
+
+    const isActive = activeLobe === lobe;
 
     nodes.push({
       id: `dept:${dept.id}`,
       type: "brain",
-      position: { x, y },
-      data: { kind: "department", label: dept.name, summary: dept.summary, departmentId: dept.id },
+      position: { x: baseX, y: baseY },
+      data: {
+        kind: "department",
+        label: dept.name,
+        summary: dept.summary,
+        departmentId: dept.id,
+        isActive,
+      },
       draggable: true,
     });
+
     edges.push({
       id: `${HUB_ID}->dept:${dept.id}`,
       source: HUB_ID,
       target: `dept:${dept.id}`,
       animated: true,
-      style: { stroke: "rgba(0,180,255,0.45)", strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(0,180,255,0.6)", width: 14, height: 14 },
+      style: {
+        stroke: isActive ? "rgba(255,196,50,0.85)" : "rgba(0,180,255,0.45)",
+        strokeWidth: isActive ? 2.5 : 1.8,
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: isActive ? "rgba(255,196,50,0.9)" : "rgba(0,180,255,0.6)",
+        width: 14,
+        height: 14,
+      },
     });
   });
 
-  // Connectors: scoped to specific active departments or orbiting HQ directly
+  // Connectors: anchored to allowed departments or orbiting HQ
   servers.forEach((server) => {
     const activeTargets = server.allowedDepartments.filter((dId) => deptPositions.has(dId));
     const targets = activeTargets.length > 0 ? activeTargets : [HUB_ID];
     const anchor = targets[0] === HUB_ID ? { x: 0, y: 0 } : (deptPositions.get(targets[0]) ?? { x: 0, y: 0 });
-    const angleJitter = (hashString(server.id) % 360) * (Math.PI / 180);
-    const x = anchor.x + Math.cos(angleJitter) * CONNECTOR_RADIUS;
-    const y = anchor.y + Math.sin(angleJitter) * CONNECTOR_RADIUS;
+    const angleJitter = ((hashString(`${server.id}:${userSeedKey}`) % 360) * Math.PI) / 180;
+    const x = anchor.x + Math.cos(angleJitter) * 110;
+    const y = anchor.y + Math.sin(angleJitter) * 110;
 
     nodes.push({
       id: `mcp:${server.id}`,
       type: "brain",
       position: { x, y },
-      data: { kind: "connector", label: server.name, serverId: server.id },
+      data: { kind: "connector", label: server.name, serverId: server.id, isActive: false },
       draggable: true,
     });
 
@@ -201,18 +240,17 @@ function buildGraph(
         source: `mcp:${server.id}`,
         target: targetNodeId,
         animated: true,
-        style: { stroke: "rgba(16,185,129,0.4)", strokeWidth: 1.5 },
+        style: { stroke: "rgba(16,185,129,0.45)", strokeWidth: 1.5 },
       });
     }
   });
 
   // Real Capability Keys (e.g. Higgsfield, configured AI models)
   capabilityNodes.forEach((cap, idx) => {
-    // Avoid duplicate nodes if already in servers
     if (nodes.some((n) => n.id === cap.id)) return;
 
     const angle = ((idx + 0.5) / Math.max(capabilityNodes.length, 1)) * Math.PI * 2;
-    const radius = 180;
+    const radius = 160;
     const x = Math.cos(angle) * radius;
     const y = Math.sin(angle) * radius;
 
@@ -226,6 +264,7 @@ function buildGraph(
         capabilityId: cap.id,
         nodeType: cap.type,
         tools: cap.tools,
+        isActive: false,
       },
       draggable: true,
     });
@@ -473,6 +512,7 @@ type ConnectorTestResult = { ok: boolean; tools?: { name: string }[]; error?: st
 
 export function AIBrainCanvas() {
   const { telemetry } = useTelemetry();
+  const { profileName } = useAppState();
   const [allDepartments, setAllDepartments] = useState<DepartmentInfo[]>([]);
   const [servers, setServers] = useState<McpServerInfo[]>([]);
   const [capabilities, setCapabilities] = useState<DynamicTopologyNode[]>([]);
@@ -545,8 +585,15 @@ export function AIBrainCanvas() {
   }, [allDepartments, telemetry.executionState, telemetry.activeLobe]);
 
   const graph = useMemo(
-    () => buildGraph(activeDepartments, servers, capabilities),
-    [activeDepartments, servers, capabilities]
+    () =>
+      buildGraph(
+        activeDepartments,
+        servers,
+        capabilities,
+        profileName || "growforge-default-operator",
+        telemetry.executionState === "processing" ? telemetry.activeLobe : null
+      ),
+    [activeDepartments, servers, capabilities, profileName, telemetry.executionState, telemetry.activeLobe]
   );
 
   const nodesWithSelection = useMemo(

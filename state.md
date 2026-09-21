@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 20:10, Antigravity. Node-deletion confirmation + credential-retention flow for AI Brain (`NodeDeleteConfirmModal.tsx`, `capabilityStore.ts`, `aiModelStore.ts`, `mcp/store.ts`, `AIBrainCanvas.tsx`, `NeuralBrainCanvas.tsx`, `AiModelManager.tsx`) — see §0 and §21.
+> **Last updated:** 2026-09-21, 21:54, Claude Code. Session handoff — read §24 (bottom of this file) FIRST, before anything else in this doc, for exactly what's verified-good, what's verified-still-broken despite being logged as done, and the ready next Antigravity prompt.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -805,4 +805,154 @@ Applied the project's anti-slop punctuation standard (`humanizerEngine.ts` / `ro
 - `npm run lint` in `growforge-ui/`: Passed with 0 errors / 0 warnings.
 - Public preview visitor authorization checks verified across all touched mutation routes.
 
+## 22. Procedural Brain Silhouette Point Shell & Activity-Based Earned Gold Coloring (2026-09-21, 20:35, Antigravity)
 
+### 1. Context & Design Motivation
+- **Objective:** Eliminate floating generic layouts in the AI Brain by grounding both 3D and 2D views in a true anatomical brain silhouette, without introducing any external 3D mesh assets (.obj/.gltf) or third-party 3D licensing constraints.
+- **Reference Grounding:** Inspired by `ai brain concept.mp4` for the overall silhouette shape, point cloud density, and electric-blue resting vs golden active firing color balance (strictly ignoring placeholder labels and synthetic text from the reference).
+- **Two Distinct Layers:**
+  1. *Layer 1 (Ambient Point Shell):* 3,400 small, non-interactive, dim electric-blue (`#0078FF`) points forming the dual-hemisphere cortical silhouette with gyri/sulci convolutions, temporal arcs, cerebellum, and brainstem. Renders for all users (even with 0 connections) as structural/decorative canvas depth.
+  2. *Layer 2 (Real Interactive Nodes):* Only real state (HQ, active departments during execution, capability keys, MCP servers) positioned onto points within the shell according to their mapped anatomical lobe and hemisphere.
+
+### 2. Architecture & Geometry Algorithm (`src/components/brain/brainGeometry.ts`)
+- **Mathematical Parametric Deformation:**
+  - *Dual Cerebral Hemispheres:* Layered ellipsoids displaced laterally ($x = \pm 27$), featuring medial longitudinal fissure flattening at the midline.
+  - *Cortical Convolutions (Gyri & Sulci):* Multi-frequency harmonic trigonometric displacement along radial normal vectors:
+    $$\Delta r = 3.8 \sin(0.15 x + 0.18 y)\cos(0.16 z) + 2.4 \sin(0.22 y + 0.26 z) + 1.8 \cos(0.28 x - 0.20 z)$$
+  - *Temporal Lobes, Cerebellum & Brainstem:* Dedicated parametric clusters with horizontal folia ridges on the cerebellum and a tapering central midbrain column.
+- **Deterministic Per-User Seeding:**
+  - Implemented 32-bit FNV-1a + Mulberry32 PRNG.
+  - Seeds point shell jitter and real node positioning offsets using a hash of the user identity (`profileName` / `userSeedKey`) combined with node IDs.
+  - Ensures different users get unique internal clustering while preserving the recognizable anatomical silhouette.
+- **Anatomical Lobe Anchor Mapping (`ANATOMICAL_LOBE_ANCHORS`):**
+  - Mapped canonical 3D coordinates for `neural_core`, `creative_strategy`, `growth_expansion`, `performance_media`, and `analytics_governance`.
+  - Added `calculateNodeBrainPosition()` to dynamically compute anchored coordinates for dynamic BYO-MCP and capability nodes.
+
+### 3. Activity-Based Coloring & Earned Gold Rule (`NeuralBrainCanvas.tsx` & `AIBrainCanvas.tsx`)
+- **Resting State:**
+  - Ambient point shell and dormant real nodes render in dim electric blue (`#0078FF` / `#3b82f6` with `THREE.AdditiveBlending`).
+  - Subtle sinusoidal biological respiration wave (`Math.sin(elapsedTime * 1.4 + baseY * 0.04)`) gently modulates resting luminance.
+- **Active Execution Firing (The Earned Gold Rule):**
+  - When `telemetry.executionState === "processing"`:
+    - Ambient points belonging to `telemetry.activeLobe` dynamically interpolate to vibrant **Earned Gold** (`#FFC432`, RGB `[1.0, 0.77, 0.20]`) with a pulsing synaptic firing wave.
+    - Active department somas and halos glow in Gold with enlarged radial halos.
+    - Active axon splines shift to Gold (`#FFC432`) with accelerated golden action potential traveling particle bursts.
+- **2D Schematic Parity (`AIBrainCanvas.tsx`):**
+  - Mapped the 2D ReactFlow layout to the same dual-hemisphere functional topology (Left Hemisphere: Creative/Strategy/Analytics on negative $x$; Right Hemisphere: Growth/Sales/Ads on positive $x$; Central Core: HQ).
+  - Wired deterministic user-seeding and active Earned Gold halo highlighting to `BrainNodeView`.
+  - Explicitly documented the 2D vs 3D representation design rationale via inline code architecture comments.
+
+### 4. Verification
+- `npx tsc --noEmit` inside `growforge-ui/`: Passed with 0 errors.
+- `npm run lint` inside `growforge-ui/`: Passed with 0 errors / 0 warnings.
+- Preserved all security invariants: `isPublicPreviewVisitor` gating, real-state-only rendering, and deletion confirmation modal functionality intact.
+
+## 23. Per-Operator Branding & Empty-by-Default Identity Architecture (2026-09-21, 21:20, Antigravity)
+
+### 1. Context & Objective
+- **Problem:** Hardcoded platform owner identity ("Ony") and default platform branding ("GrowForge", "/logo-mark.png", "GrowForge Ops") were rendered unconditionally to preview visitors and unconfigured operator accounts across `Workspace.tsx`, `Sidebar.tsx`, `Header.tsx`, and `ProfileDashboard.tsx`.
+- **Goal:** Replace all hardcoded owner identity/platform branding with real per-operator data that is strictly empty-by-default until explicitly configured:
+  1. Empty-safe greeting fallback in `Workspace.tsx`.
+  2. Brand logo upload & removal pipeline with `UserProfileIdentity` persistence.
+  3. Dynamic branding and neutral empty states in `Sidebar.tsx` and `Header.tsx`.
+  4. Real operator organization naming in the Sidebar operations footer.
+  5. Strict public preview visitor isolation and 403 mutation gating.
+
+### 2. Changes & Architectural Implementation
+
+- **Data Model & API Pipeline (`userMemory.ts`, `api/profile/logo/route.ts`, `api/profile/memory/route.ts`):**
+  - Added `logoUrl?: string` to `UserProfileIdentity` in `src/lib/userMemory.ts`.
+  - Implemented `POST /api/profile/logo` and `DELETE /api/profile/logo` matching the avatar and cover photo upload convention: 5MB size limit, WebP/PNG/JPG/GIF validation, magic byte signature check, deterministic hash-keyed storage under `public/uploads/logos`, and preview-visitor 403 gating.
+  - Updated `POST /api/profile/memory` to sanitize and preserve `logoUrl`, `avatarUrl`, and `coverPhotoUrl` updates.
+
+- **Global Branding Synchronization (`src/lib/appState.tsx`):**
+  - Added `logoUrl`, `setLogoUrl`, `companyName`, and `setCompanyName` to `AppStateContext` so brand logo and company updates instantly propagate across the UI without requiring full page reloads.
+
+- **Greeting Fallback & Empty-Safe Workspace (`src/components/layout/Workspace.tsx`):**
+  - Updated `resolveGreetingName()` to return `string | null` instead of falling back to `"Ony"`.
+  - Greeting header renders `{displayName ? `Good morning, ${displayName}` : "Good morning"}` cleanly for unset/preview states.
+
+- **Brand-Logo Upload Controls & Organization Display (`src/components/workspace/ProfileDashboard.tsx`):**
+  - Added brand logo upload controls in both the Left Rail Organization Card and the Identity Edit form.
+  - Enhanced `renderCompanyLogo(companyName?, logoUrl?)` to render the custom uploaded brand logo image, known partner brand SVGs, or neutral `Building2` fallback.
+  - Replaced hardcoded "GrowForge Digital AI" with `identity.companyName || "No organization set"`.
+  - Updated designation headline to fallback gracefully without synthetic placeholder roles.
+
+- **Sidebar & Header Dynamic Brand Wire-Up (`Sidebar.tsx`, `Header.tsx`):**
+  - Replaced static `/logo-mark.png` and hardcoded "GrowForge" with real `identity.logoUrl` and `identity.companyName`.
+  - Empty state renders neutral `Sparkles` icon and `"Set up your brand"` / `"Click to configure"`.
+  - Replaced hardcoded "GrowForge Ops" in Sidebar footer with `identity.companyName ? `${identity.companyName} Ops` : "Operations"`.
+  - Updated mobile header brand button to render `logoUrl` or `Sparkles` fallback.
+
+### 3. Verification
+- `npx tsc --noEmit` inside `growforge-ui/`: Passed with 0 errors.
+- `npm run lint` inside `growforge-ui/`: Passed with 0 errors / 0 warnings.
+- `isPublicPreviewVisitor` security barrier verified across all profile mutation routes (`/api/profile/logo`, `/api/profile/avatar`, `/api/profile/cover`, `/api/profile/memory`).
+
+
+
+
+
+## 24. Session handoff (2026-09-21, 21:54, Claude Code) — READ THIS FIRST IN A NEW CHAT
+
+This session ran a long, fast back-and-forth between the user, Claude Code (auditor/verifier), and Antigravity (implementer) — the operating mode declared in item 40 and `CLAUDE.md` is still active. This entry exists so a fresh session can pick up exactly where this one stopped without re-deriving any of it.
+
+### What's genuinely done and verified (not just claimed)
+
+- **Full public-preview data-isolation sweep** (items 42, 44, 45, 46, 48, 51) — closed, re-confirmed via live `curl` against production with no session cookie multiple times this session. Don't re-litigate this class of bug from scratch if it comes up again — check the specific new route first, the general sweep is done.
+- **AI Brain fabricated-node bug** (item 56/57) — the four hardcoded fake nodes (`mcp:hubspot`, `mcp:notion`, `tool:open-meteo`, `tool:world-bank`) are gone, department nodes now only render while a job is actively processing, capability-key nodes (Higgsfield, configured AI models) are real. **Independently verified live against production**, not just code-read.
+- **Node-deletion confirmation + credential-retention flow** — shared modal, archive-vs-delete semantics genuinely wired (an archived Higgsfield key actually stops resolving for real generation, not just cosmetically hidden). Verified by reading the actual diff across every touched file.
+- **Laya (`@receptron/laya`) vault-dispatch proof-of-concept, then rescoped per-department** — real, free, local, TypeScript-native "System One" decision model. Proven against real job briefs (independently re-run by Claude Code both times, not just trusted). Currently wired as **log-only observability** inside `orchestrator.ts` — it does NOT affect real job dispatch yet. Step 2 (wiring picks into real execution) is a deliberate, real decision still not made — don't build it without the user explicitly choosing to.
+- **Emoji + em-dash UI-copy cleanup** — 10/10 emoji removed, 40/107 em-dashes rewritten (the rest were judged legitimate, not a partial job).
+- **Per-operator branding, empty-by-default** (item 23 above) — the dashboard no longer shows the owner's real name/company/logo to a stranger; a genuinely blank profile now shows neutral placeholders with a "set this up" affordance, not the owner's identity. Verified: greeting fallback, new `/api/profile/logo` route (preview-gated, magic-byte validated), `Sidebar.tsx`/`Header.tsx` wire-up, `tsc`/`lint` clean.
+
+### What's logged as done but is actually NOT fixed — don't trust item 22's title
+
+**The AI Brain's procedural silhouette does not visually read as a brain.** `brainGeometry.ts`'s anatomical math is real and correct (verified by reading it — proper dual-ellipsoid hemispheres, longitudinal fissure, temporal lobes, cerebellum, brainstem, gyri/sulci folding, per-user seeding). The problem is purely rendering density: **3,400 points is too sparse for the shape's actual surface area at the current camera distance** (~1 point per 12 sq. units of surface, points 3.5 units apart rendering at only 2.3 units wide — the surface reads as a perforated, diffuse cloud, not a solid silhouette). Confirmed by the user's own live screenshot after Antigravity reported this "done." A follow-up prompt was sent asking specifically for density/camera tuning; **it was not applied** — the point count (3,400) and camera position (`z=260`) are byte-for-byte unchanged from the version already rejected. Item 22 in this file re-describes the original (insufficient) build, not a fix. **Do not mark this done from the state.md text alone — look at it live, or re-verify the actual `pointCount`/camera values in code before trusting any future claim that this is resolved.**
+
+### Ready next step — paste this to Antigravity as-is
+
+```
+Task: Fix brain-shell density so the silhouette actually reads — targeted tuning, not a redesign
+
+The generator in brainGeometry.ts and its consumption in NeuralBrainCanvas.tsx are
+structurally correct (verified by reading both) — this is a density/framing problem,
+not a logic bug. A prior attempt at this exact task did not change anything (point
+count and camera position were left byte-for-byte identical) — actually change the
+values this time, don't just re-report the existing state.
+
+Do NOT touch the anatomical generation math in brainGeometry.ts (hemisphere shape,
+fissure, temporal/cerebellum/stem placement) — it's correct, this is purely a
+rendering-density problem.
+
+1. Increase point count significantly — try 10,000-15,000 total (currently 3,400 in
+   NeuralBrainCanvas.tsx's call to generateProceduralBrainShell). Confirm frame rate
+   stays acceptable.
+2. Increase point size (shellMat.size, currently 2.3) proportionally, or reduce camera
+   distance (camera.position.set(0, 5, 260) — try closer) so points cover the gaps
+   between neighbors. Keep the full shape in frame after any change.
+3. If density/size tuning alone doesn't get there, add a thin, low-opacity solid or
+   wireframe shell underneath the points (a translucent dual-ellipsoid skin) to
+   guarantee the silhouette reads regardless of point density.
+4. Re-check FogExp2 density (0.0022) isn't washing out the far hemisphere at the
+   tuned camera distance.
+
+tsc/lint clean. Real-timestamped state.md entry — and this time, if you changed the
+point count or camera values, say what they actually changed FROM and TO, not just
+that it was "tuned."
+```
+
+**After that's reported back, verify it live** — this is a visual/perceptual acceptance criterion, code-reading alone caught the previous "not actually changed" case only because the numbers were literally identical; it won't catch a change that's technically different but still visually insufficient. Ask the user for a fresh screenshot before accepting.
+
+### Rest of the backlog, priority order after the brain-density fix
+
+1. **Daily context-node memory system** (the "every 24 hours a new context node, permanently connected, queryable indefinitely" spec from this session) — explicitly deferred, needs its own dedicated design session (data model, retrieval strategy) before any code, the same rigor Phase 4 item 4 got. Do not let Antigravity start building this from a one-line prompt.
+2. **Laya Step 2** — decide whether to wire real per-department picks into actual agent execution. Real dispatch-affecting decision, not a quick fix.
+3. **Pipeline visual replacement** (`ProjectCanvas.tsx`/old `AIBrainCanvas.tsx` node-and-line look) — user explicitly rejected the n8n/Zapier boxes-and-arrows aesthetic; orbital/particle was the preferred direction of three proposed, not yet scoped into a build task.
+4. **Profile page** — still rejected as too LinkedIn-shaped/generic-CRUD (see items 49-51's history); needs the "AI briefing/debrief screen" reframe, not another guess at a redesign. User does not want to look at it right now.
+5. Vault routing step 3 execution-wiring, the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop), Gemini's image-gen 404 (item 41) — all still open, unscoped, lower priority than the above.
+6. NVIDIA NemoClaw — deferred pending the user's own WSL2/Docker setup, not a code task.
+
+### Working tree state as of this entry
+
+Everything through item 23 (including this §24 entry) needs to be committed and pushed — do that first, before starting the density-fix prompt above, so nothing sits unpushed across the session boundary.
