@@ -6,6 +6,7 @@ import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
 import { createConsultation, getConsultation, markConsultationTimedOut } from "@/lib/consultationStore";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
 import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
+import { selectVaultAgent, logVaultDispatchRecommendation } from "@/lib/vaultDispatch";
 import {
   addLiveNote,
   addRevisionEntry,
@@ -267,6 +268,17 @@ Rules:
     department: "GrowForge HQ",
   });
   logJobStateChange(getJob(job.id)!);
+
+  // Step 1: System-1 Vault Dispatch Instrumentation (Log-Only Observability, per-department)
+  try {
+    const briefText = currentBrief(job.id);
+    for (const a of assignments) {
+      const vaultRecommendation = await selectVaultAgent(briefText, a.departmentId);
+      logVaultDispatchRecommendation(job.id, vaultRecommendation, a.departmentId);
+    }
+  } catch (err) {
+    console.warn(`[orchestrator] vaultDispatch observation skipped for job ${job.id}:`, err);
+  }
 
   return plan;
 }
