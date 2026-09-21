@@ -162,11 +162,11 @@ export function VaultLibraryOverlay() {
                 Vault Capability Library
               </h1>
               <span className="rounded-full border border-[#0078FF]/40 bg-[#0078FF]/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-[#0078FF]">
-                279 AGENTS
+                {vaultData.length} AGENTS
               </span>
             </div>
             <p className="text-xs text-[#CCCCCC] hidden sm:block">
-              Master repository of specialized domain agents, tools, and execution tiers.
+              {vaultData.length} specialized agency agents, tooling declarations, and authorization gates.
             </p>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function VaultLibraryOverlay() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 279 agents by name, skills, role, or declared tools..."
+              placeholder="Search agents by name, domain role, or tool dependency..."
               className="w-full rounded-xl border border-[#333333] bg-[#0B1220] py-2 pl-10 pr-10 text-xs md:text-sm text-white placeholder-[#94a3b8] transition-colors focus:border-[#0078FF] focus:outline-none focus:ring-1 focus:ring-[#0078FF]/40"
             />
             {searchQuery && (
@@ -234,9 +234,9 @@ export function VaultLibraryOverlay() {
                 onChange={(e) => setSelectedTier(e.target.value as "all" | "read-only" | "needs-approval-to-act")}
                 className="rounded-lg border border-[#333333] bg-[#0B1220] px-2.5 py-1.5 text-xs text-white transition-colors hover:border-[#0078FF] focus:border-[#0078FF] focus:outline-none"
               >
-                <option value="all">All Tiers ({vaultData.length})</option>
+                <option value="all">All Gates ({vaultData.length})</option>
                 <option value="read-only">Read-Only ({tierCounts["read-only"]})</option>
-                <option value="needs-approval-to-act">Needs Approval ({tierCounts["needs-approval-to-act"]})</option>
+                <option value="needs-approval-to-act">Action-Gated ({tierCounts["needs-approval-to-act"]})</option>
               </select>
             </div>
 
@@ -248,9 +248,9 @@ export function VaultLibraryOverlay() {
                 onChange={(e) => setSelectedToolFilter(e.target.value as ToolFilterOption)}
                 className="rounded-lg border border-[#333333] bg-[#0B1220] px-2.5 py-1.5 text-xs text-white transition-colors hover:border-[#0078FF] focus:border-[#0078FF] focus:outline-none"
               >
-                <option value="all">All Agents</option>
-                <option value="with-tools">With Tools ({withToolsCount})</option>
-                <option value="no-tools">Pure Reasoning ({vaultData.length - withToolsCount})</option>
+                <option value="all">All Roles</option>
+                <option value="with-tools">Tool-Connected ({withToolsCount})</option>
+                <option value="no-tools">Direct Reasoning ({vaultData.length - withToolsCount})</option>
               </select>
             </div>
 
@@ -314,16 +314,16 @@ export function VaultLibraryOverlay() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0B1220] border border-[#333333] text-[#94a3b8]">
                 <Search className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 font-heading text-base font-semibold text-white">No agents matched your criteria</h3>
+              <h3 className="mt-4 font-heading text-base font-semibold text-white">No agents match these filters</h3>
               <p className="mt-1 text-xs text-[#CCCCCC] max-w-md">
-                Try adjusting your search keywords, category selection, or tier filters to find what you&apos;re looking for.
+                No catalog entries found for this keyword or gate selection. Clear filters to view the full roster.
               </p>
               <button
                 type="button"
                 onClick={resetFilters}
                 className="mt-4 rounded-xl border border-[#0078FF] bg-[#0078FF]/10 px-4 py-2 text-xs font-semibold text-[#0078FF] transition-all hover:bg-[#0078FF] hover:text-white"
               >
-                Clear all filters
+                Reset all filters
               </button>
             </div>
           ) : (
@@ -405,7 +405,7 @@ export function VaultLibraryOverlay() {
                           </>
                         ) : (
                           <span className="text-[10px] text-[#64748b] italic">
-                            Pure analysis (no APIs declared)
+                            Direct model reasoning (no external tools)
                           </span>
                         )}
                       </div>
@@ -415,7 +415,7 @@ export function VaultLibraryOverlay() {
                           {agent.filename}
                         </span>
                         <span className="text-[#0078FF] group-hover:underline">
-                          View details →
+                          Inspect agent →
                         </span>
                       </div>
                     </div>
@@ -483,13 +483,13 @@ export function VaultLibraryOverlay() {
                 <div>
                   <h4 className="font-heading text-sm font-semibold">
                     {selectedAgent.approvalTier === "read-only"
-                      ? "Read-Only Analysis Tier"
-                      : "Human-in-the-Loop Action Gated Tier"}
+                      ? "Read-Only Reasoning Gate"
+                      : "Action-Gated Execution"}
                   </h4>
                   <p className="mt-1 text-xs text-[#CCCCCC] leading-relaxed">
                     {selectedAgent.approvalTier === "read-only"
-                      ? "This agent performs research, analysis, and strategy formulation without executing irreversible state changes or external write mutations."
-                      : "This agent contains capabilities that can mutate external services, generate files, or dispatch actions. It will require operator approval before execution."}
+                      ? "Researches and formulates plans without writing to external services or executing destructive actions."
+                      : "Can create files, call APIs, or push changes to third-party platforms. Requires explicit operator confirmation before dispatch."}
                   </p>
                 </div>
               </div>
@@ -497,7 +497,7 @@ export function VaultLibraryOverlay() {
               {/* Role & Summary */}
               <div>
                 <h4 className="font-heading text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2 flex items-center gap-1.5">
-                  <BookOpen className="h-3.5 w-3.5 text-[#0078FF]" /> Role & Capabilities Summary
+                  <BookOpen className="h-3.5 w-3.5 text-[#0078FF]" /> Role Directive &amp; Capability Brief
                 </h4>
                 <div className="rounded-xl border border-[#333333] bg-[#0E1726]/60 p-4 text-sm text-[#E2E8F0] leading-relaxed font-inter">
                   {selectedAgent.summary}
@@ -507,7 +507,7 @@ export function VaultLibraryOverlay() {
               {/* Required Tools / APIs */}
               <div>
                 <h4 className="font-heading text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2 flex items-center gap-1.5">
-                  <Wrench className="h-3.5 w-3.5 text-[#0078FF]" /> Required Tools & Integrations
+                  <Wrench className="h-3.5 w-3.5 text-[#0078FF]" /> Tool Dependencies &amp; Integrations
                 </h4>
                 {selectedAgent.tools && selectedAgent.tools.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -523,7 +523,7 @@ export function VaultLibraryOverlay() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-[#333333] bg-[#0E1726]/40 p-3.5 text-xs text-[#94a3b8] italic">
-                    No external platform APIs or tools explicitly declared. Operates via LLM reasoning and internal prompt synthesis.
+                    Operates via direct LLM reasoning without third-party tool dependencies.
                   </div>
                 )}
               </div>
@@ -533,7 +533,7 @@ export function VaultLibraryOverlay() {
                 <Info className="h-4 w-4 text-[#0078FF] shrink-0 mt-0.5" />
                 <div>
                   <span className="font-medium text-white">Reference Catalog Entry: </span>
-                  This agent definition is loaded from the GrowForge Vault repository (`.claude/vault/{selectedAgent.filename}`). Dispatch and autonomous orchestrator wiring are managed at the department level.
+                  Catalog definition loaded from `.claude/vault/{selectedAgent.filename}`. Autonomous job routing and tool execution are orchestrated by HQ.
                 </div>
               </div>
             </div>
