@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 import {
   createMcpServer,
   updateMcpServerDetails,
@@ -21,7 +21,14 @@ export const runtime = "nodejs";
 async function requireAuth() {
   const session = await getSession();
   if (!session?.user) return { ok: false as const, status: 401, error: "Unauthorized." };
-  return { ok: true as const };
+  return { ok: true as const, session };
+}
+
+/** Empty topology shape for a public-preview visitor — same zeroed structure
+ *  generateDynamicTopology() returns for zero servers, so the Brain canvas
+ *  renders its genuinely-empty state instead of erroring on a missing field. */
+function emptyByoMcpResponse() {
+  return { ok: true, plugins: [], topology: generateDynamicTopology([]) };
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -235,10 +242,17 @@ export function handleDisconnectByoMcp(req: Request) {
   });
 }
 
-/** GET: list every byo-mcp server and the dynamic 3D brain topology generated from them. */
+/** GET: list every byo-mcp server and the dynamic 3D brain topology generated from them.
+ *  A public-preview visitor must never see the owner's real connected servers
+ *  here — this is the exact data NeuralBrainCanvas.tsx renders as live nodes,
+ *  and this route was missed by the earlier isPublicPreviewVisitor sweep
+ *  (state.md items 42/44/45) since it's a separate file from /api/mcp. */
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json(emptyByoMcpResponse());
+  }
   return handleListByoMcp();
 }
 
@@ -248,6 +262,12 @@ export async function GET() {
 export async function POST(req: Request) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json(
+      { ok: false, error: "Public preview is read-only. Sign in to connect a server." },
+      { status: 403 }
+    );
+  }
   return handleConnectByoMcp(req);
 }
 
@@ -255,6 +275,12 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  if (isPublicPreviewVisitor(gate.session)) {
+    return NextResponse.json(
+      { ok: false, error: "Public preview is read-only. Sign in to remove a server." },
+      { status: 403 }
+    );
+  }
   return handleDisconnectByoMcp(req);
 }
 
