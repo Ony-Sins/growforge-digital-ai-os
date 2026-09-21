@@ -38,6 +38,21 @@ export interface ProfileLocation {
   lng: number;
 }
 
+export interface TargetMarketArea {
+  label: string;
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  city?: string;
+  state?: string;
+  country?: string;
+  postcode?: string;
+  placeType?: string;
+  osmPoiCount?: number;
+  commercialCount?: number;
+  amenitiesCount?: number;
+}
+
 export interface UserProfileIdentity {
   fullName: string;
   designation: string;
@@ -52,6 +67,7 @@ export interface UserProfileIdentity {
   coverPhotoUrl?: string;
   location?: ProfileLocation;
   phone?: string;
+  targetMarketArea?: TargetMarketArea;
 }
 
 function emptyIdentity(): UserProfileIdentity {

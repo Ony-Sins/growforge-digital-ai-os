@@ -19,12 +19,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const lat = Number(searchParams.get("lat"));
   const lng = Number(searchParams.get("lng"));
+  const radiusKm = Number(searchParams.get("radiusKm")) || 10;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return NextResponse.json({ error: "lat and lng query params are required numbers." }, { status: 400 });
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`;
     const res = await fetch(url, {
       headers: {
         "User-Agent": "GrowForge-Digital-AI-OS/1.0 (internal team tool; profile location picker)",
@@ -33,11 +34,51 @@ export async function GET(req: Request) {
     });
     if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
     const data = await res.json();
+    const address = data.address || {};
+    const city: string | undefined = address.city || address.town || address.village || address.municipality || address.suburb;
+    const state: string | undefined = address.state || address.region || address.province;
+    const country: string | undefined = address.country;
+    const postcode: string | undefined = address.postcode;
+    const placeType: string | undefined = data.type || data.category;
     const label: string =
       data.display_name ||
-      [data.address?.city || data.address?.town || data.address?.village, data.address?.country].filter(Boolean).join(", ") ||
+      [city, state, country].filter(Boolean).join(", ") ||
       `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    return NextResponse.json({ label });
+
+    let osmPoiCount: number | undefined;
+
+    if (searchParams.get("marketContext") === "true") {
+      try {
+        const radiusM = Math.min(Math.max(radiusKm, 1), 100) * 1000;
+        const overpassQuery = `[out:json][timeout:3];(node["amenity"](around:${radiusM},${lat},${lng});node["shop"](around:${radiusM},${lat},${lng});node["office"](around:${radiusM},${lat},${lng}););out count;`;
+        const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+        const opRes = await fetch(overpassUrl, {
+          headers: {
+            "User-Agent": "GrowForge-Digital-AI-OS/1.0 (internal team tool; market research)",
+          },
+          signal: AbortSignal.timeout(3000),
+        });
+        if (opRes.ok) {
+          const opData = await opRes.json();
+          const total = opData.elements?.[0]?.tags?.total;
+          if (typeof total === "string" || typeof total === "number") {
+            osmPoiCount = Number(total);
+          }
+        }
+      } catch {
+        // Overpass timeout or offline — gracefully continue with Nominatim context
+      }
+    }
+
+    return NextResponse.json({
+      label,
+      city,
+      state,
+      country,
+      postcode,
+      placeType,
+      osmPoiCount,
+    });
   } catch {
     // Nominatim hiccup or offline — the picker still works with raw
     // coordinates as the label, just less readable.

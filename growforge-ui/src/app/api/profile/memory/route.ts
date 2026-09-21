@@ -68,6 +68,33 @@ export async function POST(req: Request) {
         ? { label: loc.label.trim().slice(0, 200), lat: loc.lat, lng: loc.lng }
         : undefined;
 
+    const tma = p.targetMarketArea;
+    const validTargetMarketArea =
+      tma &&
+      typeof tma === "object" &&
+      typeof tma.label === "string" &&
+      typeof tma.lat === "number" &&
+      typeof tma.lng === "number" &&
+      typeof tma.radiusKm === "number" &&
+      Number.isFinite(tma.lat) &&
+      Number.isFinite(tma.lng) &&
+      Number.isFinite(tma.radiusKm)
+        ? {
+            label: tma.label.trim().slice(0, 200),
+            lat: tma.lat,
+            lng: tma.lng,
+            radiusKm: Math.min(Math.max(tma.radiusKm, 1), 500),
+            city: typeof tma.city === "string" ? tma.city.trim().slice(0, 100) : undefined,
+            state: typeof tma.state === "string" ? tma.state.trim().slice(0, 100) : undefined,
+            country: typeof tma.country === "string" ? tma.country.trim().slice(0, 100) : undefined,
+            postcode: typeof tma.postcode === "string" ? tma.postcode.trim().slice(0, 50) : undefined,
+            placeType: typeof tma.placeType === "string" ? tma.placeType.trim().slice(0, 100) : undefined,
+            osmPoiCount: typeof tma.osmPoiCount === "number" && Number.isFinite(tma.osmPoiCount) ? tma.osmPoiCount : undefined,
+            commercialCount: typeof tma.commercialCount === "number" && Number.isFinite(tma.commercialCount) ? tma.commercialCount : undefined,
+            amenitiesCount: typeof tma.amenitiesCount === "number" && Number.isFinite(tma.amenitiesCount) ? tma.amenitiesCount : undefined,
+          }
+        : undefined;
+
     patch.profile = {
       fullName: typeof p.fullName === "string" ? p.fullName.trim().slice(0, 200) : "",
       designation: typeof p.designation === "string" ? p.designation.trim().slice(0, 200) : "",
@@ -81,6 +108,7 @@ export async function POST(req: Request) {
       // entirely would mean "leave it alone"; this route's contract is that
       // the identity save always sends the complete current state.
       location: validLocation,
+      targetMarketArea: validTargetMarketArea,
     };
   }
 
