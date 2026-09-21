@@ -1,65 +1,5 @@
 [
   {
-    "id": "academic-anthropologist",
-    "filename": "academic-anthropologist.md",
-    "name": "Anthropologist",
-    "emoji": "🌍",
-    "color": "#D97706",
-    "category": "academic",
-    "summary": "Expert in cultural systems, rituals, kinship, belief systems, and ethnographic method — builds culturally coherent societies that feel lived-in rather than invented",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "academic-geographer",
-    "filename": "academic-geographer.md",
-    "name": "Geographer",
-    "emoji": "🗺️",
-    "color": "#059669",
-    "category": "academic",
-    "summary": "Expert in physical and human geography, climate systems, cartography, and spatial analysis — builds geographically coherent worlds where terrain, climate, resources, and settlement patterns make scientific sense",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "academic-historian",
-    "filename": "academic-historian.md",
-    "name": "Historian",
-    "emoji": "📚",
-    "color": "#B45309",
-    "category": "academic",
-    "summary": "Expert in historical analysis, periodization, material culture, and historiography — validates historical coherence and enriches settings with authentic period detail grounded in primary and secondary sources",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "academic-narratologist",
-    "filename": "academic-narratologist.md",
-    "name": "Narratologist",
-    "emoji": "📜",
-    "color": "#8B5CF6",
-    "category": "academic",
-    "summary": "Expert in narrative theory, story structure, character arcs, and literary analysis — grounds advice in established frameworks from Propp to Campbell to modern narratology",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "academic-psychologist",
-    "filename": "academic-psychologist.md",
-    "name": "Psychologist",
-    "emoji": "🧠",
-    "color": "#EC4899",
-    "category": "academic",
-    "summary": "Expert in human behavior, personality theory, motivation, and cognitive patterns — builds psychologically credible characters and interactions grounded in clinical and research frameworks",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "academic-statistician",
-    "filename": "academic-statistician.md",
-    "name": "Statistician",
-    "emoji": "📊",
-    "color": "#8B5CF6",
-    "category": "academic",
-    "summary": "Expert in quantitative research methodology, experimental design, and statistical inference — pressure-tests claims, designs sound studies, and separates real signal from noise, chance, and bias",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
     "id": "accounts-payable-agent",
     "filename": "accounts-payable-agent.md",
     "name": "Accounts Payable Agent",
@@ -67,9 +7,12 @@
     "color": "green",
     "category": "accounts",
     "summary": "Autonomous payment processing specialist that executes vendor payments, contractor invoices, and recurring bills across any payment rail — crypto, fiat, stablecoins. Integrates with AI agent workflows via tool calls.",
-    "tools": ["Stripe"],
+    "tools": [
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "agentic-identity-trust",
     "filename": "agentic-identity-trust.md",
     "name": "Agentic Identity & Trust Architect",
@@ -79,7 +22,8 @@
     "summary": "Designs identity, authentication, and trust verification systems for autonomous AI agents operating in multi-agent environments. Ensures agents can prove who they are, what they're authorized to do, and what they actually did.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "agents-orchestrator",
     "filename": "agents-orchestrator.md",
     "name": "Agents Orchestrator",
@@ -89,7 +33,8 @@
     "summary": "Autonomous pipeline manager that orchestrates the entire development workflow. You are the leader of this process.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "automation-governance-architect",
     "filename": "automation-governance-architect.md",
     "name": "Automation Governance Architect",
@@ -97,19 +42,12 @@
     "color": "cyan",
     "category": "automation",
     "summary": "Governance-first architect for business automations (n8n-first) who audits value, risk, and maintainability before implementation.",
-    "tools": ["n8n"],
+    "tools": [
+      "n8n"
+    ],
     "approvalTier": "read-only"
-  },  {
-    "id": "blender-addon-engineer",
-    "filename": "blender-addon-engineer.md",
-    "name": "Blender Add-on Engineer",
-    "emoji": "🧩",
-    "color": "blue",
-    "category": "blender",
-    "summary": "Blender tooling specialist - Builds Python add-ons, asset validators, exporters, and pipeline automations that turn repetitive DCC work into reliable one-click workflows",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "business-strategist",
     "filename": "business-strategist.md",
     "name": "Business Strategist",
@@ -117,19 +55,12 @@
     "color": "indigo",
     "category": "business",
     "summary": "Senior management consulting specialist for competitive analysis, market entry strategy, business model design, growth planning, organizational strategy, and strategic decision-making — translating complex market dynamics into clear, actionable strategies that create sustainable competitive advantage",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "change-management-consultant",
-    "filename": "change-management-consultant.md",
-    "name": "Change Management Consultant",
-    "emoji": "🔄",
-    "color": "amber",
-    "category": "change",
-    "summary": "Expert change management specialist using ADKAR, Kotter, and Prosci frameworks to guide organizations through technology implementations, restructuring, culture transformation, and M&A integration — managing resistance, building adoption, and ensuring changes stick long after go-live",
-    "tools": ["Segment", "Slack"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "chief-financial-officer",
     "filename": "chief-financial-officer.md",
     "name": "Chief Financial Officer",
@@ -139,17 +70,8 @@
     "summary": "Strategic finance executive who governs capital allocation, treasury operations, financial planning, M&A finance, investor relations, and board reporting — translating financial complexity into clear decisions that drive business performance and stakeholder confidence.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "corporate-training-designer",
-    "filename": "corporate-training-designer.md",
-    "name": "Corporate Training Designer",
-    "emoji": "📚",
-    "color": "orange",
-    "category": "corporate",
-    "summary": "Expert in enterprise training system design and curriculum development — proficient in training needs analysis, instructional design methodology, blended learning program design, internal trainer development, leadership programs, and training effectiveness evaluation and continuous optimization.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "customer-service",
     "filename": "customer-service.md",
     "name": "Customer Service",
@@ -159,7 +81,8 @@
     "summary": "Friendly, professional customer service specialist for any industry — handling inquiries, complaints, account support, FAQs, and seamless escalation with warmth, efficiency, and a genuine commitment to customer satisfaction",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "customer-success-manager",
     "filename": "customer-success-manager.md",
     "name": "Customer Success Manager",
@@ -167,9 +90,16 @@
     "color": "green",
     "category": "customer",
     "summary": "Strategic customer success specialist for onboarding, health scoring, QBR facilitation, churn prevention, expansion identification, and renewal management — driving net revenue retention by turning customers into long-term partners who achieve measurable outcomes",
-    "tools": ["Amplitude", "Intercom", "Mixpanel", "Salesforce", "Zendesk"],
+    "tools": [
+      "Amplitude",
+      "Intercom",
+      "Mixpanel",
+      "Salesforce",
+      "Zendesk"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "data-consolidation-agent",
     "filename": "data-consolidation-agent.md",
     "name": "Data Consolidation Agent",
@@ -179,7 +109,8 @@
     "summary": "AI agent that consolidates extracted sales data into live reporting dashboards with territory, rep, and pipeline summaries",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "data-privacy-officer",
     "filename": "data-privacy-officer.md",
     "name": "Data Privacy Officer",
@@ -189,7 +120,8 @@
     "summary": "Corporate data privacy specialist and DPO who builds GDPR, CCPA, and global privacy compliance programs — covering data mapping, privacy impact assessments, consent management, breach response, vendor due diligence, and regulatory engagement.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "design-brand-guardian",
     "filename": "design-brand-guardian.md",
     "name": "Brand Guardian",
@@ -199,7 +131,8 @@
     "summary": "Expert brand strategist and guardian specializing in brand identity development, consistency maintenance, and strategic brand positioning",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-image-prompt-engineer",
     "filename": "design-image-prompt-engineer.md",
     "name": "Image Prompt Engineer",
@@ -209,7 +142,8 @@
     "summary": "Expert photography prompt engineer specializing in crafting detailed, evocative prompts for AI image generation. Masters the art of translating visual concepts into precise language that produces stunning, professional-quality photography through generative AI tools.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-inclusive-visuals-specialist",
     "filename": "design-inclusive-visuals-specialist.md",
     "name": "Inclusive Visuals Specialist",
@@ -219,7 +153,8 @@
     "summary": "Representation expert who defeats systemic AI biases to generate culturally accurate, affirming, and non-stereotypical images and video.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "design-persona-walkthrough",
     "filename": "design-persona-walkthrough.md",
     "name": "Persona Walkthrough Specialist",
@@ -227,9 +162,12 @@
     "color": "#10B981",
     "category": "design",
     "summary": "Simulate cognitive walkthroughs of web pages from a defined persona's psychological perspective — captures emotional reactions and rational thought at each scroll position, then delivers structured CRO reports grounded in LIFT, Cialdini, and Fogg frameworks",
-    "tools": ["Google Ads"],
+    "tools": [
+      "Google Ads"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-ui-designer",
     "filename": "design-ui-designer.md",
     "name": "UI Designer",
@@ -239,7 +177,8 @@
     "summary": "Expert UI designer specializing in visual design systems, component libraries, and pixel-perfect interface creation. Creates beautiful, consistent, accessible user interfaces that enhance UX and reflect brand identity",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-ui-finish-gate-reviewer",
     "filename": "design-ui-finish-gate-reviewer.md",
     "name": "UI Finish-Gate Reviewer",
@@ -249,7 +188,8 @@
     "summary": "Product-interface reviewer who catches generic, interchangeable UI before it ships by grounding critique in real product evidence, a written design contract, and a hard implementation finish gate.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-ux-architect",
     "filename": "design-ux-architect.md",
     "name": "UX Architect",
@@ -259,7 +199,8 @@
     "summary": "Technical architecture and UX specialist who provides developers with solid foundations, CSS systems, and clear implementation guidance",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-ux-researcher",
     "filename": "design-ux-researcher.md",
     "name": "UX Researcher",
@@ -269,7 +210,8 @@
     "summary": "Expert user experience researcher specializing in user behavior analysis, usability testing, and data-driven design insights. Provides actionable research findings that improve product usability and user satisfaction",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-visual-storyteller",
     "filename": "design-visual-storyteller.md",
     "name": "Visual Storyteller",
@@ -279,7 +221,8 @@
     "summary": "Expert visual communication specialist focused on creating compelling visual narratives, multimedia content, and brand storytelling through design. Specializes in transforming complex information into engaging visual stories that connect with audiences and drive emotional engagement.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "design-whimsy-injector",
     "filename": "design-whimsy-injector.md",
     "name": "Whimsy Injector",
@@ -289,17 +232,8 @@
     "summary": "Expert creative specialist focused on adding personality, delight, and playful elements to brand experiences. Creates memorable, joyful interactions that differentiate brands through unexpected moments of whimsy",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "economy-designer",
-    "filename": "economy-designer.md",
-    "name": "Economy Designer",
-    "emoji": "💰",
-    "color": "green",
-    "category": "economy",
-    "summary": "Virtual economy architect - Masters currency systems, sources and sinks, monetization modeling, inflation control, and data-driven economic balancing for live games",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-ai-data-remediation-engineer",
     "filename": "engineering-ai-data-remediation-engineer.md",
     "name": "AI Data Remediation Engineer",
@@ -307,9 +241,15 @@
     "color": "green",
     "category": "engineering",
     "summary": "Specialist in self-healing data pipelines — uses air-gapped local SLMs and semantic clustering to automatically detect, classify, and fix data anomalies at scale. Focuses exclusively on the remediation layer: intercepting bad data, generating deterministic fix logic via Ollama, and guaranteeing zero data loss. Not a general data engineer — a surgical specialist for when your data is broken and the pipeline can't stop.",
-    "tools": ["dbt", "PagerDuty", "Redis", "Slack"],
+    "tools": [
+      "dbt",
+      "PagerDuty",
+      "Redis",
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-ai-engineer",
     "filename": "engineering-ai-engineer.md",
     "name": "AI Engineer",
@@ -317,9 +257,18 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Expert AI/ML engineer specializing in machine learning model development, deployment, and integration into production systems. Focused on building intelligent features, data pipelines, and AI-powered applications with emphasis on practical, scalable solutions.",
-    "tools": ["AWS", "Azure", "Chroma", "Hugging Face", "OpenAI API", "Pinecone", "Weaviate"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "Chroma",
+      "Hugging Face",
+      "OpenAI API",
+      "Pinecone",
+      "Weaviate"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-api-platform-engineer",
     "filename": "engineering-api-platform-engineer.md",
     "name": "API Platform Engineer",
@@ -329,7 +278,8 @@
     "summary": "Expert API platform engineer for public and partner APIs — contract-first design (OpenAPI/gRPC), versioning and deprecation policy, SDK generation, API gateway concerns (auth, rate limiting, quotas), and developer-portal DX.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-ats-validator-architect",
     "filename": "engineering-ats-validator-architect.md",
     "name": "ATS Validator Architect",
@@ -337,9 +287,14 @@
     "color": "#2563EB",
     "category": "engineering",
     "summary": "Architect and validator for Applicant Tracking Systems (ATS) and resume parsers. Combines deterministic information retrieval (BM25/TF-IDF and n-grams without AI), quantified Google/IBM X-Y-Z heuristics calibrated by seniority, layout linearization and PDF text layer integrity auditing, regulatory compliance (EU AI Act, NYC LL 144), sub-5ms client-side execution, and Agent-Native BYOK architecture.",
-    "tools": ["AWS", "Docker", "Kubernetes"],
+    "tools": [
+      "AWS",
+      "Docker",
+      "Kubernetes"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-autonomous-optimization-architect",
     "filename": "engineering-autonomous-optimization-architect.md",
     "name": "Autonomous Optimization Architect",
@@ -349,7 +304,8 @@
     "summary": "Intelligent system governor that continuously shadow-tests APIs for performance while enforcing strict financial and security guardrails against runaway costs.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-backend-architect",
     "filename": "engineering-backend-architect.md",
     "name": "Backend Architect",
@@ -357,9 +313,17 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Senior backend architect specializing in scalable system design, database architecture, API development, and cloud infrastructure. Builds robust, secure, performant server-side applications and microservices",
-    "tools": ["GraphQL for flexible product queries", "Kubernetes", "PostgreSQL", "Redis", "REST endpoints for user operations", "REST with webhook callbacks"],
+    "tools": [
+      "GraphQL for flexible product queries",
+      "Kubernetes",
+      "PostgreSQL",
+      "Redis",
+      "REST endpoints for user operations",
+      "REST with webhook callbacks"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-china-network-engineer",
     "filename": "engineering-china-network-engineer.md",
     "name": "China Network Engineer",
@@ -369,7 +333,8 @@
     "summary": "Expert in mainland China's mainstream enterprise networking stacks — Huawei VRP, H3C Comware, Ruijie RGOS, and Hillstone StoneOS — covering routing, switching, firewalling, NAT, and MLPS 2.0 (等保) compliant border design for domestic deployments.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-cms-developer",
     "filename": "engineering-cms-developer.md",
     "name": "CMS Developer",
@@ -377,9 +342,13 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Drupal and WordPress specialist for theme development, custom plugins/modules, content architecture, and code-first CMS implementation",
-    "tools": ["Playwright", "Redis"],
+    "tools": [
+      "Playwright",
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-codebase-onboarding-engineer",
     "filename": "engineering-codebase-onboarding-engineer.md",
     "name": "Codebase Onboarding Engineer",
@@ -389,7 +358,8 @@
     "summary": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-code-reviewer",
     "filename": "engineering-code-reviewer.md",
     "name": "Code Reviewer",
@@ -399,7 +369,8 @@
     "summary": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-database-optimizer",
     "filename": "engineering-database-optimizer.md",
     "name": "Database Optimizer",
@@ -407,9 +378,13 @@
     "color": "amber",
     "category": "engineering",
     "summary": "Expert database specialist focusing on schema design, query optimization, indexing strategies, and performance tuning for PostgreSQL, MySQL, and modern databases like Supabase and PlanetScale.",
-    "tools": ["MySQL", "PostgreSQL"],
+    "tools": [
+      "MySQL",
+      "PostgreSQL"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-database-reliability-engineer",
     "filename": "engineering-database-reliability-engineer.md",
     "name": "Database Reliability Engineer",
@@ -419,7 +394,8 @@
     "summary": "Expert database reliability engineer (DBRE) — high availability and replication, automated failover, backup and point-in-time recovery, zero-downtime online schema migrations, connection pooling, and disaster-recovery drills. Focused on keeping data safe and available, not query tuning.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-data-engineer",
     "filename": "engineering-data-engineer.md",
     "name": "Data Engineer",
@@ -427,9 +403,19 @@
     "color": "orange",
     "category": "engineering",
     "summary": "Expert data engineer specializing in building reliable data pipelines, lakehouse architectures, and scalable data infrastructure. Masters ETL/ELT, Apache Spark, dbt, streaming systems, and cloud data platforms to turn raw data into trusted, analytics-ready assets.",
-    "tools": ["AWS", "Azure", "BigQuery", "dbt", "GCP", "PagerDuty", "Slack", "Snowflake"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "BigQuery",
+      "dbt",
+      "GCP",
+      "PagerDuty",
+      "Slack",
+      "Snowflake"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-data-visualization-engineer",
     "filename": "engineering-data-visualization-engineer.md",
     "name": "Data Visualization Engineer",
@@ -439,7 +425,8 @@
     "summary": "Expert data visualization engineer — chart-type selection by data and question, perceptually honest encodings, colorblind-safe data palettes, accessible and interactive charts, and rendering large datasets performantly with D3, Vega, and charting libraries.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-desktop-app-engineer",
     "filename": "engineering-desktop-app-engineer.md",
     "name": "Desktop App Engineer",
@@ -449,7 +436,8 @@
     "summary": "Expert desktop application engineer for Electron and Tauri — secure IPC and process isolation, code signing and notarization, auto-update pipelines, native OS integration, and resource-footprint discipline.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-developer-tooling-engineer",
     "filename": "engineering-developer-tooling-engineer.md",
     "name": "Developer Tooling Engineer",
@@ -459,7 +447,8 @@
     "summary": "Expert developer-tooling and CLI engineer — building command-line tools and internal developer platforms with great DX: intuitive command design, helpful errors, shell completions, fast startup, cross-platform distribution, and scriptable, composable interfaces.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-devops-automator",
     "filename": "engineering-devops-automator.md",
     "name": "DevOps Automator",
@@ -467,9 +456,23 @@
     "color": "orange",
     "category": "engineering",
     "summary": "Expert DevOps engineer specializing in infrastructure automation, CI/CD pipeline development, and cloud operations",
-    "tools": ["AWS", "Azure", "Docker", "GCP", "GitHub", "Grafana", "kubectl", "Kubernetes", "PagerDuty", "Prometheus", "Slack", "Terraform"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "Docker",
+      "GCP",
+      "GitHub",
+      "Grafana",
+      "kubectl",
+      "Kubernetes",
+      "PagerDuty",
+      "Prometheus",
+      "Slack",
+      "Terraform"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-drupal-performance",
     "filename": "engineering-drupal-performance.md",
     "name": "Drupal Performance Engineer",
@@ -477,9 +480,12 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Expert Drupal 10/11 performance engineer specializing in Core Web Vitals, render and dynamic page caching, BigPipe, cache tags and contexts, database query and Views optimization, CSS/JS aggregation, responsive images and lazy loading, CDN integration, and opcache/PHP-FPM tuning for fast, audit-passing sites",
-    "tools": ["Redis"],
+    "tools": [
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-drupal-shopping-cart",
     "filename": "engineering-drupal-shopping-cart.md",
     "name": "Drupal Shopping Cart Engineer",
@@ -487,9 +493,12 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Expert Drupal e-commerce engineer specializing in Drupal Commerce for product catalog management, payment gateway integration, checkout workflow design, order management, tax and promotion configuration, and high-reliability storefront delivery on Drupal 10/11",
-    "tools": ["Stripe"],
+    "tools": [
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-email-intelligence-engineer",
     "filename": "engineering-email-intelligence-engineer.md",
     "name": "Email Intelligence Engineer",
@@ -499,7 +508,8 @@
     "summary": "Expert in extracting structured, reasoning-ready data from raw email threads for AI agents and automation systems",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-embedded-firmware-engineer",
     "filename": "engineering-embedded-firmware-engineer.md",
     "name": "Embedded Firmware Engineer",
@@ -509,7 +519,8 @@
     "summary": "Specialist in bare-metal and RTOS firmware - ESP32/ESP-IDF, PlatformIO, Arduino, ARM Cortex-M, STM32 HAL/LL, Nordic nRF5/nRF Connect SDK, FreeRTOS, Zephyr",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-feishu-integration-developer",
     "filename": "engineering-feishu-integration-developer.md",
     "name": "Feishu Integration Developer",
@@ -519,7 +530,8 @@
     "summary": "Full-stack integration expert specializing in the Feishu (Lark) Open Platform — proficient in Feishu bots, mini programs, approval workflows, Bitable (multidimensional spreadsheets), interactive message cards, Webhooks, SSO authentication, and workflow automation, building enterprise-grade collaboration and automation solutions within the Feishu ecosystem.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-filament-optimization-specialist",
     "filename": "engineering-filament-optimization-specialist.md",
     "name": "Filament Optimization Specialist",
@@ -529,7 +541,8 @@
     "summary": "Expert in restructuring and optimizing Filament PHP admin interfaces for maximum usability and efficiency. Focuses on impactful structural changes — not just cosmetic tweaks.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-finops-engineer",
     "filename": "engineering-finops-engineer.md",
     "name": "FinOps Engineer",
@@ -537,9 +550,15 @@
     "color": "#0891B2",
     "category": "engineering",
     "summary": "Expert cloud cost engineer for AWS/GCP/Azure — cost allocation and tagging, rightsizing, commitment planning (reserved instances/savings plans), egress and storage optimization, and unit-economics dashboards that tie spend to business value.",
-    "tools": ["AWS", "Azure", "GCP", "Kubernetes"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP",
+      "Kubernetes"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-frontend-developer",
     "filename": "engineering-frontend-developer.md",
     "name": "Frontend Developer",
@@ -549,7 +568,8 @@
     "summary": "Expert frontend developer specializing in modern web technologies, React/Vue/Angular frameworks, UI implementation, and performance optimization",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-gaussdb-expert",
     "filename": "engineering-gaussdb-expert.md",
     "name": "GaussDB Expert Engineer",
@@ -557,9 +577,13 @@
     "color": "amber",
     "category": "engineering",
     "summary": "Expert database specialist focusing on GaussDB OLTP — Huawei's self-developed enterprise-grade relational database (NOT GaussDB(DWS) OLAP, NOT GaussDB(for openGauss) cloud service, NOT GaussDB(for MySQL)). Covers schema design, distributed table design, query optimization, indexing, Ustore engine, and performance tuning for both distributed and centralized deployments.",
-    "tools": ["MySQL", "PostgreSQL"],
+    "tools": [
+      "MySQL",
+      "PostgreSQL"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-git-workflow-master",
     "filename": "engineering-git-workflow-master.md",
     "name": "Git Workflow Master",
@@ -569,7 +593,8 @@
     "summary": "Expert in Git workflows, branching strategies, and version control best practices including conventional commits, rebasing, worktrees, and CI-friendly branch management.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-i18n-engineer",
     "filename": "engineering-i18n-engineer.md",
     "name": "Internationalization Engineer",
@@ -579,7 +604,8 @@
     "summary": "Expert i18n engineer for ICU MessageFormat, CLDR plural rules, RTL and bidirectional layouts, locale-aware date/number/currency formatting, string extraction pipelines, and pseudo-localization testing.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-identity-access-engineer",
     "filename": "engineering-identity-access-engineer.md",
     "name": "Identity & Access Engineer",
@@ -587,9 +613,12 @@
     "color": "#7C3AED",
     "category": "engineering",
     "summary": "Expert identity engineer for OAuth 2.0/OIDC flows, enterprise SSO (SAML/OIDC) and SCIM provisioning, passkeys/WebAuthn, session architecture, and multi-tenant authorization with RBAC/ABAC.",
-    "tools": ["Redis"],
+    "tools": [
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-incident-response-commander",
     "filename": "engineering-incident-response-commander.md",
     "name": "Incident Response Commander",
@@ -597,9 +626,16 @@
     "color": "#e63946",
     "category": "engineering",
     "summary": "Expert incident commander specializing in production incident management, structured response coordination, post-mortem facilitation, SLO/SLI tracking, and on-call process design for reliable engineering organizations.",
-    "tools": ["Datadog", "Grafana", "kubectl", "PagerDuty", "Slack"],
+    "tools": [
+      "Datadog",
+      "Grafana",
+      "kubectl",
+      "PagerDuty",
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-iot-fleet-engineer",
     "filename": "engineering-iot-fleet-engineer.md",
     "name": "IoT Fleet Engineer",
@@ -609,7 +645,8 @@
     "summary": "Expert IoT and edge fleet engineer — device provisioning and identity, MQTT/telemetry pipelines, staged over-the-air (OTA) firmware updates with rollback, edge compute, and observability across fleets of unreliable, intermittently-connected devices.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-it-service-manager",
     "filename": "engineering-it-service-manager.md",
     "name": "IT Service Manager",
@@ -617,9 +654,14 @@
     "color": "blue",
     "category": "engineering",
     "summary": "Expert IT service management specialist using ITIL 4 framework for service catalog design, incident and problem management, change control, SLA governance, CMDB maintenance, and continual service improvement — ensuring IT delivers reliable, measurable business value across any organization size",
-    "tools": ["Jira", "ServiceNow", "Zendesk"],
+    "tools": [
+      "Jira",
+      "ServiceNow",
+      "Zendesk"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-knowledge-graph-engineer",
     "filename": "engineering-knowledge-graph-engineer.md",
     "name": "Knowledge Graph Engineer",
@@ -627,9 +669,12 @@
     "color": "violet",
     "category": "engineering",
     "summary": "Structures information and capabilities into interconnected nodes (entities) and edges (relationships) — enabling dynamic context navigation, modular competency chaining, lower token costs, and hallucination reduction.",
-    "tools": ["Stripe"],
+    "tools": [
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-llm-post-training-engineer",
     "filename": "engineering-llm-post-training-engineer.md",
     "name": "LLM Post-Training Engineer",
@@ -639,7 +684,8 @@
     "summary": "Evidence-driven owner for SFT, preference optimization, RLHF/RLVR, MoE post-training, and the release gates that turn a checkpoint into a defensible model change.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-minimal-change-engineer",
     "filename": "engineering-minimal-change-engineer.md",
     "name": "Minimal Change Engineer",
@@ -649,7 +695,8 @@
     "summary": "Engineering specialist focused on minimum-viable diffs — fixes only what was asked, refuses scope creep, prefers three similar lines over a premature abstraction. The discipline that prevents bug-fix PRs from becoming refactor avalanches.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-mobile-app-builder",
     "filename": "engineering-mobile-app-builder.md",
     "name": "Mobile App Builder",
@@ -659,7 +706,8 @@
     "summary": "Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-mobile-release-engineer",
     "filename": "engineering-mobile-release-engineer.md",
     "name": "Mobile Release Engineer",
@@ -669,7 +717,8 @@
     "summary": "Expert mobile release and distribution engineer for iOS and Android — code signing, provisioning, fastlane pipelines, App Store Connect and Play Console submission, phased rollouts, and crash-triaged release health.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-multi-agent-systems-architect",
     "filename": "engineering-multi-agent-systems-architect.md",
     "name": "Multi-Agent Systems Architect",
@@ -679,7 +728,8 @@
     "summary": "Systems architect specializing in the design, coordination, and governance of multi-agent AI pipelines — covering topology selection, context management, inter-agent trust, failure recovery, human-in-the-loop gating, and observability for production-grade agent systems.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-network-engineer",
     "filename": "engineering-network-engineer.md",
     "name": "Network Engineer",
@@ -689,7 +739,8 @@
     "summary": "Expert network engineer for Cisco IOS/IOS-XE, Cisco ASA/FTD, Juniper Junos, and Palo Alto PAN-OS routing, switching, firewalling, and troubleshooting.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-orgscript-engineer",
     "filename": "engineering-orgscript-engineer.md",
     "name": "OrgScript Engineer",
@@ -699,7 +750,8 @@
     "summary": "Expert in designing, parsing, and implementing OrgScript grammar, AST validation, and business logic definitions.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-payments-billing-engineer",
     "filename": "engineering-payments-billing-engineer.md",
     "name": "Payments & Billing Engineer",
@@ -707,9 +759,12 @@
     "color": "#2E7D32",
     "category": "engineering",
     "summary": "Expert payments engineer for PSP integrations (Stripe, Adyen, Braintree, PayPal), idempotent payment flows, webhook processing, subscription billing, SCA/3DS, PCI scope reduction, and financial reconciliation.",
-    "tools": ["Stripe"],
+    "tools": [
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-pdf-engine-architect",
     "filename": "engineering-pdf-engine-architect.md",
     "name": "PDF Engine Architect",
@@ -717,9 +772,13 @@
     "color": "#DC2626",
     "category": "engineering",
     "summary": "Architect and specialist in deterministic HTML-to-PDF document compilation, Playwright browser context pools, dynamic Euclidean page sizing, LayoutNG subpixel budgeting, tagged PDF (PDF/UA-1 & PDF/A-2b), and 1:1 sheet canvas editors.",
-    "tools": ["Playwright", "Puppeteer"],
+    "tools": [
+      "Playwright",
+      "Puppeteer"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-platform-engineer",
     "filename": "engineering-platform-engineer.md",
     "name": "Platform Engineer",
@@ -729,7 +788,8 @@
     "summary": "Expert internal developer platform (IDP) engineer specializing in golden paths, paved roads, and self-serve infrastructure that multiplies engineering velocity.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-privacy-engineer",
     "filename": "engineering-privacy-engineer.md",
     "name": "Privacy Engineer",
@@ -737,9 +797,12 @@
     "color": "#7E22CE",
     "category": "engineering",
     "summary": "Expert privacy engineer who implements privacy in code — PII discovery and classification, data minimization, consent enforcement at the API layer, automated DSAR and deletion across services, pseudonymization/tokenization, and retention automation. Builds the technical controls a privacy policy only promises.",
-    "tools": ["Redis"],
+    "tools": [
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-prompt-engineer",
     "filename": "engineering-prompt-engineer.md",
     "name": "Prompt Engineer",
@@ -749,7 +812,8 @@
     "summary": "Specialist in crafting, testing, and systematically optimizing prompts for LLMs — turning vague instructions into reliable, production-grade AI behaviors.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-rag-pipeline-engineer",
     "filename": "engineering-rag-pipeline-engineer.md",
     "name": "RAG Pipeline Engineer",
@@ -759,7 +823,8 @@
     "summary": "Production RAG specialist focused on chunking strategy, retrieval quality, hybrid search, re-ranking, and eval-driven iteration. Builds pipelines that actually retrieve the right context — not just pipelines that run.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-rapid-prototyper",
     "filename": "engineering-rapid-prototyper.md",
     "name": "Rapid Prototyper",
@@ -767,9 +832,13 @@
     "color": "green",
     "category": "engineering",
     "summary": "Specialized in ultra-fast proof-of-concept development and MVP creation using efficient tools and frameworks",
-    "tools": ["Google Analytics", "PostgreSQL"],
+    "tools": [
+      "Google Analytics",
+      "PostgreSQL"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-realtime-collaboration-engineer",
     "filename": "engineering-realtime-collaboration-engineer.md",
     "name": "Realtime Collaboration Engineer",
@@ -777,9 +846,12 @@
     "color": "#E11D48",
     "category": "engineering",
     "summary": "Expert realtime systems engineer for WebSocket/SSE infrastructure, presence, CRDT and OT-based collaborative editing, offline-first sync engines, and fan-out scaling with reconnect-safe protocols.",
-    "tools": ["Redis"],
+    "tools": [
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-rust-refactoring-specialist",
     "filename": "engineering-rust-refactoring-specialist.md",
     "name": "Rust Refactoring Specialist",
@@ -789,7 +861,8 @@
     "summary": "Expert Rust engineer for repository-scale refactoring, safe renames, module restructuring, duplication removal, panic hardening, ownership improvements, and compiler or Clippy remediation.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-search-relevance-engineer",
     "filename": "engineering-search-relevance-engineer.md",
     "name": "Search Relevance Engineer",
@@ -797,9 +870,13 @@
     "color": "#00BFB3",
     "category": "engineering",
     "summary": "Expert search engineer for Elasticsearch and OpenSearch — index and analyzer design, BM25 query tuning, hybrid lexical+vector retrieval, and judgment-based relevance evaluation with nDCG and online experiments.",
-    "tools": ["Elasticsearch", "Segment"],
+    "tools": [
+      "Elasticsearch",
+      "Segment"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-section-508-specialist",
     "filename": "engineering-section-508-specialist.md",
     "name": "Section 508 Accessibility Specialist",
@@ -809,7 +886,8 @@
     "summary": "Expert U.S. federal Section 508 accessibility engineer (the 508 legal baseline is WCAG 2.0 Level AA; WCAG 2.1/2.2 AA are recommended best practice, and ADA Title II requires WCAG 2.1 AA for state/local government) specializing in accessible web development, ARIA implementation, screen reader testing (JAWS/NVDA/VoiceOver), keyboard navigation, color contrast, accessible forms and PDFs, VPAT/ACR authoring, automated and manual auditing (axe/WAVE/Lighthouse), and remediation for government and enterprise sites",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-senior-developer",
     "filename": "engineering-senior-developer.md",
     "name": "Senior Developer",
@@ -819,7 +897,8 @@
     "summary": "Premium implementation specialist - Masters Laravel/Livewire/FluxUI, advanced CSS, Three.js integration",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-software-architect",
     "filename": "engineering-software-architect.md",
     "name": "Software Architect",
@@ -829,7 +908,8 @@
     "summary": "Expert software architect specializing in system design, domain-driven design, architectural patterns, and technical decision-making for scalable, maintainable systems.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-solidity-smart-contract-engineer",
     "filename": "engineering-solidity-smart-contract-engineer.md",
     "name": "Solidity Smart Contract Engineer",
@@ -839,7 +919,8 @@
     "summary": "Expert Solidity developer specializing in EVM smart contract architecture, gas optimization, upgradeable proxy patterns, DeFi protocol development, and security-first contract design across Ethereum and L2 chains.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-sre",
     "filename": "engineering-sre.md",
     "name": "SRE (Site Reliability Engineer)",
@@ -849,7 +930,8 @@
     "summary": "Expert site reliability engineer specializing in SLOs, error budgets, observability, chaos engineering, and toil reduction for production systems at scale.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-technical-writer",
     "filename": "engineering-technical-writer.md",
     "name": "Technical Writer",
@@ -857,9 +939,12 @@
     "color": "teal",
     "category": "engineering",
     "summary": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
-    "tools": ["GitHub"],
+    "tools": [
+      "GitHub"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-universal-document-compiler",
     "filename": "engineering-universal-document-compiler.md",
     "name": "Universal Document Compiler",
@@ -867,9 +952,13 @@
     "color": "#3B82F6",
     "category": "engineering",
     "summary": "Architect of schema-agnostic document ASTs, algorithmic data-shape layout inference, bidirectional CST-to-canvas synchronization, and universal paged document publishing.",
-    "tools": ["Figma", "Notion"],
+    "tools": [
+      "Figma",
+      "Notion"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-uswds-developer",
     "filename": "engineering-uswds-developer.md",
     "name": "USWDS Developer",
@@ -879,7 +968,8 @@
     "summary": "Expert U.S. Web Design System frontend developer specializing in USWDS components and design tokens, accessible-by-default patterns, responsive government UI, Sass settings/theming, the federal design language, integration into CMS platforms (Drupal/WordPress), and compliance with 21st Century IDEA and the Federal Website Standards",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-video-streaming-engineer",
     "filename": "engineering-video-streaming-engineer.md",
     "name": "Video Streaming Engineer",
@@ -887,9 +977,12 @@
     "color": "#DC2626",
     "category": "engineering",
     "summary": "Expert video streaming engineer for adaptive bitrate delivery — HLS/DASH packaging, ffmpeg transcode ladders, CMAF low-latency, DRM, CDN delivery, and QoE-driven player tuning.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-voice-ai-integration-engineer",
     "filename": "engineering-voice-ai-integration-engineer.md",
     "name": "Voice AI Integration Engineer",
@@ -897,9 +990,16 @@
     "color": "violet",
     "category": "engineering",
     "summary": "Expert in building end-to-end speech transcription pipelines using Whisper-style models and cloud ASR services — from raw audio ingestion through preprocessing, transcript cleanup, subtitle generation, speaker diarization, and structured downstream integration into apps, APIs, and CMS platforms.",
-    "tools": ["AWS", "GitHub", "Grafana", "Prometheus", "Redis"],
+    "tools": [
+      "AWS",
+      "GitHub",
+      "Grafana",
+      "Prometheus",
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-webassembly-engineer",
     "filename": "engineering-webassembly-engineer.md",
     "name": "WebAssembly Engineer",
@@ -907,9 +1007,12 @@
     "color": "#6D28D9",
     "category": "engineering",
     "summary": "Expert WebAssembly engineer — compiling Rust/C++/Go to Wasm, JS interop and the boundary marshalling cost, WASI and server-side runtimes (Wasmtime/Wasmer), the component model, and near-native performance tuning.",
-    "tools": ["Linear"],
+    "tools": [
+      "Linear"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "engineering-wechat-mini-program-developer",
     "filename": "engineering-wechat-mini-program-developer.md",
     "name": "WeChat Mini Program Developer",
@@ -919,7 +1022,8 @@
     "summary": "Expert WeChat Mini Program developer specializing in 小程序 development with WXML/WXSS/WXS, WeChat API integration, payment systems, subscription messaging, and the full WeChat ecosystem.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-wordpress-performance",
     "filename": "engineering-wordpress-performance.md",
     "name": "WordPress Performance Engineer",
@@ -927,9 +1031,13 @@
     "color": "purple",
     "category": "engineering",
     "summary": "Expert WordPress performance engineer specializing in Core Web Vitals, object caching (Redis/Memcached), page caching, database and WP_Query optimization, the Transients API, asset minification/deferral/critical CSS, image optimization and lazy loading, CDN integration, plugin performance auditing, and PHP-FPM/opcache tuning for fast, audit-passing sites",
-    "tools": ["MySQL", "Redis"],
+    "tools": [
+      "MySQL",
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "engineering-wordpress-shopping-cart",
     "filename": "engineering-wordpress-shopping-cart.md",
     "name": "WordPress Shopping Cart Engineer",
@@ -937,19 +1045,12 @@
     "color": "purple",
     "category": "engineering",
     "summary": "Expert WordPress e-commerce engineer specializing in WooCommerce for product catalog management, payment gateway integration, checkout customization, order management, tax and coupon configuration, and conversion-optimized storefront delivery on WordPress",
-    "tools": ["Stripe"],
+    "tools": [
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "esg-sustainability-officer",
-    "filename": "esg-sustainability-officer.md",
-    "name": "ESG & Sustainability Officer",
-    "emoji": "🌱",
-    "color": "green",
-    "category": "esg",
-    "summary": "Corporate sustainability strategist and ESG reporting specialist who builds environmental, social, and governance programs, manages disclosures, drives decarbonization initiatives, and aligns business strategy with stakeholder and regulatory expectations.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "finance-bookkeeper-controller",
     "filename": "finance-bookkeeper-controller.md",
     "name": "Bookkeeper & Controller",
@@ -959,7 +1060,8 @@
     "summary": "Expert bookkeeper and controller specializing in day-to-day accounting operations, financial reconciliations, month-end close processes, and internal controls. Ensures the accuracy, completeness, and timeliness of financial records while maintaining GAAP compliance and audit readiness at all times.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "finance-financial-analyst",
     "filename": "finance-financial-analyst.md",
     "name": "Financial Analyst",
@@ -969,7 +1071,8 @@
     "summary": "Expert financial analyst specializing in financial modeling, forecasting, scenario analysis, and data-driven decision support. Transforms raw financial data into actionable business intelligence that drives strategic planning, investment decisions, and operational optimization.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "finance-fpa-analyst",
     "filename": "finance-fpa-analyst.md",
     "name": "FP&A Analyst",
@@ -977,9 +1080,12 @@
     "color": "green",
     "category": "finance",
     "summary": "Expert Financial Planning & Analysis (FP&A) analyst specializing in budgeting, variance analysis, financial planning, rolling forecasts, and strategic decision support. Bridges the gap between the numbers and the business narrative to drive operational performance and strategic resource allocation.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "finance-investment-researcher",
     "filename": "finance-investment-researcher.md",
     "name": "Investment Researcher",
@@ -989,7 +1095,8 @@
     "summary": "Expert investment researcher specializing in market research, due diligence, portfolio analysis, and asset valuation. Conducts rigorous fundamental and quantitative analysis to identify investment opportunities, assess risks, and support data-driven portfolio decisions across public equities, private markets, and alternative assets.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "finance-tax-strategist",
     "filename": "finance-tax-strategist.md",
     "name": "Tax Strategist",
@@ -999,277 +1106,8 @@
     "summary": "Expert tax strategist specializing in tax optimization, multi-jurisdictional compliance, transfer pricing, and strategic tax planning. Navigates complex tax codes to minimize liability while ensuring full regulatory compliance across local, state, federal, and international tax regimes.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
-    "id": "game-audio-engineer",
-    "filename": "game-audio-engineer.md",
-    "name": "Game Audio Engineer",
-    "emoji": "🎵",
-    "color": "indigo",
-    "category": "game",
-    "summary": "Interactive audio specialist - Masters FMOD/Wwise integration, adaptive music systems, spatial audio, and audio performance budgeting across all game engines",
-    "tools": ["Linear"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "game-designer",
-    "filename": "game-designer.md",
-    "name": "Game Designer",
-    "emoji": "🎮",
-    "color": "yellow",
-    "category": "game",
-    "summary": "Systems and mechanics architect - Masters GDD authorship, player psychology, economy balancing, and gameplay loop design across all engines and genres",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-3d-scene-developer",
-    "filename": "gis-3d-scene-developer.md",
-    "name": "3D & Scene Developer",
-    "emoji": "🏔️",
-    "color": "cyan",
-    "category": "gis",
-    "summary": "Web 3D visualization specialist who creates immersive 3D scenes, terrain models, point cloud visualizations, and interactive web experiences using Cesium, ArcGIS Scene Viewer, and modern 3D web frameworks.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "gis-analyst",
-    "filename": "gis-analyst.md",
-    "name": "GIS Analyst",
-    "emoji": "🖥️",
-    "color": "teal",
-    "category": "gis",
-    "summary": "Day-to-day GIS operator who creates maps, manages layers, performs spatial queries, and maintains geospatial data integrity across desktop and web environments.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "gis-bim-specialist",
-    "filename": "gis-bim-specialist.md",
-    "name": "BIM/GIS Specialist",
-    "emoji": "🏗️",
-    "color": "gold",
-    "category": "gis",
-    "summary": "Integration specialist who bridges Building Information Modeling and Geographic Information Systems — Revit/IFC data conversion, indoor mapping, digital twin architecture, and facility management data models.",
-    "tools": ["Azure"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-cartography-designer",
-    "filename": "gis-cartography-designer.md",
-    "name": "Cartography Designer",
-    "emoji": "🎨",
-    "color": "pink",
-    "category": "gis",
-    "summary": "Map aesthetics specialist who designs beautiful, readable, and effective maps — color theory, typography, label placement, basemap selection, and visual hierarchy for both print and web.",
-    "tools": ["Chroma"],
-    "approvalTier": "read-only"
-  },  {
-    "id": "gis-drone-reality-mapping",
-    "filename": "gis-drone-reality-mapping.md",
-    "name": "Drone/Reality Mapping Specialist",
-    "emoji": "🛸",
-    "color": "amber",
-    "category": "gis",
-    "summary": "Photogrammetry and reality capture expert who processes drone imagery into orthomosaics, digital terrain models, point clouds, and 3D meshes — bridging field capture and GIS-ready products.",
-    "tools": ["GCP"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-geoai-ml-engineer",
-    "filename": "gis-geoai-ml-engineer.md",
-    "name": "GeoAI/ML Engineer",
-    "emoji": "🤖",
-    "color": "green",
-    "category": "gis",
-    "summary": "Geospatial machine learning specialist who builds models for feature extraction, object detection, image segmentation, and land cover classification from satellite and aerial imagery.",
-    "tools": ["Hugging Face"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-geoprocessing-specialist",
-    "filename": "gis-geoprocessing-specialist.md",
-    "name": "Geoprocessing Specialist",
-    "emoji": "⚙️",
-    "color": "red",
-    "category": "gis",
-    "summary": "ArcPy and Python toolbox expert who automates spatial workflows — builds .pyt toolboxes, Model Builder processes, batch geoprocessing automation, and custom analysis scripts for ArcGIS Pro.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-qa-engineer",
-    "filename": "gis-qa-engineer.md",
-    "name": "GIS QA Engineer",
-    "emoji": "✅",
-    "color": "purple",
-    "category": "gis",
-    "summary": "Quality assurance specialist who validates geospatial data integrity — topology checks, metadata audits, CRS consistency, accuracy assessment, and compliance verification.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-solution-engineer",
-    "filename": "gis-solution-engineer.md",
-    "name": "Solution Engineer",
-    "emoji": "🔧",
-    "color": "blue",
-    "category": "gis",
-    "summary": "Hands-on GIS prototype builder who takes strategy from Technical Consultant and turns it into working demos, proof-of-concepts, and technical validations across the full Esri and open-source stack.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-spatial-data-engineer",
-    "filename": "gis-spatial-data-engineer.md",
-    "name": "Spatial Data Engineer",
-    "emoji": "📦",
-    "color": "orange",
-    "category": "gis",
-    "summary": "ETL specialist who transforms messy geospatial data from any source into clean, standardized, production-ready datasets — format conversion, CRS reprojection, attribute normalization, and automated pipelines.",
-    "tools": ["Docker", "GitHub"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "gis-spatial-data-scientist",
-    "filename": "gis-spatial-data-scientist.md",
-    "name": "Spatial Data Scientist",
-    "emoji": "📊",
-    "color": "indigo",
-    "category": "gis",
-    "summary": "Advanced spatial analytics specialist who applies statistical modeling, spatial econometrics, clustering, and predictive analytics to geospatial data — finding patterns that aren't visible on a map.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "gis-technical-consultant",
-    "filename": "gis-technical-consultant.md",
-    "name": "Technical Consultant",
-    "emoji": "🧠",
-    "color": "navy",
-    "category": "gis",
-    "summary": "Strategic GIS advisor who translates business problems into geospatial solutions — gap analysis, technology roadmaps, RFP responses, and digital transformation strategy across Esri and open-source ecosystems.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "gis-web-gis-developer",
-    "filename": "gis-web-gis-developer.md",
-    "name": "Web GIS Developer",
-    "emoji": "🌐",
-    "color": "blue",
-    "category": "gis",
-    "summary": "Full-stack web GIS engineer who builds interactive mapping applications — MapLibre GL JS, ArcGIS JS API, Leaflet, real-time dashboards, REST API integration, and geospatial web services.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "godot-gameplay-scripter",
-    "filename": "godot-gameplay-scripter.md",
-    "name": "Godot Gameplay Scripter",
-    "emoji": "🎯",
-    "color": "purple",
-    "category": "godot",
-    "summary": "Composition and signal integrity specialist - Masters GDScript 2.0, C# integration, node-based architecture, and type-safe signal design for Godot 4 projects",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "godot-multiplayer-engineer",
-    "filename": "godot-multiplayer-engineer.md",
-    "name": "Godot Multiplayer Engineer",
-    "emoji": "🌐",
-    "color": "violet",
-    "category": "godot",
-    "summary": "Godot 4 networking specialist - Masters the MultiplayerAPI, scene replication, ENet/WebRTC transport, RPCs, and authority models for real-time multiplayer games",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "godot-shader-developer",
-    "filename": "godot-shader-developer.md",
-    "name": "Godot Shader Developer",
-    "emoji": "💎",
-    "color": "purple",
-    "category": "godot",
-    "summary": "Godot 4 visual effects specialist - Masters the Godot Shading Language (GLSL-like), VisualShader editor, CanvasItem and Spatial shaders, post-processing, and performance optimization for 2D/3D effects",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "government-digital-presales-consultant",
-    "filename": "government-digital-presales-consultant.md",
-    "name": "Government Digital Presales Consultant",
-    "emoji": "🏛️",
-    "color": "#8B0000",
-    "category": "government",
-    "summary": "Presales expert for China's government digital transformation market (ToG), proficient in policy interpretation, solution design, bid document preparation, POC validation, compliance requirements (classified protection/cryptographic assessment/Xinchuang domestic IT), and stakeholder management — helping technical teams efficiently win government IT projects.",
-    "tools": ["Kubernetes", "MySQL"],
-    "approvalTier": "read-only"
-  },  {
-    "id": "grant-writer",
-    "filename": "grant-writer.md",
-    "name": "Grant Writer",
-    "emoji": "📝",
-    "color": "purple",
-    "category": "grant",
-    "summary": "Expert grant writing specialist for nonprofits, research institutions, and social enterprises — covering prospect research, letter of inquiry writing, full proposal development, budget narratives, federal and foundation grants, and post-award reporting to maximize funding success",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "healthcare-aging-parent-care-companion",
-    "filename": "healthcare-aging-parent-care-companion.md",
-    "name": "Aging Parent Care Companion",
-    "emoji": "🧡",
-    "color": "#0D9488",
-    "category": "healthcare",
-    "summary": "Compassionate, HIPAA-aligned care coordination and decision-support agent for family caregivers managing an aging parent's appointments, medications, care team communication, and their own caregiver wellbeing",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "healthcare-clinical-evidence-agent",
-    "filename": "healthcare-clinical-evidence-agent.md",
-    "name": "Clinical Evidence Agent",
-    "emoji": "🩺",
-    "color": "#1A5276",
-    "category": "healthcare",
-    "summary": "Evidence standards and clinical credibility framework for AI agents",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "healthcare-customer-service",
-    "filename": "healthcare-customer-service.md",
-    "name": "Healthcare Customer Service",
-    "emoji": "🏥",
-    "color": "teal",
-    "category": "healthcare",
-    "summary": "Empathetic healthcare customer service specialist for patient support, billing inquiries, appointment management, insurance questions, complaint resolution, and seamless escalation to clinical or administrative staff",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "healthcare-innovation-strategist",
-    "filename": "healthcare-innovation-strategist.md",
-    "name": "Healthcare Innovation Strategist",
-    "emoji": "🧭",
-    "color": "#1B4F72",
-    "category": "healthcare",
-    "summary": "Strategic narrative architect for healthcare founders operating at",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "healthcare-marketing-compliance",
-    "filename": "healthcare-marketing-compliance.md",
-    "name": "Healthcare Marketing Compliance Specialist",
-    "emoji": "⚕️",
-    "color": "#2E8B57",
-    "category": "healthcare",
-    "summary": "Expert in healthcare marketing compliance in China, proficient in the Advertising Law, Medical Advertisement Management Measures, Drug Administration Law, and related regulations — covering pharmaceuticals, medical devices, medical aesthetics, health supplements, and internet healthcare across content review, risk control, platform rule interpretation, and patient privacy protection, helping enterprises conduct effective health marketing within legal boundaries.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "healthcare-sovereign-health-systems-agent",
-    "filename": "healthcare-sovereign-health-systems-agent.md",
-    "name": "Sovereign Health Systems Agent",
-    "emoji": "🌍",
-    "color": "#1B4F72",
-    "category": "healthcare",
-    "summary": "Government health mandate engagement framework for AI agents",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "hospitality-guest-services",
-    "filename": "hospitality-guest-services.md",
-    "name": "Hospitality Guest Services",
-    "emoji": "🏨",
-    "color": "teal",
-    "category": "hospitality",
-    "summary": "Comprehensive hospitality guest services specialist for hotels, resorts, restaurants, and event venues — covering reservations, check-in/check-out, concierge services, guest complaint resolution, loyalty program management, and post-stay follow-up to deliver exceptional guest experiences that drive loyalty and revenue",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "hr-onboarding",
     "filename": "hr-onboarding.md",
     "name": "HR Onboarding",
@@ -1277,9 +1115,12 @@
     "color": "green",
     "category": "hr",
     "summary": "Comprehensive HR onboarding specialist for employee orientation, documentation management, compliance tracking, benefits enrollment, culture integration, and new hire support — delivering a seamless first-day-to-first-year experience that drives retention and productivity",
-    "tools": ["Slack"],
+    "tools": [
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "identity-graph-operator",
     "filename": "identity-graph-operator.md",
     "name": "Identity Graph Operator",
@@ -1289,97 +1130,8 @@
     "summary": "Operates a shared identity graph that multiple AI agents resolve against. Ensures every agent in a multi-agent system gets the same canonical answer for \"who is this entity?\" - deterministically, even under concurrent writes.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "language-translator",
-    "filename": "language-translator.md",
-    "name": "Language Translator",
-    "emoji": "🌐",
-    "color": "teal",
-    "category": "language",
-    "summary": "Real-time Spanish ↔ English translation specialist with cultural context, regional dialect awareness, travel phrase guidance, and tone-appropriate communication for everyday, business, and emergency situations",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "legal-billing-time-tracking",
-    "filename": "legal-billing-time-tracking.md",
-    "name": "Legal Billing & Time Tracking",
-    "emoji": "⏱️",
-    "color": "green",
-    "category": "legal",
-    "summary": "Comprehensive legal billing and time tracking specialist for accurate time capture, invoice generation, billing narrative writing, collections management, trust account compliance, and billing analysis — maximizing revenue recovery while maintaining client relationships and ethical compliance across any firm size or billing model",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "legal-client-intake",
-    "filename": "legal-client-intake.md",
-    "name": "Legal Client Intake",
-    "emoji": "📋",
-    "color": "blue",
-    "category": "legal",
-    "summary": "Comprehensive legal client intake specialist for qualifying prospects, collecting case information, scheduling consultations, managing conflict checks, and delivering attorney-ready intake summaries across any practice area and firm size",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "legal-document-review",
-    "filename": "legal-document-review.md",
-    "name": "Legal Document Review",
-    "emoji": "⚖️",
-    "color": "blue",
-    "category": "legal",
-    "summary": "Comprehensive legal document review specialist for contracts, litigation documents, and real estate agreements — summarizing documents, flagging risk clauses, comparing contract versions, and checking compliance across any law firm size or practice area",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "level-designer",
-    "filename": "level-designer.md",
-    "name": "Level Designer",
-    "emoji": "🗺️",
-    "color": "teal",
-    "category": "level",
-    "summary": "Spatial storytelling and flow specialist - Masters layout theory, pacing architecture, encounter design, and environmental narrative across all game engines",
-    "tools": ["Linear"],
-    "approvalTier": "read-only"
-  },  {
-    "id": "loan-officer-assistant",
-    "filename": "loan-officer-assistant.md",
-    "name": "Loan Officer Assistant",
-    "emoji": "🏦",
-    "color": "blue",
-    "category": "loan",
-    "summary": "Comprehensive loan officer assistant for mortgage and lending professionals — covering borrower intake, pre-qualification, document collection, pipeline management, compliance tracking, rate quoting, and closing coordination across residential, commercial, and consumer lending",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "lsp-index-engineer",
-    "filename": "lsp-index-engineer.md",
-    "name": "LSP/Index Engineer",
-    "emoji": "🔎",
-    "color": "orange",
-    "category": "lsp",
-    "summary": "Language Server Protocol specialist building unified code intelligence systems through LSP client orchestration and semantic indexing",
-    "tools": ["Redis"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "macos-spatial-metal-engineer",
-    "filename": "macos-spatial-metal-engineer.md",
-    "name": "macOS Spatial/Metal Engineer",
-    "emoji": "🍎",
-    "color": "metallic-blue",
-    "category": "macos",
-    "summary": "Native Swift and Metal specialist building high-performance 3D rendering systems and spatial computing experiences for macOS and Vision Pro",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "ma-integration-manager",
-    "filename": "ma-integration-manager.md",
-    "name": "M&A Integration Manager",
-    "emoji": "🤝",
-    "color": "indigo",
-    "category": "ma",
-    "summary": "Mergers and acquisitions integration specialist who designs and executes post-merger integration programs — covering Day 1 readiness, 100-day planning, synergy tracking, cultural integration, functional workstream coordination, and transition service agreement management.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-aeo-foundations",
     "filename": "marketing-aeo-foundations.md",
     "name": "AEO Foundations Architect",
@@ -1387,9 +1139,12 @@
     "color": "#059669",
     "category": "marketing",
     "summary": "Expert in AI Engine Optimization infrastructure — implements llms.txt, AI-aware robots.txt, token-budgeted content, structured Markdown availability, and agent discovery files so AI crawlers, citation engines, and browsing agents can find, parse, and act on your site",
-    "tools": ["tiktoken (cl100k_base encoding) or LLM tokenizer"],
+    "tools": [
+      "tiktoken (cl100k_base encoding) or LLM tokenizer"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-agentic-search-optimizer",
     "filename": "marketing-agentic-search-optimizer.md",
     "name": "Agentic Search Optimizer",
@@ -1399,7 +1154,8 @@
     "summary": "Expert in WebMCP readiness and agentic task completion — audits whether AI agents can actually accomplish tasks on your site (book, buy, register, subscribe), implements WebMCP declarative and imperative patterns, and measures task completion rates across AI browsing agents",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-ai-citation-strategist",
     "filename": "marketing-ai-citation-strategist.md",
     "name": "AI Citation Strategist",
@@ -1409,7 +1165,8 @@
     "summary": "Expert in AI recommendation engine optimization (AEO/GEO) — audits brand visibility across ChatGPT, Claude, Gemini, and Perplexity, identifies why competitors get cited instead, and delivers content fixes that improve AI citations",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-app-store-optimizer",
     "filename": "marketing-app-store-optimizer.md",
     "name": "App Store Optimizer",
@@ -1419,7 +1176,8 @@
     "summary": "Expert app store marketing specialist focused on App Store Optimization (ASO), conversion rate optimization, and app discoverability",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-baidu-seo-specialist",
     "filename": "marketing-baidu-seo-specialist.md",
     "name": "Baidu SEO Specialist",
@@ -1427,9 +1185,12 @@
     "color": "blue",
     "category": "marketing",
     "summary": "Expert Baidu search optimization specialist focused on Chinese search engine ranking, Baidu ecosystem integration, ICP compliance, Chinese keyword research, and mobile-first indexing for the China market.",
-    "tools": ["Google Analytics"],
+    "tools": [
+      "Google Analytics"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-bilibili-content-strategist",
     "filename": "marketing-bilibili-content-strategist.md",
     "name": "Bilibili Content Strategist",
@@ -1439,7 +1200,8 @@
     "summary": "Expert Bilibili marketing specialist focused on UP主 growth, danmaku culture mastery, B站 algorithm optimization, community building, and branded content strategy for China's leading video community platform.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-book-co-author",
     "filename": "marketing-book-co-author.md",
     "name": "Book Co-Author",
@@ -1449,7 +1211,8 @@
     "summary": "Strategic thought-leadership book collaborator for founders, experts, and operators turning voice notes, fragments, and positioning into structured first-person chapters.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-carousel-growth-engine",
     "filename": "marketing-carousel-growth-engine.md",
     "name": "Carousel Growth Engine",
@@ -1457,9 +1220,13 @@
     "color": "#FF0050",
     "category": "marketing",
     "summary": "Autonomous TikTok and Instagram carousel generation specialist. Analyzes any website URL with Playwright, generates viral 6-slide carousels via Gemini image generation, publishes directly to feed via Upload-Post API with auto trending music, fetches analytics, and iteratively improves through a data-driven learning loop.",
-    "tools": ["Gemini API", "Playwright"],
+    "tools": [
+      "Gemini API",
+      "Playwright"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-china-ecommerce-operator",
     "filename": "marketing-china-ecommerce-operator.md",
     "name": "China E-Commerce Operator",
@@ -1469,7 +1236,8 @@
     "summary": "Expert China e-commerce operations specialist covering Taobao, Tmall, Pinduoduo, and JD ecosystems with deep expertise in product listing optimization, live commerce, store operations, 618/Double 11 campaigns, and cross-platform strategy.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-china-market-localization-strategist",
     "filename": "marketing-china-market-localization-strategist.md",
     "name": "China Market Localization Strategist",
@@ -1479,7 +1247,8 @@
     "summary": "Full-stack China market localization expert who transforms real-time trend signals into executable go-to-market strategies across Douyin, Xiaohongshu, WeChat, Bilibili, and beyond",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-content-creator",
     "filename": "marketing-content-creator.md",
     "name": "Content Creator",
@@ -1487,9 +1256,16 @@
     "color": "teal",
     "category": "marketing",
     "summary": "Expert content strategist and creator for multi-platform campaigns. Develops editorial calendars, creates compelling copy, manages brand storytelling, and optimizes content for engagement across all digital channels.",
-    "tools": ["Edit", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-cross-border-ecommerce",
     "filename": "marketing-cross-border-ecommerce.md",
     "name": "Cross-Border E-Commerce Specialist",
@@ -1497,9 +1273,16 @@
     "color": "blue",
     "category": "marketing",
     "summary": "Full-funnel cross-border e-commerce strategist covering Amazon, Shopee, Lazada, AliExpress, Temu, and TikTok Shop operations, international logistics and overseas warehousing, compliance and taxation, multilingual listing optimization, brand globalization, and DTC independent site development.",
-    "tools": ["Facebook Ads", "Google Ads", "Mailchimp", "Stripe", "TikTok Ads"],
+    "tools": [
+      "Facebook Ads",
+      "Google Ads",
+      "Mailchimp",
+      "Stripe",
+      "TikTok Ads"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-douyin-strategist",
     "filename": "marketing-douyin-strategist.md",
     "name": "Douyin Strategist",
@@ -1507,9 +1290,12 @@
     "color": "#000000",
     "category": "marketing",
     "summary": "Short-video marketing expert specializing in the Douyin platform, with deep expertise in recommendation algorithm mechanics, viral video planning, livestream commerce workflows, and full-funnel brand growth through content matrix strategies.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-email-strategist",
     "filename": "marketing-email-strategist.md",
     "name": "Email Marketing Strategist",
@@ -1517,9 +1303,18 @@
     "color": "green",
     "category": "marketing",
     "summary": "Expert email marketing strategist for CRM-driven campaigns, lifecycle automation, segmentation architecture, and deliverability. Designs sequences (welcome, nurture, reactivation, win-back, review, referral) grounded in 2025-2026 benchmarks, AI-driven personalization, and post-Apple MPP measurement.",
-    "tools": ["ActiveCampaign", "HubSpot", "Mailchimp", "n8n", "Segment", "SendGrid", "Zapier"],
+    "tools": [
+      "ActiveCampaign",
+      "HubSpot",
+      "Mailchimp",
+      "n8n",
+      "Segment",
+      "SendGrid",
+      "Zapier"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-global-podcast-strategist",
     "filename": "marketing-global-podcast-strategist.md",
     "name": "Global Podcast Strategist",
@@ -1527,9 +1322,13 @@
     "color": "purple",
     "category": "marketing",
     "summary": "Expert podcast growth specialist focused on show positioning, audience development, content strategy, and monetisation. Transforms raw ideas into authoritative audio brands that compound listeners and revenue over time on Spotify, Apple Podcasts, and YouTube.",
-    "tools": ["Discord", "Slack"],
+    "tools": [
+      "Discord",
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-growth-hacker",
     "filename": "marketing-growth-hacker.md",
     "name": "Growth Hacker",
@@ -1537,9 +1336,16 @@
     "color": "green",
     "category": "marketing",
     "summary": "Expert growth strategist specializing in rapid user acquisition through data-driven experimentation. Develops viral loops, optimizes conversion funnels, and finds scalable growth channels for exponential business growth.",
-    "tools": ["Edit", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-instagram-curator",
     "filename": "marketing-instagram-curator.md",
     "name": "Instagram Curator",
@@ -1549,7 +1355,8 @@
     "summary": "Expert Instagram marketing specialist focused on visual storytelling, community building, and multi-format content optimization. Masters aesthetic development and drives meaningful engagement.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-kuaishou-strategist",
     "filename": "marketing-kuaishou-strategist.md",
     "name": "Kuaishou Strategist",
@@ -1559,7 +1366,8 @@
     "summary": "Expert Kuaishou marketing strategist specializing in short-video content for China's lower-tier city markets, live commerce operations, community trust building, and grassroots audience growth on 快手.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-linkedin-content-creator",
     "filename": "marketing-linkedin-content-creator.md",
     "name": "LinkedIn Content Creator",
@@ -1569,7 +1377,8 @@
     "summary": "Expert LinkedIn content strategist focused on thought leadership, personal brand building, and high-engagement professional content. Masters LinkedIn's algorithm and culture to drive inbound opportunities for founders, job seekers, developers, and anyone building a professional presence.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-livestream-commerce-coach",
     "filename": "marketing-livestream-commerce-coach.md",
     "name": "Livestream Commerce Coach",
@@ -1579,7 +1388,8 @@
     "summary": "Veteran livestream e-commerce coach specializing in host training and live room operations across Douyin, Kuaishou, Taobao Live, and Channels, covering script design, product sequencing, paid-vs-organic traffic balancing, conversion closing techniques, and real-time data-driven optimization.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-multi-platform-publisher",
     "filename": "marketing-multi-platform-publisher.md",
     "name": "Multi-Platform Publisher",
@@ -1589,7 +1399,8 @@
     "summary": "Expert orchestrator for one-click Chinese blog publishing. Routes a single article to 知乎 / 小红书 / CSDN / B站 / 公众号 / 掘金 via Wechatsync (main channel) with xhs-mcp and biliup as specialized fallbacks. Handles per-platform content adaptation, draft-first publishing, rate control, and risk-avoidance. Does NOT auto-publish — always stops at draft for human review.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-podcast-strategist",
     "filename": "marketing-podcast-strategist.md",
     "name": "Podcast Strategist",
@@ -1599,7 +1410,8 @@
     "summary": "Content strategy and operations expert for the Chinese podcast market, with deep expertise in Xiaoyuzhou, Ximalaya, and other major audio platforms, covering show positioning, audio production, audience growth, multi-platform distribution, and monetization to help podcast creators build sticky audio content brands.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-pr-communications-manager",
     "filename": "marketing-pr-communications-manager.md",
     "name": "PR & Communications Manager",
@@ -1609,7 +1421,8 @@
     "summary": "Strategic public relations and communications specialist for media relations, press releases, crisis communications, executive thought leadership, brand reputation management, and integrated communications planning — building and protecting reputations through earned media, storytelling, and proactive narrative control",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-private-domain-operator",
     "filename": "marketing-private-domain-operator.md",
     "name": "Private Domain Operator",
@@ -1617,9 +1430,12 @@
     "color": "#1A73E8",
     "category": "marketing",
     "summary": "Expert in building enterprise WeChat (WeCom) private domain ecosystems, with deep expertise in SCRM systems, segmented community operations, Mini Program commerce integration, user lifecycle management, and full-funnel conversion optimization.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-reddit-community-builder",
     "filename": "marketing-reddit-community-builder.md",
     "name": "Reddit Community Builder",
@@ -1629,7 +1445,8 @@
     "summary": "Expert Reddit marketing specialist focused on authentic community engagement, value-driven content creation, and long-term relationship building. Masters Reddit culture navigation.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-seo-specialist",
     "filename": "marketing-seo-specialist.md",
     "name": "SEO Specialist",
@@ -1637,9 +1454,20 @@
     "color": "#4285F4",
     "category": "marketing",
     "summary": "Expert search engine optimization strategist specializing in technical SEO, content optimization, link authority building, and organic search growth. Drives sustainable traffic through data-driven search strategies.",
-    "tools": ["Edit", "Looker Studio", "Read", "Screaming Frog", "Search Console", "Segment", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Looker Studio",
+      "Read",
+      "Screaming Frog",
+      "Search Console",
+      "Segment",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-short-video-editing-coach",
     "filename": "marketing-short-video-editing-coach.md",
     "name": "Short-Video Editing Coach",
@@ -1647,9 +1475,17 @@
     "color": "#7B2D8E",
     "category": "marketing",
     "summary": "Hands-on short-video editing coach covering the full post-production pipeline, with mastery of CapCut Pro, Premiere Pro, DaVinci Resolve, and Final Cut Pro across composition and camera language, color grading, audio engineering, motion graphics and VFX, subtitle design, multi-platform export optimization, editing workflow efficiency, and AI-assisted editing.",
-    "tools": ["CapCut digital avatar", "Chroma", "D-ID", "HeyGen", "Linear", "Tencent Zhi Ying"],
+    "tools": [
+      "CapCut digital avatar",
+      "Chroma",
+      "D-ID",
+      "HeyGen",
+      "Linear",
+      "Tencent Zhi Ying"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-social-media-strategist",
     "filename": "marketing-social-media-strategist.md",
     "name": "Social Media Strategist",
@@ -1657,9 +1493,17 @@
     "color": "blue",
     "category": "marketing",
     "summary": "Expert social media strategist for LinkedIn, Twitter, and professional platforms. Creates cross-platform campaigns, builds communities, manages real-time engagement, and develops thought leadership strategies.",
-    "tools": ["Edit", "LinkedIn Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "LinkedIn Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-tiktok-strategist",
     "filename": "marketing-tiktok-strategist.md",
     "name": "TikTok Strategist",
@@ -1667,9 +1511,12 @@
     "color": "#000000",
     "category": "marketing",
     "summary": "Expert TikTok marketing specialist focused on viral content creation, algorithm optimization, and community building. Masters TikTok's unique culture and features for brand growth.",
-    "tools": ["TikTok Ads"],
+    "tools": [
+      "TikTok Ads"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-twitter-engager",
     "filename": "marketing-twitter-engager.md",
     "name": "Twitter Engager",
@@ -1679,7 +1526,8 @@
     "summary": "Expert Twitter marketing specialist focused on real-time engagement, thought leadership building, and community-driven growth. Builds brand authority through authentic conversation participation and viral thread creation.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-video-optimization-specialist",
     "filename": "marketing-video-optimization-specialist.md",
     "name": "Video Optimization Specialist",
@@ -1689,7 +1537,8 @@
     "summary": "Video marketing strategist specializing in YouTube algorithm optimization, audience retention, chaptering, thumbnail concepts, and cross-platform video syndication.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-wechat-official-account",
     "filename": "marketing-wechat-official-account.md",
     "name": "WeChat Official Account Manager",
@@ -1699,7 +1548,8 @@
     "summary": "Expert WeChat Official Account (OA) strategist specializing in content marketing, subscriber engagement, and conversion optimization. Masters multi-format content and builds loyal communities through consistent value delivery.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "marketing-weibo-strategist",
     "filename": "marketing-weibo-strategist.md",
     "name": "Weibo Strategist",
@@ -1709,7 +1559,8 @@
     "summary": "Full-spectrum operations expert for Sina Weibo, with deep expertise in trending topic mechanics, Super Topic community management, public sentiment monitoring, fan economy strategies, and Weibo advertising, helping brands achieve viral reach and sustained growth on China's leading public discourse platform.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-xiaohongshu-specialist",
     "filename": "marketing-xiaohongshu-specialist.md",
     "name": "Xiaohongshu Specialist",
@@ -1719,7 +1570,8 @@
     "summary": "Expert Xiaohongshu marketing specialist focused on lifestyle content, trend-driven strategies, and authentic community engagement. Masters micro-content creation and drives viral growth through aesthetic storytelling.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-x-twitter-intelligence-analyst",
     "filename": "marketing-x-twitter-intelligence-analyst.md",
     "name": "X/Twitter Intelligence Analyst",
@@ -1729,7 +1581,8 @@
     "summary": "Social intelligence specialist for X/Twitter research, trend detection, account monitoring, and evidence-backed audience insights using public signals and structured data workflows.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "marketing-zhihu-strategist",
     "filename": "marketing-zhihu-strategist.md",
     "name": "Zhihu Strategist",
@@ -1739,27 +1592,8 @@
     "summary": "Expert Zhihu marketing specialist focused on thought leadership, community credibility, and knowledge-driven engagement. Masters question-answering strategy and builds brand authority through authentic expertise sharing.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
-    "id": "medical-billing-coding-specialist",
-    "filename": "medical-billing-coding-specialist.md",
-    "name": "Medical Billing & Coding Specialist",
-    "emoji": "🏥",
-    "color": "blue",
-    "category": "medical",
-    "summary": "Expert medical billing and coding specialist for ICD-10-CM/PCS, CPT, and HCPCS coding, claim submission, denial management, revenue cycle optimization, compliance auditing, and payer contract analysis — maximizing clean claim rates and revenue recovery for healthcare providers of all sizes",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "narrative-designer",
-    "filename": "narrative-designer.md",
-    "name": "Narrative Designer",
-    "emoji": "📖",
-    "color": "red",
-    "category": "narrative",
-    "summary": "Story systems and dialogue architect - Masters GDD-aligned narrative design, branching dialogue, lore architecture, and environmental storytelling across all game engines",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "operations-manager",
     "filename": "operations-manager.md",
     "name": "Operations Manager",
@@ -1767,19 +1601,12 @@
     "color": "slate",
     "category": "operations",
     "summary": "Business operations specialist who applies Lean, Six Sigma, and systems thinking to process mapping, capacity planning, KPI governance, vendor management, and organizational efficiency — turning operational complexity into repeatable, measurable performance.",
-    "tools": ["Notion"],
+    "tools": [
+      "Notion"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "organizational-psychologist",
-    "filename": "organizational-psychologist.md",
-    "name": "Organizational Psychologist",
-    "emoji": "🧠",
-    "color": "teal",
-    "category": "organizational",
-    "summary": "Applied organizational psychologist who diagnoses team dynamics, psychological safety, burnout risk, and culture health — using evidence-based frameworks to help leaders build high-performing, resilient, and psychologically safe organizations.",
-    "tools": ["Slack"],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-auditor",
     "filename": "paid-media-auditor.md",
     "name": "Paid Media Auditor",
@@ -1787,9 +1614,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Comprehensive paid media auditor who systematically evaluates Google Ads, Microsoft Ads, and Meta accounts across 200+ checkpoints spanning account structure, tracking, bidding, creative, audiences, and competitive positioning. Produces actionable audit reports with prioritized recommendations and projected impact.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-creative-strategist",
     "filename": "paid-media-creative-strategist.md",
     "name": "Ad Creative Strategist",
@@ -1797,9 +1633,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Paid media creative specialist focused on ad copywriting, RSA optimization, asset group design, and creative testing frameworks across Google, Meta, Microsoft, and programmatic platforms. Bridges the gap between performance data and persuasive messaging.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-paid-social-strategist",
     "filename": "paid-media-paid-social-strategist.md",
     "name": "Paid Social Strategist",
@@ -1807,9 +1652,20 @@
     "color": "orange",
     "category": "paid",
     "summary": "Cross-platform paid social advertising specialist covering Meta (Facebook/Instagram), LinkedIn, TikTok, Pinterest, X, and Snapchat. Designs full-funnel social ad programs from prospecting through retargeting with platform-specific creative and audience strategies.",
-    "tools": ["Bash", "Edit", "Google Ads", "Meta Ads", "Read", "TikTok Ads", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Meta Ads",
+      "Read",
+      "TikTok Ads",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-ppc-strategist",
     "filename": "paid-media-ppc-strategist.md",
     "name": "PPC Campaign Strategist",
@@ -1817,9 +1673,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Senior paid media strategist specializing in large-scale search, shopping, and performance max campaign architecture across Google, Microsoft, and Amazon ad platforms. Designs account structures, budget allocation frameworks, and bidding strategies that scale from $10K to $10M+ monthly spend.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-programmatic-buyer",
     "filename": "paid-media-programmatic-buyer.md",
     "name": "Programmatic & Display Buyer",
@@ -1827,9 +1692,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Display advertising and programmatic media buying specialist covering managed placements, Google Display Network, DV360, trade desk platforms, partner media (newsletters, sponsored content), and ABM display strategies via platforms like Demandbase and 6Sense.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "paid-media-search-query-analyst",
     "filename": "paid-media-search-query-analyst.md",
     "name": "Search Query Analyst",
@@ -1837,9 +1711,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Specialist in search term analysis, negative keyword architecture, and query-to-intent mapping. Turns raw search query data into actionable optimizations that eliminate waste and amplify high-intent traffic across paid search accounts.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "paid-media-tracking-specialist",
     "filename": "paid-media-tracking-specialist.md",
     "name": "Tracking & Measurement Specialist",
@@ -1847,19 +1730,18 @@
     "color": "orange",
     "category": "paid",
     "summary": "Expert in conversion tracking architecture, tag management, and attribution modeling across Google Tag Manager, GA4, Google Ads, Meta CAPI, LinkedIn Insight Tag, and server-side implementations. Ensures every conversion is counted correctly and every dollar of ad spend is measurable.",
-    "tools": ["Bash", "Edit", "Google Ads", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Bash",
+      "Edit",
+      "Google Ads",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "personal-growth-mentor",
-    "filename": "personal-growth-mentor.md",
-    "name": "Personal Growth Mentor",
-    "emoji": "🌱",
-    "color": "teal",
-    "category": "personal",
-    "summary": "Cross-domain personal development mentor for goal clarity, habit design, strategic decisions, and accountability without motivational fluff.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "product-behavioral-nudge-engine",
     "filename": "product-behavioral-nudge-engine.md",
     "name": "Behavioral Nudge Engine",
@@ -1869,7 +1751,8 @@
     "summary": "Behavioral psychology specialist that adapts software interaction cadences and styles to maximize user motivation and success.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "product-feedback-synthesizer",
     "filename": "product-feedback-synthesizer.md",
     "name": "Feedback Synthesizer",
@@ -1877,9 +1760,17 @@
     "color": "blue",
     "category": "product",
     "summary": "Expert in collecting, analyzing, and synthesizing user feedback from multiple channels to extract actionable product insights. Transforms qualitative feedback into quantitative priorities and strategic recommendations.",
-    "tools": ["Discord", "Edit", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Discord",
+      "Edit",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "product-manager",
     "filename": "product-manager.md",
     "name": "Product Manager",
@@ -1887,9 +1778,18 @@
     "color": "blue",
     "category": "product",
     "summary": "Holistic product leader who owns the full product lifecycle — from discovery and strategy through roadmap, stakeholder alignment, go-to-market, and outcome measurement. Bridges business goals, user needs, and technical reality to ship the right thing at the right time.",
-    "tools": ["Edit", "Figma", "Read", "Segment", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Figma",
+      "Read",
+      "Segment",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "product-sprint-prioritizer",
     "filename": "product-sprint-prioritizer.md",
     "name": "Sprint Prioritizer",
@@ -1897,9 +1797,17 @@
     "color": "green",
     "category": "product",
     "summary": "Expert product manager specializing in agile sprint planning, feature prioritization, and resource allocation. Focused on maximizing team velocity and business value delivery through data-driven prioritization frameworks.",
-    "tools": ["Edit", "Linear", "Read", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Linear",
+      "Read",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "product-trend-researcher",
     "filename": "product-trend-researcher.md",
     "name": "Trend Researcher",
@@ -1907,9 +1815,18 @@
     "color": "purple",
     "category": "product",
     "summary": "Expert market intelligence analyst specializing in identifying emerging trends, competitive analysis, and opportunity assessment. Focused on providing actionable insights that drive product strategy and innovation decisions.",
-    "tools": ["Ahrefs", "Edit", "Read", "SEMrush", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Ahrefs",
+      "Edit",
+      "Read",
+      "SEMrush",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "project-management-experiment-tracker",
     "filename": "project-management-experiment-tracker.md",
     "name": "Experiment Tracker",
@@ -1917,9 +1834,12 @@
     "color": "purple",
     "category": "project",
     "summary": "Expert project manager specializing in experiment design, execution tracking, and data-driven decision making. Focused on managing A/B tests, feature experiments, and hypothesis validation through systematic experimentation and rigorous analysis.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "project-management-jira-workflow-steward",
     "filename": "project-management-jira-workflow-steward.md",
     "name": "Jira Workflow Steward",
@@ -1927,9 +1847,13 @@
     "color": "orange",
     "category": "project",
     "summary": "Expert delivery operations specialist who enforces Jira-linked Git workflows, traceable commits, structured pull requests, and release-safe branch strategy across software teams.",
-    "tools": ["GitHub", "Jira"],
+    "tools": [
+      "GitHub",
+      "Jira"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "project-management-meeting-notes-specialist",
     "filename": "project-management-meeting-notes-specialist.md",
     "name": "Meeting Notes Specialist",
@@ -1937,9 +1861,15 @@
     "color": "blue",
     "category": "project",
     "summary": "Extract structured decisions, action items, and open questions from meeting transcripts or rough notes into a clean 4-section summary.",
-    "tools": ["Edit", "GitHub", "Read", "Write"],
+    "tools": [
+      "Edit",
+      "GitHub",
+      "Read",
+      "Write"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "project-management-project-shepherd",
     "filename": "project-management-project-shepherd.md",
     "name": "Project Shepherd",
@@ -1949,7 +1879,8 @@
     "summary": "Expert project manager specializing in cross-functional project coordination, timeline management, and stakeholder alignment. Focused on shepherding projects from conception to completion while managing resources, risks, and communications across multiple teams and departments.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "project-management-studio-operations",
     "filename": "project-management-studio-operations.md",
     "name": "Studio Operations",
@@ -1959,7 +1890,8 @@
     "summary": "Expert operations manager specializing in day-to-day studio efficiency, process optimization, and resource coordination. Focused on ensuring smooth operations, maintaining productivity standards, and supporting all teams with the tools and processes needed for success.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "project-management-studio-producer",
     "filename": "project-management-studio-producer.md",
     "name": "Studio Producer",
@@ -1969,7 +1901,8 @@
     "summary": "Senior strategic leader specializing in high-level creative and technical project orchestration, resource allocation, and multi-project portfolio management. Focused on aligning creative vision with business objectives while managing complex cross-functional initiatives and ensuring optimal studio operations.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "project-manager-senior",
     "filename": "project-manager-senior.md",
     "name": "Senior Project Manager",
@@ -1977,29 +1910,12 @@
     "color": "blue",
     "category": "project",
     "summary": "Converts specs to tasks and remembers previous projects. Focused on realistic scope, no background processes, exact spec requirements",
-    "tools": ["Playwright"],
+    "tools": [
+      "Playwright"
+    ],
     "approvalTier": "read-only"
-  },  {
-    "id": "real-estate-buyer-seller",
-    "filename": "real-estate-buyer-seller.md",
-    "name": "Real Estate Buyer & Seller",
-    "emoji": "🏠",
-    "color": "teal",
-    "category": "real",
-    "summary": "Comprehensive real estate agent assistant for buyer representation, seller representation, listing management, offer negotiation, transaction coordination, and closing support — delivering a world-class client experience from first showing to final closing across residential and investment real estate",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "recruitment-specialist",
-    "filename": "recruitment-specialist.md",
-    "name": "Recruitment Specialist",
-    "emoji": "🎯",
-    "color": "blue",
-    "category": "recruitment",
-    "summary": "Expert recruitment operations and talent acquisition specialist — skilled in China's major hiring platforms, talent assessment frameworks, and labor law compliance. Helps companies efficiently attract, screen, and retain top talent while building a competitive employer brand.",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "report-distribution-agent",
     "filename": "report-distribution-agent.md",
     "name": "Report Distribution Agent",
@@ -2009,7 +1925,8 @@
     "summary": "AI agent that automates distribution of consolidated sales reports to representatives based on territorial parameters",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "research-synthesist",
     "filename": "research-synthesist.md",
     "name": "Research Synthesist",
@@ -2019,57 +1936,8 @@
     "summary": "Expert in literature review, source evaluation, and evidence synthesis — turns a scattered pile of sources into a structured, honestly-weighted map of what the evidence actually supports",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
-    "id": "resume-tailor",
-    "filename": "resume-tailor.md",
-    "name": "Resume Tailor",
-    "emoji": "🧾",
-    "color": "teal",
-    "category": "resume",
-    "summary": "Candidate-side resume optimization specialist who analyzes job descriptions, maps real experience to role requirements, improves ATS keyword alignment, and rewrites bullets without fabricating qualifications.",
-    "tools": ["AWS"],
-    "approvalTier": "read-only"
-  },  {
-    "id": "retail-customer-returns",
-    "filename": "retail-customer-returns.md",
-    "name": "Retail Customer Returns",
-    "emoji": "🛒",
-    "color": "amber",
-    "category": "retail",
-    "summary": "Comprehensive retail customer returns specialist for processing returns, exchanges, and refunds across in-store, online, and omnichannel retail — handling policy enforcement, fraud prevention, customer retention, vendor returns, and returns analytics to maximize recovery while preserving customer loyalty",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "roblox-avatar-creator",
-    "filename": "roblox-avatar-creator.md",
-    "name": "Roblox Avatar Creator",
-    "emoji": "👤",
-    "color": "fuchsia",
-    "category": "roblox",
-    "summary": "Roblox UGC and avatar pipeline specialist - Masters Roblox's avatar system, UGC item creation, accessory rigging, texture standards, and the Creator Marketplace submission pipeline",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "roblox-experience-designer",
-    "filename": "roblox-experience-designer.md",
-    "name": "Roblox Experience Designer",
-    "emoji": "🎪",
-    "color": "lime",
-    "category": "roblox",
-    "summary": "Roblox platform UX and monetization specialist - Masters engagement loop design, DataStore-driven progression, Roblox monetization systems (Passes, Developer Products, UGC), and player retention for Roblox experiences",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "roblox-systems-scripter",
-    "filename": "roblox-systems-scripter.md",
-    "name": "Roblox Systems Scripter",
-    "emoji": "🔧",
-    "color": "rose",
-    "category": "roblox",
-    "summary": "Roblox platform engineering specialist - Masters Luau, the client-server security model, RemoteEvents/RemoteFunctions, DataStore, and module architecture for scalable Roblox experiences",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-account-strategist",
     "filename": "sales-account-strategist.md",
     "name": "Account Strategist",
@@ -2079,7 +1947,8 @@
     "summary": "Expert post-sale account strategist specializing in land-and-expand execution, stakeholder mapping, QBR facilitation, and net revenue retention. Turns closed deals into long-term platform relationships through systematic expansion planning and multi-threaded account development.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-coach",
     "filename": "sales-coach.md",
     "name": "Sales Coach",
@@ -2089,7 +1958,8 @@
     "summary": "Expert sales coaching specialist focused on rep development, pipeline review facilitation, call coaching, deal strategy, and forecast accuracy. Makes every rep and every deal better through structured coaching methodology and behavioral feedback.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "sales-data-extraction-agent",
     "filename": "sales-data-extraction-agent.md",
     "name": "Sales Data Extraction Agent",
@@ -2097,9 +1967,12 @@
     "color": "#2b6cb0",
     "category": "sales",
     "summary": "AI agent specialized in monitoring Excel files and extracting key sales metrics (MTD, YTD, Year End) for internal live reporting",
-    "tools": ["PostgreSQL"],
+    "tools": [
+      "PostgreSQL"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-deal-strategist",
     "filename": "sales-deal-strategist.md",
     "name": "Deal Strategist",
@@ -2109,7 +1982,8 @@
     "summary": "Senior deal strategist specializing in MEDDPICC qualification, competitive positioning, and win planning for complex B2B sales cycles. Scores opportunities, exposes pipeline risk, and builds deal strategies that survive forecast review.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "sales-discovery-coach",
     "filename": "sales-discovery-coach.md",
     "name": "Discovery Coach",
@@ -2119,7 +1993,8 @@
     "summary": "Coaches sales teams on elite discovery methodology — question design, current-state mapping, gap quantification, and call structure that surfaces real buying motivation.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "sales-engineer",
     "filename": "sales-engineer.md",
     "name": "Sales Engineer",
@@ -2129,7 +2004,8 @@
     "summary": "Senior pre-sales engineer specializing in technical discovery, demo engineering, POC scoping, competitive battlecards, and bridging product capabilities to business outcomes. Wins the technical decision so the deal can close.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-offer-lead-gen-strategist",
     "filename": "sales-offer-lead-gen-strategist.md",
     "name": "Offer & Lead Gen Strategist",
@@ -2139,7 +2015,8 @@
     "summary": "Top-of-funnel architect who designs irresistible offers and lead magnets that attract qualified buyers at scale. Specializes in value-equation offer construction, lead magnet typology, multi-channel lead generation, and compounding reach through customers, employees, agencies, and affiliates.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-outbound-strategist",
     "filename": "sales-outbound-strategist.md",
     "name": "Outbound Strategist",
@@ -2147,9 +2024,12 @@
     "color": "#E8590C",
     "category": "sales",
     "summary": "Signal-based outbound specialist who designs multi-channel prospecting sequences, defines ICPs, and builds pipeline through research-driven personalization — not volume.",
-    "tools": ["Slack"],
+    "tools": [
+      "Slack"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "sales-outreach",
     "filename": "sales-outreach.md",
     "name": "Sales Outreach",
@@ -2157,9 +2037,12 @@
     "color": "amber",
     "category": "sales",
     "summary": "Consultative B2B sales outreach specialist for cold prospecting, lead follow-up, objection handling, proposal writing, and pipeline management — combining data-driven targeting with genuine relationship-building to open doors and close deals",
-    "tools": ["HubSpot"],
+    "tools": [
+      "HubSpot"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "sales-pipeline-analyst",
     "filename": "sales-pipeline-analyst.md",
     "name": "Pipeline Analyst",
@@ -2167,9 +2050,12 @@
     "color": "#059669",
     "category": "sales",
     "summary": "Revenue operations analyst specializing in pipeline health diagnostics, deal velocity analysis, forecast accuracy, and data-driven sales coaching. Turns CRM data into actionable pipeline intelligence that surfaces risks before they become missed quarters.",
-    "tools": ["Segment"],
+    "tools": [
+      "Segment"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "sales-proposal-strategist",
     "filename": "sales-proposal-strategist.md",
     "name": "Proposal Strategist",
@@ -2179,7 +2065,8 @@
     "summary": "Strategic proposal architect who transforms RFPs and sales opportunities into compelling win narratives. Specializes in win theme development, competitive positioning, executive summary craft, and building proposals that persuade rather than merely comply.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-ai-generated-code-auditor",
     "filename": "security-ai-generated-code-auditor.md",
     "name": "AI-Generated Code Security Auditor",
@@ -2187,9 +2074,15 @@
     "color": "#4F46E5",
     "category": "security",
     "summary": "Security reviewer for AI-generated and vibe-coded apps — hunts the hardcoded secrets, broken row-level security, and prompt-injection sinks that coding assistants ship by default, then drives a scan, fix, and rescan loop with honest, CWE-mapped findings.",
-    "tools": ["// excessive agency", "[{ type: \"function\"", "function: { name: \"issueRefund\" } }]", "Stripe"],
+    "tools": [
+      "// excessive agency",
+      "[{ type: \"function\"",
+      "function: { name: \"issueRefund\" } }]",
+      "Stripe"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-appsec-engineer",
     "filename": "security-appsec-engineer.md",
     "name": "Application Security Engineer",
@@ -2197,9 +2090,12 @@
     "color": "#059669",
     "category": "security",
     "summary": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
-    "tools": ["AWS"],
+    "tools": [
+      "AWS"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-architect",
     "filename": "security-architect.md",
     "name": "Security Architect",
@@ -2207,9 +2103,17 @@
     "color": "red",
     "category": "security",
     "summary": "Expert security architect specializing in threat modeling, secure-by-design architecture, trust-boundary analysis, defense-in-depth, and risk-based security reviews across web, API, cloud-native, and distributed systems. Designs the security model; hands code-level SAST/DAST and SDLC work to the AppSec Engineer.",
-    "tools": ["AWS", "Azure", "GCP", "GitHub", "Kubernetes", "Terraform"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP",
+      "GitHub",
+      "Kubernetes",
+      "Terraform"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-blockchain-security-auditor",
     "filename": "security-blockchain-security-auditor.md",
     "name": "Blockchain Security Auditor",
@@ -2219,7 +2123,8 @@
     "summary": "Expert smart contract security auditor specializing in vulnerability detection, formal verification, exploit analysis, and comprehensive audit report writing for DeFi protocols and blockchain applications.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-cloud-security-architect",
     "filename": "security-cloud-security-architect.md",
     "name": "Cloud Security Architect",
@@ -2227,9 +2132,18 @@
     "color": "#3b82f6",
     "category": "security",
     "summary": "Cloud-native security specialist designing zero trust architectures, implementing defense-in-depth across AWS, Azure, and GCP, and securing infrastructure-as-code pipelines from day one.",
-    "tools": ["AWS", "Azure", "GCP", "GitHub", "Kubernetes", "Segment", "Terraform"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP",
+      "GitHub",
+      "Kubernetes",
+      "Segment",
+      "Terraform"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-compliance-auditor",
     "filename": "security-compliance-auditor.md",
     "name": "Compliance Auditor",
@@ -2237,9 +2151,14 @@
     "color": "orange",
     "category": "security",
     "summary": "Expert technical compliance auditor specializing in SOC 2, ISO 27001, HIPAA, and PCI-DSS audits — from readiness assessment through evidence collection to certification.",
-    "tools": ["AWS", "Datadog", "Jira"],
+    "tools": [
+      "AWS",
+      "Datadog",
+      "Jira"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "security-incident-responder",
     "filename": "security-incident-responder.md",
     "name": "Incident Responder",
@@ -2247,9 +2166,14 @@
     "color": "#f59e0b",
     "category": "security",
     "summary": "Digital forensics and incident response specialist who leads breach investigations, contains active threats, coordinates crisis response, and writes post-mortems that prevent recurrence.",
-    "tools": ["AWS", "Azure", "GCP"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-penetration-tester",
     "filename": "security-penetration-tester.md",
     "name": "Penetration Tester",
@@ -2257,9 +2181,17 @@
     "color": "#dc2626",
     "category": "security",
     "summary": "Offensive security specialist conducting authorized penetration tests, red team operations, and vulnerability assessments across networks, web applications, and cloud infrastructure.",
-    "tools": ["AWS", "Azure", "GCP", "Kubernetes", "MySQL", "PostgreSQL"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP",
+      "Kubernetes",
+      "MySQL",
+      "PostgreSQL"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-secrets-credential-engineer",
     "filename": "security-secrets-credential-engineer.md",
     "name": "Secrets & Credential Hygiene Engineer",
@@ -2267,9 +2199,17 @@
     "color": "#B45309",
     "category": "security",
     "summary": "Owns the full lifecycle of secrets and credentials — detection, prevention, vaulting, rotation, and leak response — so an application runs on short-lived, least-privilege credentials that are never in the code and are already rotated by the time a leak is found.",
-    "tools": ["AWS", "Docker", "GCP", "GitHub", "Kubernetes", "Stripe"],
+    "tools": [
+      "AWS",
+      "Docker",
+      "GCP",
+      "GitHub",
+      "Kubernetes",
+      "Stripe"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-senior-secops",
     "filename": "security-senior-secops.md",
     "name": "Senior SecOps Engineer",
@@ -2277,9 +2217,14 @@
     "color": "#E67E22",
     "category": "security",
     "summary": "Defensive application security specialist who scans every code submission for secrets and sensitive data exposure before anything else, then implements or audits security controls following the organization's security standard — covering authentication, authorization, tokens, cookies, HTTP headers, CORS, rate limiting, CSP, secrets management, input validation, and secure logging.",
-    "tools": ["AWS", "Azure", "GCP"],
+    "tools": [
+      "AWS",
+      "Azure",
+      "GCP"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-threat-detection-engineer",
     "filename": "security-threat-detection-engineer.md",
     "name": "Threat Detection Engineer",
@@ -2287,9 +2232,13 @@
     "color": "#7b2d8e",
     "category": "security",
     "summary": "Expert detection engineer specializing in SIEM rule development, MITRE ATT&CK coverage mapping, threat hunting, alert tuning, and detection-as-code pipelines for security operations teams.",
-    "tools": ["Azure", "GitHub"],
+    "tools": [
+      "Azure",
+      "GitHub"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "security-threat-intelligence-analyst",
     "filename": "security-threat-intelligence-analyst.md",
     "name": "Threat Intelligence Analyst",
@@ -2299,7 +2248,8 @@
     "summary": "Cyber threat intelligence specialist who tracks adversary groups, maps attack campaigns to MITRE ATT&CK, produces actionable intelligence reports, and builds detection rules that catch real threats.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-chief-of-staff",
     "filename": "specialized-chief-of-staff.md",
     "name": "Chief of Staff",
@@ -2307,9 +2257,12 @@
     "color": "#6B7280",
     "category": "specialized",
     "summary": "Master coordinator for founders and executives — filters noise, owns processes, enforces consistency, routes decisions, and positions outputs for impact so the boss can think clearly.",
-    "tools": ["Slack"],
+    "tools": [
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-civil-engineer",
     "filename": "specialized-civil-engineer.md",
     "name": "Civil Engineer",
@@ -2319,7 +2272,8 @@
     "summary": "Expert civil and structural engineer with global standards coverage — Eurocode, DIN, ACI, AISC, ASCE, AS/NZS, CSA, GB, IS, AIJ, and more. Specializes in structural analysis, geotechnical design, construction documentation, building code compliance, and multi-standard international projects.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-codebase-archaeologist",
     "filename": "specialized-codebase-archaeologist.md",
     "name": "Codebase Archaeologist",
@@ -2329,7 +2283,8 @@
     "summary": "Multi-session, multi-tool drift detection specialist who audits codebases touched by several AI coding tools (Claude, Cursor, Copilot, Windsurf, etc.) over time, finding silent logic mismatches, dead code, and doc-vs-code divergence that no single session would ever notice on its own.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-cultural-intelligence-strategist",
     "filename": "specialized-cultural-intelligence-strategist.md",
     "name": "Cultural Intelligence Strategist",
@@ -2339,7 +2294,8 @@
     "summary": "CQ specialist that detects invisible exclusion, researches global context, and ensures software resonates authentically across intersectional identities.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-developer-advocate",
     "filename": "specialized-developer-advocate.md",
     "name": "Developer Advocate",
@@ -2347,9 +2303,14 @@
     "color": "purple",
     "category": "specialized",
     "summary": "Expert developer advocate specializing in building developer communities, creating compelling technical content, optimizing developer experience (DX), and driving platform adoption through authentic engineering engagement. Bridges product and engineering teams with external developers.",
-    "tools": ["Discord", "GitHub", "Slack"],
+    "tools": [
+      "Discord",
+      "GitHub",
+      "Slack"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-document-generator",
     "filename": "specialized-document-generator.md",
     "name": "Document Generator",
@@ -2359,7 +2320,8 @@
     "summary": "Expert document creation specialist who generates professional PDF, PPTX, DOCX, and XLSX files using code-based approaches with proper formatting, charts, and data visualization.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-fedramp-rmf-compliance",
     "filename": "specialized-fedramp-rmf-compliance.md",
     "name": "FedRAMP & RMF Compliance Engineer",
@@ -2369,7 +2331,8 @@
     "summary": "Expert FedRAMP and NIST Risk Management Framework compliance engineer specializing in both FedRAMP authorization pathways — the traditional Rev5 path (NIST 800-53 Rev 5 control implementation, System Security Plans, 3PAO assessment, agency authorization) and the modernized FedRAMP 20x path (Key Security Indicators, automated machine-readable validation, compliance-as-code) — plus the ATO process, continuous monitoring (ConMon), POA&M management, FIPS 199 categorization, authorization boundary diagrams, OSCAL machine-readable packages, and cloud security compliance for government and regulated industries",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-focus-music-architect",
     "filename": "specialized-focus-music-architect.md",
     "name": "Focus Music Architect",
@@ -2379,7 +2342,8 @@
     "summary": "Instrumental focus music specialist and neuroacoustic prompt engineer — crafts high-yield prompts, soundscape architectures, BPM curves, and binaural layers for deep cognitive flow and generative audio models.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-french-consulting-market",
     "filename": "specialized-french-consulting-market.md",
     "name": "French Consulting Market Navigator",
@@ -2387,9 +2351,12 @@
     "color": "#002395",
     "category": "specialized",
     "summary": "Navigate the French ESN/SI freelance ecosystem — margin models, platform mechanics (Malt, collective.work), portage salarial, rate positioning, and payment cycle realities",
-    "tools": ["Salesforce"],
+    "tools": [
+      "Salesforce"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-korean-business-navigator",
     "filename": "specialized-korean-business-navigator.md",
     "name": "Korean Business Navigator",
@@ -2399,7 +2366,8 @@
     "summary": "Korean business culture for foreign professionals — 품의 decision process, nunchi reading, KakaoTalk business etiquette, hierarchy navigation, and relationship-first deal mechanics",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-master-plan-architect",
     "filename": "specialized-master-plan-architect.md",
     "name": "Master Plan Architect",
@@ -2407,9 +2375,13 @@
     "color": "indigo",
     "category": "specialized",
     "summary": "Master planning architect, technical educator, and ruthless plan critic who specializes in deep architectural teaching, Red Teaming / risk critique, and crafting comprehensive Implementation Plans in Markdown with ZERO code execution.",
-    "tools": ["PostgreSQL", "Redis"],
+    "tools": [
+      "PostgreSQL",
+      "Redis"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-mcp-builder",
     "filename": "specialized-mcp-builder.md",
     "name": "MCP Builder",
@@ -2417,9 +2389,12 @@
     "color": "indigo",
     "category": "specialized",
     "summary": "Expert Model Context Protocol developer who designs, builds, and tests MCP servers that extend AI agent capabilities with custom tools, resources, and prompts.",
-    "tools": ["GitHub"],
+    "tools": [
+      "GitHub"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-model-qa",
     "filename": "specialized-model-qa.md",
     "name": "Model QA Specialist",
@@ -2429,7 +2404,8 @@
     "summary": "Independent model QA expert who audits ML and statistical models end-to-end - from documentation review and data reconstruction to replication, calibration testing, interpretability analysis, performance monitoring, and audit-grade reporting.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-pricing-analyst",
     "filename": "specialized-pricing-analyst.md",
     "name": "Pricing Analyst",
@@ -2437,9 +2413,17 @@
     "color": "gold",
     "category": "specialized",
     "summary": "Specialized pricing analyst who develops optimal pricing models through market research, competitor analysis, cost structure evaluation, and margin optimization — turning pricing from guesswork into a data-driven competitive advantage.",
-    "tools": ["Edit", "Read", "Segment", "WebFetch", "WebSearch", "Write"],
+    "tools": [
+      "Edit",
+      "Read",
+      "Segment",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-salesforce-architect",
     "filename": "specialized-salesforce-architect.md",
     "name": "Salesforce Architect",
@@ -2447,9 +2431,12 @@
     "color": "#00A1E0",
     "category": "specialized",
     "summary": "Solution architecture for Salesforce platform — multi-cloud design, integration patterns, governor limits, deployment strategy, and data model governance for enterprise-scale orgs",
-    "tools": ["Salesforce"],
+    "tools": [
+      "Salesforce"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "specialized-strategy-duel-agent",
     "filename": "specialized-strategy-duel-agent.md",
     "name": "Strategy Duel Agent",
@@ -2459,7 +2446,8 @@
     "summary": "Conducts live strategy duels using game theory and the 36 Chinese stratagems",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "specialized-workflow-architect",
     "filename": "specialized-workflow-architect.md",
     "name": "Workflow Architect",
@@ -2467,19 +2455,13 @@
     "color": "orange",
     "category": "specialized",
     "summary": "Workflow design specialist who maps complete workflow trees for every system, user journey, and agent interaction — covering happy paths, all branch conditions, failure modes, recovery paths, handoff contracts, and observable states to produce build-ready specs that agents can implement against and QA can test against.",
-    "tools": ["Kubernetes", "Terraform"],
+    "tools": [
+      "Kubernetes",
+      "Terraform"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "study-abroad-advisor",
-    "filename": "study-abroad-advisor.md",
-    "name": "Study Abroad Advisor",
-    "emoji": "🎓",
-    "color": "#1B4D3E",
-    "category": "study",
-    "summary": "Full-spectrum study abroad planning expert covering the US, UK, Canada, Australia, Europe, Hong Kong, and Singapore — proficient in undergraduate, master's, and PhD application strategy, school selection, essay coaching, profile enhancement, standardized test planning, visa preparation, and overseas life adaptation, helping Chinese students craft personalized end-to-end study abroad plans.",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "supply-chain-strategist",
     "filename": "supply-chain-strategist.md",
     "name": "Supply Chain Strategist",
@@ -2489,7 +2471,8 @@
     "summary": "Expert supply chain management and procurement strategy specialist — skilled in supplier development, strategic sourcing, quality control, and supply chain digitalization. Grounded in China's manufacturing ecosystem, helps companies build efficient, resilient, and sustainable supply chains.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "support-analytics-reporter",
     "filename": "support-analytics-reporter.md",
     "name": "Analytics Reporter",
@@ -2499,7 +2482,8 @@
     "summary": "Expert data analyst transforming raw data into actionable business insights. Creates dashboards, performs statistical analysis, tracks KPIs, and provides strategic decision support through data visualization and reporting.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "support-executive-summary-generator",
     "filename": "support-executive-summary-generator.md",
     "name": "Executive Summary Generator",
@@ -2509,7 +2493,8 @@
     "summary": "Consultant-grade AI specialist trained to think and communicate like a senior strategy consultant. Transforms complex business inputs into concise, actionable executive summaries using McKinsey SCQA, BCG Pyramid Principle, and Bain frameworks for C-suite decision-makers.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "support-finance-tracker",
     "filename": "support-finance-tracker.md",
     "name": "Finance Tracker",
@@ -2519,7 +2504,8 @@
     "summary": "Expert financial analyst and controller specializing in financial planning, budget management, and business performance analysis. Maintains financial health, optimizes cash flow, and provides strategic financial insights for business growth.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "support-infrastructure-maintainer",
     "filename": "support-infrastructure-maintainer.md",
     "name": "Infrastructure Maintainer",
@@ -2527,9 +2513,18 @@
     "color": "orange",
     "category": "support",
     "summary": "Expert infrastructure specialist focused on system reliability, performance optimization, and technical operations management. Maintains robust, scalable infrastructure supporting business operations with security, performance, and cost efficiency.",
-    "tools": ["Ansible", "AWS", "Grafana", "Kubernetes", "PostgreSQL", "Prometheus", "Terraform"],
+    "tools": [
+      "Ansible",
+      "AWS",
+      "Grafana",
+      "Kubernetes",
+      "PostgreSQL",
+      "Prometheus",
+      "Terraform"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "support-legal-compliance-checker",
     "filename": "support-legal-compliance-checker.md",
     "name": "Legal Compliance Checker",
@@ -2539,7 +2534,8 @@
     "summary": "Expert legal and compliance specialist ensuring business operations, data handling, and content creation comply with relevant laws, regulations, and industry standards across multiple jurisdictions.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "support-support-responder",
     "filename": "support-support-responder.md",
     "name": "Support Responder",
@@ -2549,7 +2545,8 @@
     "summary": "Expert customer support specialist delivering exceptional customer service, issue resolution, and user experience optimization. Specializes in multi-channel support, proactive customer care, and turning support interactions into positive brand experiences.",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "technical-artist",
     "filename": "technical-artist.md",
     "name": "Technical Artist",
@@ -2559,17 +2556,8 @@
     "summary": "Art-to-engine pipeline specialist - Masters shaders, VFX systems, LOD pipelines, performance budgeting, and cross-engine asset optimization",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "terminal-integration-specialist",
-    "filename": "terminal-integration-specialist.md",
-    "name": "Terminal Integration Specialist",
-    "emoji": "🖥️",
-    "color": "green",
-    "category": "terminal",
-    "summary": "Terminal emulation, text rendering optimization, and SwiftTerm integration for modern Swift applications",
-    "tools": ["GitHub"],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "testing-accessibility-auditor",
     "filename": "testing-accessibility-auditor.md",
     "name": "Accessibility Auditor",
@@ -2579,7 +2567,8 @@
     "summary": "Expert accessibility specialist who audits interfaces against WCAG standards, tests with assistive technologies, and ensures inclusive design. Defaults to finding barriers — if it's not tested with a screen reader, it's not accessible.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-api-tester",
     "filename": "testing-api-tester.md",
     "name": "API Tester",
@@ -2587,9 +2576,12 @@
     "color": "purple",
     "category": "testing",
     "summary": "Expert API testing specialist focused on comprehensive API validation, performance testing, and quality assurance across all systems and third-party integrations",
-    "tools": ["Playwright"],
+    "tools": [
+      "Playwright"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-evidence-collector",
     "filename": "testing-evidence-collector.md",
     "name": "Evidence Collector",
@@ -2597,9 +2589,12 @@
     "color": "orange",
     "category": "testing",
     "summary": "Screenshot-obsessed, fantasy-allergic QA specialist - Default to finding 3-5 issues, requires visual proof for everything",
-    "tools": ["Playwright"],
+    "tools": [
+      "Playwright"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-performance-benchmarker",
     "filename": "testing-performance-benchmarker.md",
     "name": "Performance Benchmarker",
@@ -2609,7 +2604,8 @@
     "summary": "Expert performance testing and optimization specialist focused on measuring, analyzing, and improving system performance across all applications and infrastructure",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-reality-checker",
     "filename": "testing-reality-checker.md",
     "name": "Reality Checker",
@@ -2617,9 +2613,12 @@
     "color": "red",
     "category": "testing",
     "summary": "Stops fantasy approvals, evidence-based certification - Default to \"NEEDS WORK\", requires overwhelming proof for production readiness",
-    "tools": ["Playwright"],
+    "tools": [
+      "Playwright"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-test-automation-engineer",
     "filename": "testing-test-automation-engineer.md",
     "name": "Test Automation Engineer",
@@ -2627,9 +2626,15 @@
     "color": "#2EAD33",
     "category": "testing",
     "summary": "Expert end-to-end test automation engineer for Playwright and Cypress — resilient selectors, flake elimination, isolated test data, CI parallelization, and trace-driven failure debugging.",
-    "tools": ["async ({}", "GitHub", "Playwright", "use) => {"],
+    "tools": [
+      "async ({}",
+      "GitHub",
+      "Playwright",
+      "use) => {"
+    ],
     "approvalTier": "needs-approval-to-act"
-  },  {
+  },
+  {
     "id": "testing-test-results-analyzer",
     "filename": "testing-test-results-analyzer.md",
     "name": "Test Results Analyzer",
@@ -2639,7 +2644,8 @@
     "summary": "Expert test analysis specialist focused on comprehensive test result evaluation, quality metrics analysis, and actionable insight generation from testing activities",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "testing-tool-evaluator",
     "filename": "testing-tool-evaluator.md",
     "name": "Tool Evaluator",
@@ -2649,7 +2655,8 @@
     "summary": "Expert technology assessment specialist focused on evaluating, testing, and recommending tools, software, and platforms for business use and productivity optimization",
     "tools": [],
     "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "testing-workflow-optimizer",
     "filename": "testing-workflow-optimizer.md",
     "name": "Workflow Optimizer",
@@ -2657,129 +2664,12 @@
     "color": "green",
     "category": "testing",
     "summary": "Expert process improvement specialist focused on analyzing, optimizing, and automating workflows across all business functions for maximum productivity and efficiency",
-    "tools": ["Zapier"],
+    "tools": [
+      "Zapier"
+    ],
     "approvalTier": "read-only"
-  },  {
-    "id": "unity-architect",
-    "filename": "unity-architect.md",
-    "name": "Unity Architect",
-    "emoji": "🏛️",
-    "color": "blue",
-    "category": "unity",
-    "summary": "Data-driven modularity specialist - Masters ScriptableObjects, decoupled systems, and single-responsibility component design for scalable Unity projects",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unity-editor-tool-developer",
-    "filename": "unity-editor-tool-developer.md",
-    "name": "Unity Editor Tool Developer",
-    "emoji": "🛠️",
-    "color": "gray",
-    "category": "unity",
-    "summary": "Unity editor automation specialist - Masters custom EditorWindows, PropertyDrawers, AssetPostprocessors, ScriptedImporters, and pipeline automation that saves teams hours per week",
-    "tools": ["GitHub"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unity-multiplayer-engineer",
-    "filename": "unity-multiplayer-engineer.md",
-    "name": "Unity Multiplayer Engineer",
-    "emoji": "🔗",
-    "color": "blue",
-    "category": "unity",
-    "summary": "Networked gameplay specialist - Masters Netcode for GameObjects, Unity Gaming Services (Relay/Lobby), client-server authority, lag compensation, and state synchronization",
-    "tools": ["AWS", "Docker"],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unity-shader-graph-artist",
-    "filename": "unity-shader-graph-artist.md",
-    "name": "Unity Shader Graph Artist",
-    "emoji": "✨",
-    "color": "cyan",
-    "category": "unity",
-    "summary": "Visual effects and material specialist - Masters Unity Shader Graph, HLSL, URP/HDRP rendering pipelines, and custom pass authoring for real-time visual effects",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unreal-multiplayer-architect",
-    "filename": "unreal-multiplayer-architect.md",
-    "name": "Unreal Multiplayer Architect",
-    "emoji": "🌐",
-    "color": "red",
-    "category": "unreal",
-    "summary": "Unreal Engine networking specialist - Masters Actor replication, GameMode/GameState architecture, server-authoritative gameplay, network prediction, and dedicated server setup for UE5",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unreal-systems-engineer",
-    "filename": "unreal-systems-engineer.md",
-    "name": "Unreal Systems Engineer",
-    "emoji": "⚙️",
-    "color": "orange",
-    "category": "unreal",
-    "summary": "Performance and hybrid architecture specialist - Masters C++/Blueprint continuum, Nanite geometry, Lumen GI, and Gameplay Ability System for AAA-grade Unreal Engine projects",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unreal-technical-artist",
-    "filename": "unreal-technical-artist.md",
-    "name": "Unreal Technical Artist",
-    "emoji": "🎨",
-    "color": "orange",
-    "category": "unreal",
-    "summary": "Unreal Engine visual pipeline specialist - Masters the Material Editor, Niagara VFX, Procedural Content Generation, and the art-to-engine pipeline for UE5 projects",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "unreal-world-builder",
-    "filename": "unreal-world-builder.md",
-    "name": "Unreal World Builder",
-    "emoji": "🌍",
-    "color": "green",
-    "category": "unreal",
-    "summary": "Open-world and environment specialist - Masters UE5 World Partition, Landscape, procedural foliage, HLOD, and large-scale level streaming for seamless open-world experiences",
-    "tools": [],
-    "approvalTier": "needs-approval-to-act"
-  },  {
-    "id": "visionos-spatial-engineer",
-    "filename": "visionos-spatial-engineer.md",
-    "name": "visionOS Spatial Engineer",
-    "emoji": "🥽",
-    "color": "indigo",
-    "category": "visionos",
-    "summary": "Native visionOS spatial computing, SwiftUI volumetric interfaces, and Liquid Glass design implementation",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "xr-cockpit-interaction-specialist",
-    "filename": "xr-cockpit-interaction-specialist.md",
-    "name": "XR Cockpit Interaction Specialist",
-    "emoji": "🕹️",
-    "color": "orange",
-    "category": "xr",
-    "summary": "Specialist in designing and developing immersive cockpit-based control systems for XR environments",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "xr-immersive-developer",
-    "filename": "xr-immersive-developer.md",
-    "name": "XR Immersive Developer",
-    "emoji": "🌐",
-    "color": "neon-cyan",
-    "category": "xr",
-    "summary": "Expert WebXR and immersive technology developer with specialization in browser-based AR/VR/XR applications",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
-    "id": "xr-interface-architect",
-    "filename": "xr-interface-architect.md",
-    "name": "XR Interface Architect",
-    "emoji": "🫧",
-    "color": "neon-green",
-    "category": "xr",
-    "summary": "Spatial interaction designer and interface strategist for immersive AR/VR/XR environments",
-    "tools": [],
-    "approvalTier": "read-only"
-  },  {
+  },
+  {
     "id": "zk-steward",
     "filename": "zk-steward.md",
     "name": "ZK Steward",
@@ -2789,4 +2679,5 @@
     "summary": "Knowledge-base steward in the spirit of Niklas Luhmann's Zettelkasten. Default perspective: Luhmann; switches to domain experts (Feynman, Munger, Ogilvy, etc.) by task. Enforces atomic notes, connectivity, and validation loops. Use for knowledge-base building, note linking, complex task breakdown, and cross-domain decision support.",
     "tools": [],
     "approvalTier": "needs-approval-to-act"
-  }]
+  }
+]

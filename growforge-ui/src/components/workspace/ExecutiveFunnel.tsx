@@ -5,11 +5,13 @@ import { ArrowRight, Bot, CheckCircle2, Cpu, Library, ShieldAlert, type LucideIc
 import type { Agent } from "@/lib/agents";
 import { useAppState } from "@/lib/appState";
 import { useLiveAgents } from "@/lib/useLiveAgents";
+import vaultDataRaw from "@/data/vaultCapabilities.json";
 
 /** Files under .claude/vault/ — the master agent catalog. Not exposed via
- *  an API (it's a static repo artifact, not app state), so this mirrors the
- *  same figure used in the Vault Library placeholder card. */
-const CATALOGED_AGENTS = 279;
+ *  an API (it's a static repo artifact, not app state), so this reads the
+ *  real catalog length instead of a hardcoded count that drifts every time
+ *  agents are added or pruned. */
+const CATALOGED_AGENTS = vaultDataRaw.length;
 
 const POLL_INTERVAL_MS = 5000;
 
