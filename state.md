@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State
 
-> **Last updated:** 2026-09-21, 05:32, Antigravity. Fixed avatar-remove hover gating & humanized static UI copy in ProfileDashboard + VaultLibraryOverlay — see §0. **Previous, 05:13, Antigravity**: profile dashboard layout synthesis (item 48).
+> **Last updated:** 2026-09-21, 15:13, Antigravity. Pushed all changes (items 48–51) to origin/master; Vercel deployment confirmed green (commit 45db079) — see §0 and §3 item 52.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan — it's the single source of truth for what phase the project is in. Also read `PRODUCT.md` and `DESIGN.md` (repo root) before any design/UI work.
@@ -390,20 +390,30 @@ The roadmap was **restructured to 7 phases (0–6)** this session, following a f
     - **Verified**: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors/0 warnings after all three fixes.
     - **This closes the actual root cause of the "new user sees connected stuff" report** — confirmed to be the public-preview-visitor case (no real multi-tenant account system exists yet; that's separate, larger, unscoped future work if ever needed), not a new bug in today's other changes.
 
-**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt. **All known public-preview data-isolation gaps are now closed** (items 42, 44, 45, 46, 48, 51). The profile-page redesign (item 49's layout, built by Antigravity) was rejected by the user as too LinkedIn-shaped/generic-CRUD — needs a fundamentally different frame ("AI briefing/debrief screen," not "profile page") before another attempt; user does not want to look at it right now. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed. **Everything since item 47's push is unpushed/uncommitted — items 48 through 51 (48 is committed-not-pushed; 49, 50, 51 are all still working-tree changes).** **Read items 51, 50, 49, 48, 47, 46, 45, 44, 42, 41, and 38 before assuming anything about current state.**
+52. **Push to origin/master + Vercel deploy confirmed green (2026-09-21, 15:13, Antigravity).**
+    - Pushed 6 commits in logical groups to `origin/master` (range `ad7b8f9..45db079`):
+      1. `3977a5d fix(security): isolate telemetry events and singleton state for public preview visitors (item 48)`
+      2. `de732ab fix(security): isolate mcp/connect topology and servers for public preview visitors`
+      3. `550ac22 feat(vault): prune 72 off-domain vault agents and make catalog count dynamic`
+      4. `2cb1bdf feat(profile): add target market radar area widget with OSM and overpass integration`
+      5. `0212956 feat(profile): synthesize profile layout, avatar hover gating, and humanize UI copy`
+      6. `45db079 docs: update state.md and ROADMAP.md for profile synthesis, market radar, and preview isolation`
+    - **Vercel deployment status**: polled GitHub commit status API for `45db079b563d8bc1574d9d928c56ef3714d82f2c` — transitioned `pending` → `success` (`Deployment has completed`, target URL: `https://vercel.com/arif-md-anjum-onys-projects/growforge-digital-ai-os/DaYB73a5mReYS7dgk2X4g8UNi8ES`).
+    - **Working tree & branch clean**: `origin/master` fully up to date with zero remaining unpushed commits.
+
+**Next up:** Vault routing step 3 (`orchestrator.ts` wiring) and the real campaign-creative pipeline (research → multi-asset generation → approval/regenerate loop, per the user's actual Higgsfield-integration ask) are both still unscoped/unbuilt. **All known public-preview data-isolation gaps are now closed** (items 42, 44, 45, 46, 48, 51). The profile-page redesign (item 49's layout, built by Antigravity) was rejected by the user as too LinkedIn-shaped/generic-CRUD — needs a fundamentally different frame ("AI briefing/debrief screen," not "profile page") before another attempt; user does not want to look at it right now. NVIDIA NemoClaw stays deferred pending the user's own WSL2/Docker setup. Gemini's image-gen 404 (item 41) is unfixed.
 
 ## 4. Known, accepted issues carried forward
 
 - **Live research is currently non-functional**: Gemini quota exhausted (free tier) + DuckDuckGo fallback anti-bot-blocked. Not fixed by the LLM strategy dropdown (it doesn't control research at all — a real gap found earlier this session, still unfixed) — genuinely blocked until one clears or a different fallback is built.
 - **n8n tool-calling reliability from a real LLM-driven job** is unresolved and explicitly deprioritized (Phase 1). The tool itself is proven correct; the model isn't reliably choosing to call it yet. A temporary diagnostic (`console.warn` in `runToolLoop`, `tools.ts`) logs raw model output when this happens — remove once/if the gap closes.
-- `ExecutiveFunnel.tsx`'s "279 cataloged agents" is a hardcoded literal, not a live count — low-risk drift, not fixed.
 - The `/settings` page's "GUIDE_TABS" setup-guide tabs (n8n API Keys / MCP Servers / REST-Webhooks walkthroughs) were **not** ported into `IntegrationsHub.tsx` — deliberately: they were documentation about functionality that already exists there (custom connectors, MCP catalog help links), not unique capability. Worth a look if a user ever asks for more in-app setup guidance, but not treated as a gap.
 - **Impeccable's hooks now run automatically** on every UI Edit/Write and at end of turn — expect `PostToolUse` hook messages with design findings; triage each per its own instructions (fix, suppress with disclosed reason, or ask) rather than ignoring them.
 
 ## 5. Working tree state
 
-**Unpushed local commit (item 48) on top of pushed master (`ad7b8f9`, item 47).**
-- Telemetry public-preview data isolation gap completely resolved.
+**All commits pushed cleanly to `origin/master`. Working tree clean.**
+- Public preview data isolation verified and active across all endpoints.
 - `growforge-ui` builds cleanly with 0 TypeScript and 0 ESLint errors.
 
 ## 6. Immediate next steps for whoever picks this up
