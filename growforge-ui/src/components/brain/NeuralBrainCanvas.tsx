@@ -22,9 +22,8 @@ import {
 } from "lucide-react";
 import { NodeDeleteConfirmModal, type DeletableNodeType } from "@/components/workspace/NodeDeleteConfirmModal";
 import {
-  generateProceduralBrainShell,
+  generateProceduralBrainWeb,
   calculateNodeBrainPosition,
-  type PointMetadata,
 } from "./brainGeometry";
 
 export interface BrainNode {
@@ -122,81 +121,81 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     lobe: "performance_media",
     hemisphere: "right",
     position: [46, -18, 28],
-    size: 6.8,
+    size: 6.5,
     color: "#ec4899",
     emissive: "#f472b6",
-    description: "Ad creative variations, ROAS optimization, budget allocation, and audience retargeting.",
-    tools: ["Campaign Engine"],
-    metrics: { throughput: "Scaled", latency: "490ms" },
+    description: "Campaign scaling, ad creative testing, algorithmic bidding, and ROAS optimization.",
+    tools: ["Ads Architect"],
+    metrics: { throughput: "Active", latency: "180ms" },
   },
-  "dept:finance-ops": {
-    id: "dept:finance-ops",
-    name: "Finance & Operations",
-    role: "Capital Allocation & Unit Economics",
+  "dept:finance": {
+    id: "dept:finance",
+    name: "Financial Modeling & Ops",
+    role: "Unit Economics & Cashflow",
     kind: "department",
     lobe: "analytics_governance",
     hemisphere: "left",
     position: [-46, -18, 22],
-    size: 6.8,
+    size: 6.5,
     color: "#f59e0b",
     emissive: "#fbbf24",
-    description: "P&L projections, break-even analysis, runway modeling, and risk mitigation.",
-    tools: ["Unit Economics Engine"],
-    metrics: { throughput: "Calibrated", latency: "180ms" },
+    description: "Budget forecasting, profit margins, burn rate monitoring, and financial scenario models.",
+    tools: ["Finance Core"],
+    metrics: { throughput: "Active", latency: "140ms" },
   },
-  "dept:client-success": {
-    id: "dept:client-success",
-    name: "Client Success & PM",
-    role: "Retention & Delivery Operations",
-    kind: "department",
-    lobe: "growth_expansion",
-    hemisphere: "right",
-    position: [42, -32, -18],
-    size: 6.0,
-    color: "#14b8a6",
-    emissive: "#5eead4",
-    description: "Onboarding workflows, health scores, recurring touchpoints, and project sequencing.",
-    tools: ["Project Tracker"],
-    metrics: { throughput: "Nominal", latency: "140ms" },
-  },
-  "dept:web-design": {
-    id: "dept:web-design",
-    name: "Digital Design & UX",
-    role: "UX Architecture & Visual Direction",
+  "dept:content": {
+    id: "dept:content",
+    name: "Content Engine & Creative",
+    role: "Asset & Copy Generation",
     kind: "department",
     lobe: "creative_strategy",
     hemisphere: "left",
-    position: [-48, 20, -22],
-    size: 6.5,
-    color: "#6366f1",
-    emissive: "#818cf8",
-    description: "Website/landing page structure, conversion design, and visual styling.",
-    tools: ["Design System"],
-    metrics: { throughput: "Active", latency: "240ms" },
+    position: [-38, 28, 6],
+    size: 6.2,
+    color: "#a855f7",
+    emissive: "#c084fc",
+    description: "Long-form editorial, social media collateral, video scripting, and visual prompt decks.",
+    tools: ["Copy Studio"],
+    metrics: { throughput: "Active", latency: "260ms" },
   },
-  "dept:web-dev": {
-    id: "dept:web-dev",
-    name: "Web Development & Engineering",
-    role: "Technical Implementation & Systems",
-    kind: "department",
-    lobe: "neural_core",
-    hemisphere: "left",
-    position: [-42, -32, -18],
-    size: 6.5,
-    color: "#06b6d4",
-    emissive: "#22d3ee",
-    description: "Website builds, technical SEO, performance tuning, and frontend/backend infrastructure.",
-    tools: ["Code Sandbox"],
-    metrics: { throughput: "Active", latency: "160ms" },
-  },
-  "dept:ai-automation": {
-    id: "dept:ai-automation",
-    name: "AI Systems & Automation",
-    role: "Workflow & n8n Integration",
+  "dept:web-build": {
+    id: "dept:web-build",
+    name: "Full-Stack Development",
+    role: "Digital Infrastructure & Code",
     kind: "department",
     lobe: "neural_core",
     hemisphere: "center",
-    position: [0, 36, -12],
+    position: [0, -18, 16],
+    size: 6.2,
+    color: "#06b6d4",
+    emissive: "#22d3ee",
+    description: "Next.js applications, responsive design systems, database schemas, and API connectors.",
+    tools: ["Code Sandbox"],
+    metrics: { throughput: "Active", latency: "190ms" },
+  },
+  "dept:seo": {
+    id: "dept:seo",
+    name: "Search Engine & Visibility",
+    role: "Organic Discovery & Ranking",
+    kind: "department",
+    lobe: "performance_media",
+    hemisphere: "right",
+    position: [38, 28, 6],
+    size: 6.2,
+    color: "#0ea5e9",
+    emissive: "#38bdf8",
+    description: "Keyword clustering, technical audits, backlink strategy, and search intent optimization.",
+    tools: ["SEO Crawler"],
+    metrics: { throughput: "Active", latency: "220ms" },
+  },
+  "dept:operations": {
+    id: "dept:operations",
+    name: "Autonomous Workflows",
+    role: "Execution Automation",
+    kind: "department",
+    lobe: "neural_core",
+    hemisphere: "center",
+    position: [0, 32, -8],
     size: 6.8,
     color: "#0078FF",
     emissive: "#60a5fa",
@@ -236,6 +235,47 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   },
 };
 
+interface NodeMeshRecord {
+  group: THREE.Group;
+  outerMesh: THREE.Mesh;
+  outerMat: THREE.MeshPhysicalMaterial;
+  coreMesh: THREE.Mesh;
+  coreMat: THREE.MeshStandardMaterial;
+  halo: THREE.Sprite;
+  baseSize: number;
+}
+
+interface AmbientWebRecord {
+  tubesGroup: THREE.Group;
+  nodesGroup: THREE.Group;
+  tubes: {
+    mesh: THREE.Mesh;
+    mat: THREE.MeshBasicMaterial;
+    lobe: BrainLobe;
+    baseOpacity: number;
+  }[];
+  nodes: {
+    group: THREE.Group;
+    outerMesh: THREE.Mesh;
+    outerMat: THREE.MeshStandardMaterial;
+    coreMesh: THREE.Mesh;
+    coreMat: THREE.MeshStandardMaterial;
+    lobe: BrainLobe;
+    startPos: THREE.Vector3;
+    targetPos: THREE.Vector3;
+    delay: number;
+  }[];
+}
+
+interface LightningArcRecord {
+  group: THREE.Group;
+  tubeMat: THREE.MeshBasicMaterial;
+  innerMat: THREE.MeshBasicMaterial;
+  branchMats: THREE.MeshBasicMaterial[];
+  startTime: number;
+  duration: number; // in seconds
+}
+
 export function NeuralBrainCanvas({
   className = "",
   userSeed,
@@ -272,13 +312,40 @@ export function NeuralBrainCanvas({
         const data = await res.json();
         if (data.topology) {
           // Reposition dynamic nodes onto the procedural shell coordinates for this user
+          const ambientPositions = ambientNodePositionsRef.current;
           const positionedNodes = ((data.topology.nodes as BrainNode[]) || []).map((node) => {
-            const pos = calculateNodeBrainPosition(
+            const anchorPos = calculateNodeBrainPosition(
               node.id,
               node.lobe || "neural_core",
               node.hemisphere || "center",
               activeUserSeed
             );
+
+            // Pull toward the nearest ambient web point so a mathematically valid
+            // anchor position doesn't render floating alone in a sparse patch of
+            // the web — real nodes should visually sit inside the structure.
+            let pos = anchorPos;
+            if (ambientPositions.length > 0) {
+              let nearest = ambientPositions[0];
+              let nearestDist = Infinity;
+              for (const candidate of ambientPositions) {
+                const dx = candidate[0] - anchorPos[0];
+                const dy = candidate[1] - anchorPos[1];
+                const dz = candidate[2] - anchorPos[2];
+                const dist = dx * dx + dy * dy + dz * dz;
+                if (dist < nearestDist) {
+                  nearestDist = dist;
+                  nearest = candidate;
+                }
+              }
+              const blend = 0.55;
+              pos = [
+                anchorPos[0] + (nearest[0] - anchorPos[0]) * blend,
+                anchorPos[1] + (nearest[1] - anchorPos[1]) * blend,
+                anchorPos[2] + (nearest[2] - anchorPos[2]) * blend,
+              ];
+            }
+
             return {
               ...node,
               position: pos,
@@ -416,20 +483,29 @@ export function NeuralBrainCanvas({
   const controlsRef = useRef<OrbitControls | null>(null);
   const brainGroupRef = useRef<THREE.Group | null>(null);
   const dynamicGroupRef = useRef<THREE.Group | null>(null);
+  const clockRef = useRef<THREE.Clock | null>(null);
 
   // Persistent Camera Target
   const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, -2, 0));
 
-  const meshesRef = useRef<Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>>(new Map());
+  // Node records map
+  const meshesRef = useRef<Map<string, NodeMeshRecord>>(new Map());
   const particleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
   const dynamicParticleSystemsRef = useRef<{ curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[]>([]);
 
-  // Ambient Procedural Point Shell Ref
-  const shellPointsRef = useRef<{
-    points: THREE.Points;
-    metadata: PointMetadata[];
-    baseColors: Float32Array;
-  } | null>(null);
+  // Ambient Procedural Connective Web Ref
+  const ambientWebRef = useRef<AmbientWebRecord | null>(null);
+  // Raw ambient node positions, kept separately (and set synchronously at
+  // generation time) so loadDynamicTopology can pull real nodes toward the
+  // nearest one — otherwise a mathematically-correct anchor position can still
+  // land in a locally sparse patch of the ambient web and look disconnected.
+  const ambientNodePositionsRef = useRef<[number, number, number][]>([]);
+
+  // Lightning Arc Ref & Trigger
+  const activeLightningRef = useRef<LightningArcRecord | null>(null);
+  const triggerLightningRef = useRef<((lobe?: BrainLobe, activePos?: [number, number, number]) => void) | null>(null);
+  const prevExecutionStateRef = useRef(telemetry.executionState);
+  const prevJobIdRef = useRef(telemetry.activeJobId);
 
   // Persistent interaction & state refs to avoid tearing down WebGL on state updates
   const isAutoRotatingRef = useRef(isAutoRotating);
@@ -438,6 +514,10 @@ export function NeuralBrainCanvas({
   const telemetryRef = useRef(telemetry);
   const filterLobeRef = useRef<BrainLobe | "all">(filterLobe);
 
+  // Camera Intro Animation Refs (Plays once per mount)
+  const introStartTimeRef = useRef<number | null>(null);
+  const introDoneRef = useRef<boolean>(false);
+
   useEffect(() => {
     isAutoRotatingRef.current = isAutoRotating;
     selectedNodeRef.current = selectedNode;
@@ -445,6 +525,21 @@ export function NeuralBrainCanvas({
     telemetryRef.current = telemetry;
     filterLobeRef.current = filterLobe;
   }, [isAutoRotating, selectedNode, hoveredNode, telemetry, filterLobe]);
+
+  // Event trigger for the one-off lightning arc on new job start
+  useEffect(() => {
+    const isProcessing = telemetry.executionState === "processing";
+    const wasProcessing = prevExecutionStateRef.current === "processing";
+    const jobChanged = telemetry.activeJobId && telemetry.activeJobId !== prevJobIdRef.current;
+
+    if (isProcessing && (!wasProcessing || jobChanged)) {
+      const activeDeptPos = activeDepartmentNodes[0]?.position;
+      triggerLightningRef.current?.(telemetry.activeLobe, activeDeptPos);
+    }
+
+    prevExecutionStateRef.current = telemetry.executionState;
+    prevJobIdRef.current = telemetry.activeJobId;
+  }, [telemetry.executionState, telemetry.activeJobId, telemetry.activeLobe, activeDepartmentNodes]);
 
   // Create radial glow halo canvas texture
   const createHaloTexture = useCallback((colorHex: string) => {
@@ -468,27 +563,66 @@ export function NeuralBrainCanvas({
     return texture;
   }, []);
 
-  // Create soft circular particle texture for ambient points
-  const createParticleTexture = useCallback(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+  // Helper to construct a two-layer translucent glass node around a glowing core
+  const buildTwoLayerNodeMesh = useCallback(
+    (node: BrainNode): NodeMeshRecord => {
+      const group = new THREE.Group();
+      group.position.set(...node.position);
 
-    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    grad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
-    grad.addColorStop(0.35, "rgba(0, 160, 255, 0.85)");
-    grad.addColorStop(0.7, "rgba(0, 120, 255, 0.3)");
-    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      // 1. Outer Translucent / Transmissive Glass Shell (MeshPhysicalMaterial)
+      const outerGeo = new THREE.SphereGeometry(node.size, 32, 32);
+      const outerMat = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(node.color),
+        emissive: new THREE.Color(node.emissive || node.color),
+        emissiveIntensity: 0.12,
+        roughness: 0.1,
+        metalness: 0.05,
+        transmission: 0.88,
+        thickness: 1.8,
+        ior: 1.45,
+        reflectivity: 0.7,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        transparent: true,
+        opacity: 0.95,
+        attenuationColor: new THREE.Color(node.color),
+        attenuationDistance: node.size * 2.5,
+      });
+      const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+      outerMesh.userData = { nodeId: node.id };
+      group.add(outerMesh);
 
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 64, 64);
+      // 2. Inner Glowing Core Sphere
+      const coreSize = node.size * 0.46;
+      const coreGeo = new THREE.SphereGeometry(coreSize, 24, 24);
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color("#FFFFFF"),
+        emissive: new THREE.Color(node.emissive || node.color),
+        emissiveIntensity: node.kind === "core" ? 2.4 : 1.8,
+        roughness: 0.15,
+        metalness: 0.2,
+      });
+      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+      coreMesh.userData = { nodeId: node.id };
+      group.add(coreMesh);
 
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    return texture;
-  }, []);
+      // 3. Subtle Bioluminescent Halo
+      const haloTex = createHaloTexture(node.emissive || node.color);
+      const haloMat = new THREE.SpriteMaterial({
+        map: haloTex,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.75,
+      });
+      const halo = new THREE.Sprite(haloMat);
+      const haloScale = node.size * 3.6;
+      halo.scale.set(haloScale, haloScale, 1);
+      group.add(halo);
+
+      return { group, outerMesh, outerMat, coreMesh, coreMat, halo, baseSize: node.size };
+    },
+    [createHaloTexture]
+  );
 
   // 1. Initial Scene Setup — Mounts ONLY ONCE
   useEffect(() => {
@@ -503,11 +637,20 @@ export function NeuralBrainCanvas({
     sceneRef.current = scene;
     scene.fog = new THREE.FogExp2(0x030712, 0.0022);
 
-    // 2. Camera setup with persistent target
+    // 2. Camera setup with tight macro framing for intro reveal
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 1500);
-    camera.position.set(0, 5, 260);
-    cameraTargetRef.current.set(0, -2, 0);
-    camera.lookAt(cameraTargetRef.current);
+    const INTRO_DURATION = 2.4; // 2.4s dolly back
+    const FORMATION_DURATION = 3.4; // ambient web: scattered starfield -> brain silhouette
+    const FORMATION_MAX_DELAY = 0.9; // per-node stagger so convergence isn't perfectly synced
+    const SPIRAL_TURNS = 1.35; // how much each node spirals as it converges
+    const macroPos = new THREE.Vector3(-14, 16, 44);
+    const macroTarget = new THREE.Vector3(0, 8, 10);
+    const restingPos = new THREE.Vector3(0, 5, 260);
+    const restingTarget = new THREE.Vector3(0, -2, 0);
+
+    camera.position.copy(macroPos);
+    cameraTargetRef.current.copy(macroTarget);
+    camera.lookAt(macroTarget);
     cameraRef.current = camera;
 
     // 3. Renderer setup
@@ -545,66 +688,128 @@ export function NeuralBrainCanvas({
     rightLight.position.set(60, 20, 20);
     scene.add(rightLight);
 
-    // 6. LAYER 1: Ambient Procedural Point Shell (Structural Brain Silhouette)
-    const shellData = generateProceduralBrainShell(activeUserSeed, 3400);
-    const shellGeo = new THREE.BufferGeometry();
-    shellGeo.setAttribute("position", new THREE.BufferAttribute(shellData.positions, 3));
-    shellGeo.setAttribute("color", new THREE.BufferAttribute(shellData.colors, 3));
+    // 6. LAYER 1: Ambient Procedural Connective Web (Nodes + Thin Dim Curved Tubes)
+    // 480 nodes (up from 210) is the density needed for the dual-hemisphere silhouette
+    // to actually read as solid rather than a sparse dot scatter — verified live, not
+    // assumed. Node material was switched off MeshPhysicalMaterial transmission (an
+    // expensive per-object render pass) to a plain MeshStandardMaterial to afford this
+    // node count without a frame-rate regression; these are small background nodes,
+    // not the hero interactive ones, so the visual cost of losing glass transmission
+    // is minor next to the density gain.
+    const webData = generateProceduralBrainWeb(activeUserSeed, 480);
+    const webNodePositions: [number, number, number][] = webData.nodes.map((n) => n.position);
+    // Imperative Three.js ref write inside the mount effect, same pattern as
+    // meshesRef/ambientWebRef below; flagged only because loadDynamicTopology's
+    // closure also reads this ref.
+    // eslint-disable-next-line react-hooks/immutability
+    ambientNodePositionsRef.current = webNodePositions;
+    const ambientTubesGroup = new THREE.Group();
+    brainGroup.add(ambientTubesGroup);
 
-    const particleTexture = createParticleTexture();
+    const ambientNodesGroup = new THREE.Group();
+    brainGroup.add(ambientNodesGroup);
 
-    const shellMat = new THREE.PointsMaterial({
-      size: 2.3,
-      sizeAttenuation: true,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      map: particleTexture || undefined,
+    const ambientTubes: AmbientWebRecord["tubes"] = [];
+    const ambientNodes: AmbientWebRecord["nodes"] = [];
+
+    // Build ambient web connective tubes
+    webData.links.forEach((link) => {
+      const p1 = new THREE.Vector3(...link.p1);
+      const mid = new THREE.Vector3(...link.mid);
+      const p2 = new THREE.Vector3(...link.p2);
+
+      const curve = new THREE.CatmullRomCurve3([p1, mid, p2]);
+      const tubeGeo = new THREE.TubeGeometry(curve, 16, 0.16, 6, false);
+      const baseOpacity = link.isInterHemisphere ? 0.14 : 0.22;
+
+      const tubeMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color("#0078FF"),
+        transparent: true,
+        opacity: baseOpacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      ambientTubesGroup.add(tubeMesh);
+      ambientTubes.push({
+        mesh: tubeMesh,
+        mat: tubeMat,
+        lobe: link.lobe,
+        baseOpacity,
+      });
     });
 
-    const shellPoints = new THREE.Points(shellGeo, shellMat);
-    brainGroup.add(shellPoints);
-    shellPointsRef.current = {
-      points: shellPoints,
-      metadata: shellData.metadata,
-      baseColors: new Float32Array(shellData.colors),
+    // Build ambient web mini-nodes (small shells around glowing cores). Each one starts
+    // scattered like a distant starfield and converges/spirals into its real anatomical
+    // position during the formation window handled in the animation loop below.
+    webData.nodes.forEach((wNode) => {
+      const targetPos = new THREE.Vector3(...wNode.position);
+
+      // Scattered starfield origin: a wide, roughly spherical cloud well outside the
+      // brain's own ~90-unit envelope, so points visibly travel/spiral inward.
+      const scatterRadius = 160 + Math.random() * 220;
+      const scatterTheta = Math.acos(2 * Math.random() - 1);
+      const scatterPhi = Math.random() * Math.PI * 2;
+      const startPos = new THREE.Vector3(
+        scatterRadius * Math.sin(scatterTheta) * Math.cos(scatterPhi),
+        scatterRadius * Math.cos(scatterTheta) * 0.6,
+        scatterRadius * Math.sin(scatterTheta) * Math.sin(scatterPhi)
+      );
+
+      const g = new THREE.Group();
+      g.position.copy(startPos);
+
+      const oGeo = new THREE.SphereGeometry(wNode.size, 12, 12);
+      const oMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color("#0078FF"),
+        emissive: new THREE.Color("#0078FF"),
+        emissiveIntensity: 0.12,
+        roughness: 0.35,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.55,
+      });
+      const oMesh = new THREE.Mesh(oGeo, oMat);
+      g.add(oMesh);
+
+      const cGeo = new THREE.SphereGeometry(wNode.size * 0.45, 10, 10);
+      const cMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color("#FFFFFF"),
+        emissive: new THREE.Color("#60a5fa"),
+        emissiveIntensity: 1.4,
+      });
+      const cMesh = new THREE.Mesh(cGeo, cMat);
+      g.add(cMesh);
+
+      ambientNodesGroup.add(g);
+      ambientNodes.push({
+        group: g,
+        outerMesh: oMesh,
+        outerMat: oMat,
+        coreMesh: cMesh,
+        coreMat: cMat,
+        lobe: wNode.lobe,
+        startPos,
+        targetPos,
+        delay: Math.random() * FORMATION_MAX_DELAY,
+      });
+    });
+
+    ambientWebRef.current = {
+      tubesGroup: ambientTubesGroup,
+      nodesGroup: ambientNodesGroup,
+      tubes: ambientTubes,
+      nodes: ambientNodes,
     };
 
     // 7. LAYER 2: Real Interactive Nodes (HQ Core & Static Base)
-    const meshesMap = new Map<string, { mesh: THREE.Mesh; halo: THREE.Sprite; baseSize: number }>();
+    const meshesMap = new Map<string, NodeMeshRecord>();
 
     INITIAL_NODES.forEach((node) => {
-      const geometry = new THREE.SphereGeometry(node.size, 32, 32);
-      const material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(node.color),
-        emissive: new THREE.Color(node.emissive),
-        emissiveIntensity: 0.95,
-        roughness: 0.2,
-        metalness: 0.85,
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(...node.position);
-      mesh.userData = { nodeId: node.id };
-      brainGroup.add(mesh);
-
-      // Radial bioluminescent halo sprite
-      const haloTex = createHaloTexture(node.emissive);
-      const haloMat = new THREE.SpriteMaterial({
-        map: haloTex,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        opacity: 0.8,
-      });
-      const halo = new THREE.Sprite(haloMat);
-      const haloScale = node.size * 3.8;
-      halo.scale.set(haloScale, haloScale, 1);
-      halo.position.set(...node.position);
-      brainGroup.add(halo);
-
-      meshesMap.set(node.id, { mesh, halo, baseSize: node.size });
+      const nodeRecord = buildTwoLayerNodeMesh(node);
+      brainGroup.add(nodeRecord.group);
+      meshesMap.set(node.id, nodeRecord);
     });
     meshesRef.current = meshesMap;
 
@@ -660,14 +865,138 @@ export function NeuralBrainCanvas({
     });
     particleSystemsRef.current = particleSystems;
 
-    // 9. OrbitControls with exact boundary parameters
+    // 9. Lightning Arc Generator Trigger
+    triggerLightningRef.current = (targetLobe?: BrainLobe, activePos?: [number, number, number]) => {
+      if (!sceneRef.current || !brainGroupRef.current) return;
+
+      // Clean up previous bolt if still active
+      if (activeLightningRef.current) {
+        brainGroupRef.current.remove(activeLightningRef.current.group);
+        activeLightningRef.current.group.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            if (obj.material instanceof THREE.Material) obj.material.dispose();
+          }
+        });
+        activeLightningRef.current = null;
+      }
+
+      const boltGroup = new THREE.Group();
+      brainGroupRef.current.add(boltGroup);
+
+      // Determine key waypoints
+      const waypoints: THREE.Vector3[] = [new THREE.Vector3(0, 8, 10)]; // HQ Core
+
+      if (activePos) {
+        waypoints.push(new THREE.Vector3(...activePos));
+      } else {
+        // Frontal waypoint
+        waypoints.push(new THREE.Vector3(-24, 18, 20));
+      }
+
+      // Add peripheral web waypoints in the target lobe
+      const webNodes = ambientWebRef.current?.nodes || [];
+      const matchingWeb = webNodes.filter((n) => !targetLobe || n.lobe === targetLobe);
+      if (matchingWeb.length > 0) {
+        const randSample1 = matchingWeb[Math.floor(Math.random() * matchingWeb.length)];
+        waypoints.push(randSample1.group.position.clone());
+        const randSample2 = matchingWeb[Math.floor(Math.random() * matchingWeb.length)];
+        if (randSample2 !== randSample1) {
+          waypoints.push(randSample2.group.position.clone());
+        }
+      } else {
+        waypoints.push(new THREE.Vector3(44, 18, 24));
+        waypoints.push(new THREE.Vector3(-38, -14, 28));
+      }
+
+      // Recursive fractal midpoint displacement algorithm
+      function subdivideSegment(pA: THREE.Vector3, pB: THREE.Vector3, depth: number, maxOffset: number): THREE.Vector3[] {
+        if (depth <= 0) return [pA, pB];
+        const mid = new THREE.Vector3().addVectors(pA, pB).multiplyScalar(0.5);
+        const dir = new THREE.Vector3().subVectors(pB, pA);
+        const perp = new THREE.Vector3(-dir.y, dir.x + dir.z, -dir.x).normalize();
+        const randOffset = (Math.random() - 0.5) * 2 * maxOffset;
+        mid.addScaledVector(perp, randOffset);
+
+        const left = subdivideSegment(pA, mid, depth - 1, maxOffset * 0.55);
+        const right = subdivideSegment(mid, pB, depth - 1, maxOffset * 0.55);
+        return [...left.slice(0, -1), ...right];
+      }
+
+      const jaggedPoints: THREE.Vector3[] = [];
+      for (let w = 0; w < waypoints.length - 1; w++) {
+        const seg = subdivideSegment(waypoints[w], waypoints[w + 1], 3, 3.8);
+        if (w === 0) {
+          jaggedPoints.push(...seg);
+        } else {
+          jaggedPoints.push(...seg.slice(1));
+        }
+      }
+
+      // Main Outer Bolt (Electric Blue)
+      const mainCurve = new THREE.CatmullRomCurve3(jaggedPoints);
+      const tubeGeo = new THREE.TubeGeometry(mainCurve, jaggedPoints.length * 3, 0.4, 6, false);
+      const tubeMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color("#00F0FF"),
+        transparent: true,
+        opacity: 1.0,
+        blending: THREE.AdditiveBlending,
+      });
+      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      boltGroup.add(tubeMesh);
+
+      // Core Hot White Inner Arc
+      const innerGeo = new THREE.TubeGeometry(mainCurve, jaggedPoints.length * 3, 0.18, 5, false);
+      const innerMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color("#FFFFFF"),
+        transparent: true,
+        opacity: 1.0,
+        blending: THREE.AdditiveBlending,
+      });
+      const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+      boltGroup.add(innerMesh);
+
+      // Secondary Branching Forks
+      const branchMats: THREE.MeshBasicMaterial[] = [];
+      if (jaggedPoints.length > 8) {
+        for (let b = 0; b < 2; b++) {
+          const forkIdx = Math.floor(jaggedPoints.length * (0.28 + b * 0.38));
+          const forkStart = jaggedPoints[forkIdx];
+          const forkEnd = forkStart.clone().add(
+            new THREE.Vector3(
+              (Math.random() - 0.5) * 26,
+              (Math.random() - 0.5) * 26,
+              (Math.random() - 0.5) * 26
+            )
+          );
+          const branchPts = subdivideSegment(forkStart, forkEnd, 2, 2.4);
+          const bCurve = new THREE.CatmullRomCurve3(branchPts);
+          const bGeo = new THREE.TubeGeometry(bCurve, branchPts.length * 2, 0.22, 5, false);
+          const bMat = tubeMat.clone();
+          const bMesh = new THREE.Mesh(bGeo, bMat);
+          boltGroup.add(bMesh);
+          branchMats.push(bMat);
+        }
+      }
+
+      activeLightningRef.current = {
+        group: boltGroup,
+        tubeMat,
+        innerMat,
+        branchMats,
+        startTime: clockRef.current?.getElapsedTime() || 0,
+        duration: 0.38, // 380ms fast flash
+      };
+    };
+
+    // 10. OrbitControls with exact boundary parameters
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.minDistance = 140;
     controls.maxDistance = 900;
     controls.enablePan = true;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.target.copy(cameraTargetRef.current);
+    controls.target.copy(macroTarget);
     controls.update();
     controlsRef.current = controls;
 
@@ -691,9 +1020,9 @@ export function NeuralBrainCanvas({
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Hover Raycasting against real node meshes only (ignores ambient point shell)
+      // Hover Raycasting against real outer glass meshes only
       raycaster.setFromCamera(mouse, camera);
-      const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.mesh);
+      const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.outerMesh);
       const intersects = raycaster.intersectObjects(meshesToTest);
 
       if (intersects.length > 0) {
@@ -718,7 +1047,7 @@ export function NeuralBrainCanvas({
       const dist = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
       if (wasDown && dist < 6) {
         raycaster.setFromCamera(mouse, camera);
-        const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.mesh);
+        const meshesToTest = Array.from(meshesRef.current.values()).map((v) => v.outerMesh);
         const intersects = raycaster.intersectObjects(meshesToTest);
 
         if (intersects.length > 0) {
@@ -735,13 +1064,37 @@ export function NeuralBrainCanvas({
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
 
-    // 10. Animation Loop
+    // 11. Animation Loop
     let animationFrameId: number;
     const clock = new THREE.Clock();
+    clockRef.current = clock;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
+
+      // Camera Intro Reveal Animation (dollying back from tight macro to resting)
+      if (introStartTimeRef.current === null) {
+        introStartTimeRef.current = elapsedTime;
+      }
+      if (!introDoneRef.current) {
+        const introElapsed = elapsedTime - introStartTimeRef.current;
+        const progress = Math.min(1, introElapsed / INTRO_DURATION);
+        // Smooth cubic ease-out
+        const ease = 1 - Math.pow(1 - progress, 3);
+
+        camera.position.lerpVectors(macroPos, restingPos, ease);
+        const currentLookAt = new THREE.Vector3().lerpVectors(macroTarget, restingTarget, ease);
+        camera.lookAt(currentLookAt);
+        controls.target.copy(currentLookAt);
+
+        if (progress >= 1) {
+          introDoneRef.current = true;
+          controls.enabled = true;
+        } else {
+          controls.enabled = false;
+        }
+      }
 
       // Continuous unbroken sideways turntable yaw rotation
       if (isAutoRotatingRef.current) {
@@ -750,7 +1103,7 @@ export function NeuralBrainCanvas({
       brainGroup.position.y = Math.sin(elapsedTime * 0.7) * 1.6;
 
       // Update OrbitControls smooth damping
-      if (controlsRef.current) {
+      if (controlsRef.current && introDoneRef.current) {
         controlsRef.current.update();
       }
 
@@ -773,55 +1126,108 @@ export function NeuralBrainCanvas({
         posAttr.needsUpdate = true;
       });
 
-      // Activity-Based Coloring: Ambient Point Shell & Earned Gold Lighting Rule
+      // Update Ambient Connective Web Layer (Activity-Based Earned Gold Lighting)
       const currentTelemetry = telemetryRef.current;
       const isProcessing = currentTelemetry.executionState === "processing";
       const activeLobe = currentTelemetry.activeLobe;
 
-      if (shellPointsRef.current) {
-        const { points, metadata, baseColors } = shellPointsRef.current;
-        const colorAttr = points.geometry.attributes.color as THREE.BufferAttribute;
-        const colorsArr = colorAttr.array as Float32Array;
-        let colorNeedsUpdate = false;
+      if (ambientWebRef.current) {
+        const { tubes, nodes } = ambientWebRef.current;
 
-        for (let i = 0; i < metadata.length; i++) {
-          const meta = metadata[i];
-          const i3 = i * 3;
-          const baseR = baseColors[i3];
-          const baseG = baseColors[i3 + 1];
-          const baseB = baseColors[i3 + 2];
+        // Overall web-formation progress (0 = still a scattered starfield, 1 = fully
+        // resolved brain). Tubes fade in against this so connective tissue only
+        // appears once the nodes it links have mostly arrived — they never visibly
+        // stretch or snap, they just aren't drawn yet.
+        const webFormationProgress = Math.min(1, elapsedTime / (FORMATION_DURATION + FORMATION_MAX_DELAY));
+        const tubeRevealFactor = Math.max(0, Math.min(1, (webFormationProgress - 0.45) / 0.4));
 
-          const isActiveLobe = isProcessing && activeLobe && meta.lobe === activeLobe;
-
+        // Ambient Tubes
+        tubes.forEach((tube) => {
+          const isActiveLobe = isProcessing && activeLobe && tube.lobe === activeLobe;
           if (isActiveLobe) {
-            // Earned Gold illumination pulse (#FFC432 -> R:1.0, G:0.77, B:0.20)
-            const wave = Math.sin(elapsedTime * 3.5 + meta.baseZ * 0.08) * 0.2 + 0.8;
-            const targetR = 1.0 * wave;
-            const targetG = 0.77 * wave;
-            const targetB = 0.20 * wave;
-
-            colorsArr[i3] += (targetR - colorsArr[i3]) * 0.14;
-            colorsArr[i3 + 1] += (targetG - colorsArr[i3 + 1]) * 0.14;
-            colorsArr[i3 + 2] += (targetB - colorsArr[i3 + 2]) * 0.14;
-            colorNeedsUpdate = true;
+            // Earned Gold glowing tube
+            tube.mat.color.set("#FFC432");
+            tube.mat.opacity = (0.48 + Math.sin(elapsedTime * 4.0) * 0.12) * tubeRevealFactor;
           } else {
-            // Resting subtle biological breathing on electric blue
-            const restingWave = Math.sin(elapsedTime * 1.4 + meta.baseY * 0.04) * 0.12 + 0.94;
-            const targetR = baseR * restingWave;
-            const targetG = baseG * restingWave;
-            const targetB = baseB * restingWave;
-
-            if (Math.abs(colorsArr[i3] - targetR) > 0.008 || Math.abs(colorsArr[i3 + 1] - targetG) > 0.008) {
-              colorsArr[i3] += (targetR - colorsArr[i3]) * 0.08;
-              colorsArr[i3 + 1] += (targetG - colorsArr[i3 + 1]) * 0.08;
-              colorsArr[i3 + 2] += (targetB - colorsArr[i3 + 2]) * 0.08;
-              colorNeedsUpdate = true;
-            }
+            // Dim electric blue resting tube
+            tube.mat.color.set("#0078FF");
+            tube.mat.opacity = tube.baseOpacity * (Math.sin(elapsedTime * 1.4) * 0.15 + 0.9) * tubeRevealFactor;
           }
-        }
+        });
 
-        if (colorNeedsUpdate) {
-          colorAttr.needsUpdate = true;
+        // Ambient Nodes — spiral-converge from their scattered starfield origin into
+        // anatomical position, staggered per-node so the formation feels organic
+        // rather than perfectly synchronized.
+        nodes.forEach((wNode) => {
+          const nodeElapsed = Math.max(0, elapsedTime - wNode.delay);
+          const rawProgress = Math.min(1, nodeElapsed / FORMATION_DURATION);
+          const ease = 1 - Math.pow(1 - rawProgress, 3);
+
+          if (rawProgress < 1) {
+            const lerped = new THREE.Vector3().lerpVectors(wNode.startPos, wNode.targetPos, ease);
+            // Spiral: rotate the still-remaining offset around the target's vertical
+            // axis, unwinding to zero as the node arrives.
+            const offset = new THREE.Vector3().subVectors(lerped, wNode.targetPos);
+            const spinAngle = (1 - ease) * SPIRAL_TURNS * Math.PI * 2;
+            const cos = Math.cos(spinAngle);
+            const sin = Math.sin(spinAngle);
+            const rx = offset.x * cos - offset.z * sin;
+            const rz = offset.x * sin + offset.z * cos;
+            wNode.group.position.set(wNode.targetPos.x + rx, lerped.y, wNode.targetPos.z + rz);
+            wNode.group.visible = true;
+          } else if (!wNode.group.visible || wNode.group.position.distanceTo(wNode.targetPos) > 0.01) {
+            wNode.group.position.copy(wNode.targetPos);
+          }
+
+          const isActiveLobe = isProcessing && activeLobe && wNode.lobe === activeLobe;
+          if (isActiveLobe) {
+            wNode.coreMat.emissive.set("#FFC432");
+            wNode.coreMat.emissiveIntensity = 2.4 + Math.sin(elapsedTime * 4.0) * 0.6;
+            wNode.outerMat.emissive.set("#FFC432");
+            wNode.outerMat.emissiveIntensity = 0.35;
+          } else {
+            wNode.coreMat.emissive.set("#60a5fa");
+            wNode.coreMat.emissiveIntensity = 1.3 + Math.sin(elapsedTime * 1.4) * 0.2;
+            wNode.outerMat.emissive.set("#0078FF");
+            wNode.outerMat.emissiveIntensity = 0.08;
+          }
+        });
+      }
+
+      // Update Lightning Arc Animation
+      if (activeLightningRef.current) {
+        const bolt = activeLightningRef.current;
+        const boltAge = elapsedTime - bolt.startTime;
+        const progress = boltAge / bolt.duration;
+
+        if (progress >= 1) {
+          brainGroup.remove(bolt.group);
+          bolt.group.traverse((obj) => {
+            if (obj instanceof THREE.Mesh) {
+              obj.geometry.dispose();
+              if (obj.material instanceof THREE.Material) obj.material.dispose();
+            }
+          });
+          activeLightningRef.current = null;
+        } else {
+          // Lightning phases: intense flicker then rapid fade out
+          let opacity = 1.0;
+          if (progress < 0.3) {
+            // Rapid forward flash / intense ionization
+            opacity = 0.85 + Math.random() * 0.3;
+          } else if (progress < 0.65) {
+            // Electric crackle flicker
+            opacity = 0.7 + Math.random() * 0.35;
+          } else {
+            // Rapid decay
+            opacity = (1 - progress) * 2.8;
+          }
+
+          bolt.tubeMat.opacity = Math.max(0, Math.min(1, opacity));
+          bolt.innerMat.opacity = Math.max(0, Math.min(1, opacity * 1.2));
+          bolt.branchMats.forEach((bm) => {
+            bm.opacity = Math.max(0, Math.min(1, opacity * 0.85));
+          });
         }
       }
 
@@ -830,7 +1236,7 @@ export function NeuralBrainCanvas({
       const currentSelectedId = selectedNodeRef.current?.id;
       const currentFilter = filterLobeRef.current;
 
-      meshesRef.current.forEach(({ mesh, halo, baseSize }, id) => {
+      meshesRef.current.forEach(({ outerMesh, outerMat, coreMat, halo, baseSize }, id) => {
         const nodeObj = nodeMapRef.current.get(id);
         const isHovered = currentHoveredId === id;
         const isSelected = currentSelectedId === id;
@@ -840,22 +1246,23 @@ export function NeuralBrainCanvas({
           isProcessing &&
           (currentTelemetry.activeNodeId === nodeObj.id || currentTelemetry.activeLobe === nodeObj.lobe);
 
-        if (mesh.material instanceof THREE.MeshStandardMaterial) {
-          mesh.material.opacity = isFiltered ? 0.2 : 1;
-          mesh.material.transparent = isFiltered;
+        outerMesh.visible = !isFiltered;
 
-          // Earned gold emissive on active nodes
-          if (isActiveNode) {
-            mesh.material.emissive.set("#FFC432");
-            mesh.material.emissiveIntensity = 1.2;
-          } else {
-            mesh.material.emissive.set(nodeObj?.emissive || "#60a5fa");
-            mesh.material.emissiveIntensity = nodeObj?.kind === "core" ? 0.95 : 0.65;
-          }
+        // Earned gold emissive on active nodes (glowing core + glass shell transmission)
+        if (isActiveNode) {
+          coreMat.emissive.set("#FFC432");
+          coreMat.emissiveIntensity = 3.2;
+          outerMat.emissive.set("#FFC432");
+          outerMat.emissiveIntensity = 0.45;
+        } else {
+          coreMat.emissive.set(nodeObj?.emissive || "#60a5fa");
+          coreMat.emissiveIntensity = nodeObj?.kind === "core" ? 2.4 : 1.8;
+          outerMat.emissive.set(nodeObj?.emissive || nodeObj?.color || "#0078FF");
+          outerMat.emissiveIntensity = 0.12;
         }
 
         const pulse = Math.sin(elapsedTime * 2 + baseSize) * 0.15 + 1;
-        const scale = baseSize * (isHovered || isSelected ? 4.8 : 3.8) * pulse * (isFiltered ? 0.4 : 1);
+        const scale = baseSize * (isHovered || isSelected ? 4.6 : 3.6) * pulse * (isFiltered ? 0.3 : 1);
         halo.scale.set(scale, scale, 1);
 
         if (isActiveNode) {
@@ -868,7 +1275,7 @@ export function NeuralBrainCanvas({
 
     animate();
 
-    // 11. True Edge-to-Edge Dynamic ResizeObserver
+    // 12. True Edge-to-Edge Dynamic ResizeObserver
     const handleResize = () => {
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth || window.innerWidth;
@@ -897,7 +1304,7 @@ export function NeuralBrainCanvas({
         container.removeChild(dom);
       }
     };
-  }, [createHaloTexture, createParticleTexture, activeUserSeed]);
+  }, [createHaloTexture, buildTwoLayerNodeMesh, activeUserSeed]);
 
   // 2. Incremental Dynamic Topology Updates (Adds/Removes BYO-MCP and capability nodes without resetting Camera/Zoom)
   useEffect(() => {
@@ -908,10 +1315,12 @@ export function NeuralBrainCanvas({
     while (dynamicGroup.children.length > 0) {
       const child = dynamicGroup.children[0];
       dynamicGroup.remove(child);
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (child.material instanceof THREE.Material) child.material.dispose();
-      }
+      child.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          if (obj.material instanceof THREE.Material) obj.material.dispose();
+        }
+      });
     }
 
     // Clean up dynamic entries in meshesRef and dynamicParticleSystemsRef
@@ -922,39 +1331,14 @@ export function NeuralBrainCanvas({
 
     if (allDynamicNodes.length === 0) return;
 
-    // Build Dynamic Somas
+    // Build Dynamic Two-Layer Somas
     allDynamicNodes.forEach((node) => {
-      const geometry = new THREE.SphereGeometry(node.size, 32, 32);
-      const material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(node.color),
-        emissive: new THREE.Color(node.emissive),
-        emissiveIntensity: 0.9,
-        roughness: 0.2,
-        metalness: 0.8,
-      });
-
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(...node.position);
-      mesh.userData = { nodeId: node.id };
-      dynamicGroup.add(mesh);
-
-      const haloTex = createHaloTexture(node.emissive);
-      const haloMat = new THREE.SpriteMaterial({
-        map: haloTex,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        opacity: 0.85,
-      });
-      const halo = new THREE.Sprite(haloMat);
-      const haloScale = node.size * 4.0;
-      halo.scale.set(haloScale, haloScale, 1);
-      halo.position.set(...node.position);
-      dynamicGroup.add(halo);
-
-      meshesRef.current.set(node.id, { mesh, halo, baseSize: node.size });
+      const nodeRecord = buildTwoLayerNodeMesh(node);
+      dynamicGroup.add(nodeRecord.group);
+      meshesRef.current.set(node.id, nodeRecord);
     });
 
-    // Build Dynamic Axons
+    // Build Dynamic Axons (glowing amber/blue tubes)
     const dynamicParticles: { curve: THREE.CatmullRomCurve3; points: THREE.Points; progress: number; speed: number }[] = [];
 
     allDynamicAxons.forEach((axon) => {
@@ -968,7 +1352,7 @@ export function NeuralBrainCanvas({
       mid.add(new THREE.Vector3(...axon.curveOffset));
 
       const curve = new THREE.CatmullRomCurve3([p1, mid, p3]);
-      const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.5, 8, false);
+      const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.48, 8, false);
       const tubeMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(axon.color),
         transparent: true,
@@ -1003,7 +1387,7 @@ export function NeuralBrainCanvas({
     });
 
     dynamicParticleSystemsRef.current = dynamicParticles;
-  }, [allDynamicNodes, allDynamicAxons, createHaloTexture]);
+  }, [allDynamicNodes, allDynamicAxons, buildTwoLayerNodeMesh]);
 
   // Reset Camera View & Brain Rotation (Explicit user action only)
   const handleResetView = () => {

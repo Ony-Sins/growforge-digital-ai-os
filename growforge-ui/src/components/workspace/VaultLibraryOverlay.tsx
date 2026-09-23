@@ -4,14 +4,39 @@ import { useMemo, useState, useEffect } from "react";
 import {
   AlertCircle,
   BookOpen,
-  Bot,
   Boxes,
+  Briefcase,
+  Code2,
+  Cpu,
+  Crown,
+  Database,
+  FileBarChart2,
+  Fingerprint,
+  FlaskConical,
+  Headset,
   Info,
+  KeyRound,
+  Landmark,
+  LifeBuoy,
+  ListChecks,
+  Megaphone,
+  Microscope,
+  Network,
+  Package,
+  PenTool,
   Library,
+  Receipt,
   Search,
+  Settings2,
   ShieldCheck,
+  Target,
+  TrendingUp,
+  Truck,
+  Users,
+  Workflow,
   Wrench,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import vaultDataRaw from "@/data/vaultCapabilities.json";
 import { useAppState } from "@/lib/appState";
@@ -29,6 +54,45 @@ export interface VaultAgentRecord {
 }
 
 const vaultData = vaultDataRaw as VaultAgentRecord[];
+
+// Real category -> icon mapping, replacing the 111 random keyboard emoji that
+// used to render per-agent (no coherent design language, e.g. 🦀🐑⚔️🏹 for
+// business/technical roles). One deliberate, premium icon per department
+// keeps the grid legible and on-brand instead of a decorative emoji zoo.
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  accounts: Receipt,
+  agentic: ShieldCheck,
+  agents: Network,
+  automation: Workflow,
+  business: Briefcase,
+  chief: Crown,
+  customer: Headset,
+  data: Database,
+  design: PenTool,
+  engineering: Code2,
+  finance: Landmark,
+  hr: Users,
+  identity: Fingerprint,
+  marketing: Megaphone,
+  operations: Settings2,
+  paid: Target,
+  product: Package,
+  project: ListChecks,
+  report: FileBarChart2,
+  research: Microscope,
+  sales: TrendingUp,
+  security: ShieldCheck,
+  specialized: Boxes,
+  supply: Truck,
+  support: LifeBuoy,
+  technical: Cpu,
+  testing: FlaskConical,
+  zk: KeyRound,
+};
+
+function getAgentIcon(category: string): LucideIcon {
+  return CATEGORY_ICONS[category] || Boxes;
+}
 
 type SortOption = "name-asc" | "name-desc" | "category" | "tools-desc" | "approval";
 type ToolFilterOption = "all" | "with-tools" | "no-tools";
@@ -332,6 +396,7 @@ export function VaultLibraryOverlay() {
               {filteredAgents.map((agent) => {
                 const isReadOnly = agent.approvalTier === "read-only";
                 const toolCount = agent.tools?.length || 0;
+                const AgentIcon = getAgentIcon(agent.category);
 
                 return (
                   <div
@@ -340,14 +405,14 @@ export function VaultLibraryOverlay() {
                     className="group flex flex-col justify-between rounded-2xl border border-[#333333] bg-[#0E1726]/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0078FF] hover:bg-[#0E1726] hover:shadow-lg hover:shadow-[#0078FF]/5 cursor-pointer"
                   >
                     <div>
-                      {/* Top Row: Emoji, Name, Badges */}
+                      {/* Top Row: Category Icon, Name, Badges */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg shadow-sm border border-white/10 text-white"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm border border-white/10 text-white"
                             style={{ backgroundColor: `${agent.color}20` }}
                           >
-                            {agent.emoji || <Bot className="h-4.5 w-4.5 text-white/80" />}
+                            <AgentIcon className="h-4.5 w-4.5" style={{ color: agent.color }} />
                           </span>
                           <div className="min-w-0">
                             <h3 className="font-heading text-sm font-semibold text-white truncate group-hover:text-[#0078FF] transition-colors">
@@ -436,10 +501,13 @@ export function VaultLibraryOverlay() {
             <div className="flex items-center justify-between border-b border-[#333333] bg-[#0E1726] px-6 py-4">
               <div className="flex items-center gap-3">
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl shadow-sm border border-white/10 text-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm border border-white/10 text-white"
                   style={{ backgroundColor: `${selectedAgent.color}25` }}
                 >
-                  {selectedAgent.emoji || <Bot className="h-6 w-6 text-white/80" />}
+                  {(() => {
+                    const SelectedIcon = getAgentIcon(selectedAgent.category);
+                    return <SelectedIcon className="h-6 w-6" style={{ color: selectedAgent.color }} />;
+                  })()}
                 </span>
                 <div>
                   <h2 className="font-heading text-lg font-bold text-white flex items-center gap-2">

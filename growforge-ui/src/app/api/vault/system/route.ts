@@ -11,6 +11,7 @@ import { hasSecret, setSecret } from "@/lib/serverVault";
 import { listAiModels, saveAiModel, type TaskRole, type ProviderType, type StoredAiModel } from "@/lib/aiModelStore";
 import { reactivateCapability } from "@/lib/capabilityStore";
 import { ROUTE_CHAINS } from "@/lib/model-router";
+import { logContextEvent } from "@/lib/spatial/dailyContext";
 
 export const runtime = "nodejs";
 
@@ -110,6 +111,7 @@ export async function POST(req: Request) {
         },
         body.apiKey
       );
+      void logContextEvent(`Configured AI model: ${saved.name}`);
       return NextResponse.json({ ok: true, model: saved });
     } catch (err) {
       return NextResponse.json(
@@ -129,6 +131,7 @@ export async function POST(req: Request) {
     try {
       setSecret(SYSTEM_VAULT_ID, provider, value);
       reactivateCapability(provider);
+      void logContextEvent(`Added capability key: ${provider}`);
       return NextResponse.json({ ok: true });
     } catch (err) {
       return NextResponse.json(

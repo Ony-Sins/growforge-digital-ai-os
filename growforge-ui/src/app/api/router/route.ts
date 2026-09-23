@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { agents } from "@/lib/agents";
+import { logContextEvent } from "@/lib/spatial/dailyContext";
 import {
   chatComplete,
   CLOUD_PROVIDERS,
@@ -337,6 +338,9 @@ export async function POST(req: Request) {
   if (!message) {
     return NextResponse.json({ error: "message is required." }, { status: 400 });
   }
+
+  // Daily context node v1 — log-and-forget, never blocks the actual chat response.
+  void logContextEvent(`User chatted: ${message.slice(0, 140)}`);
 
   const history: ChatMessage[] = (body.history ?? [])
     .slice(-10)

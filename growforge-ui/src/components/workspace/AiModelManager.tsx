@@ -12,120 +12,150 @@ import {
   Cpu,
   ChevronDown,
   ChevronUp,
-  Globe,
   Zap,
   X,
   SlidersHorizontal,
   ShieldCheck,
+  ExternalLink,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import { getAiBrandIcon } from "@/lib/aiBrandIcons";
 import type { ClientAiModel, TaskRole, ProviderType } from "@/lib/aiModelStore";
 
-interface Preset {
+export interface Preset {
+  id: string;
   label: string;
   name: string;
   baseUrl: string;
   modelName: string;
   providerType: ProviderType;
   taskRole: TaskRole;
+  helpUrl?: string;
+  tokenLabel?: string;
 }
 
-const PRESETS: Preset[] = [
+export const PRESETS: Preset[] = [
   {
+    id: "openai",
     label: "OpenAI (GPT-4o Mini)",
     name: "OpenAI GPT-4o Mini",
     baseUrl: "https://api.openai.com/v1",
     modelName: "gpt-4o-mini",
     providerType: "openai-compatible",
     taskRole: "planning",
+    tokenLabel: "OpenAI API Key (sk-...)",
+    helpUrl: "https://platform.openai.com/api-keys",
   },
   {
+    id: "anthropic",
     label: "Anthropic (Claude 3.5)",
     name: "Anthropic Claude 3.5 Sonnet",
     baseUrl: "https://api.anthropic.com/v1",
     modelName: "claude-3-5-sonnet-latest",
     providerType: "anthropic",
     taskRole: "coding",
+    tokenLabel: "Anthropic API Key (sk-ant-...)",
+    helpUrl: "https://console.anthropic.com/settings/keys",
   },
   {
+    id: "gemini",
     label: "Google Gemini",
     name: "Google Gemini 3.6 Flash",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",
     modelName: "gemini-3.6-flash",
     providerType: "gemini",
     taskRole: "general",
+    tokenLabel: "Google AI Studio API Key",
+    helpUrl: "https://aistudio.google.com/app/apikey",
   },
   {
+    id: "groq",
     label: "Groq (Llama 3.3)",
     name: "Groq Llama 3.3 70B",
     baseUrl: "https://api.groq.com/openai/v1",
     modelName: "llama-3.3-70b-versatile",
     providerType: "groq",
     taskRole: "utility",
+    tokenLabel: "Groq API Key (gsk_...)",
+    helpUrl: "https://console.groq.com/keys",
   },
   {
-    label: "Local Ollama (Private)",
-    name: "Local Ollama (Qwen 2.5 7B)",
-    baseUrl: "http://localhost:11434/v1",
-    modelName: "qwen2.5:7b-instruct",
-    providerType: "ollama",
-    taskRole: "general",
-  },
-  {
-    label: "DeepSeek API",
-    name: "DeepSeek Chat",
-    baseUrl: "https://api.deepseek.com/v1",
-    modelName: "deepseek-chat",
-    providerType: "openai-compatible",
-    taskRole: "coding",
-  },
-  {
-    label: "Mistral AI",
-    name: "Mistral Large",
-    baseUrl: "https://api.mistral.ai/v1",
-    modelName: "mistral-large-latest",
-    providerType: "openai-compatible",
-    taskRole: "general",
-  },
-  {
-    label: "LM Studio / vLLM",
-    name: "Local Private Model",
-    baseUrl: "http://localhost:1234/v1",
-    modelName: "local-model",
-    providerType: "openai-compatible",
-    taskRole: "general",
-  },
-  {
+    id: "openrouter",
     label: "OpenRouter Gateway",
     name: "OpenRouter Auto",
     baseUrl: "https://openrouter.ai/api/v1",
     modelName: "openrouter/auto",
     providerType: "openrouter",
     taskRole: "general",
+    tokenLabel: "OpenRouter API Key (sk-or-...)",
+    helpUrl: "https://openrouter.ai/keys",
   },
   {
-    label: "OpenAI DALL-E 3 (Image)",
-    name: "OpenAI DALL-E 3",
-    baseUrl: "https://api.openai.com/v1",
-    modelName: "dall-e-3",
+    id: "deepseek",
+    label: "DeepSeek API",
+    name: "DeepSeek Chat",
+    baseUrl: "https://api.deepseek.com/v1",
+    modelName: "deepseek-chat",
     providerType: "openai-compatible",
-    taskRole: "image",
+    taskRole: "coding",
+    tokenLabel: "DeepSeek API Key (sk-...)",
+    helpUrl: "https://platform.deepseek.com/api_keys",
   },
   {
-    label: "Google Imagen 3 (Image)",
-    name: "Google Imagen 3",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    modelName: "imagen-3.0-generate-002",
-    providerType: "gemini",
-    taskRole: "image",
+    id: "mistral",
+    label: "Mistral AI",
+    name: "Mistral Large",
+    baseUrl: "https://api.mistral.ai/v1",
+    modelName: "mistral-large-latest",
+    providerType: "openai-compatible",
+    taskRole: "general",
+    tokenLabel: "Mistral API Key",
+    helpUrl: "https://console.mistral.ai/api-keys/",
   },
   {
+    id: "higgsfield",
     label: "Higgsfield AI (Image)",
     name: "Higgsfield AI",
     baseUrl: "https://api.higgsfield.ai/v1",
     modelName: "higgsfield-v1",
     providerType: "custom",
     taskRole: "image",
+    tokenLabel: "Higgsfield API Key",
+    helpUrl: "https://higgsfield.ai/",
+  },
+  {
+    id: "dalle3",
+    label: "OpenAI DALL-E 3 (Image)",
+    name: "OpenAI DALL-E 3",
+    baseUrl: "https://api.openai.com/v1",
+    modelName: "dall-e-3",
+    providerType: "openai-compatible",
+    taskRole: "image",
+    tokenLabel: "OpenAI API Key (sk-...)",
+    helpUrl: "https://platform.openai.com/api-keys",
+  },
+  {
+    id: "imagen3",
+    label: "Google Imagen 3 (Image)",
+    name: "Google Imagen 3",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    modelName: "imagen-3.0-generate-002",
+    providerType: "gemini",
+    taskRole: "image",
+    tokenLabel: "Google AI Studio API Key",
+    helpUrl: "https://aistudio.google.com/app/apikey",
+  },
+  {
+    id: "ollama",
+    label: "Local Ollama (Private)",
+    name: "Local Ollama (Qwen 2.5 7B)",
+    baseUrl: "http://localhost:11434/v1",
+    modelName: "qwen2.5:7b-instruct",
+    providerType: "ollama",
+    taskRole: "general",
+    tokenLabel: "Optional Authorization Token",
+    helpUrl: "https://ollama.com",
   },
 ];
 
@@ -143,21 +173,14 @@ export function AiModelManager() {
   const [strategy, setStrategy] = useState<string>("auto");
   const [loaded, setLoaded] = useState(false);
 
-  // Modal drawer state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
-  const [modelName, setModelName] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [taskRole, setTaskRole] = useState<TaskRole>("general");
-  const [providerType, setProviderType] = useState<ProviderType>("openai-compatible");
-  const [isPrimary, setIsPrimary] = useState(false);
+  // Minimal single-field token prompt state (PinPromptModal pattern)
+  const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
+
+  // Custom / Deep Edit Modal State
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+  const [inspectedModel, setInspectedModel] = useState<ClientAiModel | null>(null);
 
   // Action feedback states
-  const [saving, setSaving] = useState(false);
-  const [builderError, setBuilderError] = useState<string | null>(null);
-  const [builderTestResult, setBuilderTestResult] = useState<{ ok: boolean; message: string; latencyMs?: number } | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; message: string; latencyMs?: number }>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -198,116 +221,6 @@ export function AiModelManager() {
   useEffect(() => {
     loadData();
   }, []);
-
-  function openBuilderWithPreset(preset?: Preset) {
-    setEditingId(null);
-    if (preset) {
-      setName(preset.name);
-      setBaseUrl(preset.baseUrl);
-      setModelName(preset.modelName);
-      setProviderType(preset.providerType);
-      setTaskRole(preset.taskRole);
-    } else {
-      setName("");
-      setBaseUrl("");
-      setModelName("");
-      setApiKey("");
-      setTaskRole("general");
-      setProviderType("openai-compatible");
-      setIsPrimary(false);
-    }
-    setBuilderError(null);
-    setBuilderTestResult(null);
-    setIsModalOpen(true);
-  }
-
-  function handleEditModel(model: ClientAiModel) {
-    setEditingId(model.id);
-    setName(model.name);
-    setBaseUrl(model.baseUrl);
-    setModelName(model.modelName);
-    setApiKey("");
-    setTaskRole(model.taskRole);
-    setProviderType(model.providerType);
-    setIsPrimary(Boolean(model.isPrimary));
-    setBuilderError(null);
-    setBuilderTestResult(null);
-    setIsModalOpen(true);
-  }
-
-  async function handleTestBuilder() {
-    if (!baseUrl.trim() || !modelName.trim()) {
-      setBuilderError("Please enter a Base URL and Model Name before testing.");
-      return;
-    }
-    setSaving(true);
-    setBuilderError(null);
-    setBuilderTestResult(null);
-
-    try {
-      const res = await fetch("/api/vault/system/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          baseUrl: baseUrl.trim(),
-          modelName: modelName.trim(),
-          apiKey: apiKey.trim() || undefined,
-          providerType,
-        }),
-      });
-      const data = await res.json();
-      setBuilderTestResult(data);
-      if (!data.ok) {
-        setBuilderError(data.message || "Connection test failed.");
-      }
-    } catch (err) {
-      setBuilderError(err instanceof Error ? err.message : "Network error testing endpoint.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSaveModel(e: React.FormEvent) {
-    e.preventDefault();
-    if (!baseUrl.trim() || !modelName.trim()) {
-      setBuilderError("Base URL and Model Name are required.");
-      return;
-    }
-
-    setSaving(true);
-    setBuilderError(null);
-
-    try {
-      const res = await fetch("/api/vault/system", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: editingId || undefined,
-          name: name.trim() || modelName.trim(),
-          baseUrl: baseUrl.trim(),
-          modelName: modelName.trim(),
-          apiKey: apiKey.trim() || undefined,
-          taskRole,
-          providerType,
-          isPrimary,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setBuilderError(data.error || "Failed to save AI model.");
-      } else {
-        setIsModalOpen(false);
-        setEditingId(null);
-        setBuilderTestResult(null);
-        await loadData();
-      }
-    } catch (err) {
-      setBuilderError(err instanceof Error ? err.message : "Error saving model.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleTestModel(model: ClientAiModel) {
     setTestingId(model.id);
@@ -393,38 +306,126 @@ export function AiModelManager() {
     url.includes("172.");
 
   return (
-    <div className="space-y-4">
-      {/* Top Header & Prominent Add AI Model Action Card */}
-      <div className="glass-card rounded-xl p-5 border border-border-metal">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* 1. Curated Known API Connectors Grid */}
+      <div className="glass-card rounded-2xl p-5 border border-border-metal shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#333333]">
           <div>
             <div className="flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-electric" />
-              <h2 className="font-heading text-sm font-semibold text-navy">AI Model Connectors</h2>
+              <Sparkles className="h-4 w-4 text-electric" />
+              <h2 className="font-heading text-sm font-semibold text-white">Popular API Connectors</h2>
             </div>
             <p className="mt-1 text-xs text-secondary">
-              Connect and orchestrate cloud APIs and private local LLM endpoints (Ollama, vLLM, LM Studio) seamlessly.
+              Connect cloud intelligence or image models with a single API key.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => openBuilderWithPreset()}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
+            onClick={() => setIsCustomModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3 py-1.5 text-xs font-semibold text-white hover:border-electric/50 hover:bg-electric/10 hover:text-electric transition-all shrink-0"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Add AI Model</span>
+            <span>Custom Endpoint</span>
           </button>
         </div>
 
-        {/* Minimalist, Clean Model List */}
-        <div className="mt-5 space-y-2">
+        {/* Presets Cards Grid */}
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+          {PRESETS.map((preset) => {
+            const brand = getAiBrandIcon(preset.providerType, preset.modelName, preset.baseUrl);
+            const isConfigured = models.some(
+              (m) =>
+                m.modelName === preset.modelName ||
+                (m.baseUrl === preset.baseUrl && m.providerType === preset.providerType)
+            );
+            const matchingModel = models.find(
+              (m) =>
+                m.modelName === preset.modelName ||
+                (m.baseUrl === preset.baseUrl && m.providerType === preset.providerType)
+            );
+
+            return (
+              <div
+                key={preset.id}
+                onClick={() => {
+                  if (matchingModel) {
+                    setInspectedModel(matchingModel);
+                  } else {
+                    setSelectedPreset(preset);
+                  }
+                }}
+                className={`group cursor-pointer rounded-xl border p-3.5 transition-all flex flex-col justify-between ${
+                  isConfigured
+                    ? "border-emerald/30 bg-[#0B1220] hover:border-emerald/60"
+                    : "border-[#333333] bg-[#111827] hover:border-electric/50 hover:shadow-md"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}
+                    >
+                      <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d={brand.path} />
+                      </svg>
+                    </div>
+
+                    {isConfigured ? (
+                      <span className="flex items-center gap-1 rounded-full bg-emerald/10 border border-emerald/25 px-2 py-0.5 text-[10px] font-semibold text-emerald">
+                        <Check className="h-3 w-3" /> Connected
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 rounded-full bg-electric/10 border border-electric/25 px-2 py-0.5 text-[10px] font-semibold text-electric group-hover:bg-electric group-hover:text-white transition-colors">
+                        <Plus className="h-3 w-3" /> Connect
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="mt-2.5 text-xs font-semibold text-white group-hover:text-electric transition-colors truncate">
+                    {preset.name}
+                  </h3>
+                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`rounded px-1.5 py-0.2 text-[9px] font-medium border ${
+                        TASK_ROLE_LABELS[preset.taskRole]?.color || TASK_ROLE_LABELS.general.color
+                      }`}
+                    >
+                      {TASK_ROLE_LABELS[preset.taskRole]?.label || "General"}
+                    </span>
+                    <span className="text-[10px] text-muted font-mono truncate">{preset.modelName}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-[#333333] flex items-center justify-between text-[11px] text-secondary">
+                  <span>{isConfigured ? "Inspect Model" : "Enter API Key"}</span>
+                  <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Connected AI Models List */}
+      <div className="glass-card rounded-2xl p-5 border border-border-metal shadow-sm">
+        <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-electric" />
+            <h2 className="font-heading text-sm font-semibold text-white">Active AI Models & Endpoints</h2>
+          </div>
+          <span className="rounded-full bg-electric/15 text-electric px-2 py-0.5 text-xs font-semibold">
+            {models.length} active
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-2">
           {models.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border-metal p-8 text-center bg-sunken/40">
+            <div className="rounded-xl border border-dashed border-[#333333] p-8 text-center bg-[#111827]/40">
               <Server className="mx-auto h-7 w-7 text-muted" />
-              <p className="mt-2 text-xs font-medium text-navy">No AI models connected yet</p>
+              <p className="mt-2 text-xs font-medium text-white">No AI models configured yet</p>
               <p className="mt-1 text-[11px] text-secondary">
-                Click &quot;Add AI Model&quot; to connect your first cloud or local endpoint.
+                Click any connector above or add a custom model to activate intelligence.
               </p>
             </div>
           ) : (
@@ -440,10 +441,9 @@ export function AiModelManager() {
                 return (
                   <li
                     key={m.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-3 transition-all hover:border-electric/50"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#333333] bg-[#111827] px-3.5 py-3 transition-all hover:border-electric/50"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Authentic Brand Logo */}
                       <div
                         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}
                       >
@@ -527,17 +527,17 @@ export function AiModelManager() {
                         ) : (
                           <Zap className="h-3 w-3 text-electric" />
                         )}
-                        <span>{isTesting ? "Testing…" : "Test Connection"}</span>
+                        <span>{isTesting ? "Testing…" : "Test Ping"}</span>
                       </button>
 
-                      {/* Edit Model */}
+                      {/* Inspect / Edit Model */}
                       <button
                         type="button"
-                        onClick={() => handleEditModel(m)}
+                        onClick={() => setInspectedModel(m)}
                         disabled={isTesting || isDeleting}
-                        title={`Edit ${m.name}`}
-                        aria-label={`Edit ${m.name}`}
-                        className="rounded-md p-1.5 text-muted transition-colors hover:bg-sunken hover:text-electric disabled:opacity-50"
+                        title={`Inspect ${m.name}`}
+                        aria-label={`Inspect ${m.name}`}
+                        className="rounded-md border border-[#333333] bg-[#0B1220] p-1.5 text-secondary transition-colors hover:border-electric/50 hover:text-white disabled:opacity-50"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -561,8 +561,8 @@ export function AiModelManager() {
         </div>
       </div>
 
-      {/* Advanced Mode Toggle & Inspector (Strictly Hidden by Default) */}
-      <div className="glass-card rounded-xl p-4 border border-border-metal">
+      {/* 3. Advanced Mode Toggle & Inspector (Strictly Collapsed by Default) */}
+      <div className="glass-card rounded-2xl p-4 border border-border-metal">
         <button
           type="button"
           onClick={() => setAdvancedMode((v) => !v)}
@@ -585,7 +585,7 @@ export function AiModelManager() {
             {/* Strategy Switcher */}
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sunken/60 p-3">
               <div>
-                <span className="text-xs font-semibold text-navy">Global Dispatch Strategy</span>
+                <span className="text-xs font-semibold text-white">Global Dispatch Strategy</span>
                 <p className="text-[11px] text-muted">Defines execution cascade across local and cloud models.</p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -663,189 +663,624 @@ export function AiModelManager() {
         )}
       </div>
 
-      {/* Clean 'Add/Edit AI Model' Modal / Drawer Overlay */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app/70 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-xl rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
-              <div className="flex items-center gap-2">
-                <Cpu className="h-5 w-5 text-electric" />
-                <div>
-                  <h3 className="font-heading text-base font-semibold text-white">
-                    {editingId ? "Edit AI Model Connector" : "Add AI Model Connector"}
-                  </h3>
-                  {editingId && (
-                    <p className="text-[11px] text-muted">Update configuration, endpoint URL, or authentication key.</p>
-                  )}
-                </div>
-              </div>
+      {/* 4. Minimal Single-Field Token Prompt Modal (PinPromptModal pattern) */}
+      {selectedPreset && (
+        <AiModelTokenPromptModal
+          preset={selectedPreset}
+          onClose={() => setSelectedPreset(null)}
+          onConnected={() => {
+            setSelectedPreset(null);
+            void loadData();
+          }}
+        />
+      )}
+
+      {/* 5. Custom / New Model Modal */}
+      {isCustomModalOpen && (
+        <CustomAiModelModal
+          onClose={() => setIsCustomModalOpen(false)}
+          onCreated={() => {
+            setIsCustomModalOpen(false);
+            void loadData();
+          }}
+        />
+      )}
+
+      {/* 6. Inspect / Edit Model Modal (Deeper Config) */}
+      {inspectedModel && (
+        <AiModelInspectorModal
+          model={inspectedModel}
+          onClose={() => setInspectedModel(null)}
+          onSaved={() => {
+            setInspectedModel(null);
+            void loadData();
+          }}
+          onDeleted={() => {
+            setInspectedModel(null);
+            void loadData();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// MINIMAL SINGLE-FIELD TOKEN PROMPT MODAL (PinPromptModal Pattern)
+// -------------------------------------------------------------
+
+function AiModelTokenPromptModal({
+  preset,
+  onClose,
+  onConnected,
+}: {
+  preset: Preset;
+  onClose: () => void;
+  onConnected: () => void;
+}) {
+  const brand = getAiBrandIcon(preset.providerType, preset.modelName, preset.baseUrl);
+  const isOllama = preset.providerType === "ollama";
+  const [apiKey, setApiKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isOllama && !apiKey.trim()) return;
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/vault/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: preset.name,
+          baseUrl: preset.baseUrl,
+          modelName: preset.modelName,
+          apiKey: apiKey.trim() || undefined,
+          taskRole: preset.taskRole,
+          providerType: preset.providerType,
+          isPrimary: false,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to connect AI model.");
+      } else {
+        onConnected();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Connection failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={onClose}
+        className="absolute inset-0 bg-transparent"
+      />
+      <form
+        onSubmit={handleSubmit}
+        className="glass-card-strong relative w-full max-w-sm rounded-2xl border border-[#333333] bg-[#0B1220] p-6 shadow-2xl animate-in zoom-in-95 duration-150"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-muted transition-colors hover:bg-sunken hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <span
+          className={`flex h-11 w-11 items-center justify-center rounded-xl border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}
+        >
+          <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+            <path d={brand.path} />
+          </svg>
+        </span>
+
+        <h2 className="mt-3 font-heading text-base font-semibold text-white">
+          Connect {preset.name}
+        </h2>
+        <p className="mt-1 text-xs text-secondary">
+          {isOllama
+            ? "Connect your local private Ollama instance running on " + preset.baseUrl + "."
+            : `Enter your API key to activate ${preset.label} across your GrowForge departments.`}
+        </p>
+
+        {!isOllama && preset.helpUrl && (
+          <a
+            href={preset.helpUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] text-electric hover:underline"
+          >
+            <span>Get your API key</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
+
+        {!isOllama ? (
+          <input
+            type="password"
+            autoFocus
+            required
+            value={apiKey}
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setError(null);
+            }}
+            placeholder={preset.tokenLabel || "Enter API Key (sk-...)"}
+            className="mt-4 w-full rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2.5 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
+          />
+        ) : (
+          <div className="mt-4 rounded-lg border border-[#333333] bg-[#111827] p-2.5">
+            <span className="text-[10px] text-muted uppercase font-bold">Endpoint</span>
+            <p className="font-mono text-xs text-white truncate">{preset.baseUrl}</p>
+          </div>
+        )}
+
+        {error && <p className="mt-2 text-xs text-crimson">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={(!isOllama && !apiKey.trim()) || busy}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          <span>Connect {preset.label.split(" ")[0]}</span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// CUSTOM AI MODEL BUILDER MODAL (Small Form)
+// -------------------------------------------------------------
+
+function CustomAiModelModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [taskRole, setTaskRole] = useState<TaskRole>("general");
+  const [providerType, setProviderType] = useState<ProviderType>("openai-compatible");
+  const [isPrimary, setIsPrimary] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!baseUrl.trim() || !modelName.trim()) {
+      setError("Base URL and Model Name are required.");
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/vault/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim() || modelName.trim(),
+          baseUrl: baseUrl.trim(),
+          modelName: modelName.trim(),
+          apiKey: apiKey.trim() || undefined,
+          taskRole,
+          providerType,
+          isPrimary,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to save AI model.");
+      } else {
+        onCreated();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error saving custom model.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-5 w-5 text-electric" />
+            <h3 className="font-heading text-base font-semibold text-white">Add Custom Model / Endpoint</h3>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-white">Display Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. My Private vLLM Server"
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-white">Endpoint Base URL</label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="http://localhost:11434/v1 or https://api.vendor.com/v1"
+              required
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-white">Model Slug</label>
+              <input
+                type="text"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="e.g. llama3.3:70b"
+                required
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white">API Key (optional)</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Leave blank if none"
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div>
+              <label className="block text-xs font-medium text-white">Provider Protocol</label>
+              <select
+                value={providerType}
+                onChange={(e) => setProviderType(e.target.value as ProviderType)}
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-electric"
+              >
+                <option value="openai-compatible">OpenAI Compatible (v1)</option>
+                <option value="anthropic">Anthropic Messages API</option>
+                <option value="gemini">Google Gemini API</option>
+                <option value="ollama">Ollama Native</option>
+                <option value="custom">Custom Protocol</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white">Task Role</label>
+              <select
+                value={taskRole}
+                onChange={(e) => setTaskRole(e.target.value as TaskRole)}
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-electric"
+              >
+                <option value="general">General Purpose</option>
+                <option value="planning">Strategic Planning</option>
+                <option value="coding">Code & Automation</option>
+                <option value="utility">Fast Triage & QA</option>
+                <option value="image">Image Generation</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="customPrimaryCheckbox"
+              checked={isPrimary}
+              onChange={(e) => setIsPrimary(e.target.checked)}
+              className="h-4 w-4 rounded border-[#333333] bg-[#111827] text-electric"
+            />
+            <label htmlFor="customPrimaryCheckbox" className="text-xs text-white cursor-pointer">
+              Set as Primary Default Model
+            </label>
+          </div>
+
+          {error && <p className="text-xs text-crimson">{error}</p>}
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#333333]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs text-muted hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy || !baseUrl.trim() || !modelName.trim()}
+              className="btn-primary-cta px-4 py-2 text-xs font-semibold disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 inline" /> : <Plus className="h-3.5 w-3.5 mr-1 inline" />}
+              <span>Save Custom Model</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// INSPECT / EDIT MODAL FOR ALREADY-CONNECTED MODEL (Deeper Config)
+// -------------------------------------------------------------
+
+function AiModelInspectorModal({
+  model,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  model: ClientAiModel;
+  onClose: () => void;
+  onSaved: () => void;
+  onDeleted: () => void;
+}) {
+  const brand = getAiBrandIcon(model.providerType, model.modelName, model.baseUrl);
+  const [name, setName] = useState(model.name);
+  const [baseUrl, setBaseUrl] = useState(model.baseUrl);
+  const [modelName, setModelName] = useState(model.modelName);
+  const [apiKey, setApiKey] = useState("");
+  const [taskRole, setTaskRole] = useState<TaskRole>(model.taskRole);
+  const providerType = model.providerType;
+  const [isPrimary, setIsPrimary] = useState(Boolean(model.isPrimary));
+  const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string; latencyMs?: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/vault/system/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId: model.id }),
+      });
+      const data = await res.json();
+      setTestResult(data);
+    } catch (err) {
+      setTestResult({ ok: false, message: err instanceof Error ? err.message : "Test failed" });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/vault/system", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: model.id,
+          name: name.trim() || modelName.trim(),
+          baseUrl: baseUrl.trim(),
+          modelName: modelName.trim(),
+          apiKey: apiKey.trim() || undefined,
+          taskRole,
+          providerType,
+          isPrimary,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update AI model.");
+      } else {
+        onSaved();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Are you sure you want to disconnect ${model.name}?`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/vault/system/${encodeURIComponent(model.id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        onDeleted();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${brand.bgClass} ${brand.borderClass} ${brand.textClass}`}
+            >
+              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                <path d={brand.path} />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold text-white">{model.name}</h3>
+              <p className="text-xs text-muted font-mono">{model.modelName}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Live Test Ping Action */}
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl border border-[#333333] bg-[#111827]">
+          <div>
+            <span className="text-xs font-medium text-white">Connection Verification</span>
+            <p className="text-[11px] text-muted">Test active latency to {model.baseUrl}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testing}
+            className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#0B1220] px-3 py-1.5 text-xs font-semibold text-white hover:border-electric hover:text-electric transition-colors disabled:opacity-50"
+          >
+            {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
+            <span>{testing ? "Testing…" : "Test Ping"}</span>
+          </button>
+        </div>
+
+        {testResult && (
+          <div
+            className={`flex items-start gap-2 rounded-lg p-2.5 text-xs border ${
+              testResult.ok ? "bg-emerald/10 text-emerald border-emerald/20" : "bg-crimson/10 text-crimson border-crimson/20"
+            }`}
+          >
+            {testResult.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <XCircle className="h-4 w-4 shrink-0 mt-0.5" />}
+            <span>{testResult.ok ? `Verified connection (${testResult.latencyMs ?? 0}ms)` : testResult.message}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="space-y-3 pt-2">
+          <div>
+            <label className="block text-xs font-medium text-white">Display Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-white">Endpoint Base URL</label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-white">Model Slug</label>
+              <input
+                type="text"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-white">Update Key (leave blank to keep)</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="••••••••"
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-white">Task Role</label>
+              <select
+                value={taskRole}
+                onChange={(e) => setTaskRole(e.target.value as TaskRole)}
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-electric"
+              >
+                <option value="general">General Purpose</option>
+                <option value="planning">Strategic Planning</option>
+                <option value="coding">Code & Automation</option>
+                <option value="utility">Fast Triage & QA</option>
+                <option value="image">Image Generation</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <input
+                type="checkbox"
+                id="inspectPrimaryCheckbox"
+                checked={isPrimary}
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                className="h-4 w-4 rounded border-[#333333] bg-[#111827] text-electric"
+              />
+              <label htmlFor="inspectPrimaryCheckbox" className="text-xs text-white cursor-pointer">
+                Primary Model
+              </label>
+            </div>
+          </div>
+
+          {error && <p className="text-xs text-crimson">{error}</p>}
+
+          <div className="flex items-center justify-between pt-3 border-t border-[#333333]">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={busy}
+              className="flex items-center gap-1.5 text-xs text-crimson hover:underline"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Disconnect Model
+            </button>
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setEditingId(null);
-                }}
-                className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white"
+                onClick={onClose}
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs text-muted hover:text-white"
               >
-                <X className="h-4 w-4" />
+                Done
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="btn-primary-cta px-4 py-2 text-xs font-semibold disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 inline" /> : null}
+                Save Changes
               </button>
             </div>
-
-            {/* Quick 1-Click Preset Tags (Only when adding new model) */}
-            {!editingId && (
-              <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">1-Click Presets</span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {PRESETS.map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      onClick={() => openBuilderWithPreset(p)}
-                      className="rounded-md border border-[#333333] bg-[#111827] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:border-electric/50 hover:bg-electric/10 hover:text-electric"
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSaveModel} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-white">Display Label</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. My Local vLLM, DeepSeek API"
-                  className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-medium text-white">Custom Base URL</label>
-                  <span className="text-[10px] text-emerald font-semibold flex items-center gap-1">
-                    <Globe className="h-3 w-3" /> Local & private endpoints supported
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://localhost:11434/v1 or https://api.openai.com/v1"
-                  required
-                  className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-white">Model Name / Slug</label>
-                  <input
-                    type="text"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="e.g. llama3.2:1b, gpt-4o-mini"
-                    required
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-white">API Key / Token</label>
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={editingId ? "•••••••• (enter new key to replace, or blank to keep)" : "Leave blank for local Ollama"}
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-xs font-medium text-white">Assigned Task Role</label>
-                  <select
-                    value={taskRole}
-                    onChange={(e) => setTaskRole(e.target.value as TaskRole)}
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric/60"
-                  >
-                    <option value="general">General Purpose & Briefs</option>
-                    <option value="planning">Strategic Planning (HQ & PM)</option>
-                    <option value="coding">Code Generation (AI Systems)</option>
-                    <option value="utility">Fast Utility & Triage (Router & QA)</option>
-                    <option value="image">Image Generation (DALL-E / Imagen / Higgsfield)</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2 pt-6">
-                  <input
-                    type="checkbox"
-                    id="isPrimaryModelModal"
-                    checked={isPrimary}
-                    onChange={(e) => setIsPrimary(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#333333] bg-[#111827] text-electric focus:ring-electric"
-                  />
-                  <label htmlFor="isPrimaryModelModal" className="text-xs font-medium text-white cursor-pointer">
-                    Set as Primary Default Model
-                  </label>
-                </div>
-              </div>
-
-              {/* Error or Test Result in Modal */}
-              {builderError && (
-                <div className="flex items-center gap-2 rounded-lg bg-crimson/10 border border-crimson/20 p-2.5 text-xs text-crimson">
-                  <XCircle className="h-4 w-4 shrink-0" />
-                  <span>{builderError}</span>
-                </div>
-              )}
-              {builderTestResult?.ok && (
-                <div className="flex items-center gap-2 rounded-lg bg-emerald/10 border border-emerald/20 p-2.5 text-xs text-emerald">
-                  <CheckCircle2 className="h-3 w-3 shrink-0" />
-                  <span>
-                    Connection Verified! Responded in {builderTestResult.latencyMs ?? 0}ms.
-                  </span>
-                </div>
-              )}
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#333333]">
-                <button
-                  type="button"
-                  onClick={handleTestBuilder}
-                  disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs font-medium text-white hover:border-electric/50 hover:bg-electric/5 disabled:opacity-50"
-                >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
-                  Test Endpoint
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={saving || !baseUrl.trim() || !modelName.trim()}
-                  className="btn-primary-cta !px-4 !py-2 text-xs font-semibold shadow-sm disabled:opacity-60"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Saving…
-                    </>
-                  ) : editingId ? (
-                    "Save Changes"
-                  ) : (
-                    <Plus className="h-3.5 w-3.5" />
-                  )}
-                  <span>{editingId ? "Save Changes" : "Connect AI Model"}</span>
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        </form>
+      </div>
     </div>
   );
 }

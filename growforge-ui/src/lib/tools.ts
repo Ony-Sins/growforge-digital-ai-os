@@ -41,9 +41,16 @@ export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nT
  * approval-gated tool can ever run — the safe default is "don't", not "do".
  */
 
+export interface MediaItem {
+  type: "image";
+  url: string;
+  label?: string;
+}
+
 export interface ToolResult {
   ok: boolean;
   output: string;
+  media?: MediaItem[];
 }
 
 export interface Tool {
@@ -64,6 +71,7 @@ export interface ToolCallLog {
   args: Record<string, unknown>;
   approved: boolean;
   result: string;
+  media?: MediaItem[];
 }
 
 export interface ToolLoopOptions {
@@ -218,12 +226,14 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
       }
 
       let resultText: string;
+      let resultMedia: MediaItem[] | undefined;
       if (!approved) {
         resultText = "Not approved — this action needs owner sign-off and was not approved. Do not retry it.";
       } else {
         try {
           const res = await tool.execute(args);
           resultText = scrubSecrets(res.output);
+          resultMedia = res.media;
           telemetryStore.recordToolCall(res.ok);
           telemetryStore.emitEvent({
             type: "tool_invoked",
@@ -245,7 +255,7 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
       }
 
       onActivity?.(`${tool.name} → ${resultText.slice(0, 80)}${resultText.length > 80 ? "…" : ""}`);
-      calls.push({ tool: tool.name, args, approved, result: resultText });
+      calls.push({ tool: tool.name, args, approved, result: resultText, media: resultMedia });
       transcript += `\n\nCALLED ${tool.name} WITH ${JSON.stringify(args)}\nRESULT: ${resultText}`;
     }
 

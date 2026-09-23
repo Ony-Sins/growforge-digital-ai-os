@@ -5,12 +5,14 @@ import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { getSecretForServerUse } from "@/lib/serverVault";
 import { listAiModels, getAiModelApiKey } from "@/lib/aiModelStore";
 import { isCapabilityActive } from "@/lib/capabilityStore";
+import type { MediaItem } from "@/lib/tools";
 
 export interface ImageGenResult {
   ok: boolean;
   output: string;
   providerUsed?: "openai" | "gemini" | "higgsfield" | "comfyui";
   imageUrl?: string;
+  media?: MediaItem[];
 }
 
 const OUTPUT_DIR = process.env.COMFYUI_OUTPUT_DIR || path.join(process.cwd(), "public", "generated", "images");
@@ -316,7 +318,12 @@ async function pollHiggsfieldStatus(statusUrl: string, apiKey: string, deadlineM
 async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<ImageGenResult> {
   const deadlineMs = Date.now() + 90_000;
   try {
-    const submitRes = await fetch("https://api.higgsfield.ai/higgsfield-ai/soul/standard", {
+    // v2/standard confirmed against Higgsfield's official docs; resolution
+    // must be exactly "720p" or "1080p" — the previous "2K" value was
+    // rejected with a 422 the moment authentication started succeeding
+    // (real evidence, not a guess: the 401 was masking this validation
+    // error the whole time).
+    const submitRes = await fetch("https://api.higgsfield.ai/higgsfield-ai/soul/v2/standard", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -325,7 +332,7 @@ async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<Im
       body: JSON.stringify({
         prompt,
         num_images: 1,
-        resolution: "2K",
+        resolution: "1080p",
         aspect_ratio: "1:1",
       }),
       signal: AbortSignal.timeout(15_000),
@@ -381,7 +388,7 @@ async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<Im
 export async function generateImageWithByoFallback(
   prompt: string,
   agentId?: string,
-  localFallbackFn?: (prompt: string) => Promise<{ ok: boolean; output: string }>
+  localFallbackFn?: (prompt: string) => Promise<{ ok: boolean; output: string; imageUrl?: string; media?: MediaItem[] }>
 ): Promise<ImageGenResult> {
   const keys = resolveImageKeys(agentId);
 
@@ -410,10 +417,15 @@ export async function generateImageWithByoFallback(
   if (localFallbackFn) {
     const localRes = await localFallbackFn(prompt);
     if (localRes.ok) {
+      const match = localRes.output.match(/\/generated\/images\/[^\s,"]+/);
+      const url = localRes.imageUrl || (match ? match[0] : undefined);
+      const media = localRes.media || (url ? [{ type: "image" as const, url }] : undefined);
       return {
         ok: true,
         output: localRes.output,
         providerUsed: "comfyui",
+        imageUrl: url,
+        media,
       };
     }
     return {

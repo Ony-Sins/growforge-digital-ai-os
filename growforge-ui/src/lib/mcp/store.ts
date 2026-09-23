@@ -115,8 +115,12 @@ let writeQueue: Promise<void> = Promise.resolve();
 function persist(defs: McpServerDef[]) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const json = JSON.stringify(defs, null, 2);
+  const tmp = STORE_FILE + ".tmp";
   writeQueue = writeQueue
-    .then(() => fs.promises.writeFile(STORE_FILE, json, "utf8"))
+    .then(async () => {
+      await fs.promises.writeFile(tmp, json, "utf8");
+      await fs.promises.rename(tmp, STORE_FILE);
+    })
     .catch((err) => console.error("[mcp/store] failed to persist mcp-servers.json:", err));
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -15,6 +16,7 @@ import {
   FileText,
   Filter,
   Globe,
+  ImageIcon,
   Layers,
   Megaphone,
   MousePointerClick,
@@ -539,6 +541,42 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                           <div className="prose prose-invert max-w-none text-white">
                             <Markdown content={step.output || "No output recorded."} size="base" />
                           </div>
+
+                          {/* Visual Assets if present */}
+                          {step.media && step.media.length > 0 && (
+                            <div className="mt-6 pt-4 border-t border-[#333333]">
+                              <span className="text-xs font-semibold text-electric flex items-center gap-1.5 mb-3">
+                                <ImageIcon className="h-3.5 w-3.5" /> Generated Creative Assets ({step.media.length})
+                              </span>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {step.media.map((med, mIdx) => (
+                                  <div key={mIdx} className="group rounded-xl border border-[#333333] bg-[#111827] p-2.5 transition-all hover:border-electric/50">
+                                    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#0B1220]">
+                                      <img
+                                        src={med.url}
+                                        alt={med.label || `Asset ${mIdx + 1}`}
+                                        className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between px-1 text-xs">
+                                      <span className="truncate font-mono text-[11px] text-secondary">
+                                        {med.label || med.url.split("/").pop()}
+                                      </span>
+                                      <a
+                                        href={med.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-1 font-semibold text-electric hover:underline text-[11px]"
+                                      >
+                                        <ExternalLink className="h-3.5 w-3.5" /> Full view
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Sources & Citations if present */}
                           {step.sources && step.sources.length > 0 && (

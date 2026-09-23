@@ -1091,6 +1091,16 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                 </p>
                 <p className="text-[10px] text-[#94a3b8] font-inter">Current Organization</p>
               </div>
+              {!identity.logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                  className="shrink-0 rounded-lg border border-[#333333] bg-[#0B1220]/80 px-2 py-1 text-[10px] font-medium text-[#94a3b8] transition-colors hover:border-electric hover:text-electric"
+                >
+                  {logoUploading ? "Uploading..." : "Add logo"}
+                </button>
+              )}
               {identity.logoUrl && (
                 <button
                   type="button"

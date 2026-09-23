@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -22,10 +23,12 @@ import {
   Cog,
   Copy,
   Download,
+  ExternalLink,
   FileText,
   FolderOpen,
   Globe,
   History,
+  ImageIcon,
   Layers,
   Loader2,
   Megaphone,
@@ -135,7 +138,15 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
 
       <div className="mt-1.5 flex items-center justify-between text-[10px]">
         <span className={`font-medium ${style.text}`}>{style.label}</span>
-        {step.sources && step.sources.length > 0 && <span className="text-muted">{step.sources.length} sources</span>}
+        <div className="flex items-center gap-2">
+          {step.media && step.media.length > 0 && (
+            <span className="flex items-center gap-1 font-medium text-electric">
+              <ImageIcon className="h-3 w-3" />
+              {step.media.length} visual{step.media.length === 1 ? "" : "s"}
+            </span>
+          )}
+          {step.sources && step.sources.length > 0 && <span className="text-muted">{step.sources.length} sources</span>}
+        </div>
       </div>
     </div>
   );
@@ -222,6 +233,40 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
           <Markdown content={step.output} />
         ) : (
           <p className="text-sm text-muted">{step.status === "active" ? "This agent is still working…" : "Nothing produced yet."}</p>
+        )}
+        {step.media && step.media.length > 0 && (
+          <div className="mt-5 border-t border-border-metal pt-4">
+            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+              <ImageIcon className="h-3.5 w-3.5 text-electric" /> Generated Visuals & Assets ({step.media.length})
+            </p>
+            <div className="space-y-3">
+              {step.media.map((med, idx) => (
+                <div key={idx} className="group relative overflow-hidden rounded-xl border border-[#333333] bg-[#111827] p-2 shadow-sm transition-all hover:border-electric/40">
+                  <div className="relative overflow-hidden rounded-lg bg-[#0B1220]">
+                    <img
+                      src={med.url}
+                      alt={med.label || `Visual deliverable ${idx + 1}`}
+                      className="max-h-72 w-full rounded-lg object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between px-1 text-xs">
+                    <span className="truncate font-mono text-[11px] text-secondary">
+                      {med.label || med.url.split("/").pop()}
+                    </span>
+                    <a
+                      href={med.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 font-medium text-electric hover:underline text-[11px]"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Full size
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         {step.sources && step.sources.length > 0 && (
           <div className="mt-5 border-t border-border-metal pt-4">
@@ -391,6 +436,11 @@ function FinalPlanModal({
     }
   }
 
+  const allMedia = useMemo(() => {
+    const list = [...(job.media ?? []), ...job.steps.flatMap((s) => s.media ?? [])];
+    return Array.from(new Map(list.map((m) => [m.url, m])).values());
+  }, [job]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-app/60 backdrop-blur-sm" />
@@ -444,8 +494,57 @@ function FinalPlanModal({
           </button>
         </div>
         <div className="overflow-y-auto bg-[#0B1220] px-6 py-6">
-          <div className="mx-auto max-w-3xl rounded-2xl bg-[#111827] border border-[#333333] px-6 py-6 shadow-sm">
-            <Markdown content={content} size="base" />
+          <div className="mx-auto max-w-3xl space-y-6">
+            <div className="rounded-2xl bg-[#111827] border border-[#333333] px-6 py-6 shadow-sm">
+              <Markdown content={content} size="base" />
+            </div>
+
+            {allMedia.length > 0 && (
+              <div className="rounded-2xl bg-[#111827] border border-[#333333] p-6 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-electric/15 text-electric">
+                      <ImageIcon className="h-4 w-4" />
+                    </span>
+                    <h3 className="font-heading text-sm font-semibold text-white">
+                      Generated Creative Assets & Visual Deliverables ({allMedia.length})
+                    </h3>
+                  </div>
+                  <span className="text-xs text-muted">Ready for client presentation</span>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {allMedia.map((med, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative flex flex-col overflow-hidden rounded-xl border border-[#333333] bg-[#0B1220] p-2.5 transition-all hover:border-electric/50"
+                    >
+                      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#111827]">
+                        <img
+                          src={med.url}
+                          alt={med.label || `Asset ${idx + 1}`}
+                          className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between px-1">
+                        <span className="truncate font-mono text-[11px] text-secondary">
+                          {med.label || med.url.split("/").pop()}
+                        </span>
+                        <a
+                          href={med.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-xs font-semibold text-electric hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" /> Full view
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="border-t border-border-metal bg-sunken/60 px-6 py-4">

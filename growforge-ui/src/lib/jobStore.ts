@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
+import { logContextEvent } from "@/lib/spatial/dailyContext";
 import type { Source } from "@/lib/research";
+import type { MediaItem } from "@/lib/tools";
+
+export type { MediaItem };
 
 /**
  * Persisted orchestration jobs (data/jobs.json). A job is one brief moving
@@ -29,6 +33,7 @@ export interface JobStep {
   weight: number;
   dependsOn: string[];
   output?: string;
+  media?: MediaItem[];
   sources?: Source[];
   error?: string;
   provider?: string;
@@ -62,6 +67,7 @@ export interface Job {
   verified: boolean;
   steps: JobStep[];
   finalOutput?: string;
+  media?: MediaItem[];
   error?: string;
   createdAt: string;
   updatedAt: string;
@@ -107,11 +113,11 @@ function loadFromDisk(): Job[] {
     return (parsed as Job[]).map((raw) => ({ ...raw, liveNotes: raw.liveNotes ?? [], revisions: raw.revisions ?? [] })).map((job) =>
       job.status === "running"
         ? {
-            ...job,
-            status: "error" as const,
-            error: "Interrupted by a server restart before it finished.",
-            steps: job.steps.map((s) => (s.status === "active" ? { ...s, status: "error" as const, error: "Interrupted" } : s)),
-          }
+          ...job,
+          status: "error" as const,
+          error: "Interrupted by a server restart before it finished.",
+          steps: job.steps.map((s) => (s.status === "active" ? { ...s, status: "error" as const, error: "Interrupted" } : s)),
+        }
         : job,
     );
   } catch (err) {
@@ -219,6 +225,7 @@ export function updateJob(jobId: string, patch: Partial<Job>): void {
   persist();
 
   if (patch.status === "done") {
+    void logContextEvent(`Completed job: ${job.title}`);
     telemetryStore.emitEvent({
       type: "job_completed",
       lobe: "neural_core",

@@ -81,11 +81,19 @@ function persist(store: Store) {
     nextLogId: store.nextLogId,
   };
   const json = JSON.stringify(snapshot, null, 2);
+  const tmp = STORE_FILE + ".tmp";
 
   // Fire-and-forget from the caller's perspective — request handlers don't
-  // await this, so a disk write never adds latency to a response.
+  // await this, so a disk write never adds latency to a response. Write to a
+  // temp file and rename over the real one so a crash mid-write (the known
+  // Turbopack crash pattern) can never leave store.json truncated/corrupt —
+  // the queue alone only prevents concurrent writes from interleaving, it
+  // doesn't protect against a partial write if the process dies mid-flush.
   writeQueue = writeQueue
-    .then(() => fs.promises.writeFile(STORE_FILE, json, "utf8"))
+    .then(async () => {
+      await fs.promises.writeFile(tmp, json, "utf8");
+      await fs.promises.rename(tmp, STORE_FILE);
+    })
     .catch((err) => {
       console.error("[agentStore] failed to persist store.json:", err);
     });

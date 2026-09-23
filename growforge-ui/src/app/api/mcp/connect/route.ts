@@ -10,12 +10,14 @@ import {
   deleteMcpServer,
   findMcpServerByUrl,
   getMcpServer,
+  listMcpServers,
   listMcpServersByOrigin,
   type DetectedMcpTool,
 } from "@/lib/mcp/store";
 import { callCustomMcpTool, generateDynamicTopology, toPluginShape } from "@/lib/mcp/pluginRegistry";
 import { isSafeOutboundUrl, scrubSecrets } from "@/lib/security/toolBroker";
 import { telemetryStore, type BrainLobe } from "@/lib/telemetryStore";
+import { logContextEvent } from "@/lib/spatial/dailyContext";
 
 export const runtime = "nodejs";
 
@@ -125,7 +127,15 @@ async function connectAndDiscoverTools(serverUrl: string, apiKey?: string): Prom
 
 export function handleListByoMcp() {
   const servers = listMcpServersByOrigin("byo-mcp");
-  const topology = generateDynamicTopology(servers);
+  // Topology must reflect every connected server, not only ones added
+  // through this BYO-MCP route — catalog-connected servers (Notion, HubSpot,
+  // Apollo.io, GitHub, Vercel, etc.) have no `origin` field at all and were
+  // being silently excluded from generateDynamicTopology()'s input, so none
+  // of them ever appeared as brain nodes regardless of how many tools they'd
+  // discovered. Confirmed live: all 5 of the account's real connected
+  // servers had origin === undefined. `plugins` stays BYO-scoped since it
+  // powers a BYO-specific list elsewhere; only the topology feed is broadened.
+  const topology = generateDynamicTopology(listMcpServers());
   return NextResponse.json({
     ok: true,
     plugins: servers.map(toPluginShape),
@@ -193,6 +203,8 @@ export async function handleConnectByoMcp(req: Request) {
           status: "connected",
         });
 
+    void logContextEvent(`Connected MCP server: ${def.name}`);
+
     // 3. Emit real-time telemetry so target brain lobe and somas light up
     telemetryStore.setExecutionState("processing", { nodeId: `mcp:${def.id}` });
     telemetryStore.emitEvent({
@@ -210,7 +222,7 @@ export async function handleConnectByoMcp(req: Request) {
       telemetryStore.setExecutionState("idle");
     }, 1200);
 
-    const topology = generateDynamicTopology(listMcpServersByOrigin("byo-mcp"));
+    const topology = generateDynamicTopology(listMcpServers());
 
     return NextResponse.json({
       ok: true,
@@ -259,7 +271,7 @@ export async function handleDisconnectByoMcp(req: Request) {
     deleteMcpServer(id);
   }
 
-  const topology = generateDynamicTopology(listMcpServersByOrigin("byo-mcp"));
+  const topology = generateDynamicTopology(listMcpServers());
 
   return NextResponse.json({
     ok: true,

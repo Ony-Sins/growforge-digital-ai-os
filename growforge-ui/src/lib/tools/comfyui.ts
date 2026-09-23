@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import type { Tool } from "@/lib/tools";
+import type { Tool, MediaItem } from "@/lib/tools";
 import { generateImageWithByoFallback } from "@/lib/imageGen";
 
 /**
@@ -96,13 +96,17 @@ interface HistoryImage {
 }
 
 interface HistoryEntry {
-  status?: { completed?: boolean; status_str?: string };
+  status?: {
+    completed?: boolean;
+    status_str?: string;
+    messages?: Array<[string, { node_id?: string; node_type?: string; exception_message?: string; exception_type?: string }] | unknown>;
+  };
   outputs?: Record<string, { images?: HistoryImage[] }>;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function generateImage(promptText: string): Promise<{ ok: boolean; output: string }> {
+async function generateImage(promptText: string): Promise<{ ok: boolean; output: string; imageUrl?: string; media?: MediaItem[] }> {
   const clientId = crypto.randomUUID();
   const workflow = buildWorkflow(promptText, Math.floor(Math.random() * 2 ** 32));
 
@@ -149,11 +153,24 @@ async function generateImage(promptText: string): Promise<{ ok: boolean; output:
 
     const history = (await historyRes.json()) as Record<string, HistoryEntry>;
     const entry = history[promptId];
+    if (entry?.status?.status_str === "error") {
+      const messages = entry.status.messages || [];
+      const errorMsg = messages
+        .map((m) => {
+          if (Array.isArray(m) && m[1] && typeof m[1] === "object") {
+            const errInfo = m[1] as { node_type?: string; exception_message?: string; exception_type?: string };
+            return `${errInfo.node_type ? `Node [${errInfo.node_type}]: ` : ""}${errInfo.exception_message || errInfo.exception_type || "execution error"}`;
+          }
+          return typeof m === "string" ? m : JSON.stringify(m);
+        })
+        .join("; ");
+      return { ok: false, output: `ComfyUI execution failed: ${errorMsg || "Unknown execution error"}` };
+    }
     if (!entry?.status?.completed) continue;
 
     const images = Object.values(entry.outputs ?? {}).flatMap((o) => o.images ?? []);
     if (images.length === 0) {
-      return { ok: false, output: `ComfyUI finished but produced no images (status: ${entry.status.status_str ?? "unknown"}).` };
+      return { ok: false, output: `ComfyUI finished but produced no images (status: ${entry.status?.status_str ?? "unknown"}).` };
     }
 
     const saved: string[] = [];
@@ -174,7 +191,12 @@ async function generateImage(promptText: string): Promise<{ ok: boolean; output:
     }
 
     return saved.length > 0
-      ? { ok: true, output: `Generated ${saved.length} image(s): ${saved.join(", ")}` }
+      ? {
+          ok: true,
+          output: `Generated ${saved.length} image(s): ${saved.join(", ")}`,
+          imageUrl: saved[0],
+          media: saved.map((url) => ({ type: "image" as const, url })),
+        }
       : { ok: false, output: "ComfyUI produced images but none could be downloaded from its /view endpoint." };
   }
 
@@ -203,7 +225,8 @@ export const comfyuiTool: Tool = {
 
     try {
       const result = await generateImageWithByoFallback(prompt, agentId, localFallback);
-      return { ok: result.ok, output: result.output };
+      const media = result.media || (result.imageUrl ? [{ type: "image" as const, url: result.imageUrl }] : undefined);
+      return { ok: result.ok, output: result.output, media };
     } catch (err) {
       return { ok: false, output: `Image generation failed: ${err instanceof Error ? err.message : String(err)}` };
     }

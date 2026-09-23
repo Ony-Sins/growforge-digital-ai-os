@@ -1,7 +1,7 @@
 import { chatComplete } from "@/lib/llm";
 import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions, hashInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
-import { runToolLoop, getDefaultTools } from "@/lib/tools";
+import { runToolLoop, getDefaultTools, type MediaItem } from "@/lib/tools";
 import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
 import { createConsultation, getConsultation, markConsultationTimedOut } from "@/lib/consultationStore";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
@@ -427,7 +427,13 @@ async function waitForConsultation(consultationId: string): Promise<string | nul
   return null;
 }
 
-async function gatherWithTools(jobId: string, stepId: string, stepLabel: string, dept: { id: string; name: string; file: string }, task: string): Promise<string> {
+async function gatherWithTools(
+  jobId: string,
+  stepId: string,
+  stepLabel: string,
+  dept: { id: string; name: string; file: string },
+  task: string
+): Promise<{ text: string; media: MediaItem[] }> {
   const result = await runToolLoop({
     systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.`,
     task: `${task}\n\nIf this assignment explicitly asks you to actually create, activate, run, or otherwise operate a real system (an n8n/Zapier workflow, a connector) — call that exact tool now, with real arguments. Do not write a proposal or description instead of calling it. If the research dossier above is missing something you need, call a research tool instead. Otherwise finish immediately with action "final" and text "no additional research needed".`,
@@ -462,8 +468,10 @@ async function gatherWithTools(jobId: string, stepId: string, stepLabel: string,
     },
   });
 
-  if (result.calls.length === 0) return "";
-  return result.calls.map((c) => `- Called ${c.tool}(${JSON.stringify(c.args)}) → ${c.result}`).join("\n");
+  const media = result.calls.flatMap((c) => c.media ?? []);
+  if (result.calls.length === 0) return { text: "", media: [] };
+  const text = result.calls.map((c) => `- Called ${c.tool}(${JSON.stringify(c.args)}) → ${c.result}`).join("\n");
+  return { text, media };
 }
 
 /** Runs (or re-runs) exactly the given assignments — a resume/revise only
@@ -479,8 +487,11 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
     const gatherTask = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nYOUR ASSIGNMENT FROM HQ:\n${a.task}\n\nRESEARCH DOSSIER:\n${dossierText}`;
 
     let extraFindings = "";
+    let deptMedia: MediaItem[] = [];
     try {
-      extraFindings = await gatherWithTools(jobId, stepId, dept.name, dept, gatherTask);
+      const gathered = await gatherWithTools(jobId, stepId, dept.name, dept, gatherTask);
+      extraFindings = gathered.text;
+      deptMedia = gathered.media;
     } catch (err) {
       console.error(`[orchestrator] tool-gathering failed for ${stepId}, drafting without it:`, err);
     }
@@ -491,7 +502,16 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
 
     try {
       const { text, provider } = await ask(system, user, 2200);
-      updateStep(jobId, stepId, { status: "done", percent: 100, activity: "Draft complete", output: text, provider, instructionsHash: hashInstructions(dept.file), finishedAt: now() });
+      updateStep(jobId, stepId, {
+        status: "done",
+        percent: 100,
+        activity: "Draft complete",
+        output: text,
+        media: deptMedia.length > 0 ? deptMedia : undefined,
+        provider,
+        instructionsHash: hashInstructions(dept.file),
+        finishedAt: now(),
+      });
       return { departmentId: a.departmentId, name: dept.name, output: text };
     } catch (err) {
       updateStep(jobId, stepId, { status: "error", activity: "Failed", error: err instanceof Error ? err.message : String(err), finishedAt: now() });
@@ -584,7 +604,20 @@ Choose sections that fit this brief. For a business launch or growth brief, cove
     : "";
   const finalOutput = `${banner}\n\n${text.trim()}${sourceList}`;
 
-  updateStep(jobId, "final", { status: "done", percent: 100, activity: "Plan ready", output: finalOutput, provider, instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
+  const currentJob = getJob(jobId);
+  const allJobMedia = (currentJob?.steps ?? []).flatMap((s) => s.media ?? []);
+  const uniqueMedia = Array.from(new Map(allJobMedia.map((m) => [m.url, m])).values());
+
+  updateStep(jobId, "final", {
+    status: "done",
+    percent: 100,
+    activity: "Plan ready",
+    output: finalOutput,
+    media: uniqueMedia.length > 0 ? uniqueMedia : undefined,
+    provider,
+    instructionsHash: hashInstructions(HQ.file),
+    finishedAt: now(),
+  });
   logJobStateChange(getJob(jobId)!);
   return finalOutput;
 }
@@ -623,7 +656,16 @@ async function resumePipeline(jobId: string): Promise<void> {
   const finalOutput =
     stepStatus("final") === "pending" ? await runFinal(jobId, drafts, review, qa, dossier) : getJob(jobId)!.finalOutput!;
 
-  updateJob(jobId, { status: "done", finalOutput, finishedAt: now() });
+  const currentJob = getJob(jobId);
+  const allJobMedia = (currentJob?.steps ?? []).flatMap((s) => s.media ?? []);
+  const uniqueMedia = Array.from(new Map(allJobMedia.map((m) => [m.url, m])).values());
+
+  updateJob(jobId, {
+    status: "done",
+    finalOutput,
+    media: uniqueMedia.length > 0 ? uniqueMedia : undefined,
+    finishedAt: now(),
+  });
   logJobStateChange(getJob(jobId)!);
 }
 

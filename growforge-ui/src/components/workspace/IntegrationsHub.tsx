@@ -577,11 +577,15 @@ export function IntegrationsHub() {
               <div
                 key={entry.id}
                 onClick={() => setInspectedCatalog(entry)}
-                className="group cursor-pointer rounded-xl border border-[#333333] bg-[#111827] p-4 transition-all hover:border-electric/50 hover:shadow-md flex flex-col justify-between"
+                className={`group cursor-pointer rounded-xl border p-4 transition-all flex flex-col justify-between ${
+                  isConnected
+                    ? "border-emerald/30 bg-[#0B1220] hover:border-emerald/60"
+                    : "border-[#333333] bg-[#111827] hover:border-electric/50 hover:shadow-md"
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B1220] border border-[#333333] text-white`}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0B1220] border border-[#333333] text-white">
                       {brand ? (
                         <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
                           <path d={brand.path} />
@@ -591,12 +595,12 @@ export function IntegrationsHub() {
                       )}
                     </div>
                     {isConnected ? (
-                      <span className="flex items-center gap-1 rounded-full bg-emerald/10 px-2 py-0.5 text-[10px] font-semibold text-emerald">
+                      <span className="flex items-center gap-1 rounded-full bg-emerald/10 border border-emerald/25 px-2 py-0.5 text-[10px] font-semibold text-emerald">
                         <Check className="h-3 w-3" /> Connected
                       </span>
                     ) : (
-                      <span className="rounded-full bg-[#0B1220] border border-[#333333] px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                        MCP
+                      <span className="flex items-center gap-1 rounded-full bg-electric/10 border border-electric/25 px-2 py-0.5 text-[10px] font-semibold text-electric group-hover:bg-electric group-hover:text-white transition-colors">
+                        <Plus className="h-3 w-3" /> Connect
                       </span>
                     )}
                   </div>
@@ -606,8 +610,8 @@ export function IntegrationsHub() {
                   <p className="mt-1 text-[11px] text-muted line-clamp-2">{entry.description}</p>
                 </div>
                 <div className="mt-4 pt-2.5 border-t border-[#333333] flex items-center justify-between text-[11px] text-secondary">
-                  <span>{isConnected ? "Inspect & Manage" : "Connect Tool"}</span>
-                  <span className="font-semibold text-electric">→</span>
+                  <span>{isConnected ? "Inspect & Manage" : "Enter Access Token"}</span>
+                  <span className="font-semibold text-electric group-hover:translate-x-0.5 transition-transform">→</span>
                 </div>
               </div>
             );
@@ -752,35 +756,17 @@ function McpInspectorModal({
           url: server.transport === "http" ? url.trim() : undefined,
           command: server.transport === "stdio" ? command.trim() : undefined,
           args: server.transport === "stdio" ? args.split(/\s+/).filter(Boolean) : undefined,
-          bearerToken: server.transport === "http" && bearerToken ? bearerToken.trim() : undefined,
           authHeader: server.transport === "http" ? authHeader.trim() || undefined : undefined,
+          bearerToken: bearerToken.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to update MCP server.");
+        setError(data.error ?? "Failed to save.");
       } else {
         setIsEditing(false);
         onChanged();
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error saving changes.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function toggleDepartment(deptId: string) {
-    const has = server.allowedDepartments.includes(deptId);
-    const next = has ? server.allowedDepartments.filter((d) => d !== deptId) : [...server.allowedDepartments, deptId];
-    setBusy(true);
-    try {
-      await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowedDepartments: next }),
-      });
-      onChanged();
     } finally {
       setBusy(false);
     }
@@ -797,13 +783,31 @@ function McpInspectorModal({
     }
   }
 
+  async function toggleDepartment(deptId: string) {
+    const current = new Set(server.allowedDepartments);
+    if (current.has(deptId)) current.delete(deptId);
+    else current.add(deptId);
+    const next = Array.from(current);
+
+    setBusy(true);
+    try {
+      await fetch(`/api/mcp/${encodeURIComponent(server.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowedDepartments: next }),
+      });
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
       <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827] text-white border border-[#333333] shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827] border border-[#333333] text-white">
               {brand ? (
                 <svg role="img" viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-label={brand.title}>
                   <path d={brand.path} />
@@ -815,14 +819,12 @@ function McpInspectorModal({
             <div>
               <h3 className="font-heading text-base font-semibold text-white">{server.name}</h3>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="rounded bg-[#111827] border border-[#333333] px-1.5 py-0.2 font-mono text-[10px] font-bold text-secondary uppercase">
+                <span className="rounded bg-[#111827] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white uppercase border border-[#333333]">
                   MCP {server.transport}
                 </span>
-                {server.hasCredential && (
-                  <span className="rounded-full bg-emerald/10 text-emerald px-2 py-0.2 text-[10px] font-semibold border border-emerald/20">
-                    Vault Authenticated
-                  </span>
-                )}
+                <span className="text-[10px] text-emerald font-semibold flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald animate-pulse" /> Active Connection
+                </span>
               </div>
             </div>
           </div>
@@ -831,7 +833,6 @@ function McpInspectorModal({
           </button>
         </div>
 
-        {/* Configuration Details or Edit Form */}
         {isEditing ? (
           <form onSubmit={handleSaveEdit} className="space-y-3">
             <div>
@@ -840,67 +841,65 @@ function McpInspectorModal({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                 required
+                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric"
               />
             </div>
             {server.transport === "http" ? (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-white">MCP Server URL</label>
+                  <label className="block text-xs font-medium text-white">Endpoint URL</label>
                   <input
                     type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     required
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-medium text-white">Auth Header Name</label>
-                    <input
-                      type="text"
-                      value={authHeader}
-                      onChange={(e) => setAuthHeader(e.target.value)}
-                      placeholder="e.g. X-Api-Key"
-                      className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white placeholder:text-muted outline-none focus:border-electric"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-white">Bearer Token</label>
-                    <input
-                      type="password"
-                      value={bearerToken}
-                      onChange={(e) => setBearerToken(e.target.value)}
-                      placeholder="•••••••• (leave blank to keep)"
-                      className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-white">Auth Header (optional)</label>
+                  <input
+                    type="text"
+                    value={authHeader}
+                    onChange={(e) => setAuthHeader(e.target.value)}
+                    placeholder="Authorization"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white">New Bearer / API Token</label>
+                  <input
+                    type="password"
+                    value={bearerToken}
+                    onChange={(e) => setBearerToken(e.target.value)}
+                    placeholder="•••••••• (leave blank to keep current credential)"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+                  />
                 </div>
               </>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <>
                 <div>
                   <label className="block text-xs font-medium text-white">Command</label>
                   <input
                     type="text"
                     value={command}
                     onChange={(e) => setCommand(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
                     required
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white">Args</label>
+                  <label className="block text-xs font-medium text-white">Arguments</label>
                   <input
                     type="text"
                     value={args}
                     onChange={(e) => setArgs(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
+                    className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
                   />
                 </div>
-              </div>
+              </>
             )}
             {error && <p className="text-xs text-crimson">{error}</p>}
             <div className="flex justify-end gap-2 pt-2">
@@ -916,21 +915,20 @@ function McpInspectorModal({
                 disabled={busy}
                 className="btn-primary-cta px-4 py-1.5 text-xs disabled:opacity-60"
               >
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin inline mr-1" /> : null}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 inline" /> : null}
                 Save Changes
               </button>
             </div>
           </form>
         ) : (
-          <div className="space-y-3">
-            <div className="rounded-xl border border-[#333333] bg-[#111827] p-3 space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint Target</span>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-[#333333] bg-[#111827] p-3 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Endpoint / Command</span>
               <p className="font-mono text-xs text-white break-all">
                 {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
               </p>
             </div>
 
-            {/* Live Test & Tool Count */}
             <div className="flex items-center justify-between gap-2 pt-1">
               <button
                 type="button"
@@ -941,7 +939,6 @@ function McpInspectorModal({
                 {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5 text-electric" />}
                 <span>{testing ? "Testing Ping…" : "Test Connection"}</span>
               </button>
-
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
@@ -1155,66 +1152,102 @@ function CatalogInspectorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between pb-3 border-b border-[#333333]">
-          <div className="flex items-center gap-3">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${entry.tint}`}>
-              {brand ? (
-                <svg role="img" viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-label={brand.title}>
-                  <path d={brand.path} />
-                </svg>
-              ) : (
-                <Icon className="h-6 w-6" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-heading text-base font-semibold text-white">Connect {entry.name}</h3>
-              <p className="text-xs text-secondary">{entry.description}</p>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white transition-colors">
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={onClose}
+        className="absolute inset-0 bg-transparent"
+      />
+      {entry.authKind === "token" ? (
+        <form
+          onSubmit={handleConnectToken}
+          className="glass-card-strong relative w-full max-w-sm rounded-2xl border border-[#333333] bg-[#0B1220] p-6 shadow-2xl animate-in zoom-in-95 duration-150"
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute right-4 top-4 rounded-lg p-1.5 text-muted transition-colors hover:bg-sunken hover:text-white"
+          >
             <X className="h-4 w-4" />
           </button>
-        </div>
 
-        {entry.authKind === "token" ? (
-          <form onSubmit={handleConnectToken} className="space-y-3.5">
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-medium text-white">{entry.tokenLabel || "API / Access Token"}</label>
-                {entry.tokenHelpUrl && (
-                  <a
-                    href={entry.tokenHelpUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-[11px] text-electric hover:underline"
-                  >
-                    <span>Get token</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-border-metal">
+            {brand ? (
+              <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
+                <path d={brand.path} />
+              </svg>
+            ) : (
+              <Icon className="h-5 w-5" />
+            )}
+          </span>
+
+          <h2 className="mt-3 font-heading text-base font-semibold text-white">
+            Connect {entry.name}
+          </h2>
+          <p className="mt-1 text-xs text-secondary">
+            {entry.description}
+          </p>
+
+          {entry.tokenHelpUrl && (
+            <a
+              href={entry.tokenHelpUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] text-electric hover:underline"
+            >
+              <span>Get your {entry.tokenLabel || "token"}</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+
+          <input
+            type="password"
+            autoFocus
+            required
+            value={token}
+            onChange={(e) => {
+              setToken(e.target.value);
+              setError(null);
+            }}
+            placeholder={entry.tokenLabel || "Enter Access Token or Key"}
+            className="mt-4 w-full rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2.5 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric/60"
+          />
+
+          {error && <p className="mt-2 text-xs text-crimson">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={!token.trim() || busy}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-electric to-gold px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            <span>Connect {entry.name}</span>
+          </button>
+        </form>
+      ) : (
+        <div className="relative w-full max-w-lg rounded-2xl border border-[#333333] bg-[#0B1220] shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111827] border border-[#333333] text-white">
+                {brand ? (
+                  <svg role="img" viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-label={brand.title}>
+                    <path d={brand.path} />
+                  </svg>
+                ) : (
+                  <Icon className="h-5 w-5 text-electric" />
                 )}
               </div>
-              <input
-                type="password"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="Paste token or key..."
-                autoFocus
-                required
-                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white placeholder:text-muted outline-none focus:border-electric"
-              />
+              <div>
+                <h3 className="font-heading text-base font-semibold text-white">Connect {entry.name}</h3>
+                <p className="text-xs text-secondary">{entry.description}</p>
+              </div>
             </div>
-            {error && <p className="text-xs text-crimson">{error}</p>}
-            <button
-              type="submit"
-              disabled={!token.trim() || busy}
-              className="btn-primary-cta flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs disabled:opacity-60"
-            >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              Connect {entry.name}
+            <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
+              <X className="h-4 w-4" />
             </button>
-          </form>
-        ) : (
+          </div>
+
           <form onSubmit={handleManualConnect} className="space-y-3">
             <select
               value={manualTransport}
@@ -1261,18 +1294,38 @@ function CatalogInspectorModal({
                 />
               </>
             )}
+            {entry.manualHelpUrl && (
+              <a
+                href={entry.manualHelpUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 text-[11px] text-electric hover:underline"
+              >
+                <span>Setup & credential guide for {entry.name}</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
             {error && <p className="text-xs text-crimson">{error}</p>}
-            <button
-              type="submit"
-              disabled={busy}
-              className="btn-primary-cta flex w-full items-center justify-center gap-1.5 px-4 py-2.5 text-xs disabled:opacity-60"
-            >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              Connect {entry.name}
-            </button>
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#333333]">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs text-muted hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="btn-primary-cta px-4 py-2 text-xs font-semibold disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1 inline" /> : null}
+                Connect {entry.name}
+              </button>
+            </div>
           </form>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

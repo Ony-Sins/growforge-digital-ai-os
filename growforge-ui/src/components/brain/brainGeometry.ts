@@ -327,6 +327,261 @@ export function generateProceduralBrainShell(
   };
 }
 
+export interface BrainWebNode {
+  id: string;
+  position: [number, number, number];
+  lobe: BrainLobe;
+  hemisphere: "left" | "right" | "center";
+  region: "cortex" | "temporal" | "cerebellum" | "stem";
+  size: number;
+}
+
+export interface BrainWebLink {
+  id: string;
+  sourceIndex: number;
+  targetIndex: number;
+  p1: [number, number, number];
+  mid: [number, number, number];
+  p2: [number, number, number];
+  lobe: BrainLobe;
+  isInterHemisphere: boolean;
+}
+
+export interface ProceduralBrainWebData {
+  nodes: BrainWebNode[];
+  links: BrainWebLink[];
+}
+
+/**
+ * Generate a sparse anatomical connective web (nodes + thin curved tubes)
+ * forming the organic brain silhouette.
+ *
+ * @param userSeedKey String identity for deterministic seeding
+ * @param nodeCount Number of structural web nodes to generate (default 210)
+ */
+export function generateProceduralBrainWeb(
+  userSeedKey = "growforge-default-operator",
+  nodeCount = 210
+): ProceduralBrainWebData {
+  const seed = hashString(`gf-brain-web-${userSeedKey}`);
+  const prng = createPrng(seed);
+
+  const nodes: BrainWebNode[] = [];
+  const links: BrainWebLink[] = [];
+
+  const cortexQuota = Math.floor(nodeCount * 0.68);
+  const temporalQuota = Math.floor(nodeCount * 0.16);
+  const cerebellumQuota = Math.floor(nodeCount * 0.10);
+  const stemQuota = nodeCount - cortexQuota - temporalQuota - cerebellumQuota;
+
+  let nIdx = 0;
+
+  function addNode(
+    x: number,
+    y: number,
+    z: number,
+    region: BrainWebNode["region"],
+    baseSize = 1.2
+  ) {
+    // Add subtle organic jitter from user seed (within ±1.4 units)
+    const jx = (prng() - 0.5) * 2.8;
+    const jy = (prng() - 0.5) * 2.8;
+    const jz = (prng() - 0.5) * 2.8;
+
+    const finalX = Math.round((x + jx) * 10) / 10;
+    const finalY = Math.round((y + jy) * 10) / 10;
+    const finalZ = Math.round((z + jz) * 10) / 10;
+
+    const lobe = getLobeForCoordinates(finalX, finalY, finalZ);
+    const hemisphere: BrainWebNode["hemisphere"] =
+      finalX < -4 ? "left" : finalX > 4 ? "right" : "center";
+
+    const size = Math.round((baseSize + (prng() - 0.5) * 0.4) * 10) / 10;
+
+    nodes.push({
+      id: `web-node-${nIdx}`,
+      position: [finalX, finalY, finalZ],
+      lobe,
+      hemisphere,
+      region,
+      size,
+    });
+
+    nIdx++;
+  }
+
+  // 1. Dual-Hemisphere Cortical Shell
+  for (let i = 0; i < cortexQuota; i++) {
+    const isLeft = prng() < 0.5;
+    const hSign = isLeft ? -1 : 1;
+
+    // Golden spiral spherical distribution for uniform surface coverage
+    const theta = Math.acos(1 - (2 * (i + 0.5)) / cortexQuota);
+    const phi = Math.PI * (1 + Math.sqrt(5)) * (i + prng() * 0.3);
+
+    // Hemisphere center offset
+    const hCenterX = hSign * 27;
+    const hCenterY = 5;
+    const hCenterZ = 2;
+
+    // Semi-axes for cerebral ellipsoid
+    const rx = 34;
+    const ry = 38;
+    const rz = 52;
+
+    let x = hCenterX + rx * Math.sin(theta) * Math.cos(phi);
+    let y = hCenterY + ry * Math.cos(theta);
+    let z = hCenterZ + rz * Math.sin(theta) * Math.sin(phi);
+
+    // Longitudinal Fissure flattening
+    if (hSign === -1 && x > -5) {
+      x = -5 - prng() * 4;
+    } else if (hSign === 1 && x < 5) {
+      x = 5 + prng() * 4;
+    }
+
+    // Superior parietal dome arching
+    if (y > 15) {
+      y += Math.sin((z + 10) * 0.03) * 6;
+    }
+
+    // Anterior frontal taper
+    if (z > 25) {
+      x *= 0.92;
+      y = y * 0.95 + 4;
+    }
+
+    // Posterior occipital rounding
+    if (z < -25) {
+      x *= 0.88;
+      y = y * 0.9 - 2;
+    }
+
+    // Cortical Sulci & Gyri harmonic displacement
+    const gyriFold =
+      Math.sin(x * 0.15 + y * 0.18) * Math.cos(z * 0.16) * 3.6 +
+      Math.sin(y * 0.22 + z * 0.26) * 2.2 +
+      Math.cos(x * 0.28 - z * 0.2) * 1.6;
+
+    const dist = Math.sqrt((x - hCenterX) ** 2 + (y - hCenterY) ** 2 + (z - hCenterZ) ** 2) || 1;
+    x += ((x - hCenterX) / dist) * gyriFold;
+    y += ((y - hCenterY) / dist) * gyriFold;
+    z += ((z - hCenterZ) / dist) * gyriFold;
+
+    addNode(x, y, z, "cortex", 1.2);
+  }
+
+  // 2. Temporal Lobes (Bilateral Inferior Lateral Arcs)
+  for (let i = 0; i < temporalQuota; i++) {
+    const isLeft = prng() < 0.5;
+    const hSign = isLeft ? -1 : 1;
+
+    const t = prng();
+    const tx = hSign * (38 + prng() * 12);
+    const ty = -12 - Math.sin(t * Math.PI) * 16 - prng() * 8;
+    const tz = -15 + t * 42;
+
+    const fold = Math.sin(tx * 0.2 + tz * 0.3) * 2.5;
+    addNode(tx + fold, ty, tz + fold, "temporal", 1.1);
+  }
+
+  // 3. Cerebellum (Bilateral Posterior-Inferior Clusters)
+  for (let i = 0; i < cerebellumQuota; i++) {
+    const isLeft = prng() < 0.5;
+    const hSign = isLeft ? -1 : 1;
+
+    const cx = hSign * (18 + prng() * 16);
+    const cy = -32 - prng() * 18;
+    const cz = -38 + (prng() - 0.5) * 24;
+
+    const folia = Math.sin(cy * 0.55) * 1.6;
+    addNode(cx + folia, cy, cz + folia, "cerebellum", 1.0);
+  }
+
+  // 4. Brainstem & Midbrain Column
+  for (let i = 0; i < stemQuota; i++) {
+    const t = prng();
+    const sy = -20 - t * 45;
+    const taper = 1 - t * 0.45;
+    const sx = (prng() - 0.5) * 12 * taper;
+    const sz = -10 - t * 12 + (prng() - 0.5) * 10 * taper;
+
+    addNode(sx, sy, sz, "stem", 1.0);
+  }
+
+  // 5. Connective Spline Links Generation (k-nearest neighbors graph)
+  const existingPairSet = new Set<string>();
+
+  for (let i = 0; i < nodes.length; i++) {
+    const nodeA = nodes[i];
+    const distances: { index: number; dist: number }[] = [];
+
+    for (let j = 0; j < nodes.length; j++) {
+      if (i === j) continue;
+      const nodeB = nodes[j];
+
+      // Prefer connecting within the same hemisphere/region
+      const sameHemi = nodeA.hemisphere === nodeB.hemisphere || nodeA.hemisphere === "center" || nodeB.hemisphere === "center";
+      const dx = nodeA.position[0] - nodeB.position[0];
+      const dy = nodeA.position[1] - nodeB.position[1];
+      const dz = nodeA.position[2] - nodeB.position[2];
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      // Penalize cross-hemisphere connections unless within the central commissural band
+      const penalty = sameHemi ? 1.0 : (Math.abs(nodeA.position[0]) < 18 && Math.abs(nodeB.position[0]) < 18 ? 1.2 : 4.0);
+      distances.push({ index: j, dist: dist * penalty });
+    }
+
+    // Sort by proximity
+    distances.sort((a, b) => a.dist - b.dist);
+
+    // Connect to closest 2-3 neighbors within max distance threshold (28 units)
+    const kNeighbors = 2 + (i % 2);
+    for (let k = 0; k < kNeighbors && k < distances.length; k++) {
+      const neighbor = distances[k];
+      if (neighbor.dist > 30) continue;
+
+      const j = neighbor.index;
+      const nodeB = nodes[j];
+
+      const pairKey = i < j ? `${i}-${j}` : `${j}-${i}`;
+      if (existingPairSet.has(pairKey)) continue;
+      existingPairSet.add(pairKey);
+
+      const p1: [number, number, number] = [...nodeA.position];
+      const p2: [number, number, number] = [...nodeB.position];
+
+      // Midpoint with subtle outward radial bowing
+      const mx = (p1[0] + p2[0]) * 0.5;
+      const my = (p1[1] + p2[1]) * 0.5;
+      const mz = (p1[2] + p2[2]) * 0.5;
+
+      const normalLen = Math.sqrt(mx * mx + my * my + mz * mz) || 1;
+      const outwardBulge = 1.6 + prng() * 1.8;
+      const mid: [number, number, number] = [
+        Math.round((mx + (mx / normalLen) * outwardBulge) * 10) / 10,
+        Math.round((my + (my / normalLen) * outwardBulge) * 10) / 10,
+        Math.round((mz + (mz / normalLen) * outwardBulge) * 10) / 10,
+      ];
+
+      const isInter = nodeA.hemisphere !== nodeB.hemisphere && nodeA.hemisphere !== "center" && nodeB.hemisphere !== "center";
+
+      links.push({
+        id: `web-link-${links.length}`,
+        sourceIndex: i,
+        targetIndex: j,
+        p1,
+        mid,
+        p2,
+        lobe: nodeA.lobe,
+        isInterHemisphere: isInter,
+      });
+    }
+  }
+
+  return { nodes, links };
+}
+
 /**
  * Calculates a deterministic node position on or near the brain shell
  * for a specific user and node ID.
@@ -347,10 +602,15 @@ export function calculateNodeBrainPosition(
   const seed = hashString(`${userSeedKey}:${nodeId}:${lobe}`);
   const prng = createPrng(seed);
 
-  // Deterministic orbital displacement around the lobe anchor (within ±6 units)
+  // Deterministic orbital displacement around the lobe anchor. "center"
+  // anchors sit very close to HQ's own fixed position ([0,8,10] vs
+  // neural_core.center's [0,8,12]) — a small radius there puts nodes inside
+  // HQ's own 8.5-unit sphere and ~30-unit glow halo, rendering them
+  // invisible. Give center-anchored nodes a wider orbit so they form a
+  // visible ring around HQ instead of disappearing inside it.
   const angle = prng() * Math.PI * 2;
-  const elevation = (prng() - 0.5) * 10;
-  const radius = 3 + prng() * 6;
+  const elevation = hemisphere === "center" ? (prng() - 0.5) * 20 : (prng() - 0.5) * 10;
+  const radius = hemisphere === "center" ? 26 + prng() * 14 : 3 + prng() * 6;
 
   const x = baseAnchor[0] + Math.cos(angle) * radius;
   const y = baseAnchor[1] + elevation;

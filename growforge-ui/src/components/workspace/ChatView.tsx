@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -7,6 +8,7 @@ import {
   Bot,
   ClipboardCheck,
   Code2,
+  ExternalLink,
   FileText,
   FlaskConical,
   Loader2,
@@ -31,6 +33,7 @@ import type { HandoffSuggestion } from "@/lib/handoff";
 import { Markdown } from "@/components/ui/Markdown";
 import { generateWebLlmChat, isWebGpuSupported, type WebLlmProgressReport } from "@/lib/webLlm";
 import { WebLlmIndicator } from "@/components/workspace/WebLlmIndicator";
+import type { MediaItem } from "@/lib/tools";
 
 interface RouterStatus {
   strategy: LlmStrategy;
@@ -77,6 +80,7 @@ interface ChatMessageUI {
   content: string;
   timestamp: string;
   provider?: string;
+  media?: MediaItem[];
   dispatch?: DispatchInfo | null;
   dispatchError?: string;
   locked?: { agentId: string; agentName: string } | null;
@@ -129,7 +133,14 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
 const WELCOME_CONTENT =
   "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language (in any language), and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
 
-export function ChatView() {
+export interface ChatViewProps {
+  embedded?: boolean;
+  onClose?: () => void;
+  className?: string;
+  initialPrompt?: string;
+}
+
+export function ChatView({ embedded = false, onClose, className = "", initialPrompt }: ChatViewProps = {}) {
   const { role, unlockedAgentIds, requestAgentUnlock, openJob, chatViewMode, setChatViewMode, activeView, activeViewToken } =
     useAppState();
 
@@ -362,6 +373,7 @@ export function ChatView() {
           content: data.reply,
           timestamp: new Date().toISOString(),
           provider: data.provider,
+          media: data.media ?? (data.imageUrl ? [{ type: "image", url: data.imageUrl }] : undefined),
           dispatch: data.dispatch ?? null,
           dispatchError: data.dispatchError,
           locked: data.locked ?? null,
@@ -562,18 +574,24 @@ export function ChatView() {
     setPendingHandoff(null);
   }
 
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      setInput(initialPrompt);
+      inputRef.current?.focus();
+    }
+  }, [initialPrompt]);
+
   const maximized = chatViewMode === "maximized";
 
+  const rootClass = embedded
+    ? className || "relative flex flex-col h-full w-full bg-transparent overflow-hidden"
+    : maximized
+    ? "fixed inset-0 z-50 flex flex-col bg-[#0B1220]"
+    : "fixed inset-x-0 bottom-0 top-auto z-30 flex h-[45vh] flex-col border-t border-[#333333] bg-[#0B1220]/95 backdrop-blur-2xl shadow-2xl lg:inset-x-auto lg:inset-y-auto lg:right-0 lg:top-16 lg:bottom-0 lg:h-auto lg:w-full lg:max-w-sm lg:border-l lg:border-t-0";
+
   return (
-    <section
-      className={
-        maximized
-          ? "fixed inset-0 z-50 flex flex-col bg-[#0B1220]"
-          : // Docked: a bottom sheet below lg, persistent right-side panel at lg+
-            "fixed inset-x-0 bottom-0 top-auto z-30 flex h-[45vh] flex-col border-t border-[#333333] bg-[#0B1220]/95 backdrop-blur-2xl shadow-2xl lg:inset-x-auto lg:inset-y-auto lg:right-0 lg:top-16 lg:bottom-0 lg:h-auto lg:w-full lg:max-w-sm lg:border-l lg:border-t-0"
-      }
-    >
-      <div className="flex items-center gap-2.5 border-b border-[#333333] px-4 py-3 bg-[#111827]/60">
+    <section className={rootClass}>
+      <div className="flex items-center gap-2.5 border-b border-[#333333]/80 px-4 py-3 bg-[#111827]/60">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-electric/15 to-gold/15 text-electric ring-1 ring-[#333333]">
           <MessageSquare className="h-4 w-4" />
         </span>
@@ -583,7 +601,7 @@ export function ChatView() {
             <p className="truncate text-xs text-secondary">Describe it in plain language. I ask, confirm, then the team builds it.</p>
           )}
         </div>
-        {strategy && maximized && (
+        {strategy && (maximized || embedded) && (
           <label className="flex shrink-0 items-center gap-1.5">
             <span className="sr-only">LLM strategy</span>
             <select
@@ -602,14 +620,26 @@ export function ChatView() {
             </select>
           </label>
         )}
-        <button
-          type="button"
-          onClick={() => setChatViewMode(maximized ? "docked" : "maximized")}
-          title={maximized ? "Dock to the right side" : "Maximize to full screen"}
-          className="flex shrink-0 items-center justify-center rounded-lg border border-[#333333] bg-[#111827] p-1.5 text-secondary hover:border-electric/40 hover:text-electric"
-        >
-          {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        </button>
+        {!embedded && (
+          <button
+            type="button"
+            onClick={() => setChatViewMode(maximized ? "docked" : "maximized")}
+            title={maximized ? "Dock to the right side" : "Maximize to full screen"}
+            className="flex shrink-0 items-center justify-center rounded-lg border border-[#333333] bg-[#111827] p-1.5 text-secondary hover:border-electric/40 hover:text-electric"
+          >
+            {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </button>
+        )}
+        {embedded && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close Assistant"
+            className="flex shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-1.5 text-cyan-300 hover:border-cyan-400/50 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <div
@@ -646,6 +676,38 @@ export function ChatView() {
                     <Markdown content={m.content} />
                   )}
                 </div>
+                {m.media && m.media.length > 0 && (
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {m.media.map((med, idx) => (
+                      <div
+                        key={idx}
+                        className="group relative flex flex-col overflow-hidden rounded-xl border border-[#333333] bg-[#111827] p-2 shadow-sm transition-all hover:border-electric/50"
+                      >
+                        <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-[#0B1220]">
+                          <img
+                            src={med.url}
+                            alt={med.label || `Visual ${idx + 1}`}
+                            className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between px-1 text-xs">
+                          <span className="truncate font-mono text-[10px] text-secondary">
+                            {med.label || med.url.split("/").pop()}
+                          </span>
+                          <a
+                            href={med.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 text-[10px] font-semibold text-electric hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" /> View
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {m.dispatch && <ExecutionCard dispatch={m.dispatch} />}
                 {m.confirmBrief && (
                   <div className="mt-2 rounded-xl border border-gold/40 bg-gold/5 p-3">

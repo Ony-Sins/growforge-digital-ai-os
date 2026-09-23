@@ -149,46 +149,51 @@ export function generateDynamicTopology(byoMcpServers: McpServerDef[]): { nodes:
       s.detectedTools?.length
   );
 
+  // One node per connected platform, not one per discovered sub-tool/function.
+  // Previously this expanded every server's detectedTools into its own
+  // separate brain node — a server with 24 tools produced 24 nodes. That was
+  // masked for a long time because no server ever had detectedTools actually
+  // persisted (see the detectedTools-persistence fix logged the same
+  // session); the moment real tool data started flowing through, it exposed
+  // this as genuinely unusable, noisy clutter — confirmed directly by the
+  // user, not a guess. A connector is one real thing the operator connected;
+  // its tools are detail about that one thing, not 24 separate things.
   active.forEach((server, pIdx) => {
     const parentInfo = LOBE_PARENT_MAP[server.targetLobe ?? "neural_core"] || LOBE_PARENT_MAP.neural_core;
     const baseCenter = parentInfo.center;
     const tools = server.detectedTools ?? [];
 
-    tools.forEach((tool, tIdx) => {
-      const totalTools = tools.length;
-      const angle = (tIdx / Math.max(totalTools, 1)) * Math.PI * 2 + pIdx * 0.6;
-      const radius = 26 + (tIdx % 2) * 8;
+    const angle = pIdx * 1.15;
+    const radius = 30;
+    const posX = baseCenter[0] + Math.cos(angle) * radius;
+    const posY = baseCenter[1] + Math.sin(angle) * (radius * 0.75);
+    const posZ = baseCenter[2] + Math.sin(angle * 1.5) * 14;
 
-      const posX = baseCenter[0] + Math.cos(angle) * radius;
-      const posY = baseCenter[1] + Math.sin(angle) * (radius * 0.75) + ((tIdx % 3) - 1) * 6;
-      const posZ = baseCenter[2] + Math.sin(angle * 1.5) * 14;
+    const nodeId = `mcp-node:${server.id}`;
 
-      const nodeId = `mcp-node:${server.id}:${tool.name}`;
+    nodes.push({
+      id: nodeId,
+      name: server.name,
+      role: "Connected MCP Server",
+      kind: "tendril",
+      lobe: server.targetLobe ?? "neural_core",
+      hemisphere: parentInfo.hemisphere,
+      position: [posX, posY, posZ],
+      size: 5,
+      color: "#06b6d4",
+      emissive: "#22d3ee",
+      description: `${tools.length} tool${tools.length === 1 ? "" : "s"} available on ${server.name}.`,
+      tools: tools.map((t) => t.name),
+      pluginId: server.id,
+    });
 
-      nodes.push({
-        id: nodeId,
-        name: tool.name,
-        role: `Custom MCP Tool (${server.name})`,
-        kind: "tendril",
-        lobe: server.targetLobe ?? "neural_core",
-        hemisphere: parentInfo.hemisphere,
-        position: [posX, posY, posZ],
-        size: 4,
-        color: "#06b6d4",
-        emissive: "#22d3ee",
-        description: tool.description || `Dynamic tool discovered on ${server.url}`,
-        tools: [tool.name],
-        pluginId: server.id,
-      });
-
-      axons.push({
-        id: `ax-hq-${nodeId}`,
-        source: "hq",
-        target: nodeId,
-        color: "#06b6d4",
-        curveOffset: [Math.cos(angle) * 8, Math.sin(angle) * 8, tIdx % 2 === 0 ? 6 : -6],
-        isDynamic: true,
-      });
+    axons.push({
+      id: `ax-hq-${nodeId}`,
+      source: "hq",
+      target: nodeId,
+      color: "#06b6d4",
+      curveOffset: [Math.cos(angle) * 8, Math.sin(angle) * 8, pIdx % 2 === 0 ? 6 : -6],
+      isDynamic: true,
     });
   });
 

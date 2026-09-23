@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
-import { Cpu, Key, Terminal, Check, Copy, X, RefreshCw, ArrowRight } from "lucide-react";
+import { Cpu, Key, Terminal, Check, Copy, X, RefreshCw, ArrowRight, Globe } from "lucide-react";
 import { useAppState } from "@/lib/appState";
+import { getWebLlmEngine, isWebGpuSupported, type WebLlmProgressReport } from "@/lib/webLlm";
+import { WebLlmIndicator } from "@/components/workspace/WebLlmIndicator";
 
 const DISMISSED_KEY = "growforge.byok_onboarding_dismissed";
 type ProviderStatus = "checking" | "local-ready" | "local-offline" | "cloud-configured";
@@ -20,6 +22,9 @@ export function ByokOnboardingBanner() {
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [providerStatus, setProviderStatus] = useState<ProviderStatus>("checking");
+  const [webLlmProgress, setWebLlmProgress] = useState<WebLlmProgressReport | null>(null);
+  const [webLlmReady, setWebLlmReady] = useState(false);
+  const [webLlmError, setWebLlmError] = useState<string | null>(null);
 
   const storedDismissed = useSyncExternalStore(
     emptySubscribe,
@@ -85,11 +90,34 @@ export function ByokOnboardingBanner() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  // Downloads and runs a small model entirely inside this browser tab via
+  // WebGPU (@mlc-ai/web-llm) — no install, no OS-level permission, because
+  // the browser is downloading into its own sandboxed cache, not touching
+  // the user's filesystem. This is the closest thing to "one click, it just
+  // works, no terminal" that's actually possible from a webpage: a real
+  // native-software install can never be triggered by a website, by design
+  // (the same browser security boundary that keeps sites from installing
+  // malware). ChatView.tsx already falls back to this automatically once
+  // nothing else is configured — this button just makes that option visible
+  // and explicit instead of a silent fallback the user never finds.
+  async function handleRunInBrowser() {
+    setWebLlmError(null);
+    setWebLlmProgress({ text: "Starting…", progress: 0 });
+    try {
+      await getWebLlmEngine(undefined, (report) => setWebLlmProgress(report));
+      setWebLlmReady(true);
+    } catch (err) {
+      setWebLlmError(err instanceof Error ? err.message : "Failed to start the in-browser model.");
+      setWebLlmProgress(null);
+    }
+  }
+
   const isDismissed = dismissedLocally || storedDismissed;
+  const webGpuAvailable = mounted && isWebGpuSupported();
 
   // A confirmed local runtime needs no onboarding banner. A configured cloud
   // key stays visible until the user verifies it from the model manager.
-  if (!mounted || isDismissed || providerStatus === "local-ready") return null;
+  if (!mounted || isDismissed || providerStatus === "local-ready" || webLlmReady) return null;
 
   const hasCloudConfiguration = providerStatus === "cloud-configured";
   const isChecking = providerStatus === "checking";
@@ -97,7 +125,9 @@ export function ByokOnboardingBanner() {
     ? "Checking whether GrowForge can reach its local AI runtime…"
     : hasCloudConfiguration
       ? "Local Ollama is not reachable. A cloud API key is configured, but it still needs a connection test before you rely on it."
-      : "No runnable AI provider is detected. Start Ollama locally for private, no-token-cost execution, or add and test your own cloud API key.";
+      : webGpuAvailable
+        ? "No runnable AI provider is detected. Run a small model right in this browser tab (free, no install), start Ollama locally, or add your own cloud API key."
+        : "No runnable AI provider is detected. Start Ollama locally for private, no-token-cost execution, or add and test your own cloud API key.";
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-electric/30 bg-gradient-to-r from-app via-app to-slate-900 p-4 sm:p-5 text-white shadow-xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
@@ -127,50 +157,75 @@ export function ByokOnboardingBanner() {
         </div>
 
         {/* Right actions */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1 md:pt-0">
-          {/* Copy CLI command pill */}
-          <button
-            type="button"
-            onClick={handleCopyCommand}
-            title="Click to copy Ollama launch command"
-            className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-[11px] text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <Terminal className="h-3.5 w-3.5 text-electric" />
-            <span>ollama run qwen2.5:7b-instruct</span>
-            {copied ? <Check className="h-3.5 w-3.5 text-emerald" /> : <Copy className="h-3 w-3 text-muted" />}
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1 md:pt-0">
+            {/* Copy CLI command pill */}
+            <button
+              type="button"
+              onClick={handleCopyCommand}
+              title="Click to copy Ollama launch command"
+              className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-[11px] text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Terminal className="h-3.5 w-3.5 text-electric" />
+              <span>ollama run qwen2.5:7b-instruct</span>
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald" /> : <Copy className="h-3 w-3 text-muted" />}
+            </button>
 
-          {/* Re-test button */}
-          <button
-            type="button"
-            onClick={checkProviderStatus}
-            disabled={isTesting}
-            title="Re-test local Ollama connection"
-            className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isTesting ? "animate-spin text-electric" : ""}`} />
-          </button>
+            {/* Re-test button — re-checks local Ollama specifically, distinct
+             *  from "Run in this browser" below which needs no re-testing. */}
+            <button
+              type="button"
+              onClick={checkProviderStatus}
+              disabled={isTesting}
+              title="Re-test local Ollama connection"
+              className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isTesting ? "animate-spin text-electric" : ""}`} />
+            </button>
 
-          {/* Settings button */}
-          <button
-            type="button"
-            onClick={() => openSettings("ai-providers")}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
-          >
-            <Key className="h-3.5 w-3.5" />
-            <span>{hasCloudConfiguration ? "Test configured model" : "Add a cloud key"}</span>
-            <ArrowRight className="h-3 w-3" />
-          </button>
+            {/* Run in this browser — free, zero-install, real download+run
+             *  confined to the browser's own sandbox (WebGPU). Only shown
+             *  when the browser actually supports WebGPU, since it cannot
+             *  work otherwise. */}
+            {webGpuAvailable && (
+              <button
+                type="button"
+                onClick={handleRunInBrowser}
+                disabled={Boolean(webLlmProgress)}
+                title="Download and run a small model directly in this browser tab — no install"
+                className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+              >
+                <Globe className="h-3.5 w-3.5 text-electric" />
+                <span>Run in this browser</span>
+              </button>
+            )}
 
-          {/* Dismiss button */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            aria-label="Dismiss banner"
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
+            {/* Settings button */}
+            <button
+              type="button"
+              onClick={() => openSettings("ai-providers")}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-electric to-gold px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
+            >
+              <Key className="h-3.5 w-3.5" />
+              <span>{hasCloudConfiguration ? "Test configured model" : "Add a cloud key"}</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+
+            {/* Dismiss button */}
+            <button
+              type="button"
+              onClick={handleDismiss}
+              aria-label="Dismiss banner"
+              className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {webLlmProgress && (
+            <WebLlmIndicator progressText={webLlmProgress.text} progressPercent={webLlmProgress.progress} />
+          )}
+          {webLlmError && <p className="text-[11px] text-crimson">{webLlmError}</p>}
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import ReactMarkdown from "react-markdown";
@@ -42,6 +43,16 @@ export function Markdown({ content, size = "sm" }: { content: string; size?: "sm
           ),
           th: (props) => <th className="border-b border-border-metal bg-sunken px-2.5 py-1.5 font-semibold" {...props} />,
           td: (props) => <td className="border-b border-border-metal px-2.5 py-1.5 align-top" {...props} />,
+          img: (props) => (
+            <span className="my-3 block overflow-hidden rounded-xl border border-border-metal bg-[#0B1220] p-1 shadow-md">
+              <img
+                {...props}
+                alt={props.alt || "Visual asset"}
+                className="max-h-96 w-full rounded-lg object-contain"
+                loading="lazy"
+              />
+            </span>
+          ),
         }}
       >
         {content}
