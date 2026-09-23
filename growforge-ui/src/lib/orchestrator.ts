@@ -39,12 +39,20 @@ import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
 
 const WEIGHTS = { plan: 10, research: 15, departments: 40, reconcile: 10, qa: 10, final: 15 };
 
-const EVIDENCE_RULES = `EVIDENCE RULES & STRATEGIC CHALLENGER DIRECTIVE (non-negotiable):
+/** A function, not a module-load-time const, since this process can run for
+ *  days under PM2 — a stale baked-in date would silently drift. Local models
+ *  in particular have no other grounding for "today" and were observed
+ *  reasoning from training-data-era years (e.g. writing "2025 Q3" timelines
+ *  for a 2026 brief) without this. */
+function evidenceRules(): string {
+  const todayLine = `TODAY'S REAL-WORLD DATE is ${new Date().toISOString().slice(0, 10)}. Use this for all date-dependent reasoning (quarters, years, timelines) — do not infer or assume a date from training data.\n\n`;
+  return `${todayLine}EVIDENCE RULES & STRATEGIC CHALLENGER DIRECTIVE (non-negotiable):
 1. The RESEARCH DOSSIER is your only source of facts about the market, prices, costs, ad benchmarks, competitors, platforms and regulations. When you use one, cite it inline as [n] using the dossier's source numbers.
 2. Never invent statistics, prices, percentages, market sizes, or named companies. If the plan needs a number that is not in the dossier, either label it "(estimate — verify)" or list it as an open question.
 3. STRATEGIC RED-TEAM & CHALLENGER PUSHBACK: If any client requirement, assumption, or user proposal carries realistic deliverability, low-ROI, poor conversion, or execution risks (e.g. unrealistic timelines, bloated/misallocated budgets, low-performing channels, missing tracking), you MUST challenge it constructively. Quote the risk, cite authentic benchmark evidence or research logic, and propose a high-ROI alternative aligned with GrowForge Digital's vision.
 4. You PROPOSE; you never EXECUTE. Recommend budgets and actions — never imply money has been spent or commitments made.
 5. Be specific to this exact client. Advice that would apply unchanged to any business is not acceptable.`;
+}
 
 interface Assignment {
   departmentId: string;
@@ -542,7 +550,7 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
     }
 
     updateStep(jobId, stepId, { percent: 40, activity: "Drafting department section" });
-    const system = `${loadInstructions(dept.file)}${blueprintContext}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${EVIDENCE_RULES}`;
+    const system = `${loadInstructions(dept.file)}${blueprintContext}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${evidenceRules()}`;
     const user = `${gatherTask}${extraFindings ? `\n\nADDITIONAL RESEARCH YOU GATHERED:\n${extraFindings}` : ""}\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
 
     try {
@@ -574,7 +582,7 @@ function draftsBlock(drafts: Draft[]): string {
 async function runReconcile(jobId: string, drafts: Draft[], dossier: Dossier): Promise<string> {
   updateStep(jobId, "reconcile", { status: "active", percent: 20, activity: "Comparing drafts for conflicts and gaps", startedAt: now() });
 
-  const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ chairing the cross-department review of a client plan.\n\n${EVIDENCE_RULES}`;
+  const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ chairing the cross-department review of a client plan.\n\n${evidenceRules()}`;
   const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nRESEARCH SOURCE INDEX:\n${dossier.sources.map((s, i) => `[${i + 1}] ${s.title}`).join("\n") || "(no verified sources)"}
 
 Run the review as a record of the team discussion, in Markdown:
@@ -603,7 +611,7 @@ async function runQa(jobId: string, drafts: Draft[], review: string, dossier: Do
   updateStep(jobId, "qa", { status: "active", percent: 20, activity: "Checking every claim against sources", startedAt: now() });
   logJobStateChange(getJob(jobId)!);
 
-  const system = `${loadInstructions(QA.file)}\n\n---\n\nYou are GrowForge's independent QA reviewer. You do not rewrite the plan; you find what is wrong with it.\n\n${EVIDENCE_RULES}`;
+  const system = `${loadInstructions(QA.file)}\n\n---\n\nYou are GrowForge's independent QA reviewer. You do not rewrite the plan; you find what is wrong with it.\n\n${evidenceRules()}`;
   const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nHQ TEAM REVIEW:\n${review}
 
 Produce, in Markdown:
@@ -633,7 +641,7 @@ async function runFinal(jobId: string, drafts: Draft[], review: string, qa: stri
   updateStep(jobId, "final", { status: "active", percent: 15, activity: "Writing the consolidated plan", startedAt: now() });
   logJobStateChange(getJob(jobId)!);
 
-  const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ consolidating departmental work into one client-ready plan.\n\n${EVIDENCE_RULES}`;
+  const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ consolidating departmental work into one client-ready plan.\n\n${evidenceRules()}`;
   const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nTEAM REVIEW DECISIONS:\n${review}\n\nQA REVIEW (apply every required fix):\n${qa}
 
 Write the complete final plan in Markdown. Follow the team review's agreed direction and apply every QA fix. Keep inline [n] citations exactly as numbered in the dossier. Do NOT write a sources list — it is appended automatically.
