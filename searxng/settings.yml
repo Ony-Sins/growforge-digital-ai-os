@@ -1,0 +1,39 @@
+# SearXNG configuration for GrowForge Digital AI OS
+use_default_settings: true
+
+server:
+  secret_key: "3f9a7d2b8e1c4a5f6e0b9d8c7a1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e"
+  bind_address: "127.0.0.1"
+  port: 8088
+  base_url: "http://localhost:8088/"
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "auto"
+  formats:
+    - html
+    - json
+
+engines:
+  - name: google
+    engine: google
+    shortcut: go
+  - name: bing
+    engine: bing
+    shortcut: bi
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+  - name: wikidata
+    engine: wikidata
+    shortcut: wd
+  - name: github
+    engine: github
+    shortcut: gh
+  - name: arxiv
+    engine: arxiv
+    shortcut: ar
