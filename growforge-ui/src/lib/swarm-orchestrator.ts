@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { chatComplete } from "@/lib/llm";
+import { chatComplete, jobPrefersCloud } from "@/lib/llm";
 import { getDefaultTools, Tool } from "@/lib/tools";
 import { transferTaskTool, setTransferTaskHandler, TaskTransferPayload } from "@/lib/tools/transferTask";
 import { completeDirectiveTool, setCompleteDirectiveHandler, DirectiveCompletionPayload } from "@/lib/tools/completeDirective";
@@ -610,7 +610,7 @@ async function runSwarmExecutionLoop(
         } else {
           modelResponse = await chatComplete(systemPrompt, [{ role: "user", content: userPrompt }], {
             maxTokens: 1500,
-            preferCloud: true,
+            preferCloud: jobPrefersCloud(),
           });
         }
       } catch (err) {

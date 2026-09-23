@@ -1,12 +1,12 @@
-import { chatComplete } from "@/lib/llm";
+import { chatComplete, jobPrefersCloud } from "@/lib/llm";
 import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions, hashInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
 import { runToolLoop, getDefaultTools, type MediaItem } from "@/lib/tools";
 import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
 import { createConsultation, getConsultation, markConsultationTimedOut } from "@/lib/consultationStore";
 import { formatUserMemoryPrompt, recordLearnedObservation, recordExplicitRejection } from "@/lib/userMemory";
-import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
-import { selectVaultAgent, logVaultDispatchRecommendation } from "@/lib/vaultDispatch";
+import { selectVaultAgent, logVaultDispatchRecommendation, type VaultDispatchRecommendation } from "@/lib/vaultDispatch";
+import { getVaultCapability } from "@/lib/vaultMatcher";
 import {
   addLiveNote,
   addRevisionEntry,
@@ -18,6 +18,7 @@ import {
   type Job,
   type JobStep,
 } from "@/lib/jobStore";
+import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
 
 /**
  * The multi-agent pipeline behind a confirmed brief:
@@ -49,12 +50,21 @@ interface Assignment {
   departmentId: string;
   task: string;
   activity: string;
+  vaultRecommendation?: VaultDispatchRecommendation;
 }
 
 interface Plan {
   title: string;
   assignments: Assignment[];
   researchQuestions: string[];
+}
+
+/** Formats job-scoped specialist blueprint context to enrich department instructions. */
+function formatBlueprintContext(rec: VaultDispatchRecommendation): string {
+  const cap = getVaultCapability(rec.selectedAgentId);
+  const summary = cap?.summary || rec.selectedAgentName;
+  const tools = cap?.tools && cap.tools.length > 0 ? cap.tools.join(", ") : "Standard department toolset";
+  return `\n\n---\n\nSPECIALIST BLUEPRINT CONTEXT (Job-Scoped):\nFor this specific job, draw on the following specialist expertise from the GrowForge Specialist Blueprint Library:\n- Specialist Blueprint: ${rec.selectedAgentName} (${rec.selectedAgentCategory})\n- Domain Expertise & Focus: ${summary}\n- Specialized Toolset: ${tools}\n\nGovernance Rule: Your core department instructions and GrowForge standards above remain primary and authoritative. Use this specialist blueprint's domain lens, technical depth, and specific methodology to enrich your department draft.`;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -91,7 +101,7 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, index: nu
 }
 
 async function ask(system: string, user: string, maxTokens: number): Promise<{ text: string; provider: string }> {
-  return withRetry(() => chatComplete(system, [{ role: "user", content: user }], { maxTokens, preferCloud: true }));
+  return withRetry(() => chatComplete(system, [{ role: "user", content: user }], { maxTokens, preferCloud: jobPrefersCloud() }));
 }
 
 function extractJson(text: string): unknown {
@@ -216,6 +226,18 @@ Rules:
     ];
   }
 
+  // Step 1: System-1 Specialist Blueprint Dispatch & Scoped Attachment (per-department)
+  try {
+    const briefText = currentBrief(job.id);
+    for (const a of assignments) {
+      const vaultRecommendation = await selectVaultAgent(briefText, a.departmentId);
+      logVaultDispatchRecommendation(job.id, vaultRecommendation, a.departmentId);
+      a.vaultRecommendation = vaultRecommendation;
+    }
+  } catch (err) {
+    console.warn(`[orchestrator] vaultDispatch observation skipped for job ${job.id}:`, err);
+  }
+
   const plan: Plan = {
     title: typeof parsed?.title === "string" && parsed.title.trim() ? parsed.title.trim().slice(0, 60) : job.title,
     assignments,
@@ -268,17 +290,6 @@ Rules:
     department: "GrowForge HQ",
   });
   logJobStateChange(getJob(job.id)!);
-
-  // Step 1: System-1 Vault Dispatch Instrumentation (Log-Only Observability, per-department)
-  try {
-    const briefText = currentBrief(job.id);
-    for (const a of assignments) {
-      const vaultRecommendation = await selectVaultAgent(briefText, a.departmentId);
-      logVaultDispatchRecommendation(job.id, vaultRecommendation, a.departmentId);
-    }
-  } catch (err) {
-    console.warn(`[orchestrator] vaultDispatch observation skipped for job ${job.id}:`, err);
-  }
 
   return plan;
 }
@@ -496,8 +507,42 @@ async function runDepartments(jobId: string, assignments: Assignment[]): Promise
       console.error(`[orchestrator] tool-gathering failed for ${stepId}, drafting without it:`, err);
     }
 
+    // Step 2: System-1 Specialist Blueprint Integration (Job-Scoped Context)
+    let blueprintContext = "";
+    const rec = a.vaultRecommendation ?? await selectVaultAgent(currentBrief(jobId), a.departmentId).catch(() => null);
+    if (rec) {
+      if (rec.band === "direct") {
+        blueprintContext = formatBlueprintContext(rec);
+      } else if (rec.band === "confirm") {
+        try {
+          const approval = createApproval({
+            jobId,
+            jobTitle: getJob(jobId)?.title ?? jobId,
+            stepId,
+            stepLabel: `${dept.name} Specialist Blueprint`,
+            toolName: "apply_specialist_blueprint",
+            args: {
+              specialistId: rec.selectedAgentId,
+              specialistName: rec.selectedAgentName,
+              category: rec.selectedAgentCategory,
+              confidence: rec.confidence,
+              reason: `Laya confidence ${Math.round(rec.confidence * 100)}% fell in confirmation band (0.50-0.85). Requesting approval to apply specialist blueprint context.`,
+            },
+          });
+          updateStep(jobId, stepId, { activity: `Awaiting blueprint approval: ${rec.selectedAgentName}` });
+          const isApproved = await waitForApproval(approval.id);
+          if (isApproved) {
+            blueprintContext = formatBlueprintContext(rec);
+          }
+        } catch (err) {
+          console.warn(`[orchestrator] Blueprint approval check failed for ${stepId}, continuing with generic department:`, err);
+        }
+      }
+      // If band === "escalate" -> blueprintContext stays empty (generic department behavior)
+    }
+
     updateStep(jobId, stepId, { percent: 40, activity: "Drafting department section" });
-    const system = `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${EVIDENCE_RULES}`;
+    const system = `${loadInstructions(dept.file)}${blueprintContext}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${EVIDENCE_RULES}`;
     const user = `${gatherTask}${extraFindings ? `\n\nADDITIONAL RESEARCH YOU GATHERED:\n${extraFindings}` : ""}\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
 
     try {

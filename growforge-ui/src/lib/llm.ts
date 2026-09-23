@@ -97,6 +97,16 @@ export function setStrategy(strategy: LlmStrategy): void {
   runtimeStrategy = strategy;
 }
 
+/** Whether long-form job work (departments/HQ/QA/final, tool-loop drafting)
+ *  should prefer cloud providers over free local Ollama in "auto" strategy.
+ *  Defaults to false (local-first) since that's this project's current
+ *  budget reality — flip JOB_PREFER_CLOUD=true in env once cloud spend is
+ *  affordable again, no code change needed. Read live (not cached) so a
+ *  runtime env change or restart picks it up immediately. */
+export function jobPrefersCloud(): boolean {
+  return (process.env.JOB_PREFER_CLOUD ?? "").toLowerCase() === "true";
+}
+
 /** Vault value wins over env when both are set — lets an owner override a
  *  deploy-time key live from the UI without touching server env. */
 function resolveApiKey(provider: CloudProvider): string | null {

@@ -50,6 +50,10 @@ export interface VaultMatchResult extends VaultCapabilityRecord {
 
 const VAULT_CAPABILITIES: VaultCapabilityRecord[] = vaultDataRaw as VaultCapabilityRecord[];
 
+export function getVaultCapability(id: string): VaultCapabilityRecord | undefined {
+  return VAULT_CAPABILITIES.find((rec) => rec.id === id);
+}
+
 /** Common English stop words filtered during tokenization to prevent low-signal bias. */
 const STOP_WORDS = new Set([
   "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",

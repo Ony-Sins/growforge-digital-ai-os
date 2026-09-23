@@ -224,14 +224,14 @@ export function VaultLibraryOverlay() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-heading text-base md:text-lg font-bold text-white tracking-wide">
-                Vault Capability Library
+                Specialist Blueprint Library
               </h1>
               <span className="rounded-full border border-[#0078FF]/40 bg-[#0078FF]/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-[#0078FF]">
-                {vaultData.length} AGENTS
+                {vaultData.length} BLUEPRINTS
               </span>
             </div>
             <p className="text-xs text-[#CCCCCC] hidden sm:block">
-              {vaultData.length} specialized agency agents, tooling declarations, and authorization gates.
+              {vaultData.length} specialized agency blueprints, tooling declarations, and authorization gates.
             </p>
           </div>
         </div>
@@ -240,7 +240,7 @@ export function VaultLibraryOverlay() {
           <button
             type="button"
             onClick={closeVaultLibrary}
-            aria-label="Close Vault Library"
+            aria-label="Close Blueprint Library"
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#333333] bg-[#0B1220] text-[#CCCCCC] transition-all hover:border-[#0078FF] hover:text-white"
           >
             <X className="h-4 w-4" />
@@ -258,7 +258,7 @@ export function VaultLibraryOverlay() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search agents by name, domain role, or tool dependency..."
+              placeholder="Search blueprints by name, domain role, or tool dependency..."
               className="w-full rounded-xl border border-[#333333] bg-[#0B1220] py-2 pl-10 pr-10 text-xs md:text-sm text-white placeholder-[#94a3b8] transition-colors focus:border-[#0078FF] focus:outline-none focus:ring-1 focus:ring-[#0078FF]/40"
             />
             {searchQuery && (
@@ -351,7 +351,7 @@ export function VaultLibraryOverlay() {
         <div className="mx-auto mt-2.5 flex max-w-7xl items-center justify-between text-[11px] text-[#CCCCCC]">
           <div>
             Showing <span className="font-semibold text-white">{filteredAgents.length}</span> of{" "}
-            <span className="font-semibold text-white">{vaultData.length}</span> cataloged agents
+            <span className="font-semibold text-white">{vaultData.length}</span> cataloged blueprints
             {selectedCategory !== "all" && (
               <span className="ml-1.5 rounded bg-[#0078FF]/10 px-1.5 py-0.5 text-[#0078FF]">
                 in {selectedCategory}
@@ -379,7 +379,7 @@ export function VaultLibraryOverlay() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0B1220] border border-[#333333] text-[#94a3b8]">
                 <Search className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 font-heading text-base font-semibold text-white">No agents match these filters</h3>
+              <h3 className="mt-4 font-heading text-base font-semibold text-white">No blueprints match these filters</h3>
               <p className="mt-1 text-xs text-[#CCCCCC] max-w-md">
                 No catalog entries found for this keyword or gate selection. Clear filters to view the full roster.
               </p>

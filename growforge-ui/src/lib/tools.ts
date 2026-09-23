@@ -1,4 +1,4 @@
-import { chatComplete } from "@/lib/llm";
+import { chatComplete, jobPrefersCloud } from "@/lib/llm";
 import { researchQuestion, isResearchAvailable } from "@/lib/research";
 import { listConnectors, invokeConnector } from "@/lib/connectorStore";
 import { piperTool } from "@/lib/tools/piper";
@@ -180,7 +180,7 @@ export async function runToolLoop(opts: ToolLoopOptions): Promise<ToolLoopResult
   setConsultationHandler(requestConsultation ?? null);
   try {
     for (let step = 0; step < maxSteps; step++) {
-      const result = await chatComplete(system, [{ role: "user", content: transcript }], { maxTokens, preferCloud: true });
+      const result = await chatComplete(system, [{ role: "user", content: transcript }], { maxTokens, preferCloud: jobPrefersCloud() });
       provider = result.provider;
 
       const decision = extractJson(result.text) as

@@ -4,6 +4,7 @@ import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import { logContextEvent } from "@/lib/spatial/dailyContext";
 import type { Source } from "@/lib/research";
 import type { MediaItem } from "@/lib/tools";
+import type { VaultDispatchRecommendation } from "@/lib/vaultDispatch";
 
 export type { MediaItem };
 
@@ -88,7 +89,7 @@ export interface Job {
   approvedBy?: string;
   /** Snapshots that let resumePipeline() redo just one stage without
    *  re-deriving everything from scratch — see orchestrator.ts. */
-  planSnapshot?: { title: string; assignments: { departmentId: string; task: string; activity: string }[] };
+  planSnapshot?: { title: string; assignments: { departmentId: string; task: string; activity: string; vaultRecommendation?: VaultDispatchRecommendation }[] };
   dossierSnapshot?: { text: string; sources: Source[]; verified: boolean };
 }
 
@@ -225,7 +226,21 @@ export function updateJob(jobId: string, patch: Partial<Job>): void {
   persist();
 
   if (patch.status === "done") {
-    void logContextEvent(`Completed job: ${job.title}`);
+    // Extract real outcome/verdict summary (favoring workflow/outcome, never naming internal blueprint IDs)
+    const finalStep = job.steps.find((s) => s.id === "final" || s.kind === "final");
+    const qaStep = job.steps.find((s) => s.id === "qa" || s.kind === "qa");
+    let outcomeNote = "Deliverable finalized & verified";
+    const rawOutput = patch.finalOutput || finalStep?.output || qaStep?.output || "";
+    if (rawOutput) {
+      const candidateLine = rawOutput
+        .split("\n")
+        .map((l) => l.trim())
+        .find((l) => l && !l.startsWith("#") && !l.startsWith(">") && l.length > 15);
+      if (candidateLine) {
+        outcomeNote = candidateLine.slice(0, 100);
+      }
+    }
+    void logContextEvent(`Completed job "${job.title}" — ${outcomeNote}`);
     telemetryStore.emitEvent({
       type: "job_completed",
       lobe: "neural_core",
