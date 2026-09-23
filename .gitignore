@@ -6,6 +6,10 @@
 .env.local
 .env.*.local
 
+# Local SearXNG runtime config — contains a real secret_key; commit only
+# searxng/settings.example.yml, never this file.
+searxng/settings.yml
+
 # OS/editor junk
 .DS_Store
 Thumbs.db

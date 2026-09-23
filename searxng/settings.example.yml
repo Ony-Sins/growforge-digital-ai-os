@@ -1,8 +1,12 @@
 # SearXNG configuration for GrowForge Digital AI OS
+#
+# Copy this file to settings.yml (gitignored - never commit that copy) and
+# replace secret_key with a real random value:
+#   python3 -c "import secrets; print(secrets.token_hex(32))"
 use_default_settings: true
 
 server:
-  secret_key: "3f9a7d2b8e1c4a5f6e0b9d8c7a1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e"
+  secret_key: "REPLACE_WITH_A_REAL_RANDOM_64_CHAR_HEX_SECRET"
   bind_address: "127.0.0.1"
   port: 8088
   base_url: "http://localhost:8088/"
