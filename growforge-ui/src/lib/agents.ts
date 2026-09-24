@@ -112,7 +112,6 @@ export const navSections = [
   {
     label: "Overview",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: "LayoutDashboard" },
       { id: "vault", label: "Vault Library", icon: "Library" },
       { id: "activity", label: "Real-time Activity", icon: "Activity" },
       { id: "roster", label: "Agent Roster", icon: "Bot" },

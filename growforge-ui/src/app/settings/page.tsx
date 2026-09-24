@@ -10,5 +10,5 @@ import { redirect } from "next/navigation";
  *  longer stranded behind an unlinked URL. This route stays only so an old
  *  bookmark lands somewhere real. */
 export default function SettingsPage() {
-  redirect("/");
+  redirect("/workspace?panel=settings");
 }

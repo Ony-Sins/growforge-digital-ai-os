@@ -10,5 +10,5 @@ import { redirect } from "next/navigation";
  *  Providers & Connectors live inline on the dashboard itself. This route
  *  stays only so old bookmarks/links still land somewhere real. */
 export default function AdminPage() {
-  redirect("/");
+  redirect("/workspace");
 }

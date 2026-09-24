@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   Bot,
@@ -37,6 +39,7 @@ const ICONS: Record<string, LucideIcon> = {
 
 export function Sidebar() {
   const { activeView, setActiveView, companyName } = useAppState();
+  const router = useRouter();
   const agents = useLiveAgents();
   const { telemetry } = useTelemetry();
   const isPipelineActive = telemetry.executionState === "processing";
@@ -56,8 +59,8 @@ export function Sidebar() {
       <div className="flex h-18 items-center border-b border-[#333333] px-3 py-3">
         <button
           type="button"
-          onClick={() => setActiveView("dashboard")}
-          title="Back to dashboard home"
+          onClick={() => router.push("/")}
+          title="Back to the dashboard"
           className="flex w-full items-center gap-3 bg-[#111c34] shadow-sm border border-[#333333] rounded-xl px-3 py-2 text-left transition-colors hover:bg-[#18233c]"
         >
           <span className="relative flex h-9 w-9 shrink-0 items-center justify-center">
@@ -117,19 +120,25 @@ export function Sidebar() {
           </div>
         ))}
 
-        {/* 3D Spatial Canvas (Continuous Zoomable Home -> Brain -> Dashboard) */}
-        <div className="mb-6">
+        {/* 3D Spatial Canvas & CORE Pipeline */}
+        <div className="mb-6 space-y-1.5">
           <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
-            Next-Gen Experience
+            Spatial
           </p>
           <a
-            href="/canvas"
-            className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm font-medium bg-gradient-to-r from-cyan-500/15 via-pink-500/15 to-amber-500/15 border border-cyan-500/30 text-white hover:border-cyan-400 shadow-sm transition-all"
+            href="/core"
+            className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-sm font-medium bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 border border-emerald-500/30 text-white hover:border-emerald-400 shadow-sm transition-all"
           >
-            <Sparkles className="h-4 w-4 shrink-0 text-cyan-300 animate-pulse" />
-            <span className="truncate">3D Spatial Canvas</span>
-            <span className="ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">3D</span>
+            <Zap className="h-4 w-4 shrink-0 text-emerald-400" />
+            <span className="truncate">CORE</span>
           </a>
+          <Link
+            href="/"
+            className="group flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-sm font-medium bg-gradient-to-r from-cyan-500/15 via-pink-500/15 to-amber-500/15 border border-cyan-500/30 text-white hover:border-cyan-400 shadow-sm transition-all"
+          >
+            <Sparkles className="h-4 w-4 shrink-0 text-cyan-300" />
+            <span className="truncate">Dashboard</span>
+          </Link>
         </div>
       </nav>
 

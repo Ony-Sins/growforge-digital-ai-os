@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { canAccessAgentWith, type Role } from "@/lib/security";
 
 export type ActiveView =
@@ -181,6 +182,7 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
   const [role, setRoleState] = useState<Role>("employee");
   const [unlockedAgentIds, setUnlockedAgentIds] = useState<string[]>([]);
   const [pinPromptTarget, setPinPromptTarget] = useState<PinPromptTarget>(null);
+  const router = useRouter();
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(() => initialLocation?.panel === "admin");
   const [adminDrawerTab, setAdminDrawerTab] = useState<"terminal" | "logs" | "diagnostics">(() => {
@@ -351,10 +353,16 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const openJob = useCallback(
     (jobId: string) => {
+      // Outside the workspace shell (e.g. the spatial dashboard) there is no
+      // project drawer to open — the job's live view is CORE.
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/workspace")) {
+        router.push(`/core?job=${encodeURIComponent(jobId)}`);
+        return;
+      }
       setActiveJobId(jobId);
       setActiveView("workflows");
     },
-    [setActiveView],
+    [setActiveView, router],
   );
 
   const openAgentPanel = useCallback((agentId: string) => setSelectedAgentId(agentId), []);

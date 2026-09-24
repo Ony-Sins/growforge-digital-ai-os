@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GraphNode, GraphLink, SpatialGraphData } from "@/lib/spatial/obsidianReader";
@@ -37,6 +38,9 @@ interface SpatialTelemetryData {
   telemetry: { executionState: string };
 }
 
+const DIVE_MS = 1150;
+const DIVE_END_Z = -70;
+
 interface SpatialCanvasProps {
   className?: string;
   initialTier?: ZoomTierName;
@@ -56,6 +60,13 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
   const [currentTier, setCurrentTier] = useState<ZoomTierName>(initialTier);
+  const [isDiving, setIsDiving] = useState(false);
+  const diveRef = useRef<{ start: number; startZ: number; navigated: boolean } | null>(null);
+  const router = useRouter();
+  const routerRef = useRef(router);
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
   const [isCinema, setIsCinema] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayTime, setReplayTime] = useState(0);
@@ -164,6 +175,19 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       clearInterval(interval);
     };
   }, [refreshData]);
+
+  // Dashboard → CORE: the camera accelerates through the core (nodes streak
+  // past, FOV widens, exposure blows out to white) and CORE emerges from the
+  // light on the other side. Reduced-motion users get a plain navigation.
+  const handleEnterCore = useCallback(() => {
+    if (diveRef.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !cameraRef.current) {
+      routerRef.current.push("/core");
+      return;
+    }
+    diveRef.current = { start: performance.now(), startZ: cameraRef.current.position.z, navigated: false };
+    setIsDiving(true);
+  }, []);
 
   // Fast-travel zoom navigation
   const handleSelectTier = (tier: ZoomTierName) => {
@@ -338,19 +362,40 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth camera interpolation for fast-travel zoom only — once the user
-      // manually drags/zooms, syncTargetToCamera() keeps this a no-op so it
-      // never fights their input (see the OrbitControls "change" listener above).
-      if (Math.abs(camera.position.z - targetCameraZRef.current) > 1.5) {
-        camera.position.z += (targetCameraZRef.current - camera.position.z) * 0.08;
-      }
+      const dive = diveRef.current;
+      if (dive) {
+        // Accelerating (cubic) run straight through the core, with FOV warp,
+        // a slight roll and exposure blow-out. OrbitControls is bypassed —
+        // it would clamp the camera back out to its min distance.
+        const t = Math.min((performance.now() - dive.start) / DIVE_MS, 1);
+        const e = t * t * t;
+        controls.enabled = false;
+        camera.position.z = dive.startZ + (DIVE_END_Z - dive.startZ) * e;
+        camera.position.x *= 0.92;
+        camera.position.y *= 0.92;
+        camera.rotation.z = e * 0.6;
+        camera.fov = 48 + 72 * e;
+        camera.updateProjectionMatrix();
+        renderer.toneMappingExposure = 1.15 + 3.4 * e * e;
+        if (t >= 1 && !dive.navigated) {
+          dive.navigated = true;
+          routerRef.current.push("/core?warp=1");
+        }
+      } else {
+        // Smooth camera interpolation for fast-travel zoom only — once the user
+        // manually drags/zooms, syncTargetToCamera() keeps this a no-op so it
+        // never fights their input (see the OrbitControls "change" listener above).
+        if (Math.abs(camera.position.z - targetCameraZRef.current) > 1.5) {
+          camera.position.z += (targetCameraZRef.current - camera.position.z) * 0.08;
+        }
 
-      // controls.update() MUST run before any .project(camera) calls below —
-      // it reconciles OrbitControls' internal state with the camera position
-      // we may have just mutated above. Projecting before this reconciliation
-      // used a one-frame-stale transform during active zoom, which is what
-      // caused the core glow to visibly flicker/dim mid-zoom (reported live).
-      controls.update();
+        // controls.update() MUST run before any .project(camera) calls below —
+        // it reconciles OrbitControls' internal state with the camera position
+        // we may have just mutated above. Projecting before this reconciliation
+        // used a one-frame-stale transform during active zoom, which is what
+        // caused the core glow to visibly flicker/dim mid-zoom (reported live).
+        controls.update();
+      }
 
       // Update current zoom tier based on real camera distance
       const z = camera.position.length();
@@ -715,8 +760,10 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       {/* 3D Canvas Viewport */}
       <div ref={containerRef} className="w-full h-full inset-0 absolute" />
 
-      {/* Spatial HUD Overlay */}
+      {/* Spatial HUD Overlay — dissolves while the camera dives into the core */}
+      <div className={isDiving ? "pointer-events-none opacity-0 transition-opacity duration-300" : "transition-opacity duration-300"}>
       <SpatialHud
+        onEnterCore={handleEnterCore}
         currentTier={currentTier}
         onSelectTier={handleSelectTier}
         categories={graphData?.categories || []}
@@ -750,6 +797,9 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
           setIsChatOpen(true);
         }}
       />
+      </div>
+
+      {isDiving && <div className="dive-flash pointer-events-none absolute inset-0 z-50" aria-hidden />}
 
       {/* Note Reader Modal (Wikilinks & Markdown Previews) */}
       <NoteReaderModal

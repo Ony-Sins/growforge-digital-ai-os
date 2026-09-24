@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Bell, ChevronRight, CircuitBoard, LogOut, Search, Sparkles } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { StatusDot } from "@/components/ui/StatusDot";
@@ -24,6 +25,7 @@ function initialsFor(user: HeaderUser | null): string {
 
 export function Header({ user }: { user: HeaderUser | null }) {
   const { setActiveView, avatarUrl, logoUrl, companyName } = useAppState();
+  const router = useRouter();
   const pending = usePendingSummary();
   const pendingCount = pending.approvals + pending.consultations + pending.unapprovedPlans;
   const [notifOpen, setNotifOpen] = useState(false);
@@ -34,8 +36,8 @@ export function Header({ user }: { user: HeaderUser | null }) {
           element returns you to the dashboard home view. */}
       <button
         type="button"
-        onClick={() => setActiveView(companyName || logoUrl ? "dashboard" : "profile")}
-        aria-label="Back to dashboard home"
+        onClick={() => (companyName || logoUrl ? router.push("/") : setActiveView("profile"))}
+        aria-label="Back to dashboard"
         className="relative flex h-10 w-10 shrink-0 items-center justify-center bg-[#111827] shadow-sm border border-[#333333] rounded-xl p-1.5 transition-transform hover:scale-105 md:hidden overflow-hidden"
       >
         {logoUrl ? (
@@ -49,15 +51,15 @@ export function Header({ user }: { user: HeaderUser | null }) {
       <div className="flex min-w-0 items-center gap-2 text-sm">
         <button
           type="button"
-          onClick={() => setActiveView("dashboard")}
-          title="Back to dashboard home"
+          onClick={() => router.push("/")}
+          title="Back to the dashboard"
           className="flex shrink-0 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-[#111827]"
         >
           <CircuitBoard className="h-4 w-4 shrink-0 text-electric" />
-          <span className="text-[#CCCCCC] hover:text-white">Console</span>
+          <span className="text-[#CCCCCC] hover:text-white">Dashboard</span>
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-muted" />
-        <span className="truncate font-heading font-semibold text-white">Agent Dashboard</span>
+        <span className="truncate font-heading font-semibold text-white">Projects &amp; Workspace</span>
       </div>
 
       {/* Search */}

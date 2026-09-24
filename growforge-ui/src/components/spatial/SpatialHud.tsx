@@ -60,6 +60,8 @@ interface SpatialHudProps {
   isNoteOpen?: boolean;
   isChatOpen?: boolean;
   onOpenChat: (prompt?: string) => void;
+  /** Dive the camera through the core and arrive on the CORE page. */
+  onEnterCore?: () => void;
 }
 
 export function SpatialHud({
@@ -82,6 +84,7 @@ export function SpatialHud({
   isNoteOpen = false,
   isChatOpen = false,
   onOpenChat,
+  onEnterCore,
 }: SpatialHudProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -226,10 +229,19 @@ export function SpatialHud({
                   <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-amber-500/20 text-amber-300">MCP</span>
                 </button>
                 <Link
-                  href="/"
+                  href="/core"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-emerald-300 hover:bg-emerald-500/10 transition-all"
+                >
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    CORE
+                  </span>
+                </Link>
+                <Link
+                  href="/workspace"
                   className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  <span>Classic Command Deck</span>
+                  <span>Workspace (projects, vault, settings)</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
               </div>
@@ -623,6 +635,20 @@ export function SpatialHud({
             <span>Dashboard</span>
           </button>
         </div>
+
+        {/* Drill-down from the Dashboard tier into CORE */}
+        {currentTier === "dashboard" && (
+          <button
+            type="button"
+            onClick={onEnterCore}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-emerald-400/50 bg-emerald-500/15 backdrop-blur-2xl text-xs font-bold text-emerald-300 shadow-xl shadow-emerald-500/10 transition-all hover:bg-emerald-500/25 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            title="Dive into CORE — the live execution pipeline"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Enter CORE</span>
+            <span aria-hidden>&rarr;</span>
+          </button>
+        )}
 
         {/* AI Assistant Chat Quick Button */}
         <button

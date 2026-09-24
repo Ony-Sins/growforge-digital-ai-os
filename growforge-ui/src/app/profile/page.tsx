@@ -7,5 +7,5 @@ import { redirect } from "next/navigation";
  *  inside the main dashboard (see Workspace.tsx), right next to AI Brain.
  *  This route stays only so old bookmarks/links still land somewhere real. */
 export default function ProfilePage() {
-  redirect("/");
+  redirect("/workspace?panel=profile");
 }

@@ -267,3 +267,60 @@ kbd,
     animation: none;
   }
 }
+
+/* ── Dashboard → CORE warp ─────────────────────────────────────────────
+ * dive-flash: white-out at the end of the camera dive through the core.
+ * core-emerge / warp-burst / warp-streaks: CORE surfaces out of the light. */
+@keyframes dive-flash {
+  0%,
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes core-emerge {
+  0%,
+  30% {
+    opacity: 0;
+    filter: blur(18px) brightness(2);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+}
+@keyframes warp-burst {
+  0% {
+    transform: scale(0.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+@keyframes warp-streaks {
+  0% {
+    transform: scale(0.18) rotate(0deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(4.8) rotate(14deg);
+    opacity: 0;
+  }
+}
+.dive-flash {
+  background: radial-gradient(circle at center, #ffffff 0%, #a5f3fc 22%, #0e7490 58%, #050811 100%);
+  animation: dive-flash 1.15s ease-in both;
+}
+.core-emerge {
+  animation: core-emerge 1.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dive-flash,
+  .core-emerge {
+    animation: none;
+  }
+}

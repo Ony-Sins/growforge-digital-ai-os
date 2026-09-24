@@ -1,16 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  ArrowUpRight,
-  CheckCircle2,
-  Clock,
-  FolderKanban,
-  Send,
-  Sparkles,
-  Trophy,
-  Users,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, CheckCircle2, FolderKanban, Plus, Trophy, Zap } from "lucide-react";
 import type { JobSummary } from "@/lib/jobStore";
 import { AgentRosterOverlay } from "@/components/workspace/AgentRosterOverlay";
 import { NeedsAttention } from "@/components/workspace/NeedsAttention";
@@ -30,13 +22,7 @@ interface WorkspaceUser {
 }
 
 const JOB_POLL_INTERVAL_MS = 5000;
-
-const STARTER_PROMPTS = [
-  "Deploy Google & Meta Ads for P&E Flooring",
-  "Dhaka Drug Store GTM Launch Blueprint",
-  "Run cross-department strategic audit",
-  "Draft high-ticket B2B sales sequence",
-];
+const TEST_JOB_ID = /^job-(test|crash-test|research-verify)/;
 
 function sectionIdFor(view: ActiveView): string | null {
   switch (view) {
@@ -44,56 +30,23 @@ function sectionIdFor(view: ActiveView): string | null {
       return null;
     case "activity":
       return "section-operational";
-    case "workflows":
-      return "section-projects";
-    case "dashboard":
     default:
-      return "section-top";
+      return "section-projects";
   }
 }
 
-function resolveGreetingName(userPropName?: string | null, memoryProfileName?: string | null): string | null {
-  const candidate = (memoryProfileName || userPropName || "").trim();
-
-  if (!candidate || candidate.toLowerCase().startsWith("dev") || candidate.toLowerCase() === "preview") {
-    return null;
-  }
-
-  if (
-    /arif\s+md\.?\s*anjum\s+ony/i.test(candidate) ||
-    /\bony\b/i.test(candidate)
-  ) {
-    return "Ony";
-  }
-
-  const first = candidate.split(/\s+/)[0];
-  if (first.toLowerCase().startsWith("dev") || first.toLowerCase() === "preview") {
-    return null;
-  }
-
-  return first || null;
+function formatWhen(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export function Workspace({ user }: { user: WorkspaceUser | null }) {
-  const {
-    activeView,
-    activeViewToken,
-    openAdminDrawer,
-    openUserProfile,
-    openAgentRoster,
-    openVaultLibrary,
-    chatViewMode,
-    profileName,
-  } = useAppState();
+  const { activeView, activeViewToken, openUserProfile, openAgentRoster, openVaultLibrary, chatViewMode } = useAppState();
   const [flashSection, setFlashSection] = useState<string | null>(null);
-  const [jobs, setJobs] = useState<JobSummary[]>([]);
-  const [directiveText, setDirectiveText] = useState("");
-  const [isSubmittingDirective, setIsSubmittingDirective] = useState(false);
+  const [jobs, setJobs] = useState<JobSummary[] | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorJobId, setInspectorJobId] = useState<string | null>(null);
   const [inspectorShowFinal, setInspectorShowFinal] = useState(false);
-
-  const displayName = resolveGreetingName(user?.name, profileName);
 
   useEffect(() => {
     if (activeView === "brain") {
@@ -123,21 +76,20 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
 
   useEffect(() => {
     let unmounted = false;
-    async function loadWorkspaceData() {
+    async function loadJobs() {
       try {
-        const [jobsRes] = await Promise.all([
-          fetch("/api/jobs"),
-        ]);
-        if (!unmounted && jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          setJobs(Array.isArray(jobsData.jobs) ? jobsData.jobs : []);
+        const res = await fetch("/api/jobs");
+        if (!unmounted && res.ok) {
+          const data = await res.json();
+          const list: JobSummary[] = Array.isArray(data.jobs) ? data.jobs : [];
+          setJobs([...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
         }
       } catch (err) {
-        console.error("Failed to load workspace data:", err);
+        console.error("Failed to load projects:", err);
       }
     }
-    loadWorkspaceData();
-    const interval = setInterval(loadWorkspaceData, JOB_POLL_INTERVAL_MS);
+    void loadJobs();
+    const interval = setInterval(loadJobs, JOB_POLL_INTERVAL_MS);
     return () => {
       unmounted = true;
       clearInterval(interval);
@@ -145,43 +97,13 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
   }, []);
 
   const flash = (id: string) =>
-    flashSection === id
-      ? "ring-2 ring-electric/80 ring-offset-2 ring-offset-[#0B1220] transition-all duration-700"
-      : "";
+    flashSection === id ? "ring-2 ring-electric/80 ring-offset-2 ring-offset-[#0B1220] transition-all duration-700" : "";
 
-  function openInspector(jobId?: string, showFinal: boolean = false) {
-    setInspectorJobId(jobId ?? null);
+  function openInspector(jobId: string, showFinal: boolean) {
+    setInspectorJobId(jobId);
     setInspectorShowFinal(showFinal);
     setInspectorOpen(true);
   }
-
-  const handleDirectiveSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!directiveText.trim() || isSubmittingDirective) return;
-    setIsSubmittingDirective(true);
-    try {
-      const res = await fetch("/api/directives", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: directiveText.trim() }),
-      });
-      if (res.ok) {
-        setDirectiveText("");
-        const jobsRes = await fetch("/api/jobs");
-        if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          setJobs(Array.isArray(jobsData.jobs) ? jobsData.jobs : []);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to submit directive:", err);
-    } finally {
-      setIsSubmittingDirective(false);
-    }
-  };
-
-  const liveRunningJob = jobs.find((j) => j.status === "running");
-  const liveDoneJob = jobs.find((j) => j.status === "done");
 
   return (
     <main
@@ -189,223 +111,121 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
         chatViewMode === "docked" ? "pb-[45vh] lg:pb-0 lg:mr-96" : ""
       }`}
     >
-      <div className="mx-auto max-w-7xl space-y-4 md:space-y-5 p-4 md:p-6">
-        {/* Local Model or BYOK Onboarding Banner */}
+      <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
         <ByokOnboardingBanner />
 
-        {/* 1. Hero Command Bar — Clean, high-impact initial viewport */}
-        <div id="section-top" className={`space-y-3 rounded-2xl ${flash("section-top")}`}>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald animate-pulse" />
-                <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-emerald">
-                  GrowForge AI OS Online
-                </span>
-              </div>
-              <h1 className="mt-1 font-heading text-2xl md:text-3xl font-bold tracking-tight text-white">
-                {displayName ? `Good morning, ${displayName}` : "Good morning"}
-              </h1>
-              <p className="mt-0.5 text-xs md:text-sm text-[#CCCCCC] font-inter">
-                Issue an executive directive or monitor active autonomous multi-agent pipelines below.
+        {/* Projects — every card is a real job from the job store */}
+        <div id="section-projects" className={`space-y-4 rounded-2xl ${flash("section-projects")}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-electric" />
+              <h1 className="font-sora text-sm font-bold uppercase tracking-tight text-white">Projects</h1>
+              {jobs && <span className="font-mono text-xs text-muted">{jobs.length} on record</span>}
+            </div>
+            <Link
+              href="/core"
+              className="flex items-center gap-1.5 rounded-xl border border-electric/40 bg-electric/10 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-electric/20"
+            >
+              <Plus className="h-3.5 w-3.5 text-electric" />
+              New brief in CORE
+            </Link>
+          </div>
+
+          {jobs === null && <p className="font-mono text-xs text-muted">Loading projects…</p>}
+
+          {jobs?.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-[#333333] p-10 text-center">
+              <p className="font-sora text-sm font-bold text-white">No projects yet</p>
+              <p className="mt-1 text-xs text-[#CCCCCC]">
+                Launch a brief from CORE, or describe a project to the AI Assistant, and it will appear here as real work completes.
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => openAdminDrawer("logs")}
-              className="flex items-center gap-1.5 self-start md:self-auto rounded-xl border border-[#333333] bg-[#111827] px-3.5 py-2 text-xs font-medium text-[#CCCCCC] backdrop-blur-xl transition-colors hover:border-electric/50 hover:text-white"
-            >
-              <span>View all runs</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-electric" />
-            </button>
-          </div>
-
-          {/* Directive Input Command Bar */}
-          <form
-            onSubmit={(e) => handleDirectiveSubmit(e)}
-            className="relative flex items-center rounded-2xl border border-[#333333] bg-[#0B1220]/80 backdrop-blur-xl p-1.5 shadow-2xl transition-all focus-within:border-electric/70 focus-within:ring-2 focus-within:ring-electric/20"
-          >
-            <div className="flex items-center pl-3 text-electric">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <input
-              type="text"
-              value={directiveText}
-              onChange={(e) => setDirectiveText(e.target.value)}
-              placeholder="Enter directive or client goal (e.g. 'Deploy Google Ads and marketing campaign for P&E Flooring')..."
-              className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-white placeholder:text-muted outline-none font-inter"
-            />
-            <button
-              type="submit"
-              disabled={isSubmittingDirective || !directiveText.trim()}
-              className="btn-primary-cta shrink-0 flex items-center gap-1.5 px-4 py-2 text-xs transition-all disabled:opacity-40"
-            >
-              {isSubmittingDirective ? (
-                <span className="animate-spin text-sm">↻</span>
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-              <span className="hidden sm:inline">Dispatch Team →</span>
-            </button>
-          </form>
-
-          {/* Starter Prompt Chips */}
-          <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <span className="font-inter text-xs text-[#CCCCCC]">Quick directives:</span>
-            {STARTER_PROMPTS.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => {
-                  setDirectiveText(prompt);
-                }}
-                className="rounded-lg border border-[#333333] bg-[#0B1220]/75 backdrop-blur-sm px-2.5 py-1 font-inter text-xs text-[#CCCCCC] transition-colors hover:border-electric hover:bg-electric/10 hover:text-white"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 2. Compact 2-Column "Active Pipelines" Card Grid */}
-        <div id="section-projects" className={`space-y-3 ${flash("section-projects")}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FolderKanban className="h-4 w-4 text-electric" />
-              <h2 className="font-sora font-bold text-white tracking-tight text-xs uppercase">Active Pipelines</h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => openInspector(jobs[0]?.id)}
-              className="flex items-center gap-1 font-inter text-xs font-medium text-electric hover:underline"
-            >
-              <span>Explore All Pipelines</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* Card 1: Active Execution Pipeline */}
-            <div className="rounded-2xl border border-[#333333] bg-[#0B1220]/75 backdrop-blur-xl hover:border-[#0078FF]/40 p-5 shadow-2xl transition-all flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-electric opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-electric" />
-                      </span>
-                      <span className="rounded bg-electric/15 px-2 py-0.5 font-mono text-[10px] font-bold text-electric uppercase">
-                        {liveRunningJob ? "Executing Live" : "In Progress"}
-                      </span>
-                      <span className="flex items-center gap-1 font-inter text-xs text-[#CCCCCC]">
-                        <Clock className="h-3 w-3 text-[#CCCCCC]" />
-                        1h 14m elapsed
-                      </span>
-                    </div>
-                    <h3 className="font-sora text-sm md:text-base font-bold text-white">
-                      {liveRunningJob?.title || "P&E Flooring Solutions — Automated Web Deployment"}
-                    </h3>
-                  </div>
-                  <span className="font-mono text-sm font-bold text-electric">
-                    {liveRunningJob ? `${liveRunningJob.percent}%` : "68%"}
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5 text-electric" />
-                      <span>3 agents active</span>
-                    </span>
-                    <span className="font-inter text-xs text-[#CCCCCC]">HQ Strategy · Web Dev · Meta Ads</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#1F2937]">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-electric to-gold transition-all duration-500"
-                      style={{ width: liveRunningJob ? `${liveRunningJob.percent}%` : "68%" }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-[#333333]/60 flex items-center justify-between">
-                <p className="font-inter text-xs text-[#CCCCCC] truncate max-w-[180px] sm:max-w-xs">
-                  {liveRunningJob ? "Autonomous cross-department review in progress" : "Deploying frontend codebase and syncing analytics"}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => openInspector(liveRunningJob?.id || jobs[0]?.id, false)}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220] px-3.5 py-1.5 font-inter text-xs font-semibold text-white hover:border-electric hover:bg-electric/10 transition-colors shrink-0"
+            {jobs?.map((job) => {
+              const running = job.status === "running";
+              const done = job.status === "done";
+              const isTest = TEST_JOB_ID.test(job.id);
+              return (
+                <div
+                  key={job.id}
+                  className="flex flex-col justify-between space-y-4 rounded-2xl border border-[#333333] bg-[#0B1220]/75 p-5 shadow-2xl backdrop-blur-xl transition-all hover:border-[#0078FF]/40"
                 >
-                  <span>Inspect Execution Graph</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-electric" />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 2: Completed Growth Strategy */}
-            <div className="rounded-2xl border border-[#333333] bg-[#0B1220]/75 backdrop-blur-xl hover:border-[#0078FF]/40 p-5 shadow-2xl transition-all flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald" />
-                      <span className="rounded bg-emerald/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald uppercase">
-                        Verified & Ready
+                      <span
+                        className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                          running ? "bg-electric/15 text-electric" : done ? "bg-emerald/15 text-emerald" : "bg-red-500/15 text-red-300"
+                        }`}
+                      >
+                        {running ? "Running" : done ? "Finished" : "Error"}
                       </span>
-                      <span className="flex items-center gap-1 font-inter text-xs text-[#CCCCCC]">
-                        <CheckCircle2 className="h-3 w-3 text-emerald" />
-                        8 departments finished
+                      <span className={`font-mono text-[10px] ${job.verified ? "text-emerald" : "text-amber-300"}`}>
+                        {job.verified ? "live research verified" : "unverified research"}
                       </span>
+                      {isTest && <span className="rounded border border-[#333333] px-1.5 py-0.5 font-mono text-[10px] text-muted">test</span>}
+                      {done && job.approvedAt && (
+                        <span className="flex items-center gap-1 font-mono text-[10px] text-emerald">
+                          <CheckCircle2 className="h-3 w-3" /> approved
+                        </span>
+                      )}
                     </div>
-                    <h3 className="font-sora text-sm md:text-base font-bold text-white">
-                      {liveDoneJob?.title || "Drug Store Launch in Dhaka"}
-                    </h3>
+                    <h3 className="font-sora text-sm font-bold text-white md:text-base">{job.title || "Untitled project"}</h3>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
+                        <span className="truncate">{running ? (job.activeStep ?? "Working") : formatWhen(job.finishedAt ?? job.createdAt)}</span>
+                        <span className="font-mono font-bold text-white">{job.percent}%</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-[#1F2937]">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${done ? "bg-emerald" : "bg-gradient-to-r from-electric to-gold"}`}
+                          style={{ width: `${job.percent}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <span className="font-mono text-sm font-bold text-emerald">100%</span>
-                </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between font-inter text-xs text-[#CCCCCC]">
-                    <span className="flex items-center gap-1">
-                      <Trophy className="h-3.5 w-3.5 text-gold" />
-                      <span>Executive Blueprint Ready</span>
-                    </span>
-                    <span className="font-inter text-xs text-[#CCCCCC]">Sales · Marketing · Ops · QA</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-[#1F2937]">
-                    <div className="h-full rounded-full bg-emerald transition-all duration-500 w-full" />
+                  <div className="flex flex-wrap items-center gap-2 border-t border-[#333333]/60 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => openInspector(job.id, false)}
+                      className="flex items-center gap-1.5 rounded-xl border border-[#333333] bg-[#0B1220] px-3.5 py-1.5 font-inter text-xs font-semibold text-white transition-colors hover:border-electric hover:bg-electric/10"
+                    >
+                      Inspect execution graph
+                      <ArrowUpRight className="h-3.5 w-3.5 text-electric" />
+                    </button>
+                    {job.hasFinalOutput && (
+                      <button
+                        type="button"
+                        onClick={() => openInspector(job.id, true)}
+                        className="btn-primary-cta flex items-center gap-1.5 px-3.5 py-1.5 text-xs"
+                      >
+                        <Trophy className="h-3.5 w-3.5" />
+                        View final plan
+                      </button>
+                    )}
+                    <Link
+                      href={`/core?job=${encodeURIComponent(job.id)}`}
+                      className="ml-auto flex items-center gap-1 font-mono text-xs text-electric hover:underline"
+                    >
+                      <Zap className="h-3 w-3" />
+                      Open in CORE
+                    </Link>
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-2 border-t border-[#333333]/60 flex items-center justify-between">
-                <p className="font-inter text-xs text-[#CCCCCC] truncate max-w-[180px] sm:max-w-xs">
-                  Full multi-department strategy verified with live research
-                </p>
-                <button
-                  type="button"
-                  onClick={() => openInspector(liveDoneJob?.id || jobs.find((j) => j.status === "done")?.id, true)}
-                  className="btn-primary-cta flex items-center gap-1.5 px-3.5 py-1.5 text-xs transition-transform hover:scale-105 shrink-0"
-                >
-                  <Trophy className="h-3.5 w-3.5" />
-                  <span>View Final Plan →</span>
-                </button>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* 3. Operational Row (Left: Needs Attention HITL queue; Right: Connected Ecosystem Status) */}
+        {/* Operational row: human-in-the-loop queue + live system health */}
         <div id="section-operational" className={`grid grid-cols-1 gap-4 lg:grid-cols-2 ${flash("section-operational")}`}>
           <NeedsAttention />
           <SystemHealth />
         </div>
       </div>
 
-      {/* Slide-over Drawer / Modal Inspector for Execution Graphs & Final Plans */}
       <ProjectInspectorDrawer
         isOpen={inspectorOpen}
         onClose={() => setInspectorOpen(false)}

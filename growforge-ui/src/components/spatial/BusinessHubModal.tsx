@@ -222,7 +222,7 @@ export function BusinessHubModal({ isOpen, onClose, telemetryData }: BusinessHub
             Zero synthetic data &bull; verified live against local MCP store
           </span>
           <Link
-            href="/?panel=settings&tab=connectors"
+            href="/workspace?panel=settings&tab=connectors"
             className="flex items-center gap-1 text-cyan-300 hover:text-white transition-colors normal-case"
           >
             Manage Connectors <ExternalLink className="w-3 h-3" />
