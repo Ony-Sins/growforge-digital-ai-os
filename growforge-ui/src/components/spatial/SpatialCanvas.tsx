@@ -7,6 +7,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GraphNode, GraphLink, SpatialGraphData } from "@/lib/spatial/obsidianReader";
 import {
   ZOOM_TIERS,
+  CORE_DEPTH,
   type ZoomTierName,
   layoutSpatialGlobe,
   createCoreOrbitals,
@@ -17,6 +18,7 @@ import {
   type GrowthPlan,
 } from "./spatialGeometry";
 import { SpatialHud } from "./SpatialHud";
+import { CoreZoomTier } from "./CoreZoomTier";
 import { NoteReaderModal } from "./NoteReaderModal";
 import { BusinessHubModal } from "./BusinessHubModal";
 import { SpatialChatDrawer } from "./SpatialChatDrawer";
@@ -176,25 +178,24 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
     };
   }, [refreshData]);
 
+  // Fast-travel zoom navigation
+  const handleSelectTier = useCallback((tier: ZoomTierName) => {
+    setCurrentTier(tier);
+    const targetZ = ZOOM_TIERS[tier.toUpperCase() as keyof typeof ZOOM_TIERS]?.z ?? 460;
+    targetCameraZRef.current = targetZ;
+  }, []);
+
   // Dashboard → CORE: the camera accelerates through the core (nodes streak
-  // past, FOV widens, exposure blows out to white) and CORE emerges from the
-  // light on the other side. Reduced-motion users get a plain navigation.
+  // past, FOV widens, exposure blows out to white) and CORE emerges in Tier 5.
   const handleEnterCore = useCallback(() => {
     if (diveRef.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !cameraRef.current) {
-      routerRef.current.push("/core");
+      handleSelectTier("core");
       return;
     }
     diveRef.current = { start: performance.now(), startZ: cameraRef.current.position.z, navigated: false };
     setIsDiving(true);
-  }, []);
-
-  // Fast-travel zoom navigation
-  const handleSelectTier = (tier: ZoomTierName) => {
-    setCurrentTier(tier);
-    const targetZ = ZOOM_TIERS[tier.toUpperCase() as keyof typeof ZOOM_TIERS]?.z ?? 460;
-    targetCameraZRef.current = targetZ;
-  };
+  }, [handleSelectTier]);
 
   // 2. Initialize Three.js WebGL Scene
   useEffect(() => {
@@ -227,7 +228,7 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 60;
+    controls.minDistance = 0;
     controls.maxDistance = 1400;
     controls.rotateSpeed = 0.65;
     controls.zoomSpeed = 0.9;
@@ -365,8 +366,7 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       const dive = diveRef.current;
       if (dive) {
         // Accelerating (cubic) run straight through the core, with FOV warp,
-        // a slight roll and exposure blow-out. OrbitControls is bypassed —
-        // it would clamp the camera back out to its min distance.
+        // a slight roll and exposure blow-out. OrbitControls is bypassed.
         const t = Math.min((performance.now() - dive.start) / DIVE_MS, 1);
         const e = t * t * t;
         controls.enabled = false;
@@ -379,7 +379,16 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         renderer.toneMappingExposure = 1.15 + 3.4 * e * e;
         if (t >= 1 && !dive.navigated) {
           dive.navigated = true;
-          routerRef.current.push("/core?warp=1");
+          targetCameraZRef.current = CORE_DEPTH;
+          camera.position.z = CORE_DEPTH;
+          camera.rotation.z = 0;
+          camera.fov = 48;
+          camera.updateProjectionMatrix();
+          renderer.toneMappingExposure = 1.15;
+          controls.enabled = true;
+          setIsDiving(false);
+          diveRef.current = null;
+          setCurrentTier("core");
         }
       } else {
         // Smooth camera interpolation for fast-travel zoom only — once the user
@@ -389,22 +398,19 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
           camera.position.z += (targetCameraZRef.current - camera.position.z) * 0.08;
         }
 
-        // controls.update() MUST run before any .project(camera) calls below —
-        // it reconciles OrbitControls' internal state with the camera position
-        // we may have just mutated above. Projecting before this reconciliation
-        // used a one-frame-stale transform during active zoom, which is what
-        // caused the core glow to visibly flicker/dim mid-zoom (reported live).
+        // controls.update() MUST run before any .project(camera) calls below
         controls.update();
       }
 
-      // Update current zoom tier based on real camera distance
-      const z = camera.position.length();
-      if (z > 700) setCurrentTier("home");
-      else if (z <= 700 && z > 300) setCurrentTier("brain");
-      else if (z <= 300) setCurrentTier("dashboard");
+      // Update current zoom tier based on real camera depth
+      const cz = camera.position.z;
+      if (cz > 700) setCurrentTier("home");
+      else if (cz <= 700 && cz > 300) setCurrentTier("brain");
+      else if (cz <= 300 && cz > 50) setCurrentTier("dashboard");
+      else if (cz <= 50) setCurrentTier("core");
 
       // Continuous, distance-driven progressive reveal of nodes & links
-      const depthProgress = THREE.MathUtils.clamp((880 - z) / 380, 0.12, 1.0);
+      const depthProgress = THREE.MathUtils.clamp((880 - cz) / 380, 0.12, 1.0);
       const somethingHovered = !!hoveredNodeIdRef.current;
 
       // Runs unconditionally every frame now (previously gated behind
@@ -447,7 +453,7 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       });
 
       linkObjectMap.current.forEach((item) => {
-        const linkDepth = THREE.MathUtils.clamp((800 - z) / 350, 0.02, 1.0);
+        const linkDepth = THREE.MathUtils.clamp((800 - cz) / 350, 0.02, 1.0);
         item.proximity.v += (proximityTargetFor(item.midpoint) - item.proximity.v) * 0.05;
 
         const sId = typeof item.link.source === "object" ? (item.link.source as { id: string }).id : item.link.source;
@@ -799,7 +805,16 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       />
       </div>
 
-      {isDiving && <div className="dive-flash pointer-events-none absolute inset-0 z-50" aria-hidden />}
+      {/* 5. CORE Pipeline 5th Zoom Tier Overlay (z=-70) */}
+      <div
+        className={`absolute inset-0 z-20 transition-all duration-500 overflow-y-auto ${
+          currentTier === "core"
+            ? "opacity-100 pointer-events-auto translate-y-0"
+            : "opacity-0 pointer-events-none translate-y-4"
+        }`}
+      >
+        <CoreZoomTier className="pt-20 pb-28 px-4 md:px-8 max-w-7xl mx-auto" />
+      </div>
 
       {/* Note Reader Modal (Wikilinks & Markdown Previews) */}
       <NoteReaderModal

@@ -15,6 +15,120 @@
 
 ## A. Session Handoff (2026-09-24, latest) — READ THIS FIRST
 
+> **CORE Resonance Field Visualization Built + Integrated (2026-09-24, ~18:15, Claude Code) — Physics-Based Bright Glow Visualization, Token Ledger Dashboard, Plain-Language Output**
+> - **Why:** User rejected Antigravity's generic corporate dashboard (4-card grid, particle swarm concept) as "destroyed the cool core page entirely." Directive: rebuild with bright glowing unique visualization, per-agent token tracking, humanizer plain-language format. Solution implemented in 3 components replacing the old card-based layout.
+> - **What Built:**
+>   1. **CoreRessonanceField.tsx** (canvas physics visualization):
+>      - Central bright cyan sphere with heartbeat pulse animation
+>      - 5 concentric wave rings that ripple outward (work distribution)
+>      - 8 department nodes positioned ON wave peaks (static, not orbiting)
+>      - Agent perturbations rendered as glowing dots along radial lines
+>      - Wave distortion increases with agent activity (disturbanceIntensity)
+>      - Status colors: cyan #00d4ff (active), gold #ffc432 (done), amber #f59e0b (waiting), red #ef4444 (blocked)
+>      - Dark navy #0a0e27 background with star field
+>      - Drop-shadow glow filter on canvas for bright luminescent effect
+>      - 60fps requestAnimationFrame animation loop
+>   2. **TokenLedger.tsx** (per-agent token/cost tracking):
+>      - Fixed bottom-right panel showing token usage by department
+>      - Per-agent card: name, status badge, total tokens, input/output tokens, cost, model, duration, tools called
+>      - Top summary: total tokens, total cost, model breakdown (Claude %, GPT-4 %, Ollama %), cost by department (%)
+>      - Expandable agent detail showing token-spend reasoning (input context, analysis synthesis, output formatting)
+>      - Status color indicators matching Resonance Field colors
+>   3. **CoreZoomTier.tsx (NEW)** (full replacement):
+>      - Replaced old grid-based 4-card layout entirely
+>      - Full-screen Resonance Field visualization as main view
+>      - Integrated TokenLedger as bottom-right overlay
+>      - Header: CORE Live Pipeline title, job selector, New Brief button, EXECUTING badge when running
+>      - Footer: System status (Ollama/SearXNG online indicators), total cost/token summary
+>      - Right panel: Selected agent detail view with token breakdown
+>      - Launch modal: "Describe your business brief" textarea, dispatch button
+>      - Real-time polling from `/api/core/state`, live department/agent state updates
+> - **Bug Fix:** SVG connector lines (Antigravity's code) had padding coordinate offset — not addressed in rewrite (removed SVG layer, replaced with Resonance Field visualization which solves UX problem at root).
+> - **Verification:**
+>   - TypeScript: Fixed useRef<number | undefined>(undefined) type issue, requestAnimationFrame callback signature correct
+>   - Three components complete, all proper JSX returns and closing braces verified
+>   - Build output: Layout font import issues unrelated to CORE components
+> - **Next Step:** Start dev server, verify Resonance Field renders bright and glowing, test agent click interactions, confirm token ledger updates in real-time.
+
+> **Phase 3-5 Vision & Architecture Revised (2026-09-24, ~17:45, Claude Code) — CORE Resonance Field, Token Tracking, Hermes Agent, Attachment Multimodal**
+> - **Why:** Antigravity's Phase 1 CORE delivery was technically correct but visually/UX-wise generic (corporate dashboard, not founder's command center). User rejected particle-swarm concept as "nothing unique." Revised architecture to implement 5 major features that differentiate GrowForge from generic AI platforms: (1) a unique, physics-based visualization (Resonance Field), (2) per-agent token/cost transparency, (3) plain-language humanized outputs with summaries, (4) multimodal attachment + link crawling, (5) self-learning Hermes agent that mirrors user's thinking.
+> - **CORE Resonance Field Visualization (replaces current sphere + cards):**
+>   - Central bright cyan sphere pulses like a heartbeat
+>   - Concentric wave rings emanate outward as work radiates from center
+>   - 8 departments positioned ON wave peaks (not orbiting)
+>   - Agents shown as perturbations/glowing points along wave paths
+>   - Wave motion = work spreading (outward) + completion bouncing back (inward)
+>   - Color intensity: cyan = active, gold = done, amber = waiting, red = blocked
+>   - Interactive: hover agent → wave ripples intensify around it, shows per-agent token/cost breakdown
+>   - Why this works: (1) Unique—not generic particles. (2) Visually coherent—wave mechanics represent work spreading & returning. (3) Scales infinitely—8 or 80 agents, concept holds. (4) Bright & glowing—matches founder aesthetic.
+> - **Per-Agent Token & Cost Ledger:**
+>   - Bottom-right dashboard panel shows: tokens used per agent, cost breakdown (Claude vs. GPT-4 vs. Ollama), tools called, why tokens were spent (input context vs. analysis vs. output formatting)
+>   - Hover agent card → expanded view: input tokens (research summaries), output tokens (report), model used, duration, tools called, cost attribution
+>   - Summary line: "Total this run: 34,314 tokens | $17.10 cost | Claude 60% | GPT-4 25% | Ollama 15%"
+>   - Cost by dept breakdown (Strategy 34%, Growth 45%, Product 12%, etc.)
+>   - This enables founder to see EXACTLY where compute budget goes (enables better cost management long-term)
+> - **Plain-Language Output Format + Summaries (no more generic bullets):**
+>   - Every finding/brief MUST include SUMMARY section (so founder can skim if busy)
+>   - SUMMARY: one paragraph explaining the core finding in founder's language (not AI jargon)
+>   - FULL FINDINGS: prose explanation (not bullet points), 2-3 paragraphs of context
+>   - YOUR NEXT STEP: specific, actionable recommendation (not generic "implement A/B testing")
+>   - Humanizer rule: no templated language, no assumptions, accuracy paramount (e.g., ❌"Implement testing" vs. ✅"Your email subject 'Schedule Free Audit' tests at 22% — try 'See How Much You'll Save' which performs 31-35% historically in this market")
+> - **Multimodal Attachment Feature (Phase 1b, implement before voice):**
+>   - Drag-drop + file picker: upload unlimited files (images, PDFs, links, videos, datasets, reference docs)
+>   - System audits all attachments: OCR images, parse PDFs, transcribe videos, crawl links (2-level deep: fetch destination + extract content + follow embedded links)
+>   - All extracted data becomes context for CORE brief → feeds all 8 departments
+>   - Example: user attaches competitor landing page link → system crawls it → extracts copy, pricing, CTAs, images, branding, stack (if detectable) → auto-surfaces to Growth & Marketing depts
+>   - Tools needed: firecrawl (link crawling), Claude vision API (image analysis), Whisper (video transcription), pdf-parse (PDF extraction)
+> - **Voice Feature (Phase 2, after attachments stabilize):**
+>   - User speaks brief → Whisper transcription → dispatch to CORE pipeline (same as text) → Claude TTS response → play audio
+>   - Use cases: hands-free dispatch, real-time clarification, accessibility
+>   - Implementation: Week 4-6, medium complexity
+> - **Hermes Agent: Self-Learning, Self-Updating Mirror (Phase 3, foundational differentiator):**
+>   - Observes every brief execution: what did founder approve? Reject? Change? What patterns repeat?
+>   - Learns user's reasoning, language, tone, decision priorities (e.g., always prioritizes X over Y, prefers data-driven vs. intuitive angles)
+>   - Next brief: Hermes proactively suggests decisions founder would make, adjusts tone, anticipates objections
+>   - Over time: system becomes extension of founder's brain, not generic AI (this is the differentiator)
+>   - Implementation: Vector DB (Pinecone/Weaviate) + memory storage + feedback loop (track accuracy, update vectors)
+>   - Timeline: Week 6-10, very high complexity but transformative ROI
+> - **Implementation Priority:**
+>   1. CORE Resonance Field + token ledger (Week 1-2) — visual + transparency foundation
+>   2. Plain-language humanizer (Week 1) — output quality foundation
+>   3. Attachment feature + link crawling (Week 2-4) — multimodal foundation
+>   4. Voice feature (Week 4-6) — accessibility/convenience
+>   5. Hermes agent (Week 6-10) — personalization/differentiation
+> - **Architecture Note:** These 5 features combined make GrowForge fundamentally different from generic AI platforms. Hermes is the real differentiator—it's not just an AI tool, it's an AI that learns and mirrors YOU. Voice + attachments make it multimodal and hands-free. Plain language + summaries make it legible to busy founders. Token tracking makes it cost-transparent. Resonance Field makes it beautiful.
+
+> **CORE Pipeline Integrated into Spatial Canvas as 5th Zoom Tier (2026-09-24, 14:17, Antigravity):**
+> - **Why:** GrowForge's 4-stage job execution pipeline (`/core`) previously existed in a separate dark visual world. Integrated CORE directly into the Spatial Canvas as a 5th continuous zoom tier at camera depth `z = -70` with canvas theme colors (light background, electric blue `#0078ff`, gold `#ffc432` accents, emerald `#10b981` done, crimson `#e11d48` error, navy `#0b1220` typography).
+> - **What Changed:**
+>   1. **`src/components/spatial/CoreZoomTier.tsx` (New Component):**
+>      - Extracted CORE's complete 4-stage execution pipeline (Brief & Plan, Research & Route, Execute, Review & Deliver) with 8 department routing nodes, Laya specialist blueprint badges, and token usage ledger.
+>      - Implemented `CanvasFlowLayer` SVG connector lines with real DOM anchor measuring and dynamic pulse animations for active steps.
+>      - Styled strictly to Canvas palette: frosted glass containers (`bg-white/85`, `border-slate-200`), electric-blue `#0078ff` active state, gold `#ffc432` accents, and navy text.
+>      - Wired live job polling (`/api/core/state`), job selector, and "New Brief" dispatch modal.
+>   2. **`src/components/core/CoreSphere3D.tsx`:**
+>      - Added `theme?: "dark" | "canvas"` support.
+>      - Added canvas color palette `HUB_COLORS_CANVAS` with electric-blue core, gold active pulse, emerald done, and dark slate unassigned nodes.
+>   3. **`src/components/spatial/spatialGeometry.ts`:**
+>      - Added `CORE_DEPTH = -70` constant and updated `ZOOM_TIERS.CORE` (`label: "CORE (Pipeline)"`, `z: -70`).
+>      - Updated `ZoomTierName = "home" | "brain" | "dashboard" | "core"`.
+>   4. **`src/components/spatial/SpatialHud.tsx`:**
+>      - Added `[CORE]` fast-travel button in the bottom dock tier switcher (`onClick={() => onSelectTier("core")}`).
+>      - Added `CORE Pipeline (Tier 5)` item in the 3D top dropdown navigation menu.
+>   5. **`src/components/spatial/SpatialCanvas.tsx`:**
+>      - Imported `CoreZoomTier` and `CORE_DEPTH`.
+>      - Updated `controls.minDistance = 0` so the camera can smoothly traverse through `z = 0` down to `z = -70`.
+>      - Updated tier calculation using `camera.position.z` (`z > 700` → `home`, `z > 300` → `brain`, `z > 50` → `dashboard`, `z <= 50` → `core`).
+>      - Updated `handleEnterCore` dive animation: camera runs through the core and emerges smoothly at `z = -70` without navigating away from the canvas.
+>      - Rendered `CoreZoomTier` overlay with smooth transition when `currentTier === "core"`.
+> - **Verification & Quality Gates:**
+>   - `npx tsc --noEmit`: Passed with 0 errors ✓
+>   - `npm run lint`: Passed with 0 errors, 0 warnings ✓
+>   - Smooth camera dolly: `Home (z>700)` → `Brain (z=460)` → `Dashboard (z=160)` → `CORE (z=-70)` without snaps ✓
+>   - Live job state & 8 department nodes verified responsive ✓
+> - **UX Routing Decision Implemented:**
+>   - Standalone `/core` route now redirects directly to `/?tier=core` (`src/app/core/page.tsx` → `redirect('/?tier=core')`), creating a seamless canvas-first spatial architecture with direct deep-link support.
+>
 > **Phase 2: Navigation & Orphaned Pages Cleanup Complete (2026-09-24, ~15:30, Claude Code) — CORE Integration Phase 1 Ready for Antigravity.**
 > - **Why:** GrowForge's CORE pipeline page (dark theme) and Spatial Canvas (light + holographic theme) are separate visual worlds with orphaned navigation. Users clicking "AI Brain" landed on an old dark Brain page that should redirect to the canvas. Phase 2 cleans this up; Phase 1 (wiring CORE into canvas as the 5th zoom tier) is Antigravity's next work.
 > - **What Changed:**

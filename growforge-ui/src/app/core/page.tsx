@@ -1,6 +1,5 @@
-import React from "react";
+import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { CorePipelinePage } from "@/components/core/CorePipelinePage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function CorePage({ searchParams }: { searchParams: Promise<{ job?: string; warp?: string }> }) {
   await getSession();
-  const { job, warp } = await searchParams;
-
-  return <CorePipelinePage initialJobId={job ?? null} warp={warp === "1"} />;
+  const { job } = await searchParams;
+  const qs = job ? `&job=${encodeURIComponent(job)}` : "";
+  redirect(`/?tier=core${qs}`);
 }

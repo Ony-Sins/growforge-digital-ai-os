@@ -14,14 +14,23 @@ interface CoreSphere3DProps {
   hubs: SphereHub[];
   selectedId: string | null;
   onSelect?: (id: string) => void;
+  theme?: "dark" | "canvas";
 }
 
-const HUB_COLORS: Record<HubStatus, number> = {
+const HUB_COLORS_DARK: Record<HubStatus, number> = {
   unassigned: 0x334155,
   pending: 0x22d3ee,
   active: 0x00ff88,
   done: 0x10b981,
   error: 0xef4444,
+};
+
+const HUB_COLORS_CANVAS: Record<HubStatus, number> = {
+  unassigned: 0x94a3b8,
+  pending: 0x0078ff,
+  active: 0x0078ff,
+  done: 0x10b981,
+  error: 0xe11d48,
 };
 
 /** Even spread of N points over a sphere (golden-angle spiral). */
@@ -55,13 +64,13 @@ function glowTexture(): THREE.CanvasTexture {
  * department's step is genuinely running. With nothing running the sphere is
  * calm; it never animates activity that isn't happening.
  */
-export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) {
+export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark" }: CoreSphere3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const liveRef = useRef({ hubs, selectedId, onSelect });
+  const liveRef = useRef({ hubs, selectedId, onSelect, theme });
 
   useEffect(() => {
-    liveRef.current = { hubs, selectedId, onSelect };
-  }, [hubs, selectedId, onSelect]);
+    liveRef.current = { hubs, selectedId, onSelect, theme };
+  }, [hubs, selectedId, onSelect, theme]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -69,6 +78,8 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
 
     const width = container.clientWidth || 300;
     const height = container.clientHeight || 340;
+    const isCanvas = theme === "canvas";
+    const colors = isCanvas ? HUB_COLORS_CANVAS : HUB_COLORS_DARK;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
@@ -83,21 +94,43 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
     scene.add(group);
 
     const outerGeo = new THREE.IcosahedronGeometry(1.8, 2);
-    const outerMat = new THREE.MeshBasicMaterial({ color: 0x00f5ff, wireframe: true, transparent: true, opacity: 0.26 });
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: isCanvas ? 0x0078ff : 0x00f5ff,
+      wireframe: true,
+      transparent: true,
+      opacity: isCanvas ? 0.35 : 0.26,
+    });
     const outer = new THREE.Mesh(outerGeo, outerMat);
     group.add(outer);
 
     const innerGeo = new THREE.IcosahedronGeometry(1.62, 1);
-    const innerMat = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true, transparent: true, opacity: 0.13 });
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: isCanvas ? 0xffc432 : 0x10b981,
+      wireframe: true,
+      transparent: true,
+      opacity: isCanvas ? 0.22 : 0.13,
+    });
     group.add(new THREE.Mesh(innerGeo, innerMat));
 
     const coreGeo = new THREE.SphereGeometry(0.62, 20, 20);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.2 });
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: isCanvas ? 0x0078ff : 0x06b6d4,
+      wireframe: true,
+      transparent: true,
+      opacity: isCanvas ? 0.28 : 0.2,
+    });
     const core = new THREE.Mesh(coreGeo, coreMat);
     group.add(core);
 
     const glow = glowTexture();
-    const coreGlowMat = new THREE.SpriteMaterial({ map: glow, color: 0x22d3ee, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+    const coreGlowMat = new THREE.SpriteMaterial({
+      map: glow,
+      color: isCanvas ? 0x0078ff : 0x22d3ee,
+      transparent: true,
+      opacity: isCanvas ? 0.65 : 0.55,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
     const coreGlow = new THREE.Sprite(coreGlowMat);
     coreGlow.scale.set(2.1, 2.1, 1);
     group.add(coreGlow);
@@ -106,7 +139,15 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
     const vertexPositions = outerGeo.attributes.position;
     const dotGeo = new THREE.BufferGeometry();
     dotGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vertexPositions.array), 3));
-    const dotMat = new THREE.PointsMaterial({ size: 0.11, map: glow, color: 0x22d3ee, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+    const dotMat = new THREE.PointsMaterial({
+      size: 0.11,
+      map: glow,
+      color: isCanvas ? 0x0078ff : 0x22d3ee,
+      transparent: true,
+      opacity: isCanvas ? 0.65 : 0.55,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
     group.add(new THREE.Points(dotGeo, dotMat));
 
     // One hub + link + travelling pulse per department.
@@ -114,21 +155,42 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
     const hubObjs = liveRef.current.hubs.map((h, i) => {
       const pos = fibonacciPoint(i, count, 1.8);
 
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: HUB_COLORS[h.status], transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: glow,
+          color: colors[h.status],
+          transparent: true,
+          opacity: 0.9,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
       sprite.position.copy(pos);
       group.add(sprite);
 
-      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 10), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+      const hit = new THREE.Mesh(
+        new THREE.SphereGeometry(0.26, 10, 10),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+      );
       hit.position.copy(pos);
       hit.userData.hubId = h.id;
       group.add(hit);
 
       const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), pos.clone()]);
-      const lineMat = new THREE.LineBasicMaterial({ color: HUB_COLORS[h.status], transparent: true, opacity: 0.2 });
+      const lineMat = new THREE.LineBasicMaterial({ color: colors[h.status], transparent: true, opacity: 0.25 });
       const line = new THREE.Line(lineGeo, lineMat);
       group.add(line);
 
-      const pulse = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const pulse = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: glow,
+          color: isCanvas ? 0xffc432 : 0xffffff,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
       pulse.scale.set(0.3, 0.3, 1);
       group.add(pulse);
 
@@ -204,7 +266,7 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
 
       for (const obj of hubObjs) {
         const status = liveHubs.find((h) => h.id === obj.id)?.status ?? "unassigned";
-        const color = HUB_COLORS[status];
+        const color = colors[status];
         const selected = sel === obj.id;
         (obj.sprite.material as THREE.SpriteMaterial).color.setHex(color);
         obj.lineMat.color.setHex(color);
@@ -220,7 +282,7 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
           const p = (t * 0.7 + obj.pos.y) % 1;
           obj.pulse.position.copy(obj.pos).multiplyScalar(p);
           pm.opacity = 0.9 * Math.sin(p * Math.PI);
-          pm.color.setHex(0xb6ffe0);
+          pm.color.setHex(isCanvas ? 0xffc432 : 0xb6ffe0);
         } else {
           pm.opacity = 0;
         }
@@ -251,7 +313,7 @@ export function CoreSphere3D({ hubs, selectedId, onSelect }: CoreSphere3DProps) 
       glow.dispose();
     };
     // Scene is built once for a fixed department set; live status flows in via liveRef.
-  }, []);
+  }, [theme]);
 
   return (
     <div className="relative h-[460px] w-full select-none">

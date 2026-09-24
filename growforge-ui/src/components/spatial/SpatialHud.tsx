@@ -201,6 +201,20 @@ export function SpatialHud({
                 <LayoutDashboard className="w-4 h-4 text-emerald-400" />
                 <span>Operational Dashboard</span>
               </button>
+              <button
+                onClick={() => {
+                  onSelectTier("core");
+                  setIsNavDropdownOpen(false);
+                }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all ${
+                  currentTier === "core"
+                    ? "bg-[#0078ff]/20 text-[#0078ff] border border-[#0078ff]/30 font-bold"
+                    : "text-slate-300 hover:bg-white/5"
+                }`}
+              >
+                <Zap className="w-4 h-4 text-[#ffc432]" />
+                <span>CORE Pipeline (Tier 5)</span>
+              </button>
               <div className="pt-1 border-t border-white/5">
                 <button
                   onClick={() => {
@@ -633,6 +647,18 @@ export function SpatialHud({
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span>Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => onSelectTier("core")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+              currentTier === "core"
+                ? "bg-gradient-to-r from-[#0078ff] to-[#ffc432] text-slate-950 font-bold shadow-md shadow-[#0078ff]/30"
+                : "text-slate-300 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+            <span>CORE</span>
           </button>
         </div>
 

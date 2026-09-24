@@ -1,13 +1,16 @@
 import * as THREE from "three";
 import type { GraphNode, GraphLink, GraphCategory } from "@/lib/spatial/obsidianReader";
 
+export const CORE_DEPTH = -70;
+
 export const ZOOM_TIERS = {
   HOME: { z: 950, label: "Home (Core)", name: "home" },
   BRAIN: { z: 460, label: "AI Brain (Graph)", name: "brain" },
   DASHBOARD: { z: 160, label: "Dashboard (HUD)", name: "dashboard" },
+  CORE: { z: -70, label: "CORE (Pipeline)", name: "core" },
 } as const;
 
-export type ZoomTierName = "home" | "brain" | "dashboard";
+export type ZoomTierName = "home" | "brain" | "dashboard" | "core";
 
 /**
  * Soft radial-gradient glow sprite texture, same technique as the existing

@@ -11,11 +11,11 @@ import { JobNotifier } from "@/components/workspace/JobNotifier";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tier?: "home" | "brain" | "dashboard" }>;
+  searchParams: Promise<{ tier?: "home" | "brain" | "dashboard" | "core" }>;
 }) {
   await getSession();
   const { tier } = await searchParams;
-  const initialTier = tier === "home" || tier === "brain" || tier === "dashboard" ? tier : "dashboard";
+  const initialTier = tier === "home" || tier === "brain" || tier === "dashboard" || tier === "core" ? tier : "dashboard";
 
   return (
     <AppStateProvider initialLocation={{}}>
