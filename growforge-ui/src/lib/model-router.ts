@@ -118,6 +118,7 @@ export function classifyTask(prompt: string, department?: string): TaskCategory 
 
 interface OpenRouterCompletionResponse {
   choices?: { message?: { content?: string } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
   error?: { message?: string; code?: number };
 }
 
@@ -195,7 +196,7 @@ export async function callOpenRouterWithFallback(
   messages: ChatMessage[],
   apiKey: string,
   opts: GenerationOptions = {}
-): Promise<{ text: string; modelUsed: string }> {
+): Promise<{ text: string; modelUsed: string; usage: { inputTokens: number | null; outputTokens: number | null } }> {
   if (!apiKey) {
     throw new LlmError("OpenRouter API key is not configured.", "openrouter");
   }
@@ -253,7 +254,14 @@ export async function callOpenRouterWithFallback(
         continue;
       }
 
-      return { text, modelUsed: model };
+      return {
+        text,
+        modelUsed: model,
+        usage: {
+          inputTokens: data.usage?.prompt_tokens ?? null,
+          outputTokens: data.usage?.completion_tokens ?? null,
+        },
+      };
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       errors.push(`[${model}] Exception: ${errMsg}`);
@@ -297,7 +305,11 @@ export async function callOpenRouterWithFallback(
       const data = await res.json();
       const localText = isV1 ? (data.choices?.[0]?.message?.content ?? "") : (data.message?.content ?? "");
       if (localText.trim()) {
-        return { text: localText, modelUsed: `ollama/${localModel} (local fallback)` };
+        return {
+          text: localText,
+          modelUsed: `ollama/${localModel} (local fallback)`,
+          usage: { inputTokens: null, outputTokens: null },
+        };
       }
     }
   } catch {

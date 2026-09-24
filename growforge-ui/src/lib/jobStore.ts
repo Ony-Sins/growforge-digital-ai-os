@@ -5,6 +5,7 @@ import { logContextEvent } from "@/lib/spatial/dailyContext";
 import type { Source } from "@/lib/research";
 import type { MediaItem } from "@/lib/tools";
 import type { VaultDispatchRecommendation } from "@/lib/vaultDispatch";
+import type { UsageRecord } from "@/lib/usage";
 
 export type { MediaItem };
 
@@ -38,6 +39,8 @@ export interface JobStep {
   sources?: Source[];
   error?: string;
   provider?: string;
+  /** Token usage for the LLM call(s) that produced this step's output. */
+  usage?: UsageRecord[];
   /** Short hash of the exact constitution+department instructions text this
    *  step's model call was given — see hashInstructions() in departments.ts.
    *  Lets a plan answer "which version of the rules produced this" without
@@ -46,6 +49,7 @@ export interface JobStep {
   startedAt?: string;
   finishedAt?: string;
 }
+
 
 export interface RevisionEntry {
   id: string;

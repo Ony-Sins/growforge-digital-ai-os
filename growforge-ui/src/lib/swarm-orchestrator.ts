@@ -603,7 +603,7 @@ async function runSwarmExecutionLoop(
       const systemPrompt = buildSwarmAgentSystemPrompt(currentAgentDef, context, availableTools);
       const userPrompt = `Current task for ${currentAgentDef.name}:\n${currentTask}\n\nReview the shared variables and trace. Choose your tool action or handoff.`;
 
-      let modelResponse: { text: string; provider: string };
+      let modelResponse: { text: string; provider: string; [k: string]: unknown };
       try {
         if (options.chatCompleteOverride) {
           modelResponse = await options.chatCompleteOverride(systemPrompt, [{ role: "user", content: userPrompt }]);

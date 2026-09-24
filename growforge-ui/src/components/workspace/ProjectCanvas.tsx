@@ -49,6 +49,8 @@ import type { Job, JobStep, JobSummary, StepStatus } from "@/lib/jobStore";
 import { Markdown } from "@/components/ui/Markdown";
 import { useAppState } from "@/lib/appState";
 import { MasterFindingsView } from "@/components/workspace/MasterFindingsView";
+import { JobUsageBadge } from "@/components/workspace/JobUsage";
+import { estimateCost } from "@/lib/usage";
 
 const DEPT_ICONS: Record<string, LucideIcon> = {
   "sales-bd": Target,
@@ -221,6 +223,31 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
             <p className="mt-0.5 font-mono text-[10px] text-muted" title="Hash of the exact constitution + department instructions this step's model call was given">
               rules v.{step.instructionsHash}
             </p>
+          )}
+          {step.usage && step.usage.length > 0 && (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-secondary">
+              <span className="text-muted">⚡</span>
+              <span>{step.usage.reduce((s, r) => s + (r.inputTokens ?? 0) + (r.outputTokens ?? 0), 0).toLocaleString()} tok</span>
+              <span className="text-muted">·</span>
+              <span className="text-muted truncate max-w-[150px]">{step.usage.map((r) => r.model).join(", ")}</span>
+              {(() => {
+                const totalCost = step.usage.reduce((acc, r) => {
+                  const c = estimateCost(r);
+                  return c.usd !== null ? (acc !== null ? acc + c.usd : c.usd) : acc;
+                }, null as number | null);
+                if (totalCost !== null) {
+                  return (
+                    <>
+                      <span className="text-muted">·</span>
+                      <span className={totalCost === 0 ? "text-emerald" : "text-gold"}>
+                        {totalCost === 0 ? "$0.00" : `$${totalCost.toFixed(4)}`}
+                      </span>
+                    </>
+                  );
+                }
+                return null;
+              })()}
+            </div>
           )}
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
@@ -844,6 +871,10 @@ export function ProjectCanvas({
               </span>
             </div>
           )}
+
+          <div className="px-5 py-1 shrink-0">
+            <JobUsageBadge jobId={visibleJob.id} />
+          </div>
 
           {(visibleJob.status === "done" || visibleJob.status === "running") && (
             <RevisePanel job={visibleJob} onRevised={setJob} />

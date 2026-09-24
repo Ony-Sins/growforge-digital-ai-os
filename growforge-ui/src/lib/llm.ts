@@ -23,6 +23,20 @@
 
 import { getSecretForServerUse } from "@/lib/serverVault";
 import { classifyTask, callOpenRouterWithFallback } from "@/lib/model-router";
+import type { UsageRecord } from "@/lib/usage";
+
+/** Raw token counts extracted from a provider's JSON response body. */
+interface RawUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
+/** What every call<Provider> function returns internally. */
+interface ProviderResult {
+  text: string;
+  model: string;
+  usage: RawUsage;
+}
 
 /** Reserved pseudo-agent id for system-wide (not per-agent) vault entries —
  *  distinct from any real agent id, which are always kebab-case slugs. */
@@ -153,10 +167,11 @@ export function providerOrder(strategy: LlmStrategy = getStrategy()): LlmProvide
 
 interface GeminiResponse {
   candidates?: { content?: { parts?: { text?: string }[] } }[];
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
   error?: { message?: string };
 }
 
-async function callGemini(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callGemini(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const apiKey = resolveApiKey("gemini");
   const model = resolveModel("gemini");
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -192,15 +207,23 @@ async function callGemini(systemPrompt: string, messages: ChatMessage[], opts: G
   }
   const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
   if (!text.trim()) throw new LlmError("Gemini returned an empty response.", "gemini");
-  return text;
+  return {
+    text,
+    model,
+    usage: {
+      inputTokens: data.usageMetadata?.promptTokenCount ?? null,
+      outputTokens: data.usageMetadata?.candidatesTokenCount ?? null,
+    },
+  };
 }
 
 interface GroqResponse {
   choices?: { message?: { content?: string } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
   error?: { message?: string };
 }
 
-async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const apiKey = resolveApiKey("groq");
   const model = resolveModel("groq");
 
@@ -229,15 +252,24 @@ async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: Gen
   }
   const text = data.choices?.[0]?.message?.content ?? "";
   if (!text.trim()) throw new LlmError("Groq returned an empty response.", "groq");
-  return text;
+  return {
+    text,
+    model,
+    usage: {
+      inputTokens: data.usage?.prompt_tokens ?? null,
+      outputTokens: data.usage?.completion_tokens ?? null,
+    },
+  };
 }
 
 interface OpenAIResponse {
   choices?: { message?: { content?: string } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  model?: string;
   error?: { message?: string };
 }
 
-async function callOpenAI(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callOpenAI(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const apiKey = resolveApiKey("openai");
   const model = resolveModel("openai");
 
@@ -266,15 +298,24 @@ async function callOpenAI(systemPrompt: string, messages: ChatMessage[], opts: G
   }
   const text = data.choices?.[0]?.message?.content ?? "";
   if (!text.trim()) throw new LlmError("OpenAI returned an empty response.", "openai");
-  return text;
+  return {
+    text,
+    model: data.model ?? model,
+    usage: {
+      inputTokens: data.usage?.prompt_tokens ?? null,
+      outputTokens: data.usage?.completion_tokens ?? null,
+    },
+  };
 }
 
 interface AnthropicResponse {
   content?: { type: string; text?: string }[];
+  usage?: { input_tokens?: number; output_tokens?: number };
+  model?: string;
   error?: { message?: string };
 }
 
-async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const apiKey = resolveApiKey("anthropic");
   const model = resolveModel("anthropic");
 
@@ -310,10 +351,17 @@ async function callAnthropic(systemPrompt: string, messages: ChatMessage[], opts
   }
   const text = data.content?.map((c) => (c.type === "text" ? c.text ?? "" : "")).join("") ?? "";
   if (!text.trim()) throw new LlmError("Anthropic returned an empty response.", "anthropic");
-  return text;
+  return {
+    text,
+    model: data.model ?? model,
+    usage: {
+      inputTokens: data.usage?.input_tokens ?? null,
+      outputTokens: data.usage?.output_tokens ?? null,
+    },
+  };
 }
 
-async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const apiKey = resolveApiKey("openrouter");
   if (!apiKey) throw new LlmError("No OpenRouter API key configured.", "openrouter");
 
@@ -321,7 +369,11 @@ async function callOpenRouter(systemPrompt: string, messages: ChatMessage[], opt
   const category = classifyTask(fullPrompt);
 
   const result = await callOpenRouterWithFallback(category, systemPrompt, messages, apiKey, opts);
-  return result.text;
+  return {
+    text: result.text,
+    model: result.modelUsed,
+    usage: result.usage ?? { inputTokens: null, outputTokens: null },
+  };
 }
 
 export function resolveOllamaConfig(): { baseUrl: string; model: string } {
@@ -372,7 +424,7 @@ interface OllamaResponse {
   choices?: { message?: { content?: string } }[];
 }
 
-async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<string> {
+async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const { baseUrl: rawBaseUrl, model } = resolveOllamaConfig();
   const cleanUrl = (rawBaseUrl || "http://localhost:11434/v1").trim().replace(/\/+$/, "");
   const baseWithoutV1 = cleanUrl.replace(/\/v1$/, "");
@@ -385,6 +437,7 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
   ];
 
   let text = "";
+  let rawUsage: RawUsage = { inputTokens: null, outputTokens: null };
 
   // Attempt 1: Standard OpenAI-compatible format (/v1/chat/completions)
   try {
@@ -400,8 +453,11 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
     });
 
     if (res.ok) {
-      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
       text = data.choices?.[0]?.message?.content ?? "";
+      if (data.usage) {
+        rawUsage = { inputTokens: data.usage.prompt_tokens ?? null, outputTokens: data.usage.completion_tokens ?? null };
+      }
     }
   } catch {
     // Fall back to native /api/chat
@@ -423,8 +479,13 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
       });
 
       if (res.ok) {
-        const data = (await res.json()) as OllamaResponse;
+        const data = (await res.json()) as OllamaResponse & { prompt_eval_count?: number; eval_count?: number };
         text = data.message?.content ?? "";
+        // Ollama's native API returns prompt_eval_count and eval_count at the top level
+        rawUsage = {
+          inputTokens: data.prompt_eval_count ?? null,
+          outputTokens: data.eval_count ?? null,
+        };
       } else {
         const errText = await res.text().catch(() => "");
         throw new LlmError(`Ollama request failed (${res.status}): ${errText.slice(0, 160)}`, "ollama", "OLLAMA_OFFLINE");
@@ -440,7 +501,7 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
   }
 
   if (!text.trim()) throw new LlmError(`Ollama returned an empty response for model "${model}".`, "ollama", "OLLAMA_OFFLINE");
-  return text;
+  return { text, model, usage: rawUsage };
 }
 
 function callProvider(
@@ -448,7 +509,7 @@ function callProvider(
   systemPrompt: string,
   messages: ChatMessage[],
   opts: GenerationOptions = {},
-): Promise<string> {
+): Promise<ProviderResult> {
   switch (provider) {
     case "gemini":
       return callGemini(systemPrompt, messages, opts);
@@ -474,9 +535,10 @@ export async function testProvider(provider: CloudProvider): Promise<{ ok: boole
   }
   const start = Date.now();
   try {
-    await callProvider(provider, "Reply with only the word: ok", [{ role: "user", content: "ping" }]);
+    const result = await callProvider(provider, "Reply with only the word: ok", [{ role: "user", content: "ping" }]);
     const latency = Date.now() - start;
-    return { ok: true, message: `Responded in ${latency}ms.`, latencyMs: latency };
+    const tokenInfo = result.usage.inputTokens !== null ? ` (${result.usage.inputTokens}+${result.usage.outputTokens} tokens)` : "";
+    return { ok: true, message: `Responded in ${latency}ms${tokenInfo}.`, latencyMs: latency };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : String(err), latencyMs: Date.now() - start };
   }
@@ -651,7 +713,7 @@ export async function chatComplete(
   systemPrompt: string,
   messages: ChatMessage[],
   opts: GenerationOptions = {},
-): Promise<{ text: string; provider: LlmProvider }> {
+): Promise<{ text: string; provider: LlmProvider; usage: UsageRecord }> {
   const strategy = getStrategy();
   const order: LlmProvider[] =
     opts.preferCloud && strategy === "auto" ? [...cloudProviderOrder(), "ollama"] : providerOrder(strategy);
@@ -674,8 +736,18 @@ export async function chatComplete(
   const failures: string[] = [];
   for (const provider of order) {
     try {
-      const text = await callProvider(provider, systemPrompt, messages, opts);
-      return { text, provider };
+      const callStart = Date.now();
+      const result = await callProvider(provider, systemPrompt, messages, opts);
+      const durationMs = Date.now() - callStart;
+      const usage: UsageRecord = {
+        provider,
+        model: result.model,
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      };
+      return { text: result.text, provider, usage };
     } catch (err) {
       failures.push(`${provider}: ${err instanceof Error ? err.message : String(err)}`);
     }
