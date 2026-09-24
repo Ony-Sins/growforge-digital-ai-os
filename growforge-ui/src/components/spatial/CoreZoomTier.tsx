@@ -25,15 +25,15 @@ import { formatDuration, formatTokens, formatUsd } from "@/lib/usage";
 /* Every number on this page comes from /api/core/state (jobs.json, real usage
  * records, live service probes). Where the data does not exist it says so. */
 
-const DEPT_META: Record<string, { short: string; icon: React.ElementType; accent: string }> = {
-  "sales-bd": { short: "Revenue & BD", icon: TrendingUp, accent: "#38bdf8" },
-  marketing: { short: "Marketing & Brand", icon: Megaphone, accent: "#f472b6" },
-  "meta-ads": { short: "Paid Media", icon: Target, accent: "#fb923c" },
-  "finance-ops": { short: "Finance & Ops", icon: Calculator, accent: "#fbbf24" },
-  "client-success": { short: "Client Success", icon: Users, accent: "#2dd4bf" },
-  "web-design": { short: "Design & UX", icon: Palette, accent: "#a78bfa" },
-  "web-dev": { short: "Web Engineering", icon: Code, accent: "#60a5fa" },
-  "ai-automation": { short: "AI Systems", icon: Bot, accent: "#34d399" },
+const DEPT_META: Record<string, { icon: React.ElementType; accent: string; scope: string[] }> = {
+  "sales-bd": { icon: TrendingUp, accent: "#38bdf8", scope: ["Lead prospecting", "Lead qualification", "Outreach", "Proposals & closing"] },
+  marketing: { icon: Megaphone, accent: "#f472b6", scope: ["Positioning & brand", "Market research", "Content strategy", "SEO strategy"] },
+  "meta-ads": { icon: Target, accent: "#fb923c", scope: ["Campaign structure", "Audiences", "Ad creative & copy", "Budget & optimization"] },
+  "finance-ops": { icon: Calculator, accent: "#fbbf24", scope: ["Pricing", "Revenue & costs", "SOPs", "Capacity"] },
+  "client-success": { icon: Users, accent: "#2dd4bf", scope: ["Client onboarding", "Requirements", "Delivery coordination", "Risk tracking"] },
+  "web-design": { icon: Palette, accent: "#a78bfa", scope: ["Wireframes & UI", "Design systems", "Conversion", "Accessibility"] },
+  "web-dev": { icon: Code, accent: "#60a5fa", scope: ["Site & app build", "Backend & APIs", "Technical SEO", "Deployment"] },
+  "ai-automation": { icon: Bot, accent: "#34d399", scope: ["AI agents", "n8n & Zapier workflows", "MCP integrations", "System monitoring"] },
 };
 
 type StageState = "idle" | "queued" | "active" | "done" | "error";
@@ -265,6 +265,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
     );
   }, [job, selectedDept]);
   const focus = job?.departments.find((d) => d.id === focusId) ?? null;
+  const nameOf = useCallback((id: string) => job?.departments.find((d) => d.id === id)?.name ?? id, [job]);
 
   const steps = useMemo(() => job?.steps ?? [], [job]);
 
@@ -290,13 +291,13 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
     return steps
       .filter((s) => s.startedAt || s.finishedAt)
       .map((s) => {
-        const dept = s.departmentId ? DEPT_META[s.departmentId]?.short : undefined;
+        const dept = s.departmentId ? nameOf(s.departmentId) : undefined;
         const at = s.finishedAt ?? s.startedAt!;
         return { id: s.id, at, label: s.label, dept, status: s.status };
       })
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 6);
-  }, [steps]);
+  }, [steps, nameOf]);
 
   const deptTokens = useMemo(() => {
     const rows = (job?.departments ?? [])
@@ -392,7 +393,6 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
 
   const usage = job?.usage ?? null;
   const focusStep = focus?.step;
-  const focusMeta = focus ? DEPT_META[focus.id] : undefined;
 
   return (
     <div className={`text-[#E0E6ED] ${className}`}>
@@ -460,7 +460,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
       ) : (
         <>
           {/* Departments ↔ Core ↔ Side panels. No padding on this root, so connector coordinates are exact. */}
-          <div ref={rootRef} className="relative grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)_320px]">
+          <div ref={rootRef} className="relative grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)_320px]">
             <FlowLayer w={flow.w} h={flow.h} flows={flow.flows} />
 
             <div className="relative z-10 flex flex-col gap-2">
@@ -490,13 +490,22 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                         <Icon className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-semibold text-slate-100">{meta?.short ?? d.name}</div>
-                        <div className="truncate text-[11px] text-slate-400">
-                          {d.assigned ? (d.task ? clean(d.task, 60) : "Assigned") : "Not needed for this project"}
+                        <div className="text-[13px] font-semibold leading-tight text-slate-100">{d.name}</div>
+                        <div className="mt-0.5 truncate text-[11px] text-slate-400" title={d.task}>
+                          {d.assigned ? (d.task ? clean(d.task, 70) : "Assigned") : "Not needed for this project"}
                         </div>
                       </div>
                       <Pill state={st} label={st === "unassigned" ? "unused" : STEP_LABEL[step?.status ?? "pending"]} />
                     </div>
+                    {meta?.scope && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {meta.scope.map((t) => (
+                          <span key={t} className="rounded border border-[#1E293B] bg-[#070B14] px-1.5 py-px text-[10px] text-slate-400">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {d.assigned && (
                       <div className="mt-2 flex items-center gap-2">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#1e293b]">
@@ -573,9 +582,9 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                       <div className="mt-3 border-t border-[#1E293B] pt-2">
                         <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">Where the tokens went</div>
                         {deptTokens.rows.map((r) => (
-                          <div key={r.id} className="flex justify-between text-[11px]">
-                            <span className="text-slate-300">{DEPT_META[r.id]?.short ?? r.id}</span>
-                            <span className="font-mono text-slate-400">
+                          <div key={r.id} className="flex justify-between gap-2 text-[11px]">
+                            <span className="min-w-0 truncate text-slate-300" title={nameOf(r.id)}>{nameOf(r.id)}</span>
+                            <span className="shrink-0 font-mono text-slate-400">
                               {formatTokens(r.tokens)} · {Math.round((r.tokens / deptTokens.total) * 100)}%{r.cost !== null ? ` · ${formatUsd(r.cost)}` : ""}
                             </span>
                           </div>
@@ -602,7 +611,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                         />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-[12px] font-semibold text-slate-200">{a.dept ?? a.label}</div>
-                          <div className="truncate text-[11px] text-slate-400">{a.dept ? a.label : STEP_LABEL[a.status]}</div>
+                          <div className="truncate text-[11px] text-slate-400">{a.dept && a.label !== a.dept ? a.label : STEP_LABEL[a.status]}</div>
                         </div>
                         <span className="font-mono text-[10px] text-slate-500">{clock(a.at)}</span>
                       </li>
@@ -674,7 +683,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
           {focus && focus.assigned && (
             <div className="mt-5 rounded-2xl border border-[#1E293B] bg-[#070B14]/85 p-4">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-base font-bold text-white">{focusMeta?.short ?? focus.name}</span>
+                <span className="text-base font-bold text-white">{focus.name}</span>
                 <Pill state={deptState(focus)} label={STEP_LABEL[focusStep?.status ?? "pending"]} />
                 {focus.blueprint && (
                   <span className="rounded-md border border-[#1E293B] bg-[#0B1220] px-2 py-0.5 text-[11px] text-slate-300">
