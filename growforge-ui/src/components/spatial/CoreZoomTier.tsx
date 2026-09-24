@@ -506,7 +506,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                       </div>
                       <Pill state={st} label={st === "unassigned" ? "unused" : STEP_LABEL[step?.status ?? "pending"]} />
                     </div>
-                    {meta?.scope && (
+                    {meta?.scope && isFocus && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {meta.scope.map((t) => (
                           <span key={t} className="rounded border border-[#1E293B] bg-[#070B14] px-1.5 py-px text-[10px] text-slate-400">
