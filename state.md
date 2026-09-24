@@ -15,7 +15,15 @@
 
 ## A. Session Handoff (2026-09-24, latest) — READ THIS FIRST
 
-> **CORE Resonance Field Visualization Built + Integrated (2026-09-24, ~18:15, Claude Code) — Physics-Based Bright Glow Visualization, Token Ledger Dashboard, Plain-Language Output**
+> **CORE page rebuilt from the pre-Antigravity design (2026-09-24, 16:04, Claude Code) — supersedes the Resonance Field entry below.**
+> - **Problem:** Antigravity's card-grid CORE had SVG connectors that missed the nodes (connector coordinates were measured against a root that had `p-6` padding). My first replacement, a canvas "Resonance Field" (waves + sphere), was rejected by the user ("i absolutely hate this design"), and it also fed random numbers into the token panel, which breaks the no-fake-data rule.
+> - **What the user wanted:** the older CORE (sphere hub + department cards + curved connectors), plus the layout of a ChatGPT-made NORA reference (header with progress ring, cost panel, activity feed, 5-stage timeline). Found the original in git: `670ec5b:growforge-ui/src/components/core/CorePipelinePage.tsx`.
+> - **Now:** `CoreZoomTier.tsx` rewritten (dark theme) using `CoreSphere3D` (dark theme) + 8 department cards on the left, connectors measured against an unpadded root, and right-hand Cost & Token / Live Activity / Live Systems panels, a 5-stage timeline and a selected-department detail panel. All data is from `/api/core/state`: tokens, cost, model, timestamps, task text, specialist blueprint. Missing data reads "not recorded". Not built, deliberately: per-department sub-agents (the data model has one step per department, so showing 3 agents would be invented) and per-model cost (usage only records tokens per model).
+> - **Also:** removed the duplicate yellow CORE button from the bottom dock (the "Enter CORE" button stays), renamed "Home Core" to "Home", hid the Brain/Dashboard HUD side panels on the core tier (they overlapped), gave the CORE overlay a solid `#050811` background and scroll-to-top on entry. Deleted `CoreRessonanceField.tsx`, `TokenLedger.tsx`, `CoreZoomTier_OLD.tsx`.
+> - **Verified:** `tsc --noEmit` and eslint clean; loaded `/?tier=core` in Playwright at 1600x1000, 0 console errors, connectors terminate on the sphere, the numbers match the job's real usage (34.3K tokens, 12 Ollama calls, $0.00).
+> - **Not verified:** running-job state (only a finished job exists), mobile width, and HawkScan (hawk CLI not installed, no HAWK_API_KEY).
+
+> ~~**CORE Resonance Field Visualization Built + Integrated (2026-09-24, ~18:15, Claude Code)** — REJECTED by the user and deleted, see entry above.~~ Kept for the reasoning trail only:
 > - **Why:** User rejected Antigravity's generic corporate dashboard (4-card grid, particle swarm concept) as "destroyed the cool core page entirely." Directive: rebuild with bright glowing unique visualization, per-agent token tracking, humanizer plain-language format. Solution implemented in 3 components replacing the old card-based layout.
 > - **What Built:**
 >   1. **CoreRessonanceField.tsx** (canvas physics visualization):

@@ -62,6 +62,10 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
   const [currentTier, setCurrentTier] = useState<ZoomTierName>(initialTier);
+  const coreOverlayRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (currentTier === "core") coreOverlayRef.current?.scrollTo({ top: 0 });
+  }, [currentTier]);
   const [isDiving, setIsDiving] = useState(false);
   const diveRef = useRef<{ start: number; startZ: number; navigated: boolean } | null>(null);
   const router = useRouter();
@@ -807,7 +811,8 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
 
       {/* 5. CORE Pipeline 5th Zoom Tier Overlay (z=-70) */}
       <div
-        className={`absolute inset-0 z-20 transition-all duration-500 overflow-y-auto ${
+        ref={coreOverlayRef}
+        className={`absolute inset-0 z-20 transition-all duration-500 overflow-y-auto bg-[#050811] ${
           currentTier === "core"
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none translate-y-4"
