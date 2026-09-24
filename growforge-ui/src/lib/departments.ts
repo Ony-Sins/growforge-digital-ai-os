@@ -22,7 +22,7 @@ export interface Department {
 export const DEPARTMENTS: Department[] = [
   {
     id: "sales-bd",
-    name: "Revenue & Business Development",
+    name: "Strategy & Intelligence",
     file: "Sales_BD_Agent_System.md",
     summary: "ICP definition, prospecting, lead sources, outreach sequences, qualification, proposals, closing.",
   },
@@ -34,7 +34,7 @@ export const DEPARTMENTS: Department[] = [
   },
   {
     id: "meta-ads",
-    name: "Paid Media & Performance Advertising",
+    name: "Growth & Demand",
     file: "Meta_Ads_Agent_System.md",
     summary: "Paid advertising strategy: campaign structure, audiences, creative briefs, budgets, bidding, measurement.",
   },
@@ -52,7 +52,7 @@ export const DEPARTMENTS: Department[] = [
   },
   {
     id: "web-design",
-    name: "Digital Design & User Experience",
+    name: "Product Architecture & UX",
     file: "Web_Design_UX_Agent_System.md",
     summary: "Website/landing page structure, UX, conversion optimization, visual direction.",
   },

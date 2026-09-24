@@ -85,7 +85,7 @@ const INITIAL_AXONS: BrainAxon[] = [];
 export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   "dept:sales-bd": {
     id: "dept:sales-bd",
-    name: "Revenue & Business Development",
+    name: "Strategy & Intelligence",
     role: "Pipeline & Deal Acquisition",
     kind: "department",
     lobe: "growth_expansion",
@@ -115,7 +115,7 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   },
   "dept:meta-ads": {
     id: "dept:meta-ads",
-    name: "Paid Media & Performance",
+    name: "Growth & Demand",
     role: "Performance Campaign Execution",
     kind: "department",
     lobe: "performance_media",

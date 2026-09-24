@@ -217,6 +217,13 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const [flash, setFlash] = useState<string | null>(null);
+  const pick = (id: string, scroll = false) => {
+    setSelectedDept(id);
+    setFlash(id);
+    setTimeout(() => setFlash((f) => (f === id ? null : f)), 700);
+    if (scroll) setTimeout(() => anchors.current.get(`brief:${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
+  };
 
   const state = externalState ?? internalState;
   const job: CoreJobView | null = state?.job ?? null;
@@ -264,7 +271,6 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
       null
     );
   }, [job, selectedDept]);
-  const focus = job?.departments.find((d) => d.id === focusId) ?? null;
   const nameOf = useCallback((id: string) => job?.departments.find((d) => d.id === id)?.name ?? id, [job]);
 
   const steps = useMemo(() => job?.steps ?? [], [job]);
@@ -392,10 +398,10 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
   };
 
   const usage = job?.usage ?? null;
-  const focusStep = focus?.step;
 
   return (
     <div className={`text-[#E0E6ED] ${className}`}>
+      <style>{`@keyframes coreglow{0%{box-shadow:0 0 0 0 rgba(0,245,255,.65)}100%{box-shadow:0 0 30px 8px rgba(0,245,255,0)}}`}</style>
       {/* Header */}
       <div className="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border border-[#1E293B] bg-[#070B14]/85 p-4 backdrop-blur-xl">
         <Ring percent={job?.percent ?? 0} state={jobState} />
@@ -440,7 +446,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
           <button
             type="button"
             onClick={() => setLauncherOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-cyan-500 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-[0_0_18px_rgba(0,245,255,0.35)] transition hover:bg-cyan-400"
+            className="flex items-center gap-1.5 rounded-lg bg-cyan-500 px-3.5 py-2 text-xs font-bold text-slate-950 shadow-[0_0_18px_rgba(0,245,255,0.35)] transition duration-200 hover:bg-cyan-400 hover:shadow-[0_0_28px_rgba(0,245,255,0.6)] active:scale-[0.97]"
           >
             <Plus className="h-4 w-4" /> New Brief
           </button>
@@ -476,11 +482,14 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                     key={d.id}
                     type="button"
                     ref={reg(`dept:${d.id}`)}
-                    onClick={() => d.assigned && setSelectedDept(d.id)}
+                    onClick={() => d.assigned && pick(d.id, true)}
                     disabled={!d.assigned}
-                    className={`group rounded-xl border bg-[#0B1220]/90 p-2.5 text-left transition ${
-                      isFocus ? "border-cyan-400 shadow-[0_0_18px_rgba(0,245,255,0.25)]" : "border-[#1E293B] hover:border-slate-500"
-                    } ${d.assigned ? "" : "opacity-45"}`}
+                    style={flash === d.id ? { animation: "coreglow 0.7s ease-out" } : undefined}
+                    className={`group rounded-xl border bg-[#0B1220]/90 p-2.5 text-left transition duration-200 ${
+                      isFocus
+                        ? "border-cyan-400 shadow-[0_0_18px_rgba(0,245,255,0.25)]"
+                        : "border-[#1E293B] hover:border-cyan-400/50 hover:shadow-[0_0_16px_rgba(0,245,255,0.16)]"
+                    } ${d.assigned ? "active:shadow-[0_0_26px_rgba(0,245,255,0.4)]" : "opacity-45"}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span
@@ -679,48 +688,81 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
             ))}
           </div>
 
-          {/* Selected department, everything real */}
-          {focus && focus.assigned && (
-            <div className="mt-5 rounded-2xl border border-[#1E293B] bg-[#070B14]/85 p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-base font-bold text-white">{focus.name}</span>
-                <Pill state={deptState(focus)} label={STEP_LABEL[focusStep?.status ?? "pending"]} />
-                {focus.blueprint && (
-                  <span className="rounded-md border border-[#1E293B] bg-[#0B1220] px-2 py-0.5 text-[11px] text-slate-300">
-                    Specialist: {focus.blueprint.name} · {focus.blueprint.band}
-                  </span>
-                )}
-              </div>
-              {focus.task && (
-                <div className="mt-3">
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">Assigned task</div>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-200">{clean(focus.task, 500)}</p>
-                </div>
-              )}
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  { k: "Tokens", v: focusStep?.tokens != null ? formatTokens(focusStep.tokens) : "not recorded" },
-                  { k: "Cost", v: focusStep?.costKnown && focusStep.costUsd !== null ? formatUsd(focusStep.costUsd) : "not recorded" },
-                  { k: "Time", v: elapsed(focusStep?.startedAt, focusStep?.finishedAt) ?? "not started" },
-                  { k: "Model", v: focusStep?.provider ?? "not recorded" },
-                ].map((m) => (
-                  <div key={m.k} className="rounded-lg border border-[#1E293B] bg-[#0B1220] p-2.5">
-                    <div className="text-[11px] text-slate-400">{m.k}</div>
-                    <div className="truncate font-mono text-sm font-semibold text-slate-100">{m.v}</div>
+          {/* Every department's brief. The selected one is expanded; the rest show a one-line preview. */}
+          <div className="mt-5 space-y-2">
+            <div className="px-1 font-mono text-[11px] uppercase tracking-wider text-slate-400">Department briefs</div>
+            {job.departments
+              .filter((d) => d.assigned)
+              .map((d) => {
+                const step = d.step;
+                const open = focusId === d.id;
+                const st = deptState(d);
+                return (
+                  <div
+                    key={d.id}
+                    ref={reg(`brief:${d.id}`)}
+                    className={`rounded-2xl border bg-[#070B14]/85 transition duration-200 ${
+                      open ? "border-cyan-400/60 shadow-[0_0_20px_rgba(0,245,255,0.15)]" : "border-[#1E293B] hover:border-cyan-400/40 hover:shadow-[0_0_16px_rgba(0,245,255,0.12)]"
+                    }`}
+                    style={flash === d.id ? { animation: "coreglow 0.7s ease-out" } : undefined}
+                  >
+                    <button type="button" onClick={() => pick(d.id)} className="flex w-full items-center gap-3 p-3.5 text-left active:opacity-90">
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-bold text-white">{d.name}</span>
+                          <Pill state={st} label={STEP_LABEL[step?.status ?? "pending"]} />
+                          {d.blueprint && (
+                            <span className="rounded-md border border-[#1E293B] bg-[#0B1220] px-2 py-0.5 text-[11px] text-slate-300">
+                              Specialist: {d.blueprint.name} · {d.blueprint.band}
+                            </span>
+                          )}
+                        </span>
+                        {!open && (
+                          <span className="mt-1 block truncate text-xs text-slate-400">
+                            {step && step.outputChars > 0 ? clean(step.preview, 200) : d.task ? clean(d.task, 200) : "No output yet"}
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 font-mono text-[11px] text-slate-500">
+                        {step?.tokens != null ? `${formatTokens(step.tokens)} tokens` : "no usage"}
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="border-t border-[#1E293B] p-4 pt-3">
+                        {d.task && (
+                          <div>
+                            <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">Assigned task</div>
+                            <p className="mt-1 text-sm leading-relaxed text-slate-200">{clean(d.task, 500)}</p>
+                          </div>
+                        )}
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                          {[
+                            { k: "Tokens", v: step?.tokens != null ? formatTokens(step.tokens) : "not recorded" },
+                            { k: "Cost", v: step?.costKnown && step.costUsd !== null ? formatUsd(step.costUsd) : "not recorded" },
+                            { k: "Time", v: elapsed(step?.startedAt, step?.finishedAt) ?? "not started" },
+                            { k: "Model", v: step?.provider ?? "not recorded" },
+                          ].map((m) => (
+                            <div key={m.k} className="rounded-lg border border-[#1E293B] bg-[#0B1220] p-2.5">
+                              <div className="text-[11px] text-slate-400">{m.k}</div>
+                              <div className="truncate font-mono text-sm font-semibold text-slate-100">{m.v}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {step?.error && <p className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 p-2.5 text-xs text-red-200">{step.error}</p>}
+                        {step && step.outputChars > 0 && (
+                          <div className="mt-3">
+                            <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                              What it produced · {step.outputChars.toLocaleString()} characters · {step.sourceCount} sources
+                            </div>
+                            <p className="mt-1 text-sm leading-relaxed text-slate-300">{clean(step.preview, 600)}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-              {focusStep?.error && <p className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 p-2.5 text-xs text-red-200">{focusStep.error}</p>}
-              {focusStep && focusStep.outputChars > 0 && (
-                <div className="mt-3">
-                  <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                    What it produced · {focusStep.outputChars.toLocaleString()} characters · {focusStep.sourceCount} sources
-                  </div>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-300">{clean(focusStep.preview, 600)}</p>
-                </div>
-              )}
-            </div>
-          )}
+                );
+              })}
+          </div>
         </>
       )}
 

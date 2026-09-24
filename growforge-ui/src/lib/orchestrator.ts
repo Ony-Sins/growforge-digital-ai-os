@@ -735,8 +735,8 @@ export async function reviseJob(jobId: string, message: string): Promise<Job> {
   const user = `ORIGINAL BRIEF:\n${job.brief}\n\nCLIENT'S REQUESTED CHANGE:\n${message}\n\nEXISTING DEPARTMENT WORK:\n${catalog}\n\nDecide which existing department drafts this change actually invalidates versus which stay valid as-is. Keep the blast radius as SMALL as possible — every redo costs time and money:
 - Redo a department only if its concrete recommendations would materially change. Read its current draft to judge.
 - Budget changes usually affect Finance & Operations and the paid-advertising departments only.
-- Ad-channel or targeting changes usually affect Paid Media & Performance Advertising and Marketing & Brand Strategy only.
-- Digital Design & User Experience, Web Development & Engineering, and AI Systems & Intelligent Automation rarely change for budget, channel or messaging changes.
+- Ad-channel or targeting changes usually affect Growth & Demand and Marketing & Brand Strategy only.
+- Product Architecture & UX, Web Development & Engineering, and AI Systems & Intelligent Automation rarely change for budget, channel or messaging changes.
 - The team review, QA and final plan are always regenerated automatically — do not list them.
 Redo research only if the change shifts location, industry, or target market — never for budget, tone or channel tweaks.
 Return JSON exactly in this shape:

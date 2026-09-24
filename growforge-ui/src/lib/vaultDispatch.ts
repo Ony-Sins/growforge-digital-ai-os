@@ -49,7 +49,7 @@ export const DEPARTMENT_VAULT_CATEGORIES: Record<
   { name: string; categories: string[] }
 > = {
   "sales-bd": {
-    name: "Revenue & Business Development",
+    name: "Strategy & Intelligence",
     categories: ["sales", "business", "product"],
   },
   marketing: {
@@ -57,7 +57,7 @@ export const DEPARTMENT_VAULT_CATEGORIES: Record<
     categories: ["marketing", "research"],
   },
   "meta-ads": {
-    name: "Paid Media & Performance Advertising",
+    name: "Growth & Demand",
     categories: ["paid"],
   },
   "finance-ops": {
@@ -69,7 +69,7 @@ export const DEPARTMENT_VAULT_CATEGORIES: Record<
     categories: ["project", "customer", "hr", "report", "support"],
   },
   "web-design": {
-    name: "Digital Design & User Experience",
+    name: "Product Architecture & UX",
     categories: ["design", "technical"],
   },
   "web-dev": {

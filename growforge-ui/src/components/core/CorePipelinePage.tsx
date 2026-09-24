@@ -28,12 +28,12 @@ import type { CoreDeptView, CoreJobView, CoreState, CoreStepView } from "@/lib/c
 import { formatDuration, formatTokens, formatUsd } from "@/lib/usage";
 
 const DEPT_META: Record<string, { short: string; icon: React.ElementType }> = {
-  "sales-bd": { short: "Revenue & BD", icon: TrendingUp },
+  "sales-bd": { short: "Strategy & Intelligence", icon: TrendingUp },
   marketing: { short: "Marketing", icon: Megaphone },
-  "meta-ads": { short: "Paid Media", icon: Target },
+  "meta-ads": { short: "Growth & Demand", icon: Target },
   "finance-ops": { short: "Finance & Ops", icon: Calculator },
   "client-success": { short: "Client Success", icon: Users },
-  "web-design": { short: "Design & UX", icon: Palette },
+  "web-design": { short: "Product Architecture & UX", icon: Palette },
   "web-dev": { short: "Web Engineering", icon: Code },
   "ai-automation": { short: "AI Systems", icon: Bot },
 };

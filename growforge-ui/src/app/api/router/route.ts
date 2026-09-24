@@ -128,7 +128,7 @@ const FALSE_PROGRESS_PATTERNS =
 
 function buildSystemPrompt(pendingBrief: string | null, forceProceed: boolean): string {
   return [
-    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Revenue & Business Development, Marketing & Brand Strategy, Paid Media & Performance Advertising, Finance & Operations, Client Success & Program Management, Digital Design & User Experience, Web Development & Engineering, AI Systems & Intelligent Automation).",
+    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Strategy & Intelligence, Marketing & Brand Strategy, Growth & Demand, Finance & Operations, Client Success & Program Management, Product Architecture & UX, Web Development & Engineering, AI Systems & Intelligent Automation).",
     "",
     `Universal context rule: ${UNIVERSAL_CONTEXT_POLICY}`,
     "",

@@ -34,12 +34,12 @@ import type { Job, JobStep } from "@/lib/jobStore";
 import { Markdown } from "@/components/ui/Markdown";
 
 const DEPT_NAMES: Record<string, string> = {
-  "sales-bd": "Revenue & Business Development",
+  "sales-bd": "Strategy & Intelligence",
   marketing: "Marketing & Brand Strategy",
-  "meta-ads": "Paid Media & Performance Advertising",
+  "meta-ads": "Growth & Demand",
   "finance-ops": "Finance & Operations",
   "client-success": "Client Success & Program Management",
-  "web-design": "Digital Design & User Experience",
+  "web-design": "Product Architecture & UX",
   "web-dev": "Web Development & Engineering",
   "ai-automation": "AI Systems & Intelligent Automation",
 };
