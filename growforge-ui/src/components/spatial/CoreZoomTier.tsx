@@ -26,9 +26,9 @@ import { formatDuration, formatTokens, formatUsd } from "@/lib/usage";
  * records, live service probes). Where the data does not exist it says so. */
 
 const DEPT_META: Record<string, { icon: React.ElementType; accent: string; scope: string[] }> = {
-  "sales-bd": { icon: TrendingUp, accent: "#38bdf8", scope: ["Lead prospecting", "Lead qualification", "Outreach", "Proposals & closing"] },
-  marketing: { icon: Megaphone, accent: "#f472b6", scope: ["Positioning & brand", "Market research", "Content strategy", "SEO strategy"] },
-  "meta-ads": { icon: Target, accent: "#fb923c", scope: ["Campaign structure", "Audiences", "Ad creative & copy", "Budget & optimization"] },
+  "sales-bd": { icon: TrendingUp, accent: "#38bdf8", scope: ["Market research", "Competitive analysis", "Keyword research", "Trend forecasting"] },
+  marketing: { icon: Megaphone, accent: "#f472b6", scope: ["Positioning & brand", "Messaging", "Content strategy", "SEO strategy"] },
+  "meta-ads": { icon: Target, accent: "#fb923c", scope: ["Lead generation", "Social media", "Demand generation", "Paid media & CPA/CPL"] },
   "finance-ops": { icon: Calculator, accent: "#fbbf24", scope: ["Pricing", "Revenue & costs", "SOPs", "Capacity"] },
   "client-success": { icon: Users, accent: "#2dd4bf", scope: ["Client onboarding", "Requirements", "Delivery coordination", "Risk tracking"] },
   "web-design": { icon: Palette, accent: "#a78bfa", scope: ["Wireframes & UI", "Design systems", "Conversion", "Accessibility"] },

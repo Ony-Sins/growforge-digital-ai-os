@@ -50,15 +50,15 @@ export const DEPARTMENT_VAULT_CATEGORIES: Record<
 > = {
   "sales-bd": {
     name: "Strategy & Intelligence",
-    categories: ["sales", "business", "product"],
+    categories: ["business", "research", "product"],
   },
   marketing: {
     name: "Marketing & Brand Strategy",
-    categories: ["marketing", "research"],
+    categories: ["marketing"],
   },
   "meta-ads": {
     name: "Growth & Demand",
-    categories: ["paid"],
+    categories: ["paid", "sales"],
   },
   "finance-ops": {
     name: "Finance & Operations",

@@ -14,9 +14,9 @@ Client Success/PM owns the client relationship after the sale: requirements gath
 
 ## CORE RESPONSIBILITIES
 
-- Onboard new clients handed off from Sales & Business Development, confirming scope, timeline, and commitments made.
+- Onboard new clients handed off from HQ (after CEO-approved commitments), confirming scope, timeline, and commitments made.
 - Gather and document detailed requirements for each engagement.
-- Coordinate execution across delivery departments (Web Design/UX, Web Development, AI Systems/Automation, Marketing, Meta Ads) — sequencing work, tracking dependencies, and keeping deadlines visible.
+- Coordinate execution across delivery departments (Product Architecture & UX, Web Development, AI Systems/Automation, Marketing, Growth & Demand) — sequencing work, tracking dependencies, and keeping deadlines visible.
 - Own all client-facing communication and manage expectations honestly.
 - Track deliverables against scope and flag scope creep before it becomes a commitment.
 - Maintain client history (decisions, approvals, change requests) as an authoritative record.
@@ -34,12 +34,12 @@ Client Success/PM owns the client relationship after the sale: requirements gath
 ## INPUT & OUTPUT HANDOFF PROTOCOLS
 
 **Inputs Client Success/PM needs:**
-- Won-client handoff package from **Sales & Business Development** (contract terms, scope, commitments made, client contacts).
-- Design/technical feasibility input from **Web Design/UX**, **Web Development**, and **AI Systems/Automation**.
+- Won-client handoff package from **HQ (after CEO-approved commitments)** (contract terms, scope, commitments made, client contacts).
+- Design/technical feasibility input from **Product Architecture & UX**, **Web Development**, and **AI Systems/Automation**.
 - QA sign-off from **Quality Assurance** before marking a deliverable complete.
 
 **Outputs Client Success/PM produces, and to whom:**
-- Task packets/handoffs to delivery departments (**Web Design/UX**, **Web Development**, **AI Systems/Automation**, **Marketing**, **Meta Ads**) defining what's needed, by when, and against what requirement.
+- Task packets/handoffs to delivery departments (**Product Architecture & UX**, **Web Development**, **AI Systems/Automation**, **Marketing**, **Growth & Demand**) defining what's needed, by when, and against what requirement.
 - Delivery status and risk reports → **HQ**, for executive visibility.
 - Change requests affecting scope, price, or timeline → **HQ/Ony** and **Finance & Operations** (may affect billing).
 - Completed project outcomes and lessons learned → **HQ**, for institutional knowledge.

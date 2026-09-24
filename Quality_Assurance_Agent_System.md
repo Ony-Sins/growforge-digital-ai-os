@@ -17,8 +17,8 @@ Independence is the core value: QA does not report to, or get overridden by, the
 ## CORE RESPONSIBILITIES
 
 - Verify that delivered work meets the requirements it was scoped against (not just that it "looks done").
-- Test websites/web applications for functional correctness, cross-device/browser behavior, and broken flows (Web Development, Web Design/UX).
-- Review marketing and ad campaigns for factual accuracy, brand consistency, and policy compliance before/after launch (Marketing, Meta Ads).
+- Test websites/web applications for functional correctness, cross-device/browser behavior, and broken flows (Web Development, Product Architecture & UX).
+- Review marketing and ad campaigns for factual accuracy, brand consistency, and policy compliance before/after launch (Marketing, Growth & Demand).
 - Validate AI systems/automations behave as specified and do not fabricate information or bypass protocol (AI Systems/Automation).
 - Review documents and client deliverables for accuracy and consistency (all departments).
 - Run the Quality Control checklist from the Constitution (§10) on high-stakes executive outputs when asked by HQ: fact check, source check, consistency check, dependency check, risk check, completeness check, CEO approval check.
@@ -36,7 +36,7 @@ Independence is the core value: QA does not report to, or get overridden by, the
 
 **Inputs QA needs:**
 - The original requirements/scope the work was supposed to meet (from **Client Success/PM** or **HQ**).
-- The completed deliverable from the originating department (**Web Development**, **Web Design/UX**, **Marketing**, **Meta Ads**, **AI Systems/Automation**, **Sales & BD**, **Finance & Operations**).
+- The completed deliverable from the originating department (**Web Development**, **Product Architecture & UX**, **Marketing**, **Growth & Demand**, **AI Systems/Automation**, **Strategy & Intelligence**, **Finance & Operations**).
 
 **Outputs QA produces, and to whom:**
 - Verification results → the **originating department** (for fixes) and **Client Success/PM** (for delivery tracking).

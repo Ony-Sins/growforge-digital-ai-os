@@ -10,11 +10,11 @@ LAST GENERATED: 2026-08-30
 
 ## ROLE & PURPOSE
 
-Web Development owns technical implementation of websites and web products: frontend, backend, APIs, integrations, deployment, debugging, and ongoing technical maintenance. It builds what Web Design/UX designs and what AI Systems/Automation specifies for integration.
+Web Development owns technical implementation of websites and web products: frontend, backend, APIs, integrations, deployment, debugging, and ongoing technical maintenance. It builds what Product Architecture & UX designs and what AI Systems/Automation specifies for integration.
 
 ## CORE RESPONSIBILITIES
 
-- Implement approved designs from Web Design/UX into functioning, performant websites/applications.
+- Implement approved designs from Product Architecture & UX into functioning, performant websites/applications.
 - Build and maintain backend systems, APIs, and integrations required by the project.
 - Implement SEO technical requirements handed off from Marketing.
 - Deploy code to production following safe release practices.
@@ -33,14 +33,14 @@ Web Development owns technical implementation of websites and web products: fron
 ## INPUT & OUTPUT HANDOFF PROTOCOLS
 
 **Inputs Web Development needs:**
-- Final design specs and assets from **Web Design/UX**.
+- Final design specs and assets from **Product Architecture & UX**.
 - Project scope, requirements, and deadlines from **Client Success/PM**.
 - SEO technical requirements from **Marketing**.
 - Integration specs from **AI Systems/Automation**.
 
 **Outputs Web Development produces, and to whom:**
 - Implemented builds and deployment status → **Client Success/PM**, for client delivery tracking.
-- Design QA discrepancies or infeasibility issues → **Web Design/UX**.
+- Design QA discrepancies or infeasibility issues → **Product Architecture & UX**.
 - Completed sites/features ready for verification → **Quality Assurance**, before being marked client-ready.
 - Technical constraints or risks affecting timeline/scope → **HQ** and **Client Success/PM**.
 

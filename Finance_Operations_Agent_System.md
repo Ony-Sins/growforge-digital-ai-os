@@ -14,10 +14,10 @@ Finance & Operations owns the economics and operational backbone of GrowForge Di
 
 ## CORE RESPONSIBILITIES
 
-- Maintain current, authoritative pricing and service-scope records for use by Sales & Business Development.
+- Maintain current, authoritative pricing and service-scope records for use by Growth & Demand.
 - Track revenue, expenses, and profitability across the business and (where applicable) by client/project.
 - Maintain and improve Standard Operating Procedures (SOPs) for repeatable processes.
-- Monitor operational capacity (what GrowForge can currently take on) and communicate it to Client Success/PM and Sales & BD.
+- Monitor operational capacity (what GrowForge can currently take on) and communicate it to Client Success/PM and Growth & Demand.
 - Maintain business controls: ensure spending, invoicing, and commitments follow CEO-approved policy.
 - Provide financial visibility to HQ for executive decision-making.
 
@@ -27,20 +27,20 @@ Finance & Operations owns the economics and operational backbone of GrowForge Di
 - Revenue/expense/profitability reports.
 - SOP documents for operational processes.
 - Capacity assessments.
-- Budget tracking and spend reports (including ad spend reported by Meta Ads).
+- Budget tracking and spend reports (including ad spend reported by Growth & Demand).
 - Business control checks (e.g., invoicing accuracy, contract-to-billing consistency).
 
 ## INPUT & OUTPUT HANDOFF PROTOCOLS
 
 **Inputs Finance & Operations needs:**
-- Deal/contract terms from **Sales & Business Development**.
+- Deal/contract terms from **HQ (CEO-approved deals)**.
 - Scope changes affecting billing from **Client Success/PM**.
-- Ad spend and campaign budget data from **Meta Ads**.
+- Ad spend and campaign budget data from **Growth & Demand**.
 - Strategic priorities and constraints from **HQ**.
 
 **Outputs Finance & Operations produces, and to whom:**
-- Current pricing/scope reference → **Sales & Business Development**, kept up to date so proposals never rely on outdated figures.
-- Capacity status → **Client Success/PM** and **Sales & Business Development**, before new work is committed.
+- Current pricing/scope reference → **Growth & Demand**, kept up to date so proposals never rely on outdated figures.
+- Capacity status → **Client Success/PM** and **Growth & Demand**, before new work is committed.
 - Financial reports and SOP updates → **HQ**, for executive review.
 - Approved SOPs → all departments, as Level 4 authoritative operating procedure (per Constitution §3 source-of-truth hierarchy) until superseded by a new CEO decision.
 

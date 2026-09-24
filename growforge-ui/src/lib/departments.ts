@@ -23,8 +23,8 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "sales-bd",
     name: "Strategy & Intelligence",
-    file: "Sales_BD_Agent_System.md",
-    summary: "ICP definition, prospecting, lead sources, outreach sequences, qualification, proposals, closing.",
+    file: "Strategy_Intelligence_Agent_System.md",
+    summary: "Market research, competitive analysis, keyword research, trend forecasting, ICP research.",
   },
   {
     id: "marketing",
@@ -35,8 +35,8 @@ export const DEPARTMENTS: Department[] = [
   {
     id: "meta-ads",
     name: "Growth & Demand",
-    file: "Meta_Ads_Agent_System.md",
-    summary: "Paid advertising strategy: campaign structure, audiences, creative briefs, budgets, bidding, measurement.",
+    file: "Growth_Demand_Agent_System.md",
+    summary: "Lead generation, social media marketing, demand generation, campaign strategy, paid media, CPA/CPL optimization.",
   },
   {
     id: "finance-ops",
