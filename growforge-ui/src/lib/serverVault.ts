@@ -115,6 +115,7 @@ export function getSecretForServerUse(agentId: string, provider: string): string
   const data = loadFile();
   const entry = data[agentId]?.[provider];
   if (!entry) return null;
+  if (!process.env.VAULT_MASTER_KEY) return null;
 
   try {
     const key = getMasterKey();

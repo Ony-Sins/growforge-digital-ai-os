@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "growforge-ui/src/components/spatial/SpatialHud.tsx"
+        ],
+        "createdAt": "2026-09-23T06:32:13.872Z",
+        "reason": "false positive, reconfirmed: text-slate-950 is near-black, high contrast against bright cyan-500/emerald-500/pink-500 active-state backgrounds (tier switcher + chat toggle), not washed-out gray. Same judgment as the earlier occurrence in this file this session."
+      }
+    ]
+  }
+}

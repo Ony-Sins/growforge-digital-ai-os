@@ -63,7 +63,7 @@ function persist() {
 }
 
 function getStore(): PendingApproval[] {
-  if (!globalForStore.__growforgeApprovals) globalForStore.__growforgeApprovals = loadFromDisk();
+  globalForStore.__growforgeApprovals = loadFromDisk();
   return globalForStore.__growforgeApprovals;
 }
 

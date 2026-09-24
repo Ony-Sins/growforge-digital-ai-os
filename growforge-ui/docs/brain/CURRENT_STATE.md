@@ -1,56 +1,63 @@
 # GrowForge Digital — Current Operating State
 
-> **Last State Sync:** 2026-09-23T19:31:10.967Z  
-> **Active Project:** `Boston HealthCyber Growth Initiative` (`job-mueek67v-4oor`)  
+> **Last State Sync:** 2026-09-24T07:15:16.996Z  
+> **Active Project:** `Apex Thermal Labs Heat Pump Launch` (`job-muf6zmqi-xdr4`)  
 > **Overall Pipeline Status:** **DONE** (100%)  
 
 ## 1. Live Execution Telemetry
 
 | Attribute | Current Value |
 |---|---|
-| **Job ID** | `job-mueek67v-4oor` |
-| **Project Title** | Boston HealthCyber Growth Initiative |
-| **Created By** | test-e2e@growforge.local |
+| **Job ID** | `job-muf6zmqi-xdr4` |
+| **Project Title** | Apex Thermal Labs Heat Pump Launch |
+| **Created By** | owner@growforge.local |
 | **Pipeline Progress** | `100%` |
 | **Active Node** | *(none - idle)* |
-| **Research Grounding** | ✅ Verified (23 sources) |
+| **Research Grounding** | ✅ Verified (25 sources) |
 
 ## 2. Department & Sub-Agent Step Matrix
 
 | Step ID | Department / Node | Status | Progress | Activity | Rule Hash |
 |---|---|---|---|---|---|
 | `brief` | **Client Brief** | ✅ Done | 100% | Confirmed with you in chat | `-` |
-| `plan` | **GrowForge HQ** | ✅ Done | 100% | Assigned 5 departments | `v.5d8118e9863c` |
-| `research` | **Live Research** | ✅ Done | 100% | 23 sources gathered | `-` |
-| `dept:sales-bd` | **Revenue & Business Development** | ✅ Done | 100% | Draft complete | `v.5ebf68fd5d59` |
+| `plan` | **GrowForge HQ** | ✅ Done | 100% | Assigned 8 departments | `v.5d8118e9863c` |
+| `research` | **Live Research** | ✅ Done | 100% | 25 sources gathered | `-` |
 | `dept:marketing` | **Marketing & Brand Strategy** | ✅ Done | 100% | Draft complete | `v.bed9afa93914` |
+| `dept:sales-bd` | **Revenue & Business Development** | ✅ Done | 100% | Draft complete | `v.5ebf68fd5d59` |
 | `dept:meta-ads` | **Paid Media & Performance Advertising** | ✅ Done | 100% | Draft complete | `v.84e3653ca029` |
 | `dept:finance-ops` | **Finance & Operations** | ✅ Done | 100% | Draft complete | `v.9d50519d9388` |
 | `dept:client-success` | **Client Success & Program Management** | ✅ Done | 100% | Draft complete | `v.eeea3ff1163b` |
+| `dept:web-design` | **Digital Design & User Experience** | ✅ Done | 100% | Draft complete | `v.6c4f72f1c475` |
+| `dept:web-dev` | **Web Development & Engineering** | ✅ Done | 100% | Draft complete | `v.7f7892c2c5af` |
+| `dept:ai-automation` | **AI Systems & Intelligent Automation** | ✅ Done | 100% | Draft complete | `v.3f6e9d2847c1` |
 | `reconcile` | **Team Review** | ✅ Done | 100% | Conflicts resolved | `v.5d8118e9863c` |
-| `qa` | **Quality Assurance** | ✅ Done | 100% | Pass with fixes | `v.fe3ed8ed486a` |
+| `qa` | **Quality Assurance** | ✅ Done | 100% | Needs work — fixes required | `v.fe3ed8ed486a` |
 | `final` | **Final Plan** | ✅ Done | 100% | Plan ready | `v.5d8118e9863c` |
 
 ## 3. Latest Consolidated Deliverable
 
-> **Research:** 23 live sources
+> **Research:** 25 live sources
 
-# Final Marketing and Strategy Plan
+```markdown
+# Executive Summary
+The HVAC contractor will focus on maintaining a strong presence in the Austin, TX, market through strategic marketing, quality service, and competitive pricing. The plan aims to grow the business by leveraging local advertising, optimizing lead generation, and enhancing customer experience. Key strategies include a $2,000 monthly Meta Ads budget, competitive pricing for heat pump installations, and an emphasis on customer satisfaction and compliance.
 
-## Executive Summary
+# Market Snapshot
+- **Market Trends**: Increase in residential construction and renovations.
+- **Competition**: Local HVAC companies in Austin include The Chill Brothers, Green Leaf Air, and ServiceAgent.
+- **Key Challenges**: Regulatory compliance, maintaining competitive pricing, and ensuring high customer satisfaction.
 
-The Boston mid-market healthcare sector is poised for significant growth by 2026, driven by an increasing focus on cybersecurity and regulatory compliance. This marketing and strategy plan outlines the steps required to position the cybersecurity consulting firm as a leader in the market, targeting mid-market healthcare providers and leveraging aggressive marketing, comprehensive IT infrastructure upgrades, and strategic compliance and certifications.
+# Ideal Customers
+- Homeowners and small-business owners in Austin, TX.
+- Properties requiring heat pump installations and HVAC maintenance.
 
-### Market Snapshot
+# Offer & Pricing
+- **Heat Pump Installations**: Bundle services and offer financing options, with prices ranging from $5,000 to $5,500.
+- **Pricing Strategy**: Competitive pricing to attract customers, ensuring quality without compromising on cost.
 
-By 2026, the market for cybersecurity consulting services is expected to reach $79.41 billion, driven by the increasing vulnerability of healthcare data and the need for compliance. The sector is anticipated to grow at a CAGR of 10.5%. The primary regulatory requirements include GDPR, HIPAA, and other regional and federal data privacy laws.
-
-### Ideal Customers
-
-**Target Market:** Mid-market healthcare providers facing increasing data security challenges. Core focus is on organizations with 100-1,000 employees, spanning hospitals, clinics, and health systems with annual revenues between $50 million and $500 million.
-
-### Offer & Pricing
-
-The firm will offer a range of cybersecurity services, including managed security services, incident response, compliance assistance, and threat management. The pricing will be competitive and tailored to meet the unique needs of mid-market healthcare providers. Plans will start at $
+# Lead Generation Plan
+- **Lead Sources**: Local SEO, Meta Ads, and Airtasker.
+- **Targeted Meta Ads**: Start with a $2,000 initial monthly budget, reviewing and adjusting every quarter based on performance.
+- **Airtasker**: Offer free estimates and consultatio
 
 *(...truncated for summary view...)*

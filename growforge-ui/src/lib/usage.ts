@@ -82,6 +82,11 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   "cohere/north-mini-code:free":                  { input: 0, output: 0 },
   "nvidia/nemotron-3.5-lightning:free":            { input: 0, output: 0 },
 
+  // ── OmniRoute free pool models ──
+  "omniroute":                                    { input: 0, output: 0 },
+  "omniroute/auto":                               { input: 0, output: 0 },
+  "auto":                                         { input: 0, output: 0 },
+
   // ── Local / Ollama ──
   // Local models have zero monetary cost.
   "qwen2.5:7b-instruct":    { input: 0, output: 0 },

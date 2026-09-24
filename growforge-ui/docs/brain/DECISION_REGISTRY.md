@@ -527,3 +527,163 @@
   
   3. **Market Trends and Competitor Analysis:**
      - **Claim:** "How are leading cyberse
+
+### Decision: HQ Assigned 5 Departments for "P&E Plumbing: 6M Sales, 25 Leads Per Month"
+- **Recorded:** 2026-09-24T05:11:34.430Z
+- **Department/Context:** GrowForge HQ · Job job-muf2q78j-974i
+- **Agreed Resolution & Direction:**
+  - **Revenue & Business Development**: Identify local lead sources
+  - **Paid Media & Performance Advertising**: Develop paid ad strategy
+  - **Marketing & Brand Strategy**: Create content and messaging
+  - **Client Success & Program Management**: Coordinate project timeline
+  - **Finance & Operations**: Establish budget and financial projections
+
+### Decision: HQ Reconciled Team Direction for Job job-muf2q78j-974i
+- **Recorded:** 2026-09-24T05:22:39.952Z
+- **Department/Context:** GrowForge HQ · Cross-Department Review
+- **Agreed Resolution & Direction:**
+  ### Conflicts
+  
+  **Dept A: Marketing ↔ Dept B: Finance:**
+  - **What Each Proposed:**
+    - **Marketing:** Proposed a budget of $20,000 for lead generation with a focus on PPC and SEO. They suggest a cost per lead (CPL) of $50.
+    - **Finance:** Proposed a budget of $15,000, considering the high risk of emergencies and uncertainty in service demand. They aim for a more conservative CPL of $45.
+  
+  - **Decision:** 
+    - **Decision:** Allocate a budget of $17,500 (split between $10,000 for PPC and $7,500 for SEO), with a target CPL of $47. This balance between the two departments ensures a reasonable risk and budget utilization, providing both necessary exposure and potential leads.
+  
+  ---
+  
+  **Dept A: Marketing ↔ Dept C: Operations:**
+  - **What Each Proposed:**
+    - **Marketing:** Suggested offering trip fe
+
+### Decision: HQ Assigned 7 Departments for "Apex Thermal Labs Q4 2026 Launch Plan"
+- **Recorded:** 2026-09-24T07:06:38.579Z
+- **Department/Context:** GrowForge HQ · Job job-muf6tsk8-q5d9
+- **Agreed Resolution & Direction:**
+  - **Revenue & Business Development**: Identify and prioritize qualified leads in Austin, TX
+  - **Marketing & Brand Strategy**: Develop position and target audience for the new service
+  - **Paid Media & Performance Advertising**: Create and launch paid advertising campaigns for Q4 2026
+  - **Finance & Operations**: Estimate unit economics and prepare budget forecasts
+  - **Client Success & Program Management**: Outline project timelines and risk management plan
+  - **Digital Design & User Experience**: Design and set up user-friendly CRM and booking system
+  - **AI Systems & Intelligent Automation**: Integrate lead follow-up systems for campaign automation
+
+### Decision: HQ Assigned 7 Departments for "Apex Thermal Labs Launch Q4 2026"
+- **Recorded:** 2026-09-24T07:07:36.353Z
+- **Department/Context:** GrowForge HQ · Job job-muf6uszl-rtzo
+- **Agreed Resolution & Direction:**
+  - **Revenue & Business Development**: Define sales playbook for Apex Thermal Labs
+  - **Marketing & Brand Strategy**: Develop marketing channels and messaging for Apex Thermal Labs
+  - **Paid Media & Performance Advertising**: Create and optimize meta ads for Apex Thermal Labs
+  - **Finance & Operations**: Forecast financials and unit economics for Apex Thermal Labs
+  - **Client Success & Program Management**: Coordinate client onboarding and project timelines for Apex Thermal Labs
+  - **Web Development & Engineering**: Build website for Apex Thermal Labs
+  - **AI Systems & Intelligent Automation**: Develop CRM for lead tracking and follow-up for Apex Thermal Labs
+
+### Decision: HQ Reconciled Team Direction for Job job-muf6tsk8-q5d9
+- **Recorded:** 2026-09-24T07:10:01.012Z
+- **Department/Context:** GrowForge HQ · Cross-Department Review
+- **Agreed Resolution & Direction:**
+  ### Conflicts
+  For each place two departments disagree (budgets, pricing, timelines, channel priority, targeting): "**Dept A ↔ Dept B:** what each proposed → **Decision:** the resolution and why."
+  
+  **Dept Marketing ↔ Dept Finance:**
+  - **Marketing:** Proposed budget for Google Ads is $10,000.
+  - **Finance:** Requires a more detailed cost analysis, including fixed costs and anticipated returns, to ensure the budget is feasible.
+  - **Decision:** Financial department will conduct a detailed ROI analysis, and marketing will adjust the budget based on the findings. Marketing will propose a budget of $7,500, with ongoing adjustments as needed.
+  
+  **Dept HR ↔ Dept Sales:**
+  - **HR:** Proposed to hire additional staff for the sales team.
+  - **Sales:** Requests more detailed sales projections before finali
+
+### Decision: Automatic Crash Recovery for Job job-muf6tsk8-q5d9
+- **Recorded:** 2026-09-24T07:10:05.554Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 77% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research, dept:sales-bd, dept:marketing, dept:meta-ads, dept:finance-ops, dept:client-success, dept:web-design, dept:ai-automation, reconcile].
+
+### Decision: QA Audit Verdict: Needs work — fixes required for Job job-muf6tsk8-q5d9
+- **Recorded:** 2026-09-24T07:10:21.610Z
+- **Department/Context:** Quality Assurance · Quality Assurance
+- **Agreed Resolution & Direction:**
+  **Verdict:** NEEDS WORK
+  
+  ### Unsupported Claims
+  1. **"The average heat pump replacement cost is around $10,000 to $15,000, with state incentives and rebates reducing financial burden."** [n]
+  2. **"The average CPC of $9.12 and a CPL between $67 to $120."** [n]
+  3. **"Google Ads with a CPC of $9.12 and a CPL of $67 to $120."** [n]
+  4. **"Customer search behavior highlights the importance of targeting local audiences, employing specific keywords, and leveraging high-impact marketing tactics."** [n]
+  
+  ### Contradictions
+  1. **"The timeline and priorities for 2026 are broken down into Q1 to Q4, but the budget proposal for Google Ads starts in Q2."** 
+  
+  ### Missing Essentials
+  1. **Detailed breakdown of specific state and federal incentives.**
+  2. **Specific details on customer search behavior and pref
+
+### Decision: QA Audit Verdict: Pass with fixes for Job job-muf6tsk8-q5d9
+- **Recorded:** 2026-09-24T07:10:46.913Z
+- **Department/Context:** Quality Assurance · Quality Assurance
+- **Agreed Resolution & Direction:**
+  **Verdict:** PASS WITH FIXES
+  
+  ---
+  
+  ### Unsupported Claims
+  1. The average heat pump replacement cost is around $10,000 to $15,000. (Verify specific cost figures or sources)
+  2. The average CPC for Google Ads is $9.12. (Verify from actual advertising spend data)
+  3. The average CPL is between $67 and $120. (Verify from actual lead generation data)
+  
+  ### Contradictions
+  - The timeline for Google Ads suggests starting in Q1 2026, but the timeline for launching email and social media campaigns is in Q2 2026. These should be aligned.
+  
+  ### Missing Essentials
+  1. Detailed cost analysis and breakdown for the comprehensive service package.
+  2. Specific vendor partnerships and collaboration agreements.
+  3. A structured plan for regulatory compliance and legal requirements.
+  
+  ### Required_fixes
+  
+  1. **Detailed
+
+### Decision: HQ Assigned 8 Departments for "Apex Thermal Labs Heat Pump Launch"
+- **Recorded:** 2026-09-24T07:11:40.693Z
+- **Department/Context:** GrowForge HQ · Job job-muf6zmqi-xdr4
+- **Agreed Resolution & Direction:**
+  - **Marketing & Brand Strategy**: Local target audience research and messaging strategy
+  - **Revenue & Business Development**: ICP definition and prospecting for Apex Thermal Labs
+  - **Paid Media & Performance Advertising**: Paid media strategy and campaign architectures for heat pump installations
+  - **Finance & Operations**: Unit economics and budget projections for marketing initiatives
+  - **Client Success & Program Management**: Project management for client deliverables and timelines
+  - **Digital Design & User Experience**: Design and development of the Apex Thermal Labs website and landing pages
+  - **Web Development & Engineering**: Web development and technical implementation
+  - **AI Systems & Intelligent Automation**: CRM workflows and automation for lead follow-up
+
+### Decision: HQ Reconciled Team Direction for Job job-muf6zmqi-xdr4
+- **Recorded:** 2026-09-24T07:14:36.109Z
+- **Department/Context:** GrowForge HQ · Cross-Department Review
+- **Agreed Resolution & Direction:**
+  ### Conflicts
+  For each place two departments disagree (budgets, pricing, timelines, channel priority, targeting): "**Dept A ↔ Dept B:** what each proposed → **Decision:** the resolution and why."
+  
+  #### Dept Marketing ↔ Dept Operations:
+  - **Dept Marketing**: Proposes a heavier investment in Meta Ads with a monthly budget of $4,000.
+  - **Dept Operations**: Sees the need but is concerned about the monthly budget, suggesting a $2,000 investment to ensure better control and impact.
+  - **Decision**: A mixed approach will be taken. Start with a $2,000 monthly budget for Meta Ads and review the impact every quarter. If the ROI is favorable, increase the budget to $4,000.
+  - **Reasoning**: This hybrid approach allows for initial testing and adjustment, reducing the risk of over-investing from the star
+
+### Decision: QA Audit Verdict: Needs work — fixes required for Job job-muf6zmqi-xdr4
+- **Recorded:** 2026-09-24T07:14:55.768Z
+- **Department/Context:** Quality Assurance · Quality Assurance
+- **Agreed Resolution & Direction:**
+  **Verdict:** NEEDS WORK
+  
+  ### Unsupported Claims
+  1. **Ad Spend**: The document mentions a $2,000 initial monthly budget for targeted Meta Ads but does not provide any citations or references to support this figure. This value should be verified.
+  2. **Lead Generation Cost**: The document states that the cost per lead ranges between $30 to $80 but does not provide any references for this data. This value should be substantiated.
+  3. **Closing Rate**: The document mentions an average closing rate of $45 to $120 per job for targeted Meta Ads but does not provide any citations for this information. This value should be verified.
+  
+  ### Contradictions
+  1. **Ad Spend vs. Budget Priorities**: The document suggests prioritizing lead generation over direct conversions, yet the ad spend allocation implies

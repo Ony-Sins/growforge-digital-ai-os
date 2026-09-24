@@ -60,8 +60,8 @@ export interface GenerationOptions {
   preferCloud?: boolean;
 }
 
-export type LlmProvider = "gemini" | "groq" | "openai" | "anthropic" | "openrouter" | "ollama";
-export type CloudProvider = Exclude<LlmProvider, "ollama">;
+export type LlmProvider = "omniroute" | "gemini" | "groq" | "openai" | "anthropic" | "openrouter" | "ollama";
+export type CloudProvider = Exclude<LlmProvider, "ollama" | "omniroute">;
 export type LlmStrategy = "auto" | "local" | "cloud";
 
 /** Env var name + sane default model for each cloud provider — the single
@@ -158,10 +158,10 @@ export function providerOrder(strategy: LlmStrategy = getStrategy()): LlmProvide
     case "local":
       return ["ollama"];
     case "cloud":
-      return cloudProviderOrder();
+      return ["omniroute", ...cloudProviderOrder()];
     case "auto":
     default:
-      return ["ollama", ...cloudProviderOrder()];
+      return ["omniroute", "ollama", ...cloudProviderOrder()];
   }
 }
 
@@ -504,6 +504,67 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
   return { text, model, usage: rawUsage };
 }
 
+interface OmniRouteResponse {
+  choices?: { message?: { content?: string } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  model?: string;
+  error?: { message?: string };
+}
+
+async function callOmniRoute(
+  systemPrompt: string,
+  messages: ChatMessage[],
+  opts: GenerationOptions = {},
+): Promise<ProviderResult> {
+  const baseUrl = (process.env.OMNIROUTE_BASE_URL || "http://localhost:20128").replace(/\/+$/, "");
+  const model = process.env.OMNIROUTE_MODEL || "auto";
+  const endpoint = baseUrl.endsWith("/v1") ? `${baseUrl}/chat/completions` : `${baseUrl}/v1/chat/completions`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout for rapid failover
+
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.4,
+        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw new LlmError(
+      `Could not reach OmniRoute at ${endpoint} (${err instanceof Error ? err.message : String(err)}).`,
+      "omniroute",
+    );
+  }
+  clearTimeout(timeoutId);
+
+  const data = (await res.json().catch(() => ({}))) as OmniRouteResponse;
+  if (!res.ok) {
+    throw new LlmError(data.error?.message ?? `OmniRoute request failed (HTTP ${res.status})`, "omniroute");
+  }
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text.trim()) {
+    throw new LlmError("OmniRoute returned an empty response.", "omniroute");
+  }
+  return {
+    text,
+    model: data.model ?? model,
+    usage: {
+      inputTokens: data.usage?.prompt_tokens ?? null,
+      outputTokens: data.usage?.completion_tokens ?? null,
+    },
+  };
+}
+
 function callProvider(
   provider: LlmProvider,
   systemPrompt: string,
@@ -511,6 +572,8 @@ function callProvider(
   opts: GenerationOptions = {},
 ): Promise<ProviderResult> {
   switch (provider) {
+    case "omniroute":
+      return callOmniRoute(systemPrompt, messages, opts);
     case "gemini":
       return callGemini(systemPrompt, messages, opts);
     case "groq":
@@ -716,7 +779,9 @@ export async function chatComplete(
 ): Promise<{ text: string; provider: LlmProvider; usage: UsageRecord }> {
   const strategy = getStrategy();
   const order: LlmProvider[] =
-    opts.preferCloud && strategy === "auto" ? [...cloudProviderOrder(), "ollama"] : providerOrder(strategy);
+    opts.preferCloud && strategy === "auto"
+      ? ["omniroute", ...cloudProviderOrder(), "ollama"]
+      : providerOrder(strategy);
 
   if (order.length === 0) {
     if (strategy === "cloud") {

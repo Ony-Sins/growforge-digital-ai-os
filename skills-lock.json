@@ -1,0 +1,2297 @@
+{
+  "version": 1,
+  "skills": {
+    "accelerated-computing-cudf": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/accelerated-computing-cudf/SKILL.md",
+      "computedHash": "178bee0a256f5f55493e5de31753154be23ffce329951f1cfc19f56fcdefe801"
+    },
+    "aiq-deploy": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/aiq-deploy/SKILL.md",
+      "computedHash": "d3b5cf955e192a4247857a6456cd7311d4344b163415ee3f7c7ffe4196d83116"
+    },
+    "aiq-research": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/aiq-research/SKILL.md",
+      "computedHash": "520f64d652b93e5ec05e0f865f6b95d44b1b719d091082c1ec6af9082f23be54"
+    },
+    "amc-run-rtsp-calibration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/amc-run-rtsp-calibration/SKILL.md",
+      "computedHash": "231b4d2de82692225a1bb2cd115e8ceadc3b4993fbba294483490ff70b438148"
+    },
+    "amc-run-sample-calibration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/amc-run-sample-calibration/SKILL.md",
+      "computedHash": "2f905eb17c2a08252cdf3eb783d6fbd33383ed7c629a4f1dc37aced61d308db6"
+    },
+    "amc-run-video-calibration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/amc-run-video-calibration/SKILL.md",
+      "computedHash": "8c1a85fd30f87bbc72ec2b53477b4419d34063b42687d2418c93772701c65306"
+    },
+    "amc-setup-calibration-stack": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/amc-setup-calibration-stack/SKILL.md",
+      "computedHash": "cc8887c74e119c967514dede4aa2f26516cec2cf6d6ea6a8750984e7818cbbdd"
+    },
+    "cudaq-guide": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cudaq-guide/SKILL.md",
+      "computedHash": "7da342a494c750f1bfb0004304ac8df806acade8827b89914b449bba43175f55"
+    },
+    "cudaq-importing": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cudaq-importing/SKILL.md",
+      "computedHash": "e38b4c6ff2fd8aba84c4134f3fc2a5180184aee2c1e02a62aab8215d9034292b"
+    },
+    "cuopt-developer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-developer/SKILL.md",
+      "computedHash": "10c8e5366a3540c4ec9e4cf0eead1eca3ecfa6478ffdc5b7d4f77b06337fb705"
+    },
+    "cuopt-install": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-install/SKILL.md",
+      "computedHash": "639e095d240d20c8cc29c7625ab0671eaccda197b39f66f2bae23aaf3ea98278"
+    },
+    "cuopt-multi-objective-exploration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-multi-objective-exploration/SKILL.md",
+      "computedHash": "3784bd3efa2730861d21a8b6306ea8a9beb9b68c1fd37b1ad49964d6c8180788"
+    },
+    "cuopt-numerical-optimization-api": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-numerical-optimization-api/SKILL.md",
+      "computedHash": "26d93fefc887902fa537e0ba50c0e8ec561b8f9454ac892304f26b343ef697c2"
+    },
+    "cuopt-numerical-optimization-formulation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-numerical-optimization-formulation/SKILL.md",
+      "computedHash": "0472b1d101c3e63dfb7dae62b44219c92fbe28a42d7eb33868df0775e739dcb7"
+    },
+    "cuopt-routing-api-python": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-routing-api-python/SKILL.md",
+      "computedHash": "1dfd929ce24971accfe01a00d3ae5b8be7e017cc288df2687c201284e54d15fd"
+    },
+    "cuopt-server-api-python": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cuopt-server-api-python/SKILL.md",
+      "computedHash": "095b486a5cd525ee7f67f0a7a1435659d2b53661192f0525a9736eed71ca5aae"
+    },
+    "dali-dynamic-mode": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dali-dynamic-mode/SKILL.md",
+      "computedHash": "5f83d332da168df4b305a6a375137dd57283e562b74da7662086141985e6e511"
+    },
+    "data-designer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/data-designer/SKILL.md",
+      "computedHash": "a5998c8ebe66ca88184fd409e34fb3721778c4a7ab4c8ae9753de12f6151080e"
+    },
+    "deepstream-dev": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-dev/SKILL.md",
+      "computedHash": "3c40210f67b5d33b906a5e975f2eb858919363b09b2a437a1127a8f060367f0a"
+    },
+    "deepstream-generate-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-generate-pipeline/SKILL.md",
+      "computedHash": "cae1606b1647bb28d30e38e3ebe545b9fce7e662b2c3b96bc8e6e37cdba94613"
+    },
+    "deepstream-import-vision-model": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-import-vision-model/SKILL.md",
+      "computedHash": "d7fbe6d4c3467ed9022e45ba24eb8f03aebad4cfcaf9d02efb1284ef9b680a2e"
+    },
+    "deepstream-profile-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-profile-pipeline/SKILL.md",
+      "computedHash": "419a75c175a04476661b43117bd713d4fcb058cdbfac073df28fca58323b1e10"
+    },
+    "deepstream-run-mv3dt": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-run-mv3dt/SKILL.md",
+      "computedHash": "abe240d91f6a4f7e802d62e59e56a90109dea780001b3708782f0bc9e9a0ad1c"
+    },
+    "deepstream-sop": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deepstream-sop/SKILL.md",
+      "computedHash": "8e3637b4c67c3e1c6d91118d1c2434f8502a1347b07eb9250fa64915a8ef8480"
+    },
+    "dicom-metadata-extract": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dicom-metadata-extract/SKILL.md",
+      "computedHash": "11f8b3724047ac7d9e9cf53c03865e19684b8a5f636251c18dfaf4856eba6e91"
+    },
+    "dicom-series-preflight": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dicom-series-preflight/SKILL.md",
+      "computedHash": "86438da50e060b0ae96c9c5f51e39b1117a88fce8109fc20fed407f8af459096"
+    },
+    "dicom-series-to-volume": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dicom-series-to-volume/SKILL.md",
+      "computedHash": "81224c2089f230af3f55f54738ba95ee4912f1fe6e6f85e04a7b9436da79a091"
+    },
+    "digital-health-clinical-asr-build": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/digital-health-clinical-asr-build/SKILL.md",
+      "computedHash": "981bcd1887417ca910154af2025bc4985903a5a6ea941cef6157483f9a214327"
+    },
+    "digital-health-clinical-asr-eval": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/digital-health-clinical-asr-eval/SKILL.md",
+      "computedHash": "40fe27af207a280eb287764d4cb354567c9aa756edd086ace1923abc4327be15"
+    },
+    "digital-health-clinical-asr-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/digital-health-clinical-asr-finetune/SKILL.md",
+      "computedHash": "d4dbf7fb5c996d2238e3b36f5b7daf378c7c3ca002721f4bbba93bd955603ec0"
+    },
+    "digital-health-clinical-asr-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/digital-health-clinical-asr-setup/SKILL.md",
+      "computedHash": "fe1263d708082931c5c5a71f6502cffad6d256a4ef93f84dd2c1e16f45d6f5ad"
+    },
+    "doca-aes-gcm": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-aes-gcm/SKILL.md",
+      "computedHash": "ab8f9ce53ea62d00d1d6649c20c70ab30089f11441262eebcf6073abc6d0c4da"
+    },
+    "doca-argp": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-argp/SKILL.md",
+      "computedHash": "764aa4865321441c27a8e56658ee2e474d29517d106aa2d82e0f76d6d9611ed7"
+    },
+    "doca-argus": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-argus/SKILL.md",
+      "computedHash": "e46b243def88da98e6a2e75e46d419071fb6b24e66b97b790847435e46a56c69"
+    },
+    "doca-bare-metal-deployment": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-bare-metal-deployment/SKILL.md",
+      "computedHash": "97d20a7a39899e03bea35d5bbd1ec123bad82b2f66e784842462ed7294485626"
+    },
+    "doca-bench": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-bench/SKILL.md",
+      "computedHash": "07e6a9dcd49255e3380426177f68db1582a51c69ce69ab0e206061b092497c3a"
+    },
+    "doca-bench-extension": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-bench-extension/SKILL.md",
+      "computedHash": "a74da69821801c7c3e42ef4e9e8a0f1c556990b8aa0c3fdf95ac34ecec79bebd"
+    },
+    "doca-bf3-deployment": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-bf3-deployment/SKILL.md",
+      "computedHash": "d46b3c44f442229cf29ab5ddc9299072abaf4ba129e42157ddb9d7e5caa81a1c"
+    },
+    "doca-bf4-deployment": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-bf4-deployment/SKILL.md",
+      "computedHash": "d7858c81b245a374c71108464b39ecb9f7c9089de414beddf66c9196f2dda5fe"
+    },
+    "doca-caps": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-caps/SKILL.md",
+      "computedHash": "bfd858dd0f57f8ea10668929efabdbbe1641daf44923927802b42c043c8043fc"
+    },
+    "doca-collectx-deployment": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-collectx-deployment/SKILL.md",
+      "computedHash": "d513d861b8474dd38c8e96ac06a272102c68e0cdae3a13244cb002384e01f4fe"
+    },
+    "doca-comch": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-comch/SKILL.md",
+      "computedHash": "b273da8e1541207987107dce0c97fb3680b37a0bacfa603465e6691e15521367"
+    },
+    "doca-comm-channel-admin": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-comm-channel-admin/SKILL.md",
+      "computedHash": "8cbf02471262346994939c56981e0d7b709dc55382591bf5440400cc00d7ca02"
+    },
+    "doca-common": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-common/SKILL.md",
+      "computedHash": "fb102e6d816b71f7b01233373169a6409521ee243492704089a1e41aa63c9dc4"
+    },
+    "doca-compress": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-compress/SKILL.md",
+      "computedHash": "6c06b047eaa1a11fd9a6ebba7c087f8960432eecaaba3c784d9e0136830902df"
+    },
+    "doca-container-deployment": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-container-deployment/SKILL.md",
+      "computedHash": "f37e8cf120487e46322d5780e212280b947b08a5893f119fe36e393b3b655350"
+    },
+    "doca-debug": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-debug/SKILL.md",
+      "computedHash": "5a22943032d6987e06cf15dc9e7c1302d17f723b3ed721ef5c6be74e72b183d6"
+    },
+    "doca-devemu": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-devemu/SKILL.md",
+      "computedHash": "2055c1f3a608f028bc7f9abd9c34bafb72a887c403013e4953e41ba44d3d3d23"
+    },
+    "doca-dma": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-dma/SKILL.md",
+      "computedHash": "d85b14a48aa656f0472e33fa7b95c4848100c641e5296ccac7f2b292f0c906db"
+    },
+    "doca-dms": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-dms/SKILL.md",
+      "computedHash": "53748f1a18c136719a67f543c6bf42946a22ee74c89efd149d241318702d6638"
+    },
+    "doca-dpa": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-dpa/SKILL.md",
+      "computedHash": "c76093a3b83a4ae433c6fc137ca65999b177ebee1595f65255f92101a38ea76d"
+    },
+    "doca-dpa-hl-tracer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-dpa-hl-tracer/SKILL.md",
+      "computedHash": "b5f9d26a715d3fcdcc0b34b905a7252fe60cc81b1de5275df2e0120c4f67b1dc"
+    },
+    "doca-dpdk-bridge": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-dpdk-bridge/SKILL.md",
+      "computedHash": "68903b246b62527917e381595679081f315633639b974d566e2cc1e6bc0519ae"
+    },
+    "doca-erasure-coding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-erasure-coding/SKILL.md",
+      "computedHash": "10bd2d01aa50b2313e5f25c82a8c2de4f32be5860bebb6a57b7c3790218272e8"
+    },
+    "doca-eth": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-eth/SKILL.md",
+      "computedHash": "f890d4ae2270c61dcdffeb58fc48888e8fbed8383169c25bd27cbae191f410ff"
+    },
+    "doca-firefly": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-firefly/SKILL.md",
+      "computedHash": "127063dd4258cef5c122b0ee7c6e5e8859f8a1827ee82d646f127010c5bb970b"
+    },
+    "doca-flow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow/SKILL.md",
+      "computedHash": "ab378dce3fd4bae0a6df2f596757e635d9d5bbec58d5199f75c60fb40ac78b9b"
+    },
+    "doca-flow-dpa-perf": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow-dpa-perf/SKILL.md",
+      "computedHash": "bee807a936be5990692f3c885fb28211969fd42962ab3599b71bc6cca8be93b6"
+    },
+    "doca-flow-dpa-provider": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow-dpa-provider/SKILL.md",
+      "computedHash": "ce46c902edb3f86d6eb3082c0485f666e5890e467e6cd6a7a34495cdbfef6e8e"
+    },
+    "doca-flow-grpc-server": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow-grpc-server/SKILL.md",
+      "computedHash": "eadb14d01dd842d686b98988699957f96f494fc6d980775f68e6b1e0972cc451"
+    },
+    "doca-flow-perf": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow-perf/SKILL.md",
+      "computedHash": "985296ff5ba0f20ffeb27a325e85e3a1c317faffa0e56b5e54ad7742d1191014"
+    },
+    "doca-flow-tune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-flow-tune/SKILL.md",
+      "computedHash": "f77a7f4caa6bb1899be3bd61f4278fd8d28c92b449e6dcd000c72acb34ef83b9"
+    },
+    "doca-gpi": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-gpi/SKILL.md",
+      "computedHash": "20f05bb3ac5c7057697a364b506cfa57fa41efa7f68f6105d4c7747732fcc04c"
+    },
+    "doca-gpunetio": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-gpunetio/SKILL.md",
+      "computedHash": "6c8fabb64a5c06f3834bd1a900247922476279e6f37a4eb26d8608052627b928"
+    },
+    "doca-gpunetio-ib-write-bw": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-gpunetio-ib-write-bw/SKILL.md",
+      "computedHash": "0876676c9a2ff70448409acc41a7ae4152243a6e21b7e5b64d8474077b9ea6c9"
+    },
+    "doca-gpunetio-ib-write-lat": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-gpunetio-ib-write-lat/SKILL.md",
+      "computedHash": "a1dc26774a1607fc25b082891130832a554d9ef73d64e1ee05be32026f06ddcc"
+    },
+    "doca-hardware-safety": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-hardware-safety/SKILL.md",
+      "computedHash": "6c7b277944777778ec2b587d1e185ba801393cfa962c33aacd96a900b705fb90"
+    },
+    "doca-mgmt": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-mgmt/SKILL.md",
+      "computedHash": "7c7a6bb2d145a73ffc7c5208bc6ce554f7e6a6be9fe87e72b7a42967d6cd0b8c"
+    },
+    "doca-pcc": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-pcc/SKILL.md",
+      "computedHash": "709a68f2ec33fd7c56ab1585665725bd4eab2cc02dded7a70616e6b6dc4700dc"
+    },
+    "doca-pcc-counters": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-pcc-counters/SKILL.md",
+      "computedHash": "9d21c75d541fa9135a27f5bde5703b81f253fe17e37b2e524981efcfc447eabf"
+    },
+    "doca-pcc-ztr-rttcc-algo": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-pcc-ztr-rttcc-algo/SKILL.md",
+      "computedHash": "bece26655bdbe482ea8b3a62fbc613460b5c40b2060e4550da7e26b76f619390"
+    },
+    "doca-programming-guide": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-programming-guide/SKILL.md",
+      "computedHash": "9e7de17183c05324ba81745a2667029a60136821d25d735d6b86c504e3025032"
+    },
+    "doca-public-knowledge-map": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-public-knowledge-map/SKILL.md",
+      "computedHash": "bd1f99b64eca9080f9a01815ade6fb98a691661ac6436c8a56ddce0ebee04dbc"
+    },
+    "doca-rdma": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-rdma/SKILL.md",
+      "computedHash": "a0f47aacf453b8d3ffc27274cfb2ae9f7896f0661c29f9aecc6741f78d90ef21"
+    },
+    "doca-rdmi": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-rdmi/SKILL.md",
+      "computedHash": "a707f6e0dda2aa7479005fb50fa8e0920223cb7ac623c3504f5fa78f268f14ae"
+    },
+    "doca-rmax": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-rmax/SKILL.md",
+      "computedHash": "18b9ab3fe11fed2e5e9074f86f06041642fe84ac70f802be1bf565e408d5b546"
+    },
+    "doca-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-setup/SKILL.md",
+      "computedHash": "533e167f2ea35f3dd23a39ee285338ffc4b27be1ca46329fca5071f0e51cb391"
+    },
+    "doca-sha": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-sha/SKILL.md",
+      "computedHash": "408f77b88f015298b69a19b011c8b66de553cc27b976a758eb8ce4aad769a2dd"
+    },
+    "doca-sha-offload-engine": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-sha-offload-engine/SKILL.md",
+      "computedHash": "c0ccdb65420f896f739e79ca1fd9e576af80b4741a755254c111356aefb7a3c7"
+    },
+    "doca-socket-relay": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-socket-relay/SKILL.md",
+      "computedHash": "b040d4cfaa5c6aa71c66c34f988748f480ed12bcfcf675b7dff7062a532d2dd2"
+    },
+    "doca-spcx-cc": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-spcx-cc/SKILL.md",
+      "computedHash": "3223701ee0b211f0fbb5066b8fc8659cc7d1ef955de784ae5e09ceeee121367a"
+    },
+    "doca-sta": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-sta/SKILL.md",
+      "computedHash": "be1c3d4658421aa28c094ae3fa8ce33031352e14314f3e02420004c1d606b95a"
+    },
+    "doca-structured-tools-contract": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-structured-tools-contract/SKILL.md",
+      "computedHash": "3426c2ea461a5e03305e1eeaded25ee04e66fe8f07d158c92d2bd2236419bf47"
+    },
+    "doca-telemetry": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-telemetry/SKILL.md",
+      "computedHash": "7cd65d53ceb372556608639bdeeb0b0936a9da2e8142d9be5b228e83b1e9efee"
+    },
+    "doca-telemetry-exporter": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-telemetry-exporter/SKILL.md",
+      "computedHash": "4a4759bea3c2ab53463682f3fd86f2878e5393f313ad3e6120588a0f44c0a25f"
+    },
+    "doca-telemetry-utils": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-telemetry-utils/SKILL.md",
+      "computedHash": "0cf00f5199a2607351038fc418571e5007b06274c85c15197afb48dde03e6577"
+    },
+    "doca-upgrade": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-upgrade/SKILL.md",
+      "computedHash": "7dfedb8d7be7d2b0502b9534ee919c213d3c3f72ce8c3750be6a99af108e73f4"
+    },
+    "doca-urom": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-urom/SKILL.md",
+      "computedHash": "adbec05570b33e3738ab44e31612c44967d3fd4a8321c7020dfb355fe492f5e1"
+    },
+    "doca-urom-svc": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-urom-svc/SKILL.md",
+      "computedHash": "66abf5c3dc8ff4b3924c13d8bbc68d08b0338e47a515a12b38bae97d5b6df0c2"
+    },
+    "doca-verbs": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-verbs/SKILL.md",
+      "computedHash": "9c1c099565ab856badd5f4cc3cf7e0bea2fa561c42c018bc36d9930b4658acce"
+    },
+    "doca-version": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/doca-version/SKILL.md",
+      "computedHash": "5469ddafa006271cc0870afc722814b39b95a30cb9c22dce66f5231094fde966"
+    },
+    "dynamo-interconnect-check": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dynamo-interconnect-check/SKILL.md",
+      "computedHash": "0233a0b316bfa2344609fb8907a54998977db8915f8f514d268ca6631a70cdd6"
+    },
+    "dynamo-recipe-runner": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dynamo-recipe-runner/SKILL.md",
+      "computedHash": "3a665e6b8db08daa9ecb58e9d6ae09a88690fcd1e7018b87a66188b35cde455f"
+    },
+    "dynamo-router-starter": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dynamo-router-starter/SKILL.md",
+      "computedHash": "e2b2e2d9e7150d7bfee8d9efc03a17b31fcb8580fe2dec1720e9539e32c1d1f5"
+    },
+    "dynamo-troubleshoot": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dynamo-troubleshoot/SKILL.md",
+      "computedHash": "f29880b5e5849aa9633b68d88135d20a0e353d4fd39a3c6f31f8beef80b1c1ba"
+    },
+    "earth2studio-create-datasource": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-create-datasource/SKILL.md",
+      "computedHash": "02cb867ee216d322318dbb65eaad5a8450d8e0749583ea5f096e9a405fb1e3d7"
+    },
+    "earth2studio-create-diagnostic": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-create-diagnostic/SKILL.md",
+      "computedHash": "f4b1f0c9394f321b6975ab1e035f6fd697b8811adfc256ce572749781586e396"
+    },
+    "earth2studio-create-prognostic": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-create-prognostic/SKILL.md",
+      "computedHash": "b80e452e2398fb63319812fc456093ce31b1b8bf74ec9c73cb5f9aa82899bd2a"
+    },
+    "earth2studio-data-fetch": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-data-fetch/SKILL.md",
+      "computedHash": "45799eb799893fc26bc7d38498eda7a6e76629b351f487173808ce0324d21495"
+    },
+    "earth2studio-deterministic-forecast": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-deterministic-forecast/SKILL.md",
+      "computedHash": "5c10d7fe83f888bbbd1e7684a3b975b389773f1a515496e1b8df2ca8f6d0e33f"
+    },
+    "earth2studio-discover": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-discover/SKILL.md",
+      "computedHash": "3e53487935c1225b3520ab15c6c00292f30c56d46d5dfdce1f66375bdb80e1ee"
+    },
+    "earth2studio-install": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/earth2studio-install/SKILL.md",
+      "computedHash": "c2084b0b48da8a7c2db76c4fe4b41386ea06b6515a0709b1f3d616e76f9c8675"
+    },
+    "foundationpose-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/foundationpose-pipeline/SKILL.md",
+      "computedHash": "ce1e670165ac86acffc0e14014005e31287235adfc63840514f5d3a2aa40944b"
+    },
+    "foundationpose-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/foundationpose-setup/SKILL.md",
+      "computedHash": "2e84a323159d5b0b4c18ed8a702f4f4430622365c1937d11568164c9d700a259"
+    },
+    "holohub-app-lifecycle": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holohub-app-lifecycle/SKILL.md",
+      "computedHash": "561c774c7b550517a739dca50c12d1c5bb798d64fc8596df1743dfcb60d425da"
+    },
+    "holohub-debug-build-run": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holohub-debug-build-run/SKILL.md",
+      "computedHash": "b2ee25c391af904b3d0e0942f5bb07a08f526515f6cce825587964b2fec785ea"
+    },
+    "holohub-module-lifecycle": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holohub-module-lifecycle/SKILL.md",
+      "computedHash": "62008741e1337f9462473b16ba78efe45b687483b6079bcf3fd0abbe71958ebd"
+    },
+    "holoscan-install-conda": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-install-conda/SKILL.md",
+      "computedHash": "6d3ee3af736883d466adcb5fc5861900941496cba880703c9e4789497a7b5a39"
+    },
+    "holoscan-install-container": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-install-container/SKILL.md",
+      "computedHash": "5bf52982102742ba24482b17433efc4851d205972732cb25d1193d35f9b9c5f4"
+    },
+    "holoscan-install-debian": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-install-debian/SKILL.md",
+      "computedHash": "bebf2ac2be4f196ad6759e844e08e237bb36a3b0459f3c4699f48cfde144f3aa"
+    },
+    "holoscan-install-source": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-install-source/SKILL.md",
+      "computedHash": "b8e5f8dead4b84f1e3dbfbdef66dd0cedbb665ec2562f2f9637bdebd8997ea58"
+    },
+    "holoscan-install-wheel": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-install-wheel/SKILL.md",
+      "computedHash": "fdceddca2dc011558ead803802d2d73c749cda1342d8d7a444731677a627edca"
+    },
+    "holoscan-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/holoscan-setup/SKILL.md",
+      "computedHash": "e11d75538b9ca6b91f245ca1086a959619da1e1decbfb3f1b74aaf6a7f5eb09d"
+    },
+    "hsb-app": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-app/SKILL.md",
+      "computedHash": "5f82e3e9267f597c388d434769e6e519ddb48a8fb00d3f53de3f11d57d7bab5e"
+    },
+    "hsb-flash": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-flash/SKILL.md",
+      "computedHash": "5c874d9a4175afafd96548d1e2f369db268f64626a0caf1e659f4547203943ac"
+    },
+    "hsb-ip-create-top": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-ip-create-top/SKILL.md",
+      "computedHash": "8109081f2e691d9fdcd46d1d5e3589ab9ed234602c3f0981fb73aa24b3c517e8"
+    },
+    "hsb-ip-def": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-ip-def/SKILL.md",
+      "computedHash": "e717cfbfca4a3dc00b67e774db7437a0cc8d33fdd72f985012adfa8fe3dc423e"
+    },
+    "hsb-ip-packetizer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-ip-packetizer/SKILL.md",
+      "computedHash": "f83d8da9afab7d4826380803b3a9495436450a97d398c83cea148843e8abbca6"
+    },
+    "hsb-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-setup/SKILL.md",
+      "computedHash": "3a854a64b82a7214f2156fbe7a9bdda98bebf4ff01703a56c9c1ce5c63da31db"
+    },
+    "hsb-test": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/hsb-test/SKILL.md",
+      "computedHash": "92799596477e4ece0acedf69d261ec5706b2c7570b76500dbbd275d28a94aa92"
+    },
+    "i4h-lerobot-viz": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-lerobot-viz/SKILL.md",
+      "computedHash": "4c210eea2d56ad0147649ef361a0b08aa4e20ee978234120b10eb68b24c606ef"
+    },
+    "i4h-workflow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow/SKILL.md",
+      "computedHash": "d5d728a8d776fdbb092ddb677b5385864f661bc13853b64815bc912dc597de65"
+    },
+    "i4h-workflow-create": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-create/SKILL.md",
+      "computedHash": "004fc69f7651590cfe1408c7b1b9c89594e1787189d6780fd991a93bfec856ea"
+    },
+    "i4h-workflow-dataset-annotate": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-dataset-annotate/SKILL.md",
+      "computedHash": "123bac09b4ed449d12a99d70388f101a080c1fceaf084b241a42a24f4bdbbe05"
+    },
+    "i4h-workflow-dataset-convert": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-dataset-convert/SKILL.md",
+      "computedHash": "9a5f0474e1e67da5dd580593a114ae9d75a0264660d698762d90a2be3c884c45"
+    },
+    "i4h-workflow-dataset-mimic": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-dataset-mimic/SKILL.md",
+      "computedHash": "b192b05e0028398b0dbbb8ff56df9101749f72eaac9b94a362493b155ab23141"
+    },
+    "i4h-workflow-dataset-replay": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-dataset-replay/SKILL.md",
+      "computedHash": "f96acc8452cc2a6481a48c51e3b0ce5ac0e6e5ae851bc857de01804ac4b27c18"
+    },
+    "i4h-workflow-dataset-teleop": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-dataset-teleop/SKILL.md",
+      "computedHash": "e5d8ee411988a86106a6b06e40910747b812aa2936cd2854baf2aa2d8ad7e09e"
+    },
+    "i4h-workflow-e2e": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-e2e/SKILL.md",
+      "computedHash": "e8ef936d8ba52743f4a3f8a7f31212bccafe69c822bffd272af4d0454f2b7200"
+    },
+    "i4h-workflow-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-finetune/SKILL.md",
+      "computedHash": "2d69c3a176d0cf28222db21ef727ebd41b26a84b38a73205cd3306bd5c0428e2"
+    },
+    "i4h-workflow-scene-edit": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-scene-edit/SKILL.md",
+      "computedHash": "ee07434b482b2379065bc8a6d8c5d6593c5a430cc61c16ec34a051366d369fa8"
+    },
+    "i4h-workflow-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-setup/SKILL.md",
+      "computedHash": "43ee0eff604c017bc3fa5959e98f4920b82546ac55b097ddc80823ff4b5acee2"
+    },
+    "i4h-workflow-train-rl": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-train-rl/SKILL.md",
+      "computedHash": "cba21379461fa201622003775ef55052ff29e414714341743b063da5e6495462"
+    },
+    "i4h-workflow-validate": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/i4h-workflow-validate/SKILL.md",
+      "computedHash": "74e0b8299fc5043c71de0bf594c267325f4d14e40ed97d8db2c528f96c388c14"
+    },
+    "isaac-mission-control-showcase": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/isaac-mission-control-showcase/SKILL.md",
+      "computedHash": "d1638069b30502da228ad31f7d4c30221b28fd1e7b1362ef61759ff6f572dd06"
+    },
+    "jetson-build-source": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-build-source/SKILL.md",
+      "computedHash": "d5f098e50198ff8af3b9c85d4c87464eba78246b251392d5ee5085ae37eb8f74"
+    },
+    "jetson-customize-camera": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-camera/SKILL.md",
+      "computedHash": "66f2ed92a65d42fddb2ba562107e4a30fa913737cf6fc2709daff732859223d0"
+    },
+    "jetson-customize-clocks": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-clocks/SKILL.md",
+      "computedHash": "9c413e451e81d170d455c8a343830311abb212e8d62bd3ecd19fb5463a5c025e"
+    },
+    "jetson-customize-fan": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-fan/SKILL.md",
+      "computedHash": "4806f3a287eaa938d3eeb215cc71db03855d1c80b8680177160b4d7ff678eda1"
+    },
+    "jetson-customize-mgbe": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-mgbe/SKILL.md",
+      "computedHash": "ecce7c272c26b328624ecaee4266a44a9f377259ae55235518c22a42f9788230"
+    },
+    "jetson-customize-nvpmodel": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-nvpmodel/SKILL.md",
+      "computedHash": "94af780bc05801f9860d3331162c24731d217c173dd4e240af6529050899e070"
+    },
+    "jetson-customize-pcie": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-pcie/SKILL.md",
+      "computedHash": "edd869fa2694680d62c6641e14eea70211ec61b18fdf973d6ea2525a365d8ff2"
+    },
+    "jetson-customize-pinmux": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-pinmux/SKILL.md",
+      "computedHash": "709a814e8ba577fb8f7aa216561563a67bc8e6a5c4419ddf5788fa7e1ce613bc"
+    },
+    "jetson-customize-uphy": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-uphy/SKILL.md",
+      "computedHash": "dc9204ea1590f00b3b78d1b5024d06cf4f4ce7eb7c27766cb47af7cc94a8024f"
+    },
+    "jetson-customize-usb": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-customize-usb/SKILL.md",
+      "computedHash": "cd98eb2dfce6545ca5798c2be9e971961c448ec9225b381e0f719c54bef43966"
+    },
+    "jetson-derive-carrier": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-derive-carrier/SKILL.md",
+      "computedHash": "9c749550b3aa9b632f44ee8a048552dfaf4904ce1180fc5451f194743e3a2b63"
+    },
+    "jetson-diagnostic": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-diagnostic/SKILL.md",
+      "computedHash": "37b169cf260d316530427fd38e93526e94259fa4424bdb608e1f76a8bf460d33"
+    },
+    "jetson-download-bsp": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-download-bsp/SKILL.md",
+      "computedHash": "7646eafe7c7506b1d306ef54e04438afcdc8e1d5add82debfaa2cb1bf8bb1c5c"
+    },
+    "jetson-flash-image": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-flash-image/SKILL.md",
+      "computedHash": "42192d1fe1ad186dcc46d28010b77f27365f64e701ea86a411dca5fe7f81c82a"
+    },
+    "jetson-generate-kb": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-generate-kb/SKILL.md",
+      "computedHash": "559e346c800b6e85f50de807c1b8aacbb04df2585cab0f9c1fdc9d616a116265"
+    },
+    "jetson-headless-mode": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-headless-mode/SKILL.md",
+      "computedHash": "313749eb55ce6f975f8a5c72a7c70a36a44041b3bee406e2b260061275156ae7"
+    },
+    "jetson-inference-mem-tune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-inference-mem-tune/SKILL.md",
+      "computedHash": "b9354d9574a2414bfb1d15745bf7f87e870384395df1beb8dc75565ab087719f"
+    },
+    "jetson-init-image": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-init-image/SKILL.md",
+      "computedHash": "9420831ac144b3c006b992370ff4df885bde80845180178b6d9c24b2b3ab7a9e"
+    },
+    "jetson-init-source": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-init-source/SKILL.md",
+      "computedHash": "01732b333c1e07c97e30698998c240617fe9f273fc34471d88edb0534d100f70"
+    },
+    "jetson-init-target": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-init-target/SKILL.md",
+      "computedHash": "4d7456d7497d79e0e9b767dfd8d893f93d7edfe9b70d244029be16ae88db37d5"
+    },
+    "jetson-link-docs": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-link-docs/SKILL.md",
+      "computedHash": "ea3ec03c7ba5badbc087a34e7d802ec5a0ff8125f54a4d19480b0a2f0d1a34c0"
+    },
+    "jetson-llm-benchmark": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-llm-benchmark/SKILL.md",
+      "computedHash": "7bd83771b242a6cf29f3ba1e33a7a523a671f8653987dc3ee12b6f3b14680cf9"
+    },
+    "jetson-llm-serve": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-llm-serve/SKILL.md",
+      "computedHash": "ce310ed53a2f2ebda98503c13c23245566e4aa996d8b4d222479121e60668eb7"
+    },
+    "jetson-memory-audit": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-memory-audit/SKILL.md",
+      "computedHash": "3f8ca3c7cdd5a2dc2f3fe1ac800b5a2334d5ae6880f939e5163ac7e3ec20f28e"
+    },
+    "jetson-optimize-memory": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-optimize-memory/SKILL.md",
+      "computedHash": "8245410aa5395a1ad210cc72db098ee1f9347b7f3c9a7494c24bcfca9a91b14e"
+    },
+    "jetson-package": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-package/SKILL.md",
+      "computedHash": "f2938bb9a9e5319b42b70f4d7c8110a2a9531e9738eeb096e594ed0914391f74"
+    },
+    "jetson-print-bsp-info": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-print-bsp-info/SKILL.md",
+      "computedHash": "7bf648d16009bf7f77c0036abcecf27fdb3d18267ee7846714c38292c82e9ed0"
+    },
+    "jetson-print-device-info": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-print-device-info/SKILL.md",
+      "computedHash": "d89606b60da51db59a5dd5ec1f0f576641eaae758cfe9b0a359d6192b9be70e5"
+    },
+    "jetson-promote-image": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-promote-image/SKILL.md",
+      "computedHash": "ac257472d19f69c6622934f741f60e579216f2f2ab81ce9596d5fac4b51eef68"
+    },
+    "jetson-quick-start": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-quick-start/SKILL.md",
+      "computedHash": "9932072fbbf3dbad65310becad1b6fee248c2c709762d682e03b639f7b1584fa"
+    },
+    "jetson-set-target": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-set-target/SKILL.md",
+      "computedHash": "355234bc7ae4ed88ad94d0432e50c95f117562810442d666fbee2b1eb9a4f5ce"
+    },
+    "jetson-speculative-decoding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-speculative-decoding/SKILL.md",
+      "computedHash": "07737fbf21960b87770bb84303a45e62b9fa02a521158738547ccef5d0a6cf52"
+    },
+    "jetson-validate-image": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-validate-image/SKILL.md",
+      "computedHash": "0f6daf778fb92745472f331f2437a12920895e218560ab274a9b922d896843a9"
+    },
+    "jetson-video-benchmark": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-video-benchmark/SKILL.md",
+      "computedHash": "23bef1de7c96e19bcdc4d69c53615c0bab72fbb8be0d829019b92549c95b20de"
+    },
+    "jetson-video-capability": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-video-capability/SKILL.md",
+      "computedHash": "627995ba187d0114d975f679256e61f42207aa6a438f4322556852ffdc070af8"
+    },
+    "jetson-video-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-video-pipeline/SKILL.md",
+      "computedHash": "c8e98a76382d7cad617a0f7f6f6685da58108f27c77f3f8a8f518c68465f19d3"
+    },
+    "jetson-video-recipe": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-video-recipe/SKILL.md",
+      "computedHash": "8e07acb8290c9839ca0ffc621dd85d972fe081a031b9f8a6ea3f86bd4b1cd78d"
+    },
+    "jetson-video-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/jetson-video-setup/SKILL.md",
+      "computedHash": "0734cba91d4da8404e2532924c7759f2e2e7e7d80c94e3598d7aef2b64f451f9"
+    },
+    "kermt-add-cmim-pretrain": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-add-cmim-pretrain/SKILL.md",
+      "computedHash": "42ce8b673e955e1d5e942346a2d052f284652c71baf58b4adfbbaacbe0e5390a"
+    },
+    "kermt-continue-pretrain": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-continue-pretrain/SKILL.md",
+      "computedHash": "9f97de097633dfbfe7c2022c19768fe9d3838e7a8482b4310694337ff468bd36"
+    },
+    "kermt-embed": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-embed/SKILL.md",
+      "computedHash": "46df6475112df94c60657d583a980d4cecb86254b09619e42a9f9bdeb1458fa1"
+    },
+    "kermt-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-finetune/SKILL.md",
+      "computedHash": "b56c7a419c136bdac8e833efe39adc4af723fb03c7af16a2f23ff37010845718"
+    },
+    "kermt-infer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-infer/SKILL.md",
+      "computedHash": "541fcb1220615cf74e535bd1b8d23c0c21efcca4f725b33a2d718803b35cba0e"
+    },
+    "kermt-monitor": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-monitor/SKILL.md",
+      "computedHash": "6d0cba134069d5f6b05135a56c001b2a36238fcda7aa712f60eb3e519b29449a"
+    },
+    "kermt-pretrain-scratch": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-pretrain-scratch/SKILL.md",
+      "computedHash": "237fa7abaf52d89c2fc734b2b5679b1a16a466c92628d72e537968dc8310ef8d"
+    },
+    "kermt-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-kermt-setup/SKILL.md",
+      "computedHash": "c78964292f5a5166d38233f6a40a313045c6cd605e5d3c6dfd064b7d648aab8e"
+    },
+    "launch-nemo-rl": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/launch-nemo-rl/SKILL.md",
+      "computedHash": "09a4bb9e082784404e72097bcfe0da3c12d02ecf0c9090b60c5a0707f397e7ba"
+    },
+    "mcore-create-issue": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcore-create-issue/SKILL.md",
+      "computedHash": "b633d9a8a344730e1813b2467d56d5ea0d995b47be3446c8ddf0df9a7dac8b27"
+    },
+    "mcore-linting-and-formatting": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcore-linting-and-formatting/SKILL.md",
+      "computedHash": "45d680cd48fd277fad1988052c6e77a321ae8ba591f3cac209b1177759ce1484"
+    },
+    "mcore-run-on-slurm": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcore-run-on-slurm/SKILL.md",
+      "computedHash": "d2fcee58f5db40301d829dada545b4769c4385cf5ff8fc0477f01db643c57d0e"
+    },
+    "mcore-split-pr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcore-split-pr/SKILL.md",
+      "computedHash": "ef4f0c57e5ce1ae6fe13d7e4408eca6bb7d160dad438acf09a0f3d5ea8a3ef79"
+    },
+    "mcore-testing": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcore-testing/SKILL.md",
+      "computedHash": "ed27729d4211427c71aef98401e6c8165bf3c537681bcc5d19a6b05c79aea954"
+    },
+    "medtech-model-evidence-export": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/medtech-model-evidence-export/SKILL.md",
+      "computedHash": "7e87ed7652fa79eda48ba1da9599f3dde19de9ad904675a7a70941a4990d3088"
+    },
+    "msa-structure-prediction-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-msa-structure-prediction-pipeline/SKILL.md",
+      "computedHash": "4cd00cb4100428541516a0f04996c2204d22461dcd6d351f2fe5ae1a3435797b"
+    },
+    "nemo-automodel-distributed-training": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-automodel-distributed-training/SKILL.md",
+      "computedHash": "4a2d305dabade9d03cbe4910db8ae74d95ae8482ffe2ed717542160ea8a0adb5"
+    },
+    "nemo-automodel-launcher-config": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-automodel-launcher-config/SKILL.md",
+      "computedHash": "5ac829dfd0e7f2eb22bfc6782f4f39886f494e89826b884c4e3e16e1636ba904"
+    },
+    "nemo-automodel-model-onboarding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-automodel-model-onboarding/SKILL.md",
+      "computedHash": "9ae100a2a83449b75935bcb2bb1471913a62a245f53d614ec1d279fb82fad6f1"
+    },
+    "nemo-automodel-recipe-development": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-automodel-recipe-development/SKILL.md",
+      "computedHash": "6be3ff8ff4d924f00532aacd1f0a6c7494cdd6189f4b72999bf0cefdb95637fd"
+    },
+    "nemo-fabric-build-adapter": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-fabric-build-adapter/SKILL.md",
+      "computedHash": "5d010933575d8de90ab4eac31f0bac866119abf8fd5f1b968e74ac25466c1512"
+    },
+    "nemo-fabric-integrate": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-fabric-integrate/SKILL.md",
+      "computedHash": "fef2e056e9a44b45017b885a31a69a643f108a672d152f5559ed8240e9685023"
+    },
+    "nemo-mbridge-mlm-bridge-training": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-mlm-bridge-training/SKILL.md",
+      "computedHash": "52c3fc8be6fe7720e95dbe6d9eadd74fed26f425435d5651e44adc691e1dbde1"
+    },
+    "nemo-mbridge-multi-node-slurm": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-multi-node-slurm/SKILL.md",
+      "computedHash": "5e1a0b9d30ac4e2d373cb857f82ef41185e1b1d6370cd3f0b775be4ee1ed8cf0"
+    },
+    "nemo-mbridge-perf-activation-recompute": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-activation-recompute/SKILL.md",
+      "computedHash": "fc972d5febb5df2b56967402d9b2cac7dea61a595a58cd7c04e3ff75979914b3"
+    },
+    "nemo-mbridge-perf-cpu-offloading": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-cpu-offloading/SKILL.md",
+      "computedHash": "04858a42dab681912be1c133563e214dbab8df372ecdb8f8aadce9a7531e659d"
+    },
+    "nemo-mbridge-perf-cuda-graphs": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-cuda-graphs/SKILL.md",
+      "computedHash": "a0d674d27aed039b2e5ab872a6254ec1852a3d098214d84e8109190d888d6195"
+    },
+    "nemo-mbridge-perf-expert-parallel-overlap": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-expert-parallel-overlap/SKILL.md",
+      "computedHash": "c70dcf3d9a8e56f084525c51731e2a75154939e2454a544493357cc2f5a95d7e"
+    },
+    "nemo-mbridge-perf-hierarchical-context-parallel": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-hierarchical-context-parallel/SKILL.md",
+      "computedHash": "a85c10e91c950331d917f4dc6f8b77f04cdee18c01708564b2caad3878188bdf"
+    },
+    "nemo-mbridge-perf-megatron-fsdp": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-megatron-fsdp/SKILL.md",
+      "computedHash": "8675ca51f7dcc711c95c7be48c77b0c5954bcce451279163a84dc4c11042d06c"
+    },
+    "nemo-mbridge-perf-memory-tuning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-memory-tuning/SKILL.md",
+      "computedHash": "cc5df1e57cb1bbfef30750bdb0b0f0a14e004c5420fc6e388a698c898f1997ea"
+    },
+    "nemo-mbridge-perf-moe-comm-overlap": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-comm-overlap/SKILL.md",
+      "computedHash": "50386750efd30ef144e00b382185908bd58ffcc5577a1a30c78af5cd66d2e805"
+    },
+    "nemo-mbridge-perf-moe-dispatcher-selection": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-dispatcher-selection/SKILL.md",
+      "computedHash": "36996e4938daf07edd544da17fa86529f0d1b3c8cd60358c195d52b9fa5292ef"
+    },
+    "nemo-mbridge-perf-moe-hardware-configs": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-hardware-configs/SKILL.md",
+      "computedHash": "694ab7f95b019bc27a8f782736c0974ae51875ce2894fe213f9a376f4b477c4a"
+    },
+    "nemo-mbridge-perf-moe-long-context": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-long-context/SKILL.md",
+      "computedHash": "95ac873da85967e578d77c43893081f627594695b7b08b1f5c0c5dd7384ac189"
+    },
+    "nemo-mbridge-perf-moe-optimization-workflow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-optimization-workflow/SKILL.md",
+      "computedHash": "fb83f6d4975e7f62437992b71db2b073cc1aec2b66bcc98f1b6869e4852228af"
+    },
+    "nemo-mbridge-perf-moe-vlm-training": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-moe-vlm-training/SKILL.md",
+      "computedHash": "e20d79ea7b906f6e8c332eb84af816ffd432e4544e4e12c1f37aea69588be5a4"
+    },
+    "nemo-mbridge-perf-parallelism-strategies": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-parallelism-strategies/SKILL.md",
+      "computedHash": "2c0d2259184755b06f57b8f36bc418ec76489bf78ebbc0483779021540decfd2"
+    },
+    "nemo-mbridge-perf-sequence-packing": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-sequence-packing/SKILL.md",
+      "computedHash": "81ef7c8c8b20d7b9e24225e1cf4e7f9d22ad0f29433f048375da9d91c6a7454b"
+    },
+    "nemo-mbridge-perf-tp-dp-comm-overlap": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-perf-tp-dp-comm-overlap/SKILL.md",
+      "computedHash": "808bed3091dd0b0a8a87c75a45cec764ef1c8ae8947bb45a65ecd5be15b75682"
+    },
+    "nemo-mbridge-recipe-recommender": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-recipe-recommender/SKILL.md",
+      "computedHash": "5375151000780600fa6a660d51b3c00f65966f7679afb39e45bba19b1e63b1e6"
+    },
+    "nemo-mbridge-resiliency": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-mbridge-resiliency/SKILL.md",
+      "computedHash": "b259cd8a33aa3cccee5e8b788af9347dd98192249bdef8a1426b6a5a615695d4"
+    },
+    "nemo-relay-debug-runtime-integration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-debug-runtime-integration/SKILL.md",
+      "computedHash": "265e00e672270335e2595bf775212140bd690be437e3a3feb27e9256b37fbe96"
+    },
+    "nemo-relay-get-started": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-get-started/SKILL.md",
+      "computedHash": "32d692656f62be1593f05ab00558789a7ae89a9b323d885055f4fb30a54e5c9f"
+    },
+    "nemo-relay-install": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-install/SKILL.md",
+      "computedHash": "3a86860f02f4db8773ad6b7bf84f671e4f46135778720782d7631dff938329fa"
+    },
+    "nemo-relay-instrument-calls": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-instrument-calls/SKILL.md",
+      "computedHash": "eaa9a7e2d0e1bee996fb2992795fd7c7a90de7ae33497a9e5c672a0a960c01b4"
+    },
+    "nemo-relay-instrument-context-isolation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-instrument-context-isolation/SKILL.md",
+      "computedHash": "20b30ddf523d66f361118142756a6dc7575c489b9a71bdf2003a8f763e77f940"
+    },
+    "nemo-relay-instrument-typed-wrappers": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-instrument-typed-wrappers/SKILL.md",
+      "computedHash": "b96f1ab3f4ab543cae67e922718d53270833696a9b85b8345c3fcb114f49f8a0"
+    },
+    "nemo-relay-migrate-from-flow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-migrate-from-flow/SKILL.md",
+      "computedHash": "602f6a166e657e709a41590aefdd9448a37504f92fb61cce036849cb1d700804"
+    },
+    "nemo-relay-plugin-adaptive-tuning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-plugin-adaptive-tuning/SKILL.md",
+      "computedHash": "a9a3209dba565fbeada13592499cdea24f3c4b8a389480b403f6dc511fefd22a"
+    },
+    "nemo-relay-plugin-build": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-plugin-build/SKILL.md",
+      "computedHash": "75671348df80f181cbc47af3ca6d96cfadff06cc3261b33f1debc099e719e27e"
+    },
+    "nemo-relay-plugin-observability": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-plugin-observability/SKILL.md",
+      "computedHash": "b0a59b4362a666e2453de4e226b1be249297e6abd6a926d609ea844328cd7049"
+    },
+    "nemo-retriever": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-retriever/SKILL.md",
+      "computedHash": "cb0297593945665be7192eb7f0d1b1b049ebf4f50a760d70f3316b9e40c92fb7"
+    },
+    "nemo-retriever-mcp": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-retriever-mcp/SKILL.md",
+      "computedHash": "972606ad6d0fc1ea1994e07a860bdea08322485ddd4d0c2046a1a4fa5f352a04"
+    },
+    "nemo-rl-auto-research": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-rl-auto-research/SKILL.md",
+      "computedHash": "0b12906253db3e97413cac5f6bf56b2477c5cc5057285c40dc64cb459dade743"
+    },
+    "nemo-rl-brev-etiquette": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-rl-brev-etiquette/SKILL.md",
+      "computedHash": "2e0f5d8846afd3979e58e848927500773569da9a3ec7f0f5ac72fd8101fa114e"
+    },
+    "nemo-rl-docs": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-rl-docs/SKILL.md",
+      "computedHash": "85f67844577d4497b61798d7540761e9d3335889653c56c04acec59a9292392b"
+    },
+    "nemo-rl-session-memory": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-rl-session-memory/SKILL.md",
+      "computedHash": "f3f11a2e62fc88ace5de2119d05737749fbb17db4ed92c257c877752046bf68a"
+    },
+    "nemoclaw-user-guide": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemoclaw-user-guide/SKILL.md",
+      "computedHash": "b49138ea6cab15c767f76cb4b843c698ec8fb6a80a153a63edcab1bcc457d90b"
+    },
+    "nemotron-asr-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-asr-finetune/SKILL.md",
+      "computedHash": "507a8000c039dbbc8ec5decda8c07c6033e1c72facbc0d1b0e9d6ce40b0503b4"
+    },
+    "nemotron-customize": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-customize/SKILL.md",
+      "computedHash": "fbbb0cd91191be6deff94ad417fb2752d49aaddf87afb41750cdc216df53f2e5"
+    },
+    "nemotron-policy-generator": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-policy-generator/SKILL.md",
+      "computedHash": "d29f030fd4636f48aec48aefbe3605553753d7d91ee22c24ef066e1eca1be53f"
+    },
+    "nemotron-retrieval-recipes": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-retrieval-recipes/SKILL.md",
+      "computedHash": "7033fbde10e5fca20163d5e536eeb24602b88feaf89d7ca94720fd543ef4bbd6"
+    },
+    "nemotron-speech": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-speech/SKILL.md",
+      "computedHash": "bf444165dacb50c79fec0d882a628bb1a84ddd79df51924911efaa57e03ca45c"
+    },
+    "nemotron-voice-agent-builder": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-voice-agent-builder/SKILL.md",
+      "computedHash": "01b20c57e99ed09c513c5a6e8e82830d82972c46cd778cc7a833ef7838bab75b"
+    },
+    "nv-generate-ct-rflow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-generate-ct-rflow/SKILL.md",
+      "computedHash": "00ad2d202a189b29294324028fb13f6a299ec0313da624bfdd9ce42abdf50e4b"
+    },
+    "nv-generate-mr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-generate-mr/SKILL.md",
+      "computedHash": "95c317b83483488403ed000d7def60c89f20e09e7b42f9980a75fb3ef85626a0"
+    },
+    "nv-generate-mr-brain": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-generate-mr-brain/SKILL.md",
+      "computedHash": "186bd44fa04b4d13e583d64bb98aef9f087cd7b261f73751faf2cf74c23bc65e"
+    },
+    "nv-generate-mr-brain-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-generate-mr-brain-finetune/SKILL.md",
+      "computedHash": "0a79807410c931f9fdefefb30a5e712ed7fc95539d3a93525819918e85408a66"
+    },
+    "nv-generate-vae-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-generate-vae-finetune/SKILL.md",
+      "computedHash": "74c58b41e4d7b4df9d053bf8f415ae6f8cac559bd99dc76a1fa6c4cfc91971bc"
+    },
+    "nv-reason-cxr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-reason-cxr/SKILL.md",
+      "computedHash": "07806f7ba340c9d1828849ae6bf042059aa924152e5ff10b662632c5ff59f2ee"
+    },
+    "nv-segment-ct": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-segment-ct/SKILL.md",
+      "computedHash": "b23dfa9f77b1e352cfe16cdc586c05bccc47ecb1dd1c935ef437c1fbdc3b2fea"
+    },
+    "nv-segment-ct-finetune": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-segment-ct-finetune/SKILL.md",
+      "computedHash": "70428e1cc8ade4a310a5ff3fe950200ff00feb0209796501492ad2e9f953aaaa"
+    },
+    "nv-segment-ctmr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nv-segment-ctmr/SKILL.md",
+      "computedHash": "eebcef60a451dae76ced62ae6c5a84ef826654fcd1a7a637de6ae14e81454387"
+    },
+    "nvflare-autofl": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-autofl/SKILL.md",
+      "computedHash": "2a3f7ea528d7ef3b0d69495ead20a053f6d989372a83f54126e48e86561b69ab"
+    },
+    "nvflare-autofl-report": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-autofl-report/SKILL.md",
+      "computedHash": "eac26b77ef2b1f8e18d3189feb8340c5238970b77015125ff3a93a786208ba49"
+    },
+    "nvflare-convert-huggingface": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-convert-huggingface/SKILL.md",
+      "computedHash": "d4d9d1f65894c88b8c4e98314f988a5c050cb974a981f346a4d4f20659bd6f53"
+    },
+    "nvflare-convert-lightning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-convert-lightning/SKILL.md",
+      "computedHash": "8463552ac1ee770e2a5894930a252d2bf0b40568536ecdb455ce2053034e642f"
+    },
+    "nvflare-convert-pytorch": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-convert-pytorch/SKILL.md",
+      "computedHash": "6a9e29a12afd01eaf1008d74a025119baf1e1bbdf3db1d5db91c24e83b50a4dc"
+    },
+    "nvflare-diagnose-job": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-diagnose-job/SKILL.md",
+      "computedHash": "b897215d97b18156f56d267be0f61c4a1b32c217b0a2ce09f1530182de1e81e9"
+    },
+    "nvflare-fed-stats": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-fed-stats/SKILL.md",
+      "computedHash": "1104991366fd59b7e8c7d8feb044f7d1425808910bdb29d0d256fa125d49a6dc"
+    },
+    "nvflare-orient": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-orient/SKILL.md",
+      "computedHash": "2c9ff8136874f8e8115af887d1d5dfe9c1fb629e1d8db3d2a5f46e12d7f0961e"
+    },
+    "nvflare-shared": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvflare-shared/SKILL.md",
+      "computedHash": "6d0935e98d58cac609790f9b81eae665042aae2217d0f52c4469b7efcac4940b"
+    },
+    "nvidia-skill-finder": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nvidia-skill-finder/SKILL.md",
+      "computedHash": "b6de9af83be3c777569247e30dc449661b2ee36fe53c3008af595158819f2203"
+    },
+    "nvmolkit-usage": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-nvmolkit-usage/SKILL.md",
+      "computedHash": "66e3c9eff3fcdff43861e6b9ab26ca16ebfa815d07d8a18aa8823099b2304c63"
+    },
+    "omniverse-cad-to-simready": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/omniverse-cad-to-simready/SKILL.md",
+      "computedHash": "0dc240a930f1c5d53773fee0591d951df0ddd04110e64da73416eff017571c6a"
+    },
+    "omniverse-realtime-viewer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/omniverse-realtime-viewer/SKILL.md",
+      "computedHash": "c69734febda797b452aed51bba1018a9a7bc8694536e144ab1932d2126bd585c"
+    },
+    "omniverse-usd-performance-tuning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/omniverse-usd-performance-tuning/SKILL.md",
+      "computedHash": "cb07e89ba04d3e5cac45412d53c92ad22987178837b5a9436c6b8b4a4c1d54bf"
+    },
+    "openfold2-nim": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/bionemo-openfold2-nim/SKILL.md",
+      "computedHash": "fed2a4daaddf87c3182cef01222af209ee3ab8c19898d51e55d5c9ccefa4ac27"
+    },
+    "paidf-augmentation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/paidf-augmentation/SKILL.md",
+      "computedHash": "2fad5a7b38a55f4ae5528b0b115d70aa1863a0e534bf5e5c77be9fb1f0710d92"
+    },
+    "paidf-auto-labeling": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/paidf-auto-labeling/SKILL.md",
+      "computedHash": "e02804d1a3040069f8747b3f4cb2e95c458629c87c1f7a5d61048d0f817a29c7"
+    },
+    "paidf-curation-and-retrieval": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/paidf-curation-and-retrieval/SKILL.md",
+      "computedHash": "c3111faeb41b01c8d39bf72deae4e69695e1d76f6959af75ed2e1f3790e9a441"
+    },
+    "paidf-orchestration-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/paidf-orchestration-setup/SKILL.md",
+      "computedHash": "6196990e609afd22ad471cd3c53fd48c909104e2cce6cfe6c5e25bfee6caac57"
+    },
+    "paidf-orchestration-write-dag": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/paidf-orchestration-write-dag/SKILL.md",
+      "computedHash": "43e5fa26badc8e7da9dda8a7f6d5c9470ff80652294adedda70b45cab5bcff12"
+    },
+    "physical-ai-defect-image-generation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-defect-image-generation/SKILL.md",
+      "computedHash": "2925d89e4779da87ddc8830c2747ffba5e123b79a98409669e8e2d0fc3a83e48"
+    },
+    "physical-ai-event-video-generation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-event-video-generation/SKILL.md",
+      "computedHash": "59543c1b3be264fbd0fc4665e52ec05095104eab2bd965640c3ec76ec87755f2"
+    },
+    "physical-ai-image-attribute-augmentation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-image-attribute-augmentation/SKILL.md",
+      "computedHash": "653e8f7d607152cb54880bdc4950b17ce76d857c527f9e4ec9ae815170118cee"
+    },
+    "physical-ai-infrastructure-setup-and-resilient-scaling": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-infrastructure-setup-and-resilient-scaling/SKILL.md",
+      "computedHash": "cc91da39a1a68ad81a85b157719098cf93cc05f965dfc429dc8816fea665b11e"
+    },
+    "physical-ai-neural-reconstruction": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-neural-reconstruction/SKILL.md",
+      "computedHash": "197d2fc4680ab522f50c02b4b374c59a0847c5d9ac786ea18aba0005356c12bb"
+    },
+    "physical-ai-video-data-augmentation": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physical-ai-video-data-augmentation/SKILL.md",
+      "computedHash": "19431967d9a66d2e960d35a9414cc1be10b27090c7b40ae570a72745bc87012c"
+    },
+    "physicsnemo-discover": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physicsnemo-discover/SKILL.md",
+      "computedHash": "fc9509b435e8ffa5dee1aa334b429f69db288e8af618d742200a7d51fd90a44c"
+    },
+    "physicsnemo-shard-tensor": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/physicsnemo-shard-tensor/SKILL.md",
+      "computedHash": "ab1c0cbb83e382689aed3d17b3485887596d21724896585076a607fb6da31db4"
+    },
+    "portfolio-optimization": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/portfolio-optimization/SKILL.md",
+      "computedHash": "975b8a4663496be7cbb7172811594d4911e3596d80420f7af3fdd270114ee5a2"
+    },
+    "rag-blueprint": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-blueprint/SKILL.md",
+      "computedHash": "4621085caf70c1ab91cf321dcd97ed432e44150565c30f9b2d87bbb4a2b62dfe"
+    },
+    "rag-eval": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-eval/SKILL.md",
+      "computedHash": "3c8d0780708a1d4d40a9286b77ff34f79ae8b2a62f4ca685cee21a154762f916"
+    },
+    "rag-perf": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-perf/SKILL.md",
+      "computedHash": "f669e5c80e2adbc49e9de24e19c97751c5b56d78884b94142adac73343b6d213"
+    },
+    "rtvi-cv-customize-model": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rtvi-cv-customize-model/SKILL.md",
+      "computedHash": "b04486a2b56c1a10d589f50ab5b41c4a2eab43d5693479e59a7383744701ea25"
+    },
+    "rtvi-cv-scaffold-vss-service": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rtvi-cv-scaffold-vss-service/SKILL.md",
+      "computedHash": "7c27e47d90187d45a8e7cae82e9d1466a1fdc44dedf38fe3d0868d05a301f237"
+    },
+    "rtvi-vlm-customize-model": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rtvi-vlm-customize-model/SKILL.md",
+      "computedHash": "7c573aa7b089fd64685e89c1c5a0c3a03ef9be41d33adbbb6004201a060f5300"
+    },
+    "rtx-remix-modding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rtx-remix-modding/SKILL.md",
+      "computedHash": "9d1bda6710f23e77af4e58d9021c8a25b8556efcd807fe74e32182a041fd67ef"
+    },
+    "skill-card-generator": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-card-generator/SKILL.md",
+      "computedHash": "1c4930ff1f779bd995c2a630362fdd0882887e257c825dd8ef7e318c9c954307"
+    },
+    "tao-analyze-changenet-rca": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-analyze-changenet-rca/SKILL.md",
+      "computedHash": "90ebdf80914fab6cd6de326efe119ceee038f49ba9e5b9c3c9c48582b4d65047"
+    },
+    "tao-analyze-detection-kpi": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-analyze-detection-kpi/SKILL.md",
+      "computedHash": "0dd2641e9ff999a9267f8640421e96fc35da320ea578d01f189c1613aff4fff3"
+    },
+    "tao-analyze-gaps-od-map": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-analyze-gaps-od-map/SKILL.md",
+      "computedHash": "28ea48e9abc5b84592e75aad3417ed68bea30ac0ac1ff68479a16a00084130e7"
+    },
+    "tao-analyze-gaps-visual-changenet": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-analyze-gaps-visual-changenet/SKILL.md",
+      "computedHash": "4594c126d5fa16c30962f4dad04ae47c00cea94b97de7be1d2b1e3c20423b98d"
+    },
+    "tao-analyze-gaps-vlm-bcq": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-analyze-gaps-vlm-bcq/SKILL.md",
+      "computedHash": "8bb16a3be8269d6f29a3b4d795631a367435197877b83234c0319eb5ee550b6c"
+    },
+    "tao-artifacts": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-artifacts/SKILL.md",
+      "computedHash": "4d1d3b47ec778da815b49bfcb286717d327164c302e9da52c3ce807efd2c1f03"
+    },
+    "tao-convert-dataset-format": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-convert-dataset-format/SKILL.md",
+      "computedHash": "4fb7a68cb1fd61fcadf792001a377f8ef498491e747cb86778ee0b17fdef1916"
+    },
+    "tao-data-io": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-data-io/SKILL.md",
+      "computedHash": "e88999d42b36c6d38d5d9ced37d569629f097d52abfdebaad9151b0af895b657"
+    },
+    "tao-finetune-clip": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-clip/SKILL.md",
+      "computedHash": "96add9c142b9e04e0e73114c20fb744b00769e28fa4d60c95aa91b2ba8ecbace"
+    },
+    "tao-finetune-cosmos-embed": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-cosmos-embed/SKILL.md",
+      "computedHash": "022f2f8dcd11954dbd6052220e127b6eb1c8731d3af823108c9dc836c8ef71ce"
+    },
+    "tao-finetune-cosmos-reason": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-cosmos-reason/SKILL.md",
+      "computedHash": "4b278d0b3dcc7f776ec865efc9eb0a6653ee29d492aca166a4f249aedba213f8"
+    },
+    "tao-finetune-huggingface-model": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-huggingface-model/SKILL.md",
+      "computedHash": "7e90199c83c0a1b8bd6ee5a879eeb9a736f4ff023027303a04f3d4c3f3bb19cf"
+    },
+    "tao-finetune-nv-tesseract-ad-diffusion": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-nv-tesseract-ad-diffusion/SKILL.md",
+      "computedHash": "29077e01b49c43cbd9e260c1732fc726f5cf7dd0c035c3f8765c23277c57a8d1"
+    },
+    "tao-finetune-nv-tesseract-forecasting": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-nv-tesseract-forecasting/SKILL.md",
+      "computedHash": "88a8639bdb5165fa214c45e28c70d37980f2287a79127efa3cd9d0e516bdead2"
+    },
+    "tao-finetune-video-clip": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-finetune-video-clip/SKILL.md",
+      "computedHash": "458b14456eddc09d570910adc4127014b1de3454b1fe5fc3222e11406c9c911e"
+    },
+    "tao-generate-image-embeddings": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-generate-image-embeddings/SKILL.md",
+      "computedHash": "db470660beab9e8a3542908a67fc99a0e5261209c2e49598742f26602ceb8c6a"
+    },
+    "tao-generate-image-grounding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-generate-image-grounding/SKILL.md",
+      "computedHash": "c3979bb8e6b496414bcc8a73b215b808e5ea3ed8e52b9b5dd1128ab244c831d1"
+    },
+    "tao-generate-referring-expressions": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-generate-referring-expressions/SKILL.md",
+      "computedHash": "09ab64a9ee8376829d2e517fda2be7ace45bda6e93c36b9610bb9a78d1178bdf"
+    },
+    "tao-generate-video-reasoning-annotations": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-generate-video-reasoning-annotations/SKILL.md",
+      "computedHash": "122291a7485137a4127a2cabbe6b53e5ca765a2e66da62ec1b1d218ba8d29139"
+    },
+    "tao-launch-workflow": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-launch-workflow/SKILL.md",
+      "computedHash": "c863affc0f845914caebf90c62094890f4d3d63c1e12d701679fc3d46e0ac0b9"
+    },
+    "tao-list-capabilities": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-list-capabilities/SKILL.md",
+      "computedHash": "368effb0627cb0d0df74b8dbd6def4a9793b13e939398c3c3b1ca0bfb6892f6e"
+    },
+    "tao-mine-aoi-images": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-mine-aoi-images/SKILL.md",
+      "computedHash": "071eef84a27972effd6ab1df611569a07e76a9b02f2da1f3404d224cc1cc9b3f"
+    },
+    "tao-mine-nearest-neighbors": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-mine-nearest-neighbors/SKILL.md",
+      "computedHash": "10701bfd3f9c895151a9daadb8daa586ec77882c04d781e1488c55d738e753c4"
+    },
+    "tao-mine-od-images": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-mine-od-images/SKILL.md",
+      "computedHash": "256d41ab71435e633f57fd06b88bf80edcf24d5e60928254f11c7121d4d49ce1"
+    },
+    "tao-port-huggingface-model": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-port-huggingface-model/SKILL.md",
+      "computedHash": "92078499b063abc8cf908aa4f8b252532e54b987daf12a184861c60eb6dc3907"
+    },
+    "tao-route-visual-changenet-samples": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-route-visual-changenet-samples/SKILL.md",
+      "computedHash": "8fecdd032c8ebf2a438a9a4eabce427ea318966fee2305b137cd172fa552371c"
+    },
+    "tao-run-automl": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-automl/SKILL.md",
+      "computedHash": "5b4118a93a8c5d54c409081fb95c86b1c711c76af4ecdca7c2a9fca21e216a7f"
+    },
+    "tao-run-automl-deft-pipeline": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-automl-deft-pipeline/SKILL.md",
+      "computedHash": "3ab4b247a0004d4dfdeeba0399d371bb0c97b9c0c9d8154214a291da85d014fb"
+    },
+    "tao-run-deft-aoi": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-deft-aoi/SKILL.md",
+      "computedHash": "9337c5b308d2beeb7bd2180af1490f9d0fa7e5174032caa112a3c3f4df97956e"
+    },
+    "tao-run-deft-aoi-cosmos3": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-deft-aoi-cosmos3/SKILL.md",
+      "computedHash": "2a4543b0fa8ab7880ee7b00ec880b0dc87a485f991adf38788efbe0f4ad5de5d"
+    },
+    "tao-run-deft-cr-its-mining": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-deft-cr-its-mining/SKILL.md",
+      "computedHash": "5f2aee0e0798854f923b3e3c3d81547864e9c2560cfaaa2dca4b72857d9c58e9"
+    },
+    "tao-run-deft-object-detection": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-deft-object-detection/SKILL.md",
+      "computedHash": "bd28129abdccc9da7f67caec26efd3faeb068f7dd7a0d39de2db71b8207339d0"
+    },
+    "tao-run-inference-service": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-inference-service/SKILL.md",
+      "computedHash": "83cbc783b383ad3eb870376fa55826a68ef0c4075de62cb6b9de3c21373b47ba"
+    },
+    "tao-run-on-brev": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-on-brev/SKILL.md",
+      "computedHash": "1608f02b23a98ab1ec345ac4460821da444b2b9f3754049c09c5b583f53b7785"
+    },
+    "tao-run-on-docker": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-on-docker/SKILL.md",
+      "computedHash": "9decac58f09cb8ef66e4da4f0f10b02c68dc3a6e6026baf00e534e54e178a825"
+    },
+    "tao-run-on-kubernetes": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-on-kubernetes/SKILL.md",
+      "computedHash": "a983ce47b9764655c97b305f326ea2f2c9afa5e65b8062e411f66539be3c6205"
+    },
+    "tao-run-on-slurm": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-on-slurm/SKILL.md",
+      "computedHash": "2bc253cf3ad21367ac4856660a7bd366e3973226ab5a827c117f8ac0a22321c4"
+    },
+    "tao-run-on-virtualenv": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-run-on-virtualenv/SKILL.md",
+      "computedHash": "7f07dbaec79f5456ba3150d5f23a3c46eb92c753ed2021b55e96e038cb7cce6f"
+    },
+    "tao-setup": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-setup/SKILL.md",
+      "computedHash": "b75c4b92318ea2696965dad4a4f73469aa04920526e2d3d6056b6dc33220f717"
+    },
+    "tao-setup-nvidia-gpu-host": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-setup-nvidia-gpu-host/SKILL.md",
+      "computedHash": "3dcffd5d33ae9b7443be0d48044d7d91cedf52395c0aff5a48c8f949e1fc23f2"
+    },
+    "tao-train-action-recognition": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-action-recognition/SKILL.md",
+      "computedHash": "94bd88a15ef24e1036aee3587a2f998b77bb8426dc4c900ec0f385f23f24c0bc"
+    },
+    "tao-train-bevfusion": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-bevfusion/SKILL.md",
+      "computedHash": "48588291732687eec53a551d6a022b7c009c54896a49c0b73c96e49d27c38049"
+    },
+    "tao-train-centerpose": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-centerpose/SKILL.md",
+      "computedHash": "135cd36eab217648f2779b658113fe62e43f54e066b3cd6d9bd29a86a3bb4cf3"
+    },
+    "tao-train-codetr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-codetr/SKILL.md",
+      "computedHash": "25f52420e6c4e0a5b135929312990b0c007446db30eb861579cb5211d8b82d66"
+    },
+    "tao-train-deformable-detr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-deformable-detr/SKILL.md",
+      "computedHash": "db5b1d3fcda834c716be51229b9c828fe0910b88b807a76501a0d6cd2aba826e"
+    },
+    "tao-train-depth-anything-v2": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-depth-anything-v2/SKILL.md",
+      "computedHash": "73fdd595c35dd6de333bc13098ac3a2e6e6e3aab3b914e313499ed1329fff591"
+    },
+    "tao-train-dino": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-dino/SKILL.md",
+      "computedHash": "172ee5b66392267db2dfd73a6a318df846ab617393bdadae617dd29e7767c052"
+    },
+    "tao-train-dinov3": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-dinov3/SKILL.md",
+      "computedHash": "962e6dce9b7f52d98de281c644d54396dcae30f05fdd6020c2019f7474755989"
+    },
+    "tao-train-fast-foundation-stereo": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-fast-foundation-stereo/SKILL.md",
+      "computedHash": "88dee5624cf2b16be2c1d21fe28c8eb0e2841ffdccc87685107cff156cb3dd30"
+    },
+    "tao-train-foundation-stereo": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-foundation-stereo/SKILL.md",
+      "computedHash": "6a8d4ab35b8316377641fb885d048b93d8ab65a97f5cd23e10c9080e2617cbfb"
+    },
+    "tao-train-grounding-dino": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-grounding-dino/SKILL.md",
+      "computedHash": "6a8d82f01f09485394b5aae06c69c6a69364e2581861fd81c526027e0f0808e5"
+    },
+    "tao-train-image-classification": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-image-classification/SKILL.md",
+      "computedHash": "e0ef859973cb238dd99784ac23b0d85d0bc5d373c02fc59e2db47cbe15507a8e"
+    },
+    "tao-train-mask-auto-encoder": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-mask-auto-encoder/SKILL.md",
+      "computedHash": "daacc88171603ef429597e69dc9bdd96c205533fa03adbdbd55b931f84d7fe41"
+    },
+    "tao-train-mask-auto-label": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-mask-auto-label/SKILL.md",
+      "computedHash": "1c101b8ebad2bdca80c80147dc975899c78892dc6165f5479b44a14818d71828"
+    },
+    "tao-train-mask-grounding-dino": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-mask-grounding-dino/SKILL.md",
+      "computedHash": "a355cdc573a4704c2084ab24906876ff6300791672dc7b94dd18650713df4686"
+    },
+    "tao-train-mask2former": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-mask2former/SKILL.md",
+      "computedHash": "9b2aee04253cf9966be5ccfa34423d147bf6775639add5fae76ccee37fe08a85"
+    },
+    "tao-train-metric-learning-recognition": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-metric-learning-recognition/SKILL.md",
+      "computedHash": "fc05d1df4efbd0ec13661c56b41f7e1eb862ecb1fef1f1e2ea974469b588f847"
+    },
+    "tao-train-nvdinov2": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-nvdinov2/SKILL.md",
+      "computedHash": "5c25bdade37974ff2ce91ccce3fd70dc5dc2263e22ffcb96d4bb4c679fb28dcb"
+    },
+    "tao-train-nvpanoptix3d": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-nvpanoptix3d/SKILL.md",
+      "computedHash": "d74a0920e84ae8b88a16574037226c28e8d5360e01e962276db79775e72f851e"
+    },
+    "tao-train-ocdnet": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-ocdnet/SKILL.md",
+      "computedHash": "f714aa21c301c601afc1505a3f40c2a28a08cc1edc94eebd56ae7a22dd6d87eb"
+    },
+    "tao-train-ocrnet": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-ocrnet/SKILL.md",
+      "computedHash": "87314a87e9c0fcac9307c1cfb6ec5e9907e7eda65d699dd4c5f3591281801e27"
+    },
+    "tao-train-oneformer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-oneformer/SKILL.md",
+      "computedHash": "f5167cc0e1463f6009355de643e5fdae2e4d6521e04ee93e60e4cb91ea530410"
+    },
+    "tao-train-optical-inspection": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-optical-inspection/SKILL.md",
+      "computedHash": "bc58ebc36feb16de4f1312182517010ef9d11a4edad5731061a28b97649ffee3"
+    },
+    "tao-train-pointpillars": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-pointpillars/SKILL.md",
+      "computedHash": "42b3173a61644e929b14cde9cf8c23d850f61d85bd4bb785d39846a185e73052"
+    },
+    "tao-train-pose-classification": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-pose-classification/SKILL.md",
+      "computedHash": "3540df52be74c1a5132943afbdaa1f8edd919721339cf4a2ca9cbea792f48904"
+    },
+    "tao-train-reid": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-reid/SKILL.md",
+      "computedHash": "acebdf7856e2769f24fdc7d4abc80e77fa1ee551717300eced07462fab7eba2e"
+    },
+    "tao-train-rtdetr": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-rtdetr/SKILL.md",
+      "computedHash": "f992ee10c9f50fb343aab66a7fe5156b77b68ba6585db8a56125a0a694541233"
+    },
+    "tao-train-segformer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-segformer/SKILL.md",
+      "computedHash": "a984c7214fb90ba67057cc3f8429336d002de87ea1723d9aca28d58387dc3c2f"
+    },
+    "tao-train-single-step": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-single-step/SKILL.md",
+      "computedHash": "fb0ddb6429efcf9253dcd87aaca582833916529970889ddf0d4e69f4aba060bf"
+    },
+    "tao-train-sparse4d": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-sparse4d/SKILL.md",
+      "computedHash": "0e50bff72fdb073b01df89d9dbde5fe35834e321ac1a8a7aa54d65808f41146b"
+    },
+    "tao-train-visual-changenet": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-train-visual-changenet/SKILL.md",
+      "computedHash": "0c2d58253a4fd8da240a8a152af16872b0f497c82f9701695633523697385d17"
+    },
+    "tao-validate-dataset-format": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-validate-dataset-format/SKILL.md",
+      "computedHash": "baa04cbf33737712a29241f533aabe60dd6f6bea6199ad2954a0322bbcb0c60f"
+    },
+    "tao-validate-recipe-transfer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tao-validate-recipe-transfer/SKILL.md",
+      "computedHash": "63bd0e1a023bd5edaa6d4b54e9f82de6e98b110e3c7228dced9edbe4d18f4279"
+    },
+    "tilegym-adding-cutile-kernel": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-adding-cutile-kernel/SKILL.md",
+      "computedHash": "25fd70fffb42b3e8ff3808502fccd74d649acb6e76caf4dd469e6b3e24eb562b"
+    },
+    "tilegym-converting-cutile-to-julia": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-converting-cutile-to-julia/SKILL.md",
+      "computedHash": "a16859b1706263e2d273c51ebb536e1206d7f0442f03b48425786e8cb7c9a049"
+    },
+    "tilegym-converting-cutile-to-triton": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-converting-cutile-to-triton/SKILL.md",
+      "computedHash": "2b9e28fda9554c8f72c4a391df83e4d40f253572550b94f6af0fb54f7cdae354"
+    },
+    "tilegym-cutile-autotuning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-cutile-autotuning/SKILL.md",
+      "computedHash": "d05120f1aa3fd8062a1a2260d78272fb90b4c44e9e41d31e44d5dbee12222283"
+    },
+    "tilegym-cutile-python": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-cutile-python/SKILL.md",
+      "computedHash": "e240abc0e8216a347f434acd29b474178a675ba6606ad7d4178aab103b0d27ed"
+    },
+    "tilegym-improve-cutile-kernel-perf": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-improve-cutile-kernel-perf/SKILL.md",
+      "computedHash": "11bc6149dc5e2233b893c30634daa4a327bd2bd0f335d285243117d7606e1835"
+    },
+    "tilegym-monkey-patch-kernels-to-transformers": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/tilegym-monkey-patch-kernels-to-transformers/SKILL.md",
+      "computedHash": "a228d87dab48e130d9b3583ad5ed21c74979407f2ac489364b17cdddc92adfbf"
+    },
+    "vss-ask-video": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-ask-video/SKILL.md",
+      "computedHash": "81e159c89d1c2de623c21b05943b5917693343f7a3868ce03c3f2018e258af2e"
+    },
+    "vss-deploy-dense-captioning": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-deploy-dense-captioning/SKILL.md",
+      "computedHash": "40bba6f79ce7285e794de95f5a288ed1cf02d0e403d9dff5fa7a6c953a597f32"
+    },
+    "vss-deploy-detection-tracking-2d": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-deploy-detection-tracking-2d/SKILL.md",
+      "computedHash": "acba35e8a7abeb431fe6d0f2eb964679e42e211aa80caa7b8b8dd90cc840114b"
+    },
+    "vss-deploy-detection-tracking-3d": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-deploy-detection-tracking-3d/SKILL.md",
+      "computedHash": "1a727d55d1efeb578dafeccb4f395956bcdbb49034e5ab7413977221dcf779bf"
+    },
+    "vss-deploy-profile": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-deploy-profile/SKILL.md",
+      "computedHash": "88f94b2cadd975b47623ef895c71735ef6a909f99d35eb4bd869f1fc5ea862dc"
+    },
+    "vss-deploy-video-embedding": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-deploy-video-embedding/SKILL.md",
+      "computedHash": "a900b8fca91b30c075c4c862efab0b18afb979cc80dc19f4d061aa68eb2a5d95"
+    },
+    "vss-generate-video-calibration": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-generate-video-calibration/SKILL.md",
+      "computedHash": "fe6c059587c14f3bf4f0e4298b339aa486494412e7bade78e9f163b62ef25917"
+    },
+    "vss-generate-video-report": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-generate-video-report/SKILL.md",
+      "computedHash": "e2b3605f751179b0c6758610591a9865688955355fc87237181e4349cf19e38e"
+    },
+    "vss-manage-alerts": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-manage-alerts/SKILL.md",
+      "computedHash": "a30ede0fc7a3e08c4f5e0279c4a914d8e4c2e8096bee86b01671ceb69a804c97"
+    },
+    "vss-manage-video-io-storage": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-manage-video-io-storage/SKILL.md",
+      "computedHash": "c2849daa19bccf1622b11c951b14d135a86e94561f6ee4138aeb1dd296bbd5d2"
+    },
+    "vss-query-analytics": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-query-analytics/SKILL.md",
+      "computedHash": "13528efb9f5312c5dc24d6da0dc61df7a29462d580272a94137f9602cfd8fbae"
+    },
+    "vss-search-archive": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-search-archive/SKILL.md",
+      "computedHash": "3ebed427f9b220d4f1b3ab45d3d2533079937895ea9c0f7b02f111f4c840f016"
+    },
+    "vss-setup-behavior-analytics": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-setup-behavior-analytics/SKILL.md",
+      "computedHash": "1b6cb4d301eb75a1e6488c1aab4ed090545eec72f5f3d7e32833ede08c7b4170"
+    },
+    "vss-setup-video-analytics-api": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-setup-video-analytics-api/SKILL.md",
+      "computedHash": "7b0a1ae849bd90335bfe20553f453f3fd794f39f4b6a890e456af400f036a231"
+    },
+    "vss-summarize-video": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vss-summarize-video/SKILL.md",
+      "computedHash": "bf5791552f2307d17f8c9cd55a698f79884ac04e25d43278d58ee2a0d5ca16dd"
+    },
+    "warp-compile-time-optimizer": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/warp-compile-time-optimizer/SKILL.md",
+      "computedHash": "3888a1fe22b7eef4d080ac43ad02d17fd566d2cdc781d47b791f2e037a2ff738"
+    },
+    "warp-debug-gradients": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/warp-debug-gradients/SKILL.md",
+      "computedHash": "ebc78c4bfdcd8dfbe4c853c987ae33a62e4615c7a628f308c5d199db0f013d3d"
+    },
+    "warp-eval": {
+      "source": "NVIDIA/skills",
+      "sourceType": "github",
+      "skillPath": "skills/warp-eval/SKILL.md",
+      "computedHash": "d6f473593c3c665d1f3d1f61d2b3459a907a82e9af867b4dfa21be5997713db1"
+    }
+  }
+}

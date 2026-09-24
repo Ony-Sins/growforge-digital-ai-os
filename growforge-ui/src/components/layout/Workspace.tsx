@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight, CheckCircle2, FolderKanban, Plus, Trophy, Zap } from "lucide-react";
 import type { JobSummary } from "@/lib/jobStore";
 import { AgentRosterOverlay } from "@/components/workspace/AgentRosterOverlay";
@@ -42,6 +43,7 @@ function formatWhen(iso: string): string {
 
 export function Workspace({ user }: { user: WorkspaceUser | null }) {
   const { activeView, activeViewToken, openUserProfile, openAgentRoster, openVaultLibrary, chatViewMode } = useAppState();
+  const router = useRouter();
   const [flashSection, setFlashSection] = useState<string | null>(null);
   const [jobs, setJobs] = useState<JobSummary[] | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -50,7 +52,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
 
   useEffect(() => {
     if (activeView === "brain") {
-      openUserProfile("brain");
+      router.push("/?tier=brain");
       return;
     }
     if (activeView === "roster") {
@@ -72,7 +74,7 @@ export function Workspace({ user }: { user: WorkspaceUser | null }) {
     setFlashSection(id);
     const t = setTimeout(() => setFlashSection(null), 1000);
     return () => clearTimeout(t);
-  }, [activeView, activeViewToken, openAgentRoster, openUserProfile, openVaultLibrary]);
+  }, [activeView, activeViewToken, openAgentRoster, openUserProfile, openVaultLibrary, router]);
 
   useEffect(() => {
     let unmounted = false;
