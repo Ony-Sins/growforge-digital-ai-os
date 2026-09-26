@@ -152,7 +152,8 @@ export function Header({ user }: { user: HeaderUser | null }) {
               alt={user?.name ?? user?.email ?? "Account"}
               width={32}
               height={32}
-              className="h-8 w-8 rounded-full object-cover shadow-sm ring-1 ring-[#333333]"
+              style={{ width: 32, height: 32 }}
+              className="rounded-full object-cover shadow-sm ring-1 ring-[#333333]"
             />
           ) : (
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-electric to-gold text-xs font-semibold text-white shadow-sm">

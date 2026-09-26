@@ -3,6 +3,7 @@ import { listMcpServers } from "@/lib/mcp/store";
 import { listJobSummaries } from "@/lib/jobStore";
 import { listAiModels } from "@/lib/aiModelStore";
 import { telemetryStore } from "@/lib/telemetryStore";
+import { listPendingApprovals } from "@/lib/approvalStore";
 
 export async function GET() {
   try {
@@ -53,6 +54,7 @@ export async function GET() {
       data: {
         activeJobCount: activeJobs.length,
         totalJobCount: jobs.length,
+        pendingApprovals: listPendingApprovals().length,
         recentJobs,
         mcp: {
           totalConnected: mcpServers.length,

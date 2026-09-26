@@ -1,19 +1,940 @@
 # GrowForge Digital AI OS — Handoff State (slim/current)
 
-> **Last updated:** 2026-09-25, 14:54, Codex (target HUD and interaction visual pass, see §A first entry). Earlier: 2026-09-25, 14:18, Codex. Split this file into a slim current-state doc + `state-archive.md` (full pre-split history, zero data loss) to cut the token cost of a fresh session's mandatory first read. Read **"Read this first in a new chat"** below, then jump straight to **§A: Session Handoff**.
+> **Last updated:** 2026-09-26, 17:28, Antigravity (Task C5: MOBILE CORE LAYOUT CORRECTION verified, see §A). Earlier: 2026-09-26, 17:00, Antigravity (Task C4); 2026-09-26, 16:25, Antigravity (Task C3); 2026-09-26, 15:44, Antigravity (Task C2); 2026-09-26, 15:27, Antigravity (Task C1). Split this file into a slim current-state doc + `state-archive.md` (full pre-split history, zero data loss) to cut the token cost of a fresh session's mandatory first read. Read **"Read this first in a new chat"** below, then jump straight to **§A: Session Handoff**.
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `master`
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan, then `PRODUCT.md`/`DESIGN.md` before any design/UI work. **Full history before 2026-09-21 22:09 — the entire public-preview security saga, the Phase 0-3 UI/UX buildout, every earlier redesign attempt — lives in `state-archive.md`, not here.** Don't read the archive by default; only reach for it if you need the specific reasoning behind an old, settled decision that isn't summarized below.
 >
-> **Standing rule for every tool that edits this repo (Claude Code, Antigravity, Codex, or anything else):** after any successful task, add an entry to **this file** (not `state-archive.md`, not `growforge-ui/STATE.md` — deprecated, see archive item 33) stating what changed, why, the real system-clock timestamp, and which tool did it. Also apply the **expanded documentation standard** in `CLAUDE.md`: capture the reasoning chain (what was tried/rejected and why, not just the final diff), not just the outcome.
+> **Standing rule for every tool that edits this repo (Claude Code, Antigravity, Codex, or anything else):** after any successful task, add an entry to **this file** (not `state-archive.md`, not `growforge-ui/STATE.md` — deprecated, see archive item 33) stating what changed, why, the real system-clock timestamp, and which tool did it. Also apply the **expanded documentation standard** in `CLAUDE.md`: capture the reasoning chain (what was tried/rejected and why, not just the front diff), not just the outcome.
 >
 > **Token-cost discipline going forward, per explicit user instruction (2026-09-21):** keep this file lean. When it grows past a few recent sessions' worth of detail, move the oldest/most-settled entries into `state-archive.md` (append, dated) and leave a one-line pointer here, the same way this split was done. Don't let it silently balloon back to 184KB.
 >
-> **Universal behavioral rule for every AI agent working on this project (Claude Code, Antigravity, Codex, or anything else), explicit user instruction (2026-09-22) — applies everywhere, every session, not just to code changes:** *"Be direct and honest, not agreeable. Challenge my assumptions when they are weak. If I'm wrong, say 'you're wrong' and explain why in plain English so that I understand, and give me the best realistic recommendation possible. Rate ideas honestly out of 10. If you're uncertain, say so instead of guessing confidently."* This overrides any default instinct toward agreeableness or hedging — the user wants pushback when warranted, an honest numeric rating when asked to evaluate an idea, and an explicit "I don't know"/"I'm not sure" rather than a confident-sounding guess.
+> **Universal behavioral rule for every AI agent working on this project (Claude Code, Antigravity, Codex, or anything else), explicit user instruction (2026-09-22) — applies everywhere, every session, not just to code changes:** *"Be direct and honest, not agreeable. Challenge my assumptions when they are weak. If I'm wrong, say 'you're wrong' and explain why in plain English so that I understand, and give me the best realistic recommendation possible. Rate ideas honestly out of 10. If you're uncertain, say so instead of guessing confidently."* This overrides any default instinct toward agreeableness or hedging — the user wants pushback when warranted, an honest numeric rating when asked to evaluate an idea, and an explicit "I don't know"/"I'm not sure" rather than a comfortable guess.
 
 ---
 
-## A. Session Handoff (2026-09-25, latest) — READ THIS FIRST
+## A. Session Handoff (2026-09-26, latest) — READ THIS FIRST
+
+> **TASK C5: MOBILE CORE LAYOUT CORRECTION (2026-09-26, 17:28, Antigravity).**
+> - **Objective:** Resolved the mobile layout defects identified during the CORE audit without altering approved component designs or desktop dimensions: eliminated collision between the Studio Command Dock and the mobile bottom navigation, repositioned the reactive orb away from mobile navigation buttons, established calibrated vertical rhythm with safe-area support, and ensured responsive virtual keyboard and conversation layer behavior.
+> - **Problems Diagnosed & Resolved:**
+>   1. *Dock Underneath Bottom Navigation:* Studio Command Dock previously used `bottom-7` (28px), placing its bottom half directly underneath the 56px high mobile bottom navigation (`bottom-3` ~ 12px to 68px).
+>   2. *Nora Reactive Orb Collision:* The dock's reactive orb sat at the lower-left edge of the screen, colliding directly with the active "CORE" navigation button.
+>   3. *Insufficient Vertical Breathing Room:* Conversation workspace (`SpatialResponseLayer`), staged attachment chips, and settings popovers lacked calibrated vertical bounding constraints on compact mobile screens (375x812, 390x844).
+>   4. *Virtual Keyboard Occlusion:* Soft keyboard opening on mobile devices pushed or obscured controls without proper visual viewport compensation.
+> - **Architecture & Key Implementations:**
+>   1. **Calibrated Responsive Dock Wrapper (`globals.css`, `CoreCommandCenter.tsx`):**
+>      - Added `.studio-command-dock-wrapper` with responsive vertical offsets:
+>        - Mobile (`< 768px`): `bottom: calc(76px + max(0.25rem, env(safe-area-inset-bottom, 0px)) + var(--kb-offset, 0px))`.
+>        - Desktop (`>= 768px`): `bottom: calc(2.25rem + var(--kb-offset, 0px))`.
+>      - Studio dock now begins cleanly at ~80px from screen bottom on mobile, providing an unambiguous 12px vertical air gap above the mobile navigation bar (`z-40`).
+>   2. **Layer Hierarchy & Reactive Orb Isolation:**
+>      - Stacking contexts: Mobile bottom navigation at `z-40`, Studio Command Dock at `z-30`, `SpatialResponseLayer` at `z-20`.
+>      - Repositioned the reactive orb inside the dock wrapper; on mobile, the orb is scaled to 20px container / 10px core and sits at `bottom: ~80px`, completely isolated from the bottom-left CORE navigation icon.
+>   3. **Dock-Anchored Response & History Layer (`SpatialResponseLayer`):**
+>      - Positioned via `.spatial-response-layer-wrapper`:
+>        - Mobile (`< 768px`): `bottom: calc(138px + max(0.25rem, env(safe-area-inset-bottom, 0px)) + var(--kb-offset, 0px))`.
+>        - Desktop (`>= 768px`): `bottom: calc(7.25rem + var(--kb-offset, 0px))`.
+>      - Bounded maximum heights prevent canvas overcrowding:
+>        - Compact mode: `max-h-[30vh]` (mobile) / `max-h-[38vh]` (desktop), markdown text area `max-h-[18vh]`.
+>        - Expanded history: `max-h-[44vh]` (mobile) / `max-h-[52vh]` (desktop), scrollable turns `max-h-[28vh]`.
+>      - Staged attachment chips container sized to `max-h-[64px]` with smooth horizontal scrolling.
+>      - Conversation settings popover anchored to `bottom: calc(100% + 8px)` above the dock, guaranteeing zero screen overflow.
+>   4. **Dynamic Virtual Keyboard Compensation (`layout.tsx`, `CoreCommandCenter.tsx`):**
+>      - Configured `interactiveWidget: "resizes-content"` and safe-area viewport cover in `layout.tsx`.
+>      - Added `window.visualViewport` resize/scroll listener computing dynamic `--kb-offset`, lifting the dock and conversation layer smoothly above open software keyboards without DOM jumps or layout distortion.
+>   5. **Preserved Invariants & Visual Design:**
+>      - Desktop header, side instruments, and canvas interactions remain 100% untouched.
+>      - Touch targets meet WCAG standards (minimum 36–40px active tap areas).
+>      - WebGL canvas outside controls retains full orbit and drag interactivity.
+>      - Fully accessible with `@media (prefers-reduced-motion: reduce)`.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`scripts/verify_task_c5_mobile_layout.mjs`) verified:
+>     1. `task_c5_390x844_idle_dock_above_nav.png` — Confirms Studio dock positioned completely above bottom navigation with clear air gap.
+>     2. `task_c5_390x844_attachment_staged.png` — Confirms staged attachment chips visible above dock without clipping.
+>     3. `task_c5_390x844_settings_popover.png` — Confirms settings popover renders cleanly above dock.
+>     4. `task_c5_375x812_compact_layout.png` — Confirms 375x812 compact viewport layout with zero horizontal overflow.
+>     5. `task_c5_428x926_wide_mobile.png` — Confirms wide mobile viewport layout.
+>     6. `task_c5_mobile_keyboard_open.png` — Confirms virtual keyboard simulation (+260px offset) with dock and response lifting smoothly.
+>     7. `task_c5_reduced_motion.png` — Confirms instantaneous zero-motion presentation.
+> - **Working Tree Integrity:** All pre-existing uncommitted changes preserved. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK C4: DOCK-ANCHORED CONVERSATION + ATTACHMENT SUPPORT (2026-09-26, 17:00, Antigravity).**
+> - **Objective:** Repositioned the conversation workspace from the top-right corner to a **dock-anchored surface** directly ABOVE the bottom Studio Command Dock (horizontally aligned and centered with the dock with a subtle gap), and integrated genuine **attachment support** into the Studio Command Dock.
+> - **Architecture & Key Implementations:**
+>   1. **Dock-Anchored Spatial Positioning (`CoreCommandCenter.tsx`, `SpatialResponseLayer`):**
+>      - Repositioned `SpatialResponseLayer` to `absolute left-1/2 bottom-[82px] sm:bottom-[88px] -translate-x-1/2 w-[min(650px,calc(100vw-2rem))] z-30`.
+>      - Maintains exact horizontal alignment with the Studio Command Dock with a 14–18px vertical rhythm.
+>      - Constrains height (`max-h-[38vh]` for Compact, `max-h-[52vh]` for Expanded) to preserve negative space around the CORE nucleus and prevent visual collision with the Floating Command Spine.
+>      - Surface material: minimal translucent navy-black (`rgba(6, 17, 34, 0.78)` to `rgba(8, 22, 44, 0.88)`) with subtle cyan border illumination (`rgba(34, 211, 238, 0.22)`) and calibrated backdrop blur (`backdrop-blur-md`).
+>   2. **Compact Response & Expanded History Modes:**
+>      - **Compact Mode:** Shows the latest turn directly above the dock (user prompt pill with attachment tags, assistant markdown response, model chip, action buttons "View history (n)" and "Dismiss").
+>      - **Expanded Mode:** Expands *upward* in the exact same dock-anchored container, displaying scrollable history turns with fixed header ("Nora (n TURNS)", Settings, Expand/Collapse, Close) and sticky footer ("Clear history", "Collapse to latest").
+>      - Top-right header **Assistant button** toggles the exact same dock-anchored history surface.
+>   3. **Restrained Entrance Animation (`globals.css`):**
+>      - `@keyframes holographic-reveal`: 320ms cubic-bezier entrance with opacity increase and 4px positional settling (`translateY(4px)` to `translateY(0)`). Zero bounce or scaling. Immediate state updates on `prefers-reduced-motion: reduce`.
+>   4. **Discreet Attachment Support on Studio Command Dock:**
+>      - Form action sequence in exact requested order: `Reactive orb → Text input → Hidden file input → Attachment (Paperclip) → Settings (Gear) → Separator → Microphone → Send`.
+>      - Supported file types: `.pdf, .docx, .txt, .md, .csv, image/*` up to 15MB each (10 files max).
+>      - Staged removable attachment chips appear directly above the dock input with real filename, filetype icon, loading spinner, and remove `(X)` button.
+>      - Input placeholder dynamically adapts to `"Ask about attached files..."`.
+>      - Genuine attachment upload pipeline: posts multipart files to `/api/attachments`, extracts parsed text / vision analysis, and includes formatted `attachmentContext` in the assistant payload to `/api/router`.
+>      - Failed submissions preserve the draft prompt and staged attachments for recovery.
+>      - Submitted attachments are echoed in both compact response pills and expanded history turns.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`scripts/verify_task_c4_dock_conversation_attachments.mjs` & `scripts/record_task_c4.mjs`):
+>     1. `task_c4_initial_dock_ready.png` — Confirms Studio Command Dock ready at bottom with paperclip attachment button.
+>     2. `task_c4_attachment_chip_staged.png` — Confirms staged attachment chip (`growthflow_brief.txt`) rendered above dock.
+>     3. `task_c4_attachment_response_compact.png` — Confirms compact response directly above the dock showing user prompt pill, attached file chip, assistant answer, and model chip.
+>     4. `task_c4_expanded_history_above_dock.png` — Confirms history expanding upward from the dock.
+>     5. `task_c4_header_toggled_history_dock.png` — Confirms header Assistant button toggles the dock-anchored history surface.
+>     6. `task_c4_mobile_dock_conversation.png` — Confirms mobile layout with dock-anchored conversation.
+>     7. `task_c4_reduced_motion_mode.png` — Confirms reduced-motion mode.
+> - **Limitations:**
+>   - Image attachments use base64 preview and text extraction/OCR/vision via `/api/attachments`. Server limits are enforced at 15MB per file and 10 files max per submission.
+> - **Working Tree Integrity:** All pre-existing uncommitted changes preserved. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+
+> **TASK C3: UNIFY THE SPATIAL CONVERSATION EXPERIENCE (2026-09-26, 16:25, Antigravity).**
+> - **Objective:** Eliminated the legacy central AI Assistant drawer takeover across CORE, unifying conversation into ONE coherent spatial architecture: Studio Command Dock as the persistent bottom input, a single right-side spatial workspace supporting both **Compact Response** and **Expanded History** view modes, and the top-right header Assistant button toggling expanded history in that exact same right-side workspace without ever opening a central modal over CORE.
+> - **Architecture & Key Refactors:**
+>   1. **Legacy Window Takeover Elimination (`SpatialCanvas.tsx`):**
+>      - Removed `<SpatialChatDrawer />` from the CORE spatial canvas completely. Enter, Send, header Assistant button, and the layer actions never invoke the central modal drawer in CORE.
+>      - Preserved `SpatialChatDrawer.tsx` and `ChatView.tsx` in the repo for non-CORE surfaces (e.g. `/workspace`).
+>   2. **Single Right-Side Spatial Workspace (`CoreCommandCenter.tsx`, `SpatialResponseLayer`):**
+>      - Upgraded `SpatialResponseLayer` to support dual presentation states:
+>        - **COMPACT RESPONSE:** Displays the latest exchange (user echo pill, assistant markdown response, model chip/timing, clear/expand actions), minimal translucent glass (`rgba(8, 16, 32, 0.72)` + blur), zero occlusion of CORE nucleus or Studio dock.
+>        - **EXPANDED HISTORY:** Expands in the *same* right-side workspace (`w-[440px]`, `max-h-[72vh]`), rendering full scrollable conversation turns with timestamps, role-based visual styling, and clear history action. Zero duplicate input field added; Studio dock remains the single command input.
+>      - Smoothly toggleable via the header history button, layer expand icon (`Maximize2`/`Minimize2`), or header Assistant button.
+>   3. **Restrained Holographic Entrance & Exit (`globals.css`):**
+>      - Added `@keyframes holographic-reveal`: 300ms cubic-bezier entrance with subtle opacity, backdrop blur, and 6px vertical settling without bouncy transforms or full-scene repaints.
+>      - Added complete `@media (prefers-reduced-motion: reduce)` overrides for immediate, non-animated rendering.
+>   4. **Luminous Reactive Orb Lifecycle (`CoreCommandCenter.tsx`):**
+>      - Directly bound to real conversation dispatch states: `idle` -> `typing` (debounced pop) -> `thinking` (restrained shimmer while request is pending) -> `success` / `error`.
+>      - Zero simulated text streaming or fabricated TTS.
+>   5. **Personalization & Settings Consistency:**
+>      - Personalization popover (`ConversationSettingsPopover`) is accessible from both the Studio Command Dock gear button and the right-side layer header settings button.
+>      - Reads and writes to `localStorage.getItem("growforge.userName")` (default: "Ony") and `localStorage.getItem("growforge.assistantName")` (default: "Nora").
+>      - Truthfully disables speech synthesis toggle when TTS is unavailable in the environment.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`scripts/verify_task_c3_unified_conversation.mjs` & `scripts/record_task_c3.mjs`):
+>     1. `task_c3_initial_dock_ready.png` — Confirms Option D Studio dock ready at bottom.
+>     2. `task_c3_submission_pending_reveal.png` — Confirms real request pending, thinking shimmer on orb, and skeleton loader in right-side workspace.
+>     3. `task_c3_compact_response.png` — Confirms latest exchange in compact right-side card without central modal.
+>     4. `task_c3_compact_card_crop.png` — Detailed typography and styling crop of compact card.
+>     5. `task_c3_second_turn_compact.png` — Confirms follow-up turn submitted seamlessly.
+>     6. `task_c3_expanded_history_workspace.png` — Confirms expanded history view in the same right-side workspace.
+>     7. `task_c3_expanded_history_crop.png` — Detailed crop of scrollable history turns.
+>     8. `task_c3_settings_popover_layer.png` — Confirms settings popover accessible directly from the right-side layer.
+>     9. `task_c3_collapsed_to_compact.png` — Confirms clean collapse back to compact mode without losing state.
+>     10. `task_c3_mobile_workspace.png` — Confirms mobile layout with right-side/stacked workspace.
+>     11. `task_c3_reduced_motion.png` — Confirms reduced-motion mode.
+> - **Limitations:** Real speech synthesis (TTS) was unavailable in the test environment and is truthfully indicated as disabled in settings.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK C2: NATIVE SPATIAL CONVERSATION FLOW (2026-09-26, 15:44, Antigravity).**
+> - **Objective:** Replaced the automatic legacy chat-drawer takeover with a native, non-modal spatial conversation flow in CORE. When messages are submitted from the Studio Command Dock, they route directly to the real assistant pipeline (`/api/router`), the Studio dock remains anchored and usable for follow-up questions, the reactive orb and spatial layer provide accurate pending/thinking states, and the response renders seamlessly in the right-side negative space of CORE while keeping synchronized conversation history accessible via the top-right Assistant button.
+> - **Diagnosis of Existing Submission Path:**
+>   - *Confirmed Behavior:* Submitting text previously invoked `onOpenChat(prompt)` after a 320ms simulated pulse. `SpatialCanvas` set `isChatOpen(true)` with `chatInitialPrompt = prompt`, mounting `SpatialChatDrawer` and `ChatView`. `ChatView` merely populated its local `<textarea>` with the draft (`setInput(initialPrompt)`) without dispatching to `/api/router`, completely occluding the CORE canvas with a conventional modal frame while leaving the message unsubmitted.
+> - **Architectural & Visual Implementation (`CoreCommandCenter.tsx`, `ChatView.tsx`):**
+>   1. **Direct Request Dispatching from Studio Dock:**
+>      - Implemented asynchronous `submit(overrideValue?: string)` in `CoreCommandCenter.tsx`.
+>      - Directly invokes `/api/router` with the user prompt, conversational history, user role (`operator`), and unlocked agent IDs.
+>      - Captures IME composition (`e.nativeEvent.isComposing`) and prevents duplicate or empty submissions.
+>      - Preserves user text in state and dock input on failure, allowing instant one-click retry.
+>      - Links Web Speech API voice transcript directly to the real `submit` pipeline.
+>   2. **Persistent Studio Command Dock:**
+>      - Studio dock remains permanently anchored at bottom-center with zero coordinate shift or modal occlusion.
+>      - Input resets to ready state upon submission, allowing the operator to immediately prepare follow-up questions.
+>   3. **Native Spatial Response Layer (`SpatialResponseLayer`):**
+>      - *Geometry & Positioning:* Positioned in the right-side negative space (`right-[4%] top-[22%]`, max-width 420px desktop, responsive width `calc(100vw - 2rem)` on mobile).
+>      - *Materiality:* Semi-translucent holographic glass (`rgba(8, 16, 32, 0.72)`) with `backdrop-filter: blur(20px) saturate(140%)`, subtle cyan top rim, and fine border (`rgba(34, 211, 238, 0.20)`).
+>      - *Typography & Header:* Features user-customized assistant identity badge (`✦ Nora` / configured name), uppercase provider chip (`OLLAMA` / `OPENAI` / `MOCK`), and close/dismiss button.
+>      - *User Prompt Pill:* Displays a compact, translucent echo pill (`rgba(255,255,255,0.06)`) of the user's submitted query.
+>      - *Thinking & Response States:* Shows an animated 3-bar thinking shimmer skeleton during pending dispatch, rendering cleanly formatted markdown upon arrival.
+>      - *Dispatch Info & Action Controls:* Displays model metadata footer (e.g. `llama3:latest • 48ms`) with action buttons to dismiss or open full drawer history.
+>   4. **Cross-Surface History Synchronization:**
+>      - Maintained shared conversation state in `localStorage.getItem("growforge.chat.history")`.
+>      - Updated `ChatView.tsx` to read and write to the shared history store on mount and message append.
+>      - Clicking the top-right "Assistant" button opens the full conversation log including all spatial interactions.
+>   5. **Reactive Orb State Integration:**
+>      - Orb transitions through `idle` -> `typing` -> `thinking` (shimmer) -> `success` / `error` without triggering artificial nucleus or particle spikes.
+>      - Zero fake audio playback or simulated TTS.
+>   6. **Mobile & Reduced Motion:**
+>      - Full mobile responsiveness with compact placement above the dock on viewports `< 768px`.
+>      - Complete `@media (prefers-reduced-motion: reduce)` overrides disabling slide/fade transforms.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`scripts/verify_task_c2_spatial_conversation.mjs` & `scripts/record_task_c2.mjs`) captured:
+>     1. `task_c2_submission_pending.png` — Confirms real request submission, thinking shimmer on orb, and skeleton loader in spatial layer without opening legacy drawer.
+>     2. `task_c2_spatial_response_active.png` — Confirms real assistant response rendered in right-side negative space while CORE scene and dock remain visible and operational.
+>     3. `task_c2_spatial_response_card_crop.png` — Close crop confirming typography, assistant identity, provider chip, markdown rendering, and dispatch metadata.
+>     4. `task_c2_spatial_response_second_turn.png` — Confirms second follow-up turn submitted seamlessly from the dock with updated spatial response.
+>     5. `task_c2_drawer_history_opened_manually.png` — Confirms manual click on top-right Assistant button displays full synchronized conversation history.
+>     6. `task_c2_spatial_response_mobile.png` — Confirms mobile layout on 390x844 viewport.
+>     7. `task_c2_spatial_response_reduced_motion.png` — Confirms instantaneous zero-motion presentation.
+>     8. `task_c2_spatial_conversation_recording.webm` — Video capture of the native spatial conversation flow.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK C1: STUDIO COMMAND DOCK AND REACTIVE ORB (2026-09-26, 15:27, Antigravity).**
+> - **Objective:** Redesigned the bottom-center conversational input into the approved **Option D — Studio** design: a compact, glossy, translucent navy-black glass dock with a luminous reactive interaction orb anchored at the left, responsive width (~620–680px desktop), restrained cyan illumination, single primary microphone and send controls, and an accessible Conversation Settings popover.
+> - **Exact Architectural & Visual Implementation (`CoreCommandCenter.tsx`, `globals.css`):**
+>   1. **Studio Command Dock Surface (`.studio-command-dock` in `globals.css`):**
+>      - *Geometry & Dimensions:* Compact pill container (height: 64px mobile / 68px desktop, max-width: 650px / 100vw - 2rem on mobile), centered at bottom-7 (mobile) / bottom-9 (desktop).
+>      - *Materiality:* Deep navy-black glass (`linear-gradient(180deg, rgba(8, 16, 32, 0.75) 0%, rgba(3, 8, 18, 0.88) 100%)`) with `backdrop-filter: blur(24px) saturate(140%)`, subtle glossy top highlight line (`h-[1px]` via `rgba(255,255,255,0.25)`), fine structural border (`rgba(255,255,255,0.10)`), and soft cyan underglow (`box-shadow: 0 0 24px -6px rgba(34,211,238,0.14)`).
+>      - *Hover/Focus Elevation:* Border illuminates softly to `rgba(34,211,238,0.32)`, with expanded cyan underglow (`0 0 32px -4px rgba(34,211,238,0.24)`).
+>   2. **Luminous Reactive Orb (`ReactiveOrb` & `.reactive-orb-*` in `globals.css`):**
+>      - *Anchored Geometry:* Fixed 24x24 container at the left of the dock with 12px luminous sphere at rest. Zero coordinate displacement or dock-shake during typing.
+>      - *State-Specific Visual Signatures:*
+>        - **IDLE:** Steady faint cyan aura (`#e0f7ff`, `box-shadow: 0 0 8px rgba(34, 211, 238, 0.70)`).
+>        - **FOCUS / HOVER:** Smooth increase in localized luminous glow (`#ffffff`, `box-shadow: 0 0 12px rgba(34, 211, 238, 0.95), 0 0 22px rgba(34, 211, 238, 0.55)`).
+>        - **TYPING:** Responsive 1.15 scale micro-pop (`#ffffff`, debounced 380ms keystroke coalescing to prevent rapid restart chatter or coordinate drift).
+>        - **LISTENING (Mic On, Silent):** Contained rose-tinted pulse (`orb-listening-pulse` 2s loop, `rgba(244, 63, 94, 0.80)`).
+>        - **VOICE ACTIVE (Audio Detected):** Dynamic cyan/rose ripple (`orb-voice-ripple` 800ms loop, scale 1.05 -> 1.18).
+>        - **THINKING:** Contained internal shimmer (`orb-thinking-shimmer` 1.5s loop, `#e0f7ff` <-> `#7dd3fc`).
+>        - **EXECUTING:** Purposeful emerald/teal pulse (`orb-executing-pulse` 1.8s loop, `#ccfbf1`, `rgba(45, 212, 191, 0.95)`).
+>        - **SUCCESS:** One clean emerald confirmation pulse (`#d1fae5`, `rgba(16, 185, 129, 0.95)`).
+>        - **ERROR:** Muted amber/red indication (`#fee2e2`, `rgba(239, 68, 68, 0.85)`).
+>   3. **Voice & Text Preferences Popover (`ConversationSettingsPopover`):**
+>      - Discreet popover triggered via settings gear button beside action controls.
+>      - Displays "Your Name" (persists to `localStorage.getItem("growforge.userName")`, default "Ony") and "Assistant Name" (persists to `localStorage.getItem("growforge.assistantName")`, default "Nora").
+>      - Independent controls for Text Input and Voice Input.
+>      - Truthful voice output status: truthfully indicates "Speech synthesis unavailable in current environment" with a disabled toggle rather than faking non-existent TTS output.
+>   4. **Critical Isolation from CORE:**
+>      - All dock and orb state transitions are 100% self-contained in local React state and CSS rules.
+>      - Verified zero mutation or coupling to `NeutronCoreEngine.ts`, particles, nucleus scale, camera matrices, or optical calibration.
+>   5. **Accessibility & Reduced Motion:**
+>      - Complete `@media (prefers-reduced-motion: reduce)` overrides disabling all orb bounce, scale transforms, and shimmer animations while preserving instant state clarity and functionality.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Verification (`scripts/verify_task_c1_dock.mjs` & `scripts/record_task_c1.mjs`) captured:
+>     1. `task_c1_dock_idle.png` — Option D Studio dock at rest.
+>     2. `task_c1_dock_focus.png` — Dock focused with increased orb glow.
+>     3. `task_c1_dock_typing.png` — Keystroke typing state with text and micro-pop.
+>     4. `task_c1_dock_listening.png` — Microphone enabled in silence.
+>     5. `task_c1_dock_voice_active.png` — Voice active audio reaction.
+>     6. `task_c1_dock_thinking.png` — Request pending thinking shimmer.
+>     7. `task_c1_dock_executing.png` — Purposeful executing state.
+>     8. `task_c1_dock_success.png` — Success confirmation pulse.
+>     9. `task_c1_dock_error.png` — Muted error state.
+>     10. `task_c1_conversation_settings_popover.png` — Conversation Settings popover with name customization and mode toggles.
+>     11. `task_c1_dock_mobile.png` — Responsive layout on 390x844 mobile viewport.
+>     12. `task_c1_dock_reduced_motion.png` — Instantaneous state presentation with zero motion.
+>     13. `task_c1_core_full_idle.png` — Full cinematic scene showing CORE with Option D Studio Command Dock.
+>     14. `task_c1_interaction_recording.webm` — Video capture of the dock interaction flow.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S12-B: CONTROLLED CORE OPTICAL CLARITY CORRECTION (2026-09-26, 14:47, Antigravity).**
+> - **Objective:** Executed a controlled, stepwise optical calibration of the celestial neutron star illumination layers in CORE to achieve the user's approved visual target: *Brilliant White Nucleus, Controlled Tight Corona, Crisp Distinct Cyan Particles, and Deep Cinematic Darkness* without wholesale redesign or damaging Brain view clarity.
+> - **Exact Stepwise Calibrations Implemented (`NeutronCoreEngine.ts`):**
+>   1. **Step 1 — Outer Atmosphere Aura (`outerCoronaSprite`):**
+>      - *Scale:* Reduced from $380 \times 380 \to 320 \times 320$ units.
+>      - *Opacity:* Calibrated from $0.65 \to 0.44$ (with pulse modulation scaling to $0.44 + \text{pulseOffset} \times 0.08$).
+>      - *Radial Falloff:* Refined 2D canvas gradient color stops ($0.0: \text{cyan } 0.42 \to 0.25: 0.26 \to 0.50: 0.11 \to 0.75: 0.03 \to 1.0: 0.0$), eliminating the wide 380-unit blue fog disk and dissolving cleanly into the black void.
+>   2. **Step 2 — Inner Corona (`coreSprite`):**
+>      - *Scale:* Reduced from $220 \times 220 \to 190 \times 190$ units.
+>      - *Opacity:* Calibrated from $0.78 \to 0.68$ (with pulse modulation scaling to $0.68 + \text{pulseOffset} \times 0.12$).
+>      - *Radial Falloff:* Re-tuned 2D canvas gradient ($0.0: \text{white } 0.90 \to 0.22: \text{white } 0.80 \to 0.38: \text{cyan-white } 0.70 \to 0.55: \text{cyan } 0.55 \to 0.72: \text{blue } 0.28 \to 0.88: 0.08 \to 1.0: 0.0$), maintaining a smooth, continuous luminous transition around the white nucleus with zero visible banding, rings, or harsh edges.
+>   3. **Particle System Evaluation:**
+>      - Verified through empirical screenshot comparison that calibrating the two corona sprites restored crisp separation and contrast for the 21,000 volumetric particles. The particle shader, point sizes, Gaussian falloffs, and circulation dynamics were preserved untouched to prevent over-dimming or artificial thinning.
+>   4. **Preserved Invariants:**
+>      - Central nucleus body geometry, white-hot core shader, and Fresnel limb preserved 100%.
+>      - LOCKED S11 arrival greeting lifecycle, timers, and accessibility preserved untouched.
+>      - Shared spatial consistency verified: Brain tier ($z=460$) retains full clarity, node connections, and luminous center identity.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`scripts/verify_s12b_calibration.mjs`) captured side-by-side evidence:
+>     1. `baseline_core_center_crop.png` vs `step2_inner_corona_core_center_crop.png` — Confirms elimination of central haze, brilliant white core definition, and crisp cyan particle visibility.
+>     2. `baseline_brain_center_crop.png` vs `step2_inner_corona_brain_center_crop.png` — Confirms Brain view retention and zero cross-environment degradation.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S11: REPAIR CORE GREETING LIFECYCLE (2026-09-26, 13:52, Antigravity).**
+> - **Objective:** Diagnosed and repaired the CORE greeting lifecycle so that the greeting reliably displays once per fresh application load upon first entry into CORE, replays cleanly on browser reload (F5), remains suppressed during in-app navigation within the same mounted session, and initiates only when CORE is first visited.
+> - **Root Cause Diagnosis of Previous Missing Greeting:**
+>   1. *Persistent Storage Gating:* `sessionStorage.setItem("gf_core_greeting_shown", "true")` was introduced in S10. Because `sessionStorage` survives page reloads (`F5`) in the same browser tab, test refreshes and normal reloads remained permanently suppressed.
+>   2. *React 18 / StrictMode Effect Cancellation:* On initial mount, `useEffect` ran and immediately set `sessionCoreGreetingShown = true`. In React 18 / Next.js dev StrictMode, the initial cleanup fired `clearTimeout(t1..t4)`, cancelling all pending transitions. When React immediately remounted the component, `sessionCoreGreetingShown` was already `true`, causing `useCoreArrivalGreeting` to bail out immediately without rescheduling the timers. As a result, `stage` remained permanently frozen at `"initial"` (`opacity: 0`).
+> - **Exact Architectural Fix Implemented (`CoreCommandCenter.tsx`):**
+>   1. *In-Memory Elapsed-Time State Tracking:* Replaced storage gating with time-tracked in-memory module lifecycle state (`let sessionGreetingStartTime = 0; let sessionGreetingCompleted = false;`).
+>   2. *StrictMode & Remount Resiliency:* When the effect runs, it computes `elapsed = Date.now() - sessionGreetingStartTime` and schedules the remaining time for each phase (`remainingFadeIn`, `remainingVisible`, `remainingFadeOut`, `remainingHidden`), guaranteeing that StrictMode unmount/remount cycles or fast component updates do not abort the lifecycle.
+>   3. *Lifecycle Timing Sequence:*
+>      - Fade-in over ~600ms (`transition-opacity duration-[600ms] ease-out`).
+>      - Full visible hold for 4.0 seconds (`opacity-100`, `aria-hidden="false"`).
+>      - Fade-out over ~900ms (`transition-opacity duration-[900ms] ease-in-out`).
+>      - Settles to ambient idle (`opacity-0 invisible pointer-events-none`, `aria-hidden="true"`).
+>   4. *In-App Navigation & Reload Semantics:*
+>      - Browser reload (F5) re-executes JS memory $\to$ fresh start $\to$ greeting plays once.
+>      - In-app client navigation (CORE $\to$ Brain $\to$ CORE) preserves module state $\to$ greeting initializes directly to `"hidden"` on return and never replays.
+>      - Starting the app in another environment (`/?tier=brain`) and then navigating to CORE plays the greeting on first entry.
+>   5. *Accessibility & Layout Preservation:*
+>      - Preserved exact wording and typography layout with zero coordinate translation/scale shifts.
+>      - Container is `pointer-events-none` throughout (never blocks canvas interaction or nucleus drag).
+>      - `motion-reduce:transition-none` applied for reduced-motion accessibility.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated Chrome CDP Test Suite (`scratch/verify_s11.mjs`) verified:
+>     1. *Scenario 1 (Fresh CORE Load):* Fade-in $\to$ 4.0s hold $\to$ 900ms fade-out $\to$ settled hidden (`s11_seq_1_fade_in.png` through `s11_seq_4_settled_idle.png`).
+>     2. *Scenario 2 (Reload):* `location.reload()` replayed greeting visibly on fresh load (`s11_seq_5_reload_visible.png` and `s11_seq_6_reload_hidden.png`).
+>     3. *Scenario 3 (Navigation):* CORE $\to$ Brain $\to$ CORE verified greeting stayed hidden with `visibility: hidden` and `aria-hidden="true"` (`s11_seq_7_brain_view.png`, `s11_seq_8_core_return_hidden.png`).
+>     4. *Scenario 4 (Different Initial Environment):* Fresh start at `/?tier=brain` $\to$ navigate to CORE verified greeting triggered on first CORE entry (`s11_seq_9_brain_initial.png`, `s11_seq_10_first_core_visible.png`).
+>     5. *Scenario 5 (Reduced Motion):* `prefers-reduced-motion: reduce` verified (`s11_seq_11_reduced_motion.png`).
+> - **Working Tree Integrity:** Preserved all uncommitted files. 0 commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S10: CORE Arrival and Ambient Idle Composition (2026-09-26, 12:53, Antigravity).**
+> - **Objective:** Implemented two coordinated refinements: (1) a temporary cinematic greeting lifecycle on initial CORE arrival (600ms fade-in $\to$ 4s hold $\to$ 900ms fade-out $\to$ ambient idle, 1x per app session); and (2) more subtle, translucent 25–35% transparent resting instrument panels harmonized with the celestial particle scene.
+> - **Exact Architectural & Visual Refinements Implemented:**
+>   1. **Initial Greeting Lifecycle (`useCoreArrivalGreeting` in `CoreCommandCenter.tsx`):**
+>      - *Arrival Sequence:* Fades in over 600ms ease-out, holds fully visible for 4.0 seconds, and fades out over 900ms ease-in-out into ambient idle.
+>      - *Stationary Geometry:* Zero translation shifts or scale changes (`motion-reduce:transition-none` supported).
+>      - *Session Tracking:* Handled via module flag and `sessionStorage.getItem("gf_core_greeting_shown")`; navigating away and returning to CORE during the same session does not repeat the entrance sequence.
+>      - *Interaction & Accessibility:* 100% `pointer-events-none` throughout (never blocks WebGL canvas drags, camera orbit, or HUD interaction); marked `aria-hidden` upon fade-out.
+>   2. **Ambient Side-Instrument Calibration (`globals.css` & `CoreCommandCenter.tsx`):**
+>      - *Resting Surface:* Calibrated to 25–35% transparent glass (`linear-gradient(135deg, rgba(6, 12, 24, 0.30) 0%, rgba(2, 6, 15, 0.35) 100%)`, `backdrop-filter: blur(14px)`, `border: 1px solid rgba(255, 255, 255, 0.05)`, soft ambient shadow `0 6px 20px rgba(0,0,0,0.35)`).
+>      - *Readability:* Full contrast preserved on typography and neutral cool silver-blue glyphs without lowering text opacity.
+>      - *Hover & Focus Illumination:* Seamlessly warms to `rgba(7, 18, 36, 0.70)` with coordinated glyph, text-shadow, and partial edge illumination.
+>   3. **Preserved Invariants & In-Place Features:**
+>      - Preserved real telemetry bindings, genuine data-change signal traces, all 3 click handlers, mobile layout, and reduced motion compliance.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`verify_task_s10_arrival.mjs`) verified:
+>     1. `task_s10_greeting_fade_in.png` — Greeting initial fade-in.
+>     2. `task_s10_greeting_visible.png` — Greeting fully visible hold.
+>     3. `task_s10_greeting_fade_out.png` — Greeting smooth fade-out.
+>     4. `task_s10_ambient_idle.png` — Clean, uncluttered ambient idle CORE.
+>     5. `task_s10_card_idle.png` — Ambient 25–35% translucent panel surface at rest.
+>     6. `task_s10_card_hovered.png` & `task_s10_card_focused.png` — Coordinated hover & keyboard focus illumination.
+>     7. `task_s10_approvals_positive.png` — Positive pending approvals amber cue.
+>     8. `task_s10_mobile.png` — Mobile viewport (390 x 844) clean layout.
+>     9. `task_s10_reduced_motion.png` — Reduced-motion mode verification.
+>     10. `task_s10_arrival_recording.webm` — Video capture of arrival and interaction sequence.
+>     11. *Navigation Replay Check:* Confirmed greeting stays hidden (`visibility: hidden`) after navigating to Missions and returning to CORE.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S9: Professional Instrument Glyph and Color Refinement (2026-09-26, 12:40, Antigravity).**
+> - **Objective:** Refined the visual identity of the Missions, Systems, and Approvals instruments to establish a cohesive, restrained technical instrument language, eliminating overly saturated, mismatched glyph colors and clearly separating identity, state, and interaction color channels.
+> - **Exact Architectural & Visual Refinements Implemented:**
+>   1. **Unified Neutral Glyph Styling (`CoreCommandCenter.tsx` & `globals.css`):**
+>      - All 3 glyphs share the exact same neutral cool silver-blue resting color (`rgba(203, 213, 225, 0.82)` / `#cbd5e1`) and 1.6px stroke weight.
+>      - Optical scale calibrated: 18x18 viewBox, round caps/joins, zero bulky icon boxes, zero continuous animation, and restrained resting drop-shadow (`drop-shadow(0 0 2.5px rgba(148, 163, 184, 0.25))`).
+>      - **Missions:** Minimal route vector with distinct endpoint destination marker and origin node (`TrajectoryGlyph`).
+>      - **Systems:** Interconnected dual infrastructure nodes with discrete orthogonal data link (`InfrastructureGlyph`).
+>      - **Approvals:** Geometric authorization shield seal with verification checkmark (`ApprovalSealGlyph`).
+>   2. **Separated Identity, State, and Interaction Color:**
+>      - **Identity (Glyph):** Shared cool silver-blue resting tone across all cards; illuminates to crisp white (`#ffffff`) on hover with subtle cyan aura (`drop-shadow(0 0 5.5px rgba(34, 211, 238, 0.60))`).
+>      - **State & Category (Status Strip, Corners, Signal Trace):**
+>        - *Missions:* Muted cyan category accent (`rgb(34, 211, 238)`).
+>        - *Systems:* Muted teal category accent (`rgb(45, 212, 191)`); connection count strictly represents MCP connectivity, not general system health.
+>        - *Approvals:* Neutral slate tone (`rgb(148, 163, 184)`) when `pendingApprovals === 0` (no urgent action suggested); Amber accent (`rgb(245, 183, 59)`) only when positive pending count exists (`> 0`); Unknown/unavailable data renders as `"—"` with neutral tone (never coerced to 0).
+>      - **Interaction (Hover / Active):** Shared cyan-white surface and edge warming (`rgba(7, 18, 36, 0.70)`), maintaining 260ms ease-in / 380ms ease-out timing and 100% stationary geometry.
+>   3. **Preserved Task S8 Interactions & Invariants:**
+>      - Real-data signal traces (`InstrumentSignalTrace`), keyboard focus rings, click handlers (`onOpenMissions`, `onOpenSystems`, `onOpenApprovals`), and reduced-motion compliance (`prefers-reduced-motion: reduce`) 100% intact.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP test suite (`verify_task_s9_glyphs.mjs`) verified:
+>     1. `task_s9_cluster_rest.png` — Confirms unified cool silver-blue glyphs at rest with distinct category status strips.
+>     2. `task_s9_hover_missions.png` — Missions card hovered showing crisp white glyph illumination and cyan edge.
+>     3. `task_s9_hover_systems.png` — Systems card hovered showing crisp white glyph illumination and teal edge.
+>     4. `task_s9_hover_approvals.png` — Approvals card hovered showing crisp white glyph illumination.
+>     5. `task_s9_approvals_positive.png` — Approvals with positive pending count showing amber attention accent.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S8: Cinematic Instrument Finishing Correction (2026-09-26, 12:31, Antigravity).**
+> - **Objective:** Resolved the 5 visual issues in the persistent CORE left-side instruments (Missions, Systems, Approvals): (1) diagnosed and fixed dynamically interpolated Tailwind classes by replacing them with static CSS custom properties & rules in `globals.css`; (2) restored full, coordinated surface/edge/glyph/text/chevron hover illumination; (3) calibrated hover timing to 260ms ease-in / 380ms ease-out; (4) replaced opaque grey surfaces with genuine 55–60% translucent near-black navy glass; and (5) added understated genuine data-change signal traces beside each card.
+> - **Exact Architectural & Visual Corrections Implemented:**
+>   1. **Diagnosis & Elimination of Dynamic Tailwind Arbitrary Values:**
+>      - *Root Cause:* Dynamic Tailwind arbitrary classes like `hover:border-[rgba(${t.rgb},...)]` fail silently because Tailwind's compiler extracts static classes at build time and cannot evaluate runtime JS interpolations.
+>      - *Fix:* Replaced dynamic Tailwind utilities with dedicated static classes (`.core-instrument-card`, `.core-instrument-glyph`, `.core-instrument-value`, `.core-instrument-chevron`, `.core-instrument-strip`, `.core-instrument-corner-tl/br`) driven by per-instrument CSS variables (`--inst-rgb`, `--inst-hex`).
+>   2. **Coordinated Hover Lighting (260ms Ease-In / 380ms Ease-Out):**
+>      - Rest: Translucent glass (`rgba(6,12,24,0.55)` to `rgba(2,6,15,0.60)`), subtle border (`rgba(255,255,255,0.08)`), micro glyph drop-shadow (`drop-shadow(rgba(var(--inst-rgb), 0.45) 0 0 3px)`).
+>      - Hover: Panel gently warms to `rgba(7,18,36,0.70)` / `rgba(3,10,22,0.75)`, hairline edge illuminates to `rgba(var(--inst-rgb), 0.45)`, box-shadow expands softly to `0 12px 28px rgba(0,0,0,0.55), 0 0 18px rgba(var(--inst-rgb), 0.18)`, glyph drop shadow expands to `6.5px` at `0.80` opacity, glyph icon transitions to pure `#ffffff`, live value gains `0 0 10px rgba(var(--inst-rgb), 0.50)` text-shadow, chevron transitions to `rgba(255,255,255,0.85)`.
+>      - Internal Child Movement: All child elements configured with `pointer-events-none`; moving cursor across glyph, text, and chevron holds steady without jitter or restarts.
+>   3. **Translucent Cinematic Glass Material Restored:**
+>      - Transparent near-black navy glass: ~55–60% opacity with `backdrop-filter: blur(16px)` allows CORE celestial particle circulation to remain subtly perceptible behind each card.
+>   4. **Genuine Data-Change Signal Trace Beside Each Card (`InstrumentSignalTrace`):**
+>      - Footprint: $36\text{px}$ wide $\times 14\text{px}$ high adjacent to the right edge of each card.
+>      - At rest: Quiet, faint dashed baseline (`rgba(var(--inst-rgb), 0.22)` with anchor dot).
+>      - On verified data change: Triggers a single restrained signal impulse (`.signal-trace-impulse`) for 600ms settling back to baseline.
+>      - Direct mapping: Missions $\to$ `activeJobCount`; Systems $\to$ `mcp.totalConnected`; Approvals $\to$ `pendingApprovals`. Zero fake heartbeat loops, zero synthetic noise.
+>   5. **Reduced Motion Compliance (`prefers-reduced-motion: reduce`):**
+>      - Disables animated transitions and decorative signal impulses (`transition: none !important; animation: none !important;`), while preserving immediate visible interaction states.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP Test Suite (`verify_instrument_task_s8.mjs`) evaluated computed CSS and captured visual evidence:
+>     1. `task_s8_idle.png` — Idle state showing 55% translucent glass, subtle resting glyph glow, and quiet baseline signal trace.
+>     2. `task_s8_mid_hover.png` — Mid-hover transition (at 130ms during 260ms ease-in).
+>     3. `task_s8_sustained_hover.png` — Sustained hover showing coordinated border, glyph, text-shadow, chevron, and panel illumination.
+>     4. `task_s8_child_movement.png` — Pointer movement across glyph/text/chevron confirming zero hover restarts (`borderColor: rgba(34, 211, 238, 0.45)` sustained).
+>     5. `task_s8_pointer_exit.png` — Pointer exit smoothly returning to idle (380ms ease-out).
+>     6. `task_s8_reduced_motion.png` — Reduced motion verification (`transition: none`).
+>     7. `task_s8_signal_impulse.png` — Verified data-change signal impulse waveform.
+>     8. `task_s8_interaction.webm` (1,062,145 bytes) — Normal-speed video recording of full interaction sequence.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S7: Restore Premium Micro-Glow Feedback (2026-09-26, 12:24, Antigravity).**
+> - **Objective:** Corrected two visual regressions from the previous interaction-polish task: (1) restored delicate, restrained ambient and hover micro-glow to the persistent left-side CORE instruments (Missions, Systems, Approvals), and (2) fixed selected/active center navigation button hover styling so active destinations illuminate smoothly on hover without losing active appearance or moving/scaling.
+> - **Exact Lighting & Interaction Refinements Implemented:**
+>   1. **Side Instruments Ambient & Hover Micro-Glow (`CoreCommandCenter.tsx`):**
+>      - Status Strip: Enhanced localized resting glow (`boxShadow: 0 0 7px rgba(${t.rgb}, 0.70), 0 0 2px rgba(${t.rgb}, 0.50)`).
+>      - Bespoke Glyphs: Restored delicate resting drop shadow micro-glow (`filter: drop-shadow(0 0 3.5px rgba(${t.rgb}, 0.50))`).
+>      - Hover State: Added smooth, sustained localized edge/surface illumination (`hover:border-[rgba(${t.rgb},0.50)] hover:bg-[#07142a]/92 hover:shadow-[0_12px_28px_rgba(0,0,0,0.60),0_0_20px_rgba(${t.rgb},0.22),inset_0_0_18px_rgba(${t.rgb},0.12)]`).
+>      - Timing & Mechanics: 180ms ease-in / 240ms ease-out transitions strictly on specific visual properties (`border-color, background-color, box-shadow, filter, color`).
+>      - Preserved 100% stationary card geometry (0 scale, 0 translation, 0 traveling sheen, 0 chevron movement).
+>   2. **Center Navigation Selected-Button Hover (`SpatialHud.tsx`):**
+>      - Selected Active Button: Enhanced active state with explicit hover styling (`hover:brightness-110 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_0_22px_rgba(34,211,238,0.7)]`).
+>      - Inactive Buttons: Retained crisp hover lighting (`hover:bg-cyan-500/10 hover:border-cyan-400/30 hover:text-cyan-100 hover:shadow-[0_0_12px_rgba(34,211,238,0.2)]`).
+>      - Transitions: Controlled 180ms ease-in / 240ms ease-out; returns smoothly to default active state on pointer exit.
+>   3. **Accessibility & Integrity:**
+>      - `prefers-reduced-motion: reduce`: `motion-reduce:transition-none` strictly honored.
+>      - Keyboard focus: High-contrast focus rings maintained independently of hover.
+>      - Real telemetry and status-change emphasis logic (`useStatusEmphasis`) 100% preserved.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP suite (`verify_microglow.mjs`) captured and verified all 7 required states:
+>     1. `microglow_instruments_rest.png` (Side instruments at rest).
+>     2. `microglow_missions_hovered.png` (Missions card hovered).
+>     3. `microglow_systems_hovered.png` (Systems card hovered).
+>     4. `microglow_approvals_hovered.png` (Approvals card hovered).
+>     5. `microglow_nav_core_rest.png` (Active CORE navigation button at rest).
+>     6. `microglow_nav_core_hovered.png` (Active CORE navigation button hovered).
+>     7. `microglow_nav_missions_hovered.png` (Active Missions navigation button hovered).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **CORE Ambient Instrument Interaction & Status Behavior Refinement (2026-09-26, 12:14, Antigravity).**
+> - **Objective:** Refined interaction physics, hover timing, keyboard focus, and verified data change emphasis for the persistent left-side Missions, Systems, and Approvals cluster, ensuring cards remain completely stationary without geometric distortion or continuous looping animations.
+> - **Separation of Observations & Limitations:**
+>   - *Direct Observations / Limitations:* The referenced file `20260926-0559-31.4088458.mp4` was unavailable on the filesystem (acknowledged per instructions).
+>   - *Code-Confirmed Transforms & Timings Replaced:* Removed `active:scale-[0.98]`, glyph `group-hover:scale-105`, chevron `group-hover:translate-x-0.5`, and unconstrained `transition duration-200`.
+> - **Exact Bounded Behavior Implemented:**
+>   1. **Stationary Geometry & Zero Continuous Loops:**
+>      - Removed all card translation, lift, scale, tilt, bounce, and traveling sheens.
+>      - Glyphs and chevrons remain completely stationary across all interaction states.
+>   2. **Calibrated Hover Ease-In (180ms) / Ease-Out (240ms):**
+>      - Transitions scoped strictly to visual properties: `transition-[border-color,background-color,box-shadow] duration-[240ms] ease-out hover:duration-[180ms] hover:ease-in`.
+>      - Rapid pointer entry/exit reverses smoothly without queued effects or brightness accumulation.
+>   3. **Keyboard Focus & Immediate Pressed Feedback:**
+>      - Keyboard focus outline: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030712]`.
+>      - Pressed feedback: `active:border-[rgba(${t.rgb},0.6)] active:bg-[#0a1c38]` without moving card geometry or delaying activation.
+>   4. **Telemetry Integrity & Verified Change Emphasis (`useStatusEmphasis`):**
+>      - Status markers default to static.
+>      - Real changes trigger a single 500ms emphasis on the small vertical status marker only (`isEmphasized ? 0 0 8px glow : 0 0 5px glow`).
+>      - Initial hydration, unchanged polling responses, and component re-renders produce 0 false pulses.
+>      - Burst coalescing enforces a maximum of one emphasis per card per 2 seconds (`Date.now() - lastEmphasisTimeRef >= 2000`).
+>      - Underlying text values update immediately. Missing telemetry renders as `"—"` and is never converted to a false `0`.
+>   5. **Reduced Motion (`prefers-reduced-motion: reduce`):**
+>      - Configured `motion-reduce:transition-none motion-reduce:animate-none` across cards and status indicators.
+> - **Telemetry Data Source Mapping:**
+>   - `activeJobCount` $\to$ `/api/spatial/telemetry` / `jobStore.ts`: Counts jobs currently in `in_progress` or `pending` state (proves asynchronous task queuing, not overall cluster health).
+>   - `mcp.totalConnected` $\to$ `/api/spatial/telemetry`: Counts configured MCP servers with active transport sessions (proves session connectivity, not backend throughput).
+>   - `pendingApprovals` $\to$ `/api/approvals` / `approvalStore.ts`: Counts actions awaiting user sign-off (proves pending approval gate count).
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - CDP automated suite (`verify_cluster_interaction.mjs`) verified stationary state (`interaction_stationary_desktop.png`), 180ms hover ease-in (`interaction_hover_missions.png`), keyboard focus outline (`interaction_keyboard_focus.png`), active pressed state (`interaction_active_pressed.png`), and reduced-motion compliance (`interaction_reduced_motion.png`).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S5: Cinematic Ambient Instrument Cluster (2026-09-26, 11:55, Antigravity).**
+> - **Objective:** Consolidated the Missions, Systems, and Approvals instruments into a unified, vertical translucent holographic cluster situated exclusively on the LEFT side of CORE, freeing the right side for deep spatial negative space and replacing generic icon-library symbols with bespoke technical glyphs.
+> - **Exact Architectural & Visual Refinements Implemented:**
+>   1. **Left-Side Vertical Cluster Composition:**
+>      - Grouped all 3 instruments into a unified vertical stack (`left-[4.5%] top-[30%]`): Missions $\to$ Systems $\to$ Approvals.
+>      - Standardized dimensions: $198\text{px}$ width $\times 56\text{px}$ height per instrument, with $10\text{px}$ vertical spacing (`gap-2.5`).
+>      - Completely cleared the RIGHT side of permanent status cards, restoring expansive negative breathing space around the central white-hot CORE nucleus.
+>   2. **Bespoke Technical Glyphs (Inline SVG):**
+>      - **Missions:** `TrajectoryGlyph` — sleek waypoint trajectory vector arc with apex destination beacon and origin node.
+>      - **Systems:** `InfrastructureGlyph` — dual-tier interconnected node infrastructure matrix with data bus bridge links.
+>      - **Approvals:** `ApprovalSealGlyph` — geometric authorization shield/hex seal with discrete verification tick.
+>      - Clean, uniform $1.6\text{px}$ stroke weight and tone-specific illumination (cyan, green, amber). Zero bulky background boxes.
+>   3. **Translucent Cinematic Glass Surface & Micro-Framing:**
+>      - Layered dark glass backdrop (`linear-gradient(135deg, rgba(6,12,24,0.72), rgba(2,6,15,0.78))` with `backdrop-blur-xl`).
+>      - Asymmetric corner ticks: Top-left bracket at `rgba(${t.rgb}, 0.55)`, Bottom-right bracket at `rgba(${t.rgb}, 0.35)`.
+>      - Top-left directional specular sheen (`bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.06),transparent_65%)]`) and top hairline specular edge (`via-white/18`).
+>      - Vertical micro status strip (`h-5 w-[2px]` with soft tone-specific glow).
+>   4. **Crisp Sora Typography & Live Data Preservation:**
+>      - Micro-labels: `font-sora text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400`.
+>      - Primary live values: `font-sora text-[13px] font-semibold uppercase text-white tracking-tight` (readable without hover).
+>      - 100% real live telemetry bindings preserved (`activeJobCount`, `mcp.totalConnected`, `pendingApprovals`).
+>      - Preserved all 3 interactive click actions (`onOpenMissions`, `onOpenSystems`, `onOpenApprovals`), focus-visible keyboard outlines, and hover elevation.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Visual verification captures (`core_left_cluster_desktop.png`, `core_left_cluster_closeup.png`, individual close-ups `core_left_cluster_missions.png`, `core_left_cluster_systems.png`, `core_left_cluster_approvals.png`, `core_side_instruments_mobile.png`).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S3: Ambient Instrument Finishing Pass (2026-09-26, 11:44, Antigravity).**
+> - **Objective:** Applied a final visual polish pass to the Missions, Systems, and Approvals instruments on CORE to improve typography hierarchy, dimensions ($194\text{px} \times 58\text{px}$), directional light sheen, asymmetric corner detailing, and text contrast without increasing visual noise or compromising CORE dominance.
+> - **Exact Refinements Implemented:**
+>   1. **Calibrated Dimensions & Spatial Breathing:**
+>      - Sized instruments to $194\text{px} \times 58\text{px}$ with `px-3.5` padding and `gap-3` spacing, fitting the requested $188\text{--}200\text{px}$ width and $56\text{--}60\text{px}$ height range.
+>      - Removed CSS perspective rotation/tilt (`transform: none`) so text remains crisp, pixel-perfect, and un-distorted at native resolution while suspended in space.
+>   2. **Typography Hierarchy & Contrast (Sora Font):**
+>      - Micro-labels: `font-sora text-[9.5px] font-semibold uppercase tracking-[0.2em] text-slate-400` for clear technical discipline.
+>      - Live Primary Values: `font-sora text-[13.5px] font-semibold uppercase leading-none tracking-tight text-white` for instant readability without requiring hover.
+>      - Vertical rhythm: `mt-1.5` gap between label and live value.
+>   3. **Directional Surface Sheen & Asymmetric Corner Accents:**
+>      - Added subtle top-left directional sheen: `bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.06),transparent_65%)]` with top hairline specular line `via-white/20`.
+>      - Asymmetric corner ticks: Top-left bracket at `rgba(${t.rgb}, 0.55)` and Bottom-right bracket at `rgba(${t.rgb}, 0.35)`.
+>      - Elongated vertical micro status strip to `h-6 w-[2px]` with tone-specific radiant glow.
+>   4. **Live Telemetry & Triple Action Accessibility:**
+>      - Preserved live bindings (`activeJobCount`, `mcp.totalConnected`, `pendingApprovals`).
+>      - Hooked up all 3 interactive click actions: Missions (`onOpenMissions`), Systems (`onOpenSystems`), and Approvals (`onOpenApprovals || onOpenChat("Show pending approvals")`).
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Visual verification captures (`core_side_instruments_desktop.png`, close-ups `core_side_instruments_closeup_missions.png`, `core_side_instruments_closeup_systems.png`, `core_side_instruments_closeup_approvals.png`, `core_side_instruments_mobile.png`).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **TASK S2: CORE Side Instrument Cinematic Refinement (2026-09-26, 11:35, Antigravity).**
+> - **Objective:** Refined the persistent side status cards (`Missions`, `Systems`, `Approvals`) on the CORE home screen into compact, dark, holographic instruments inspired by the cinematic reference styling, eliminating visual clutter and ensuring the white-hot CORE nucleus remains the undisputed visual hero.
+> - **Design Transformation & Technical Refinements:**
+>   1. **Compact Dimensions & Restrained Proportions:**
+>      - Scaled modules down from heavy `270px × 104px` dashboard cards to sleek `176px × 52px` floating instruments (within the requested 160–190px width and 46–60px height target).
+>      - Reduced icon sizing from `h-9 w-9` down to `h-4 w-4`, paired with fine 1.8 stroke width.
+>   2. **Dark Cinematic Glass Surface & Micro-Framing:**
+>      - Replaced solid neon borders (`2px solid rgba(..., 0.45)`) with a deep navy/near-black translucent glass backdrop (`linear-gradient(135deg, rgba(6,12,24,0.85), rgba(2,6,14,0.90))`), `backdrop-blur-xl`, and a hairline outer boundary (`1px solid rgba(255, 255, 255, 0.08)`).
+>      - Applied technical corner bracket ticks (`border-t border-l` top-left, `border-b border-r` bottom-right) in subtle accent tones (`rgba(${t.rgb}, 0.5)`).
+>      - Added a faint top hairline highlight (`bg-gradient-to-r from-transparent via-white/15 to-transparent`) and deep ambient shadow (`0 8px 24px rgba(0,0,0,0.55)`).
+>   3. **Status Strip & Restrained Accenting:**
+>      - Added a slim vertical status micro-strip on the left (`h-5 w-[2px]` with soft tone-specific glow) denoting module vitality in restrained cyan (`rgb(34,211,238)`), green (`rgb(52,224,164)`), and amber (`rgb(245,183,59)`).
+>   4. **Single Primary Value & Crisp Typography:**
+>      - Streamlined layout to contain only: micro status strip, icon, uppercase tracking micro-label (`text-[9px] font-mono tracking-[0.2em] text-slate-400/90`), and single live value (`text-xs font-semibold uppercase text-slate-100`), plus subtle disclosure chevron (`h-3.5 w-3.5 text-slate-500/80`).
+>   5. **Airy Peripheral Placement & Spatial Orientation:**
+>      - `Missions`: Left side, upper-middle area (`left-[4.5%] top-[34%]`, `tilt={5}`).
+>      - `Systems`: Right side, upper area (`right-[4.5%] top-[24%]`, `tilt={-5}`).
+>      - `Approvals`: Right side, lower-middle area (`right-[4.5%] top-[54%]`, `tilt={-5}`).
+>      - Generous breathing space preserved between top Floating Command Spine header, center greeting/nucleus, and bottom conversation bar.
+> - **Functional Invariants & Live Telemetry Preserved:**
+>   - 100% real live data bindings preserved: `telemetryData?.activeJobCount` ("X ACTIVE"), `telemetryData?.mcp.totalConnected` ("X CONNECTED"), `telemetryData?.pendingApprovals` ("X WAITING").
+>   - Preserved click destinations (`onOpenMissions`, `onOpenSystems`), tooltips, hover elevation, focus-visible outlines, and keyboard accessibility.
+>   - Preserved zero drag/scroll obstruction across negative space to the WebGL 3D spatial canvas.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Visual Verification Artifacts Captured (CDP on `http://localhost:3000`):**
+>     - `core_side_instruments_desktop.png` (Desktop 1920×1080): Confirms calm, dark holographic instruments framing the cinematic white-hot CORE hero.
+>     - `core_side_instruments_closeup_missions.png`, `core_side_instruments_closeup_systems.png`, `core_side_instruments_closeup_approvals.png`: High-resolution close-ups verifying micro-framing, subtle status strip, and crisp typography.
+>     - `core_side_instruments_missions_clicked.png`: Confirms seamless navigation interaction.
+>     - `core_side_instruments_mobile.png` (Mobile 390×844): Confirms clean responsive adaptation without crowding the mobile viewport.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **HEADER H1: Micro-Detail Polish (2026-09-26, 10:58, Antigravity).**
+> - **Objective:** Refined the Floating Command Spine header with authentic sci-fi micro-details, engineered structural connections, and a living, animated signal pulse without modifying core layout, proportions, or component architecture.
+> - **Exact Micro-Details Implemented:**
+>   1. **Pod Shell Detailing (All 3 Pods):**
+>      - Chamfered corner bracket accents (`border-t border-l border-cyan-400/40`, `border-b border-r border-cyan-400/40`) applied to Left, Center, and Right instrument pods.
+>      - Layered border depth: outer ring (`ring-1 ring-cyan-500/10` to `15`), micro chassis border (`border-white/10` to `12`), and inner bevel highlight (`shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-1px_0_rgba(6,182,212,0.15)]`).
+>      - Faint top highlight line (`after:h-[1px] via-cyan-300/40`) and subtle bottom underglow edge (`before:h-[1px] via-cyan-400/20`).
+>      - Inset vertical panel line divider (`h-4 w-[1px] bg-white/10`) between Settings and Assistant controls in the Right Pod.
+>   2. **Structural Data Rail Detailing:**
+>      - Layered data rail with continuous white/10 baseline, secondary cyan-400/25 beam, and segmented micro data track dashes (`bg-[linear-gradient(90deg,rgba(34,211,238,0.5)_2px,transparent_2px)] bg-[length:14px_1px]`).
+>      - 4 glowing anchor junction diamonds (`rotate-45 rounded-[0.5px] border-cyan-400/60 bg-[#030712]`) with subtle `node-breathe` illumination pulses.
+>   3. **Animated Signal Pulse Flow:**
+>      - Added `.spine-pulse` animation in `globals.css` with a glowing packet and trailing tail (`w-14` cyan energy gradient + `h-2.5 w-2.5` luminous nucleus with ping aura) gracefully traveling through the rail between pods.
+>      - 100% `pointer-events: none` and respects `prefers-reduced-motion`.
+>   4. **Center Nav Pod Underside Detail:**
+>      - Floating ventral keel accent (`h-[2px] w-20 via-cyan-400/80 shadow-[0_2px_8px_rgba(34,211,238,0.6)]`) with bilateral rotated support bracket ticks (`h-1 w-1 rotate-45 border-cyan-400/50`).
+>      - Downward diffused soft ambient glow fan (`h-3 w-36 bg-cyan-400/15 blur-sm`) giving the center nav module an authentic hovering command console presence.
+>   5. **Left & Right Pod Connector Entrances:**
+>      - Structural socket couplers with beveled geometry (`h-3 w-1.5 border-r/l border-y border-cyan-400/40 bg-[#050b14]`) and luminous terminal pins (`h-1 w-1 bg-cyan-400/80 shadow-[0_0_4px_#22d3ee]`) where the rail meets all three pods.
+> - **Verification & Quality:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Captured close-ups and transit frames (`header_spine_closeup.png`, `header_spine_pulse_transit.png`, `header_floating_core.png`, `header_floating_missions.png`, `header_floating_brain.png`, `header_floating_systems.png`, `header_floating_assistant.png`, `header_floating_mobile.png`).
+>   - 100% canvas drag orbit and scroll pass-through preserved across negative space.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **HEADER H1: Floating Command Spine (2026-09-26, 10:40, Antigravity).**
+> - **Objective:** Redesigned the visual shell of the header from a generic full-width enclosing pill into a coordinated, three-instrument **Floating Command Spine** purpose-built for the cinematic spatial OS environment.
+> - **Design Architecture & Visual Shell:**
+>   - **LEFT POD (Brand Anchor):** Deep navy-black translucent surface (`bg-[#050b14]/75`, `border border-white/10`, `backdrop-blur-xl`, `shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_8px_24px_rgba(0,0,0,0.45)]`) housing the GrowForge gradient Sparkles icon with "GrowForge" & tracking "AI OS".
+>   - **CENTER POD (4-Environment Navigation):** True viewport-centered navigation instrument (`absolute left-1/2 -translate-x-1/2 md:flex`) housing `CORE`, `Missions`, `Brain`, and `Systems`. Active state features a refined cyan gradient with top edge highlight and subtle glow (`bg-gradient-to-b from-cyan-200 to-cyan-400 text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_0_14px_rgba(34,211,238,0.4)]`).
+>   - **RIGHT POD (Utility & Controls):** Deep glass instrument housing Settings icon button and persistent Assistant button (`border border-cyan-400/30 bg-cyan-500/10 text-cyan-200`).
+>   - **DATUM RAIL:** Hairline structural datum line (`h-[1px] bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent`) visually connecting the three floating instruments across deliberate negative space.
+> - **Spatial Canvas & Interaction Integrity:**
+>   - Outer header wrapper configured with `pointer-events-none`; instrument pods configured with `pointer-events-auto`.
+>   - Negative space between pods passes all mouse drag, orbit, and scroll zoom events directly to the WebGL 3D spatial canvas without obstruction.
+>   - Nucleus visual hierarchy preserved as the primary luminous body.
+> - **Mobile & Responsive Layout (390 x 844):**
+>   - Left brand pod and right controls float at top corners with no horizontal overflow.
+>   - Bottom primary navigation dock handles touch-first environment selection cleanly.
+> - **Verification & Quality:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Automated CDP test suite (`verify_header_floating_spine.mjs`) verified:
+>     - Desktop CORE view (`header_floating_core.png`).
+>     - Missions navigation (`header_floating_missions.png`).
+>     - Brain navigation (`header_floating_brain.png`).
+>     - Systems connector hub modal (`header_floating_systems.png`).
+>     - Settings overlay toggle (`header_floating_settings.png`).
+>     - Assistant drawer toggle & close (`header_floating_assistant.png`).
+>     - Mobile viewport (390 x 844) (`header_floating_mobile.png`).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+>
+> ---
+>
+> **Task 04: Cinematic CORE Brightness Calibration (2026-09-26, 10:02, Antigravity).**
+> - **Objective:** Calibrated the peak additive luminosity of the white-hot nucleus and surrounding cyan corona to achieve a restrained, cinematic aesthetic (~18–20% peak brightness reduction) without washing out particle detail or modifying global scene exposure.
+> - **Overlapping Brightness Sources Diagnosed:**
+>   - Additive stacking of `spriteOuter` (0.88 opacity) + `spriteInner` (0.96 opacity) + 3D `nucleusMesh` (1.0 alpha with 1.8 limb multiplier) pushed central additive saturation over 2.6 RGB, causing overexposed blowout that reduced contrast with orbiting particles.
+> - **Exact Parameters Calibrated:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - `NeutronNucleusBodyFragmentShader`: Reduced peak core alpha from `mix(0.80, 1.0, edgeAlpha)` to `mix(0.65, 0.85, edgeAlpha)`.
+>     - Reduced limb glow multiplier from `1.8` to `1.2`.
+>     - Preserved `cPureWhite` center, electric cyan limb `#00F0FF`, and 4% internal micro-plasma shimmer (`shimmer = 0.96 + 0.04 * plasmaNoise`).
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - `spriteInner`: Calibrated base opacity from `0.96` to `0.78` (~18% reduction); softened peak radial gradient stops (`rgba(255,255,255,0.90)` $\to$ `rgba(0,220,255,0.65)` $\to$ `rgba(10,130,250,0.38)`).
+>     - `spriteOuter`: Calibrated base opacity from `0.88` to `0.65` (~26% reduction in broad ambient wash); softened outer gradient stops (`rgba(0,220,255,0.50)` $\to$ `rgba(10,180,255,0.36)` $\to$ `rgba(14,120,240,0.20)`).
+>     - Dynamic update loop opacities: `coreSprite.material.opacity = (0.78 + pulseOffset * 0.15) * depthScale` and `outerCoronaSprite.material.opacity = (0.65 + pulseOffset * 0.12) * depthScale`.
+> - **Preserved Invariants & Visual Quality:**
+>   - White-hot core geometry radius ($R=44$) and proportions preserved.
+>   - Zero changes to global scene tone mapping or renderer exposure (Brain and Missions surfaces completely unaffected).
+>   - Idle stability strictly maintained: `pulse = 1.0`, `pulseRate = 0.0`, `pulseAmplitude = 0.0`.
+>   - Macro rotation period: **$38.49\text{s / revolution}$**.
+>   - Deep dark space contrast restored; surrounding and foreground particles pop with crisp, sparkling clarity.
+> - **Verification & Continuous Benchmark:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Live CDP 60-Second Continuous Fixed-Camera Benchmark (`nucleus_calibrated_metrics.json`):**
+>     - `scale_variance_percent`: **$0.0000\%$** (InnerScale = 202.920 constant across all 12 samples from $t=0\text{s}$ to $t=60\text{s}$).
+>     - `opacity_variance_percent`: **$0.0000\%$** (InnerOpacity = 0.7800 constant, OuterOpacity = 0.6500 constant).
+>     - `uPulse`: strictly **`1.0000`** (Zero periodic breathing or vibration).
+>   - **Visual Verification Artifacts Captured:**
+>     - `nucleus_calibrated_default.png`: Default CORE home view at calibrated cinematic brightness.
+>     - `nucleus_calibrated_closeup.png`: Close-up verifying retained white-hot core identity with soft cyan edge and high particle contrast.
+>     - `nucleus_calibrated_60s.png`: 60-second idle confirmation.
+>     - `nucleus_calibrated_recording.webm`: 4s canvas recording confirming stable, cinematic resting core.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+> - **Objective:** Eliminated excessive breathing, periodic global scale expansion/contraction, and brightness surging of the inner white-hot nucleus during idle, while preserving 100% of the approved Reference A appearance, calm macro rotation (~38.5s / rev), and organic surrounding particle circulation.
+> - **Diagnosed Pulsing Sources:**
+>   1. In `neutronCoreTypes.ts`, `STATE_PROFILES.idle` configured `pulseAmplitude: 0.12` and `pulseRate: 0.8`, creating a continuous $\pm 12\%$ sinusoidal breathing cycle every 1.25s during idle.
+>   2. In `NeutronCoreEngine.ts`, `this.coreSprite.scale`, `this.outerCoronaSprite.scale`, and sprite material opacity were directly modulated by `Math.sin(pulsePhase)`, causing the cyan corona to repeatedly expand, contract, and surge in brightness.
+>   3. In `NeutronCoreShader.ts`, `NeutronNucleusBodyVertexShader` multiplied geometry vertex radius by `1.0 + (uPulse - 1.0) * 0.75` and added a `0.30` normal shimmer displacement.
+> - **Exact Code Changes Applied:**
+>   - `growforge-ui/src/components/spatial/neutronCore/neutronCoreTypes.ts`:
+>     - Configured `STATE_PROFILES.idle`: `pulseRate = 0.0`, `pulseAmplitude = 0.0`. Gated non-zero pulse rates and amplitudes strictly behind genuine non-idle interaction states (`listening`, `thinking`, `speaking`, `executing`).
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - Evaluated `pulseOffset = (pulse - 1.0)`. During idle where `pulse = 1.0`, `pulseOffset = 0.0`.
+>     - Sprite scaling and opacities now evaluate: `innerScale = 220 * (1.0 + pulseOffset * 0.6) * depthScale * (1.0 + proximity * 0.15)` and `innerOpacity = (0.96 + pulseOffset * 0.15) * depthScale`, completely eliminating periodic sine waves during idle.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - In `NeutronNucleusBodyVertexShader`, smoothed vertex displacement shimmer from 0.30 down to 0.10, preventing geometric skin vibration while keeping internal fragment micro-plasma noise vibrant (`shimmer = 0.96 + 0.04 * plasmaNoise`).
+>     - Preserved particle differential polar circulation ($\omega_0 = 0.1632\text{ rad/s}$, $T \approx 38.5\text{s}$) and convective fluid mantle motion.
+> - **Preserved Invariants & Operational State Integrity:**
+>   - White-hot core geometry radius ($R=44$) and dual-layer electric-cyan corona composition ($220 / 380\text{ units}$) preserved exactly.
+>   - Macro rotation period: **$38.49\text{s / revolution}$**.
+>   - Active state reactivity: non-idle states (`listening`, `thinking`, `executing`) retain their designated dynamic visual profiles.
+>   - Camera orbit, scroll navigation, HUD, greeting, command bar, and reduced-motion compliance intact.
+> - **Verification & Continuous 60-Second Benchmark:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Live CDP 60-Second Continuous Fixed-Camera Benchmark (`nucleus_idle_stability_metrics.json`):**
+>     - `scale_variance_percent`: **$0.0000\%$** (InnerScale = 202.920 across all 12 samples from $t=0\text{s}$ to $t=60\text{s}$).
+>     - `opacity_variance_percent`: **$0.0000\%$** (InnerOpacity = 0.9600 constant).
+>     - `uPulse`: strictly **`1.0000`** (Zero periodic breathing).
+>   - **Visual Verification Artifacts Captured:**
+>     - `nucleus_idle_initial.png`: Initial idle CORE state.
+>     - `nucleus_idle_60s.png`: 60-second idle CORE state confirming zero visual drift or expansion.
+>     - `nucleus_idle_closeup.png`: Close-up verifying stable white-hot core body, rock-solid cyan corona, and subtle micro-plasma texture.
+>     - `nucleus_idle_recording.webm`: 4s canvas recording confirming stable resting core with fluid outer particle circulation.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+> - **Objective:** Refined the inner CORE so that it faithfully reproduces **Reference A** (substantial, clearly defined white-hot central energy body surrounded by a radiant electric-cyan corona), eliminating the previous "concentrated speckle particle knot" appearance of Reference B.
+> - **Discrepancy Diagnosed & Addressed:**
+>   - Relying solely on scattered point-sprites near $r \in [0, 36]$ at camera distance $Z=880$ formed a sparse speckle cluster ("particle knot") rather than the substantial continuous luminous central energy mass shown in Reference A.
+>   - In Reference A, the central white-hot energy body occupies $\approx 30\text{--}35\%$ of the total particle sphere diameter and is enveloped in a thick, highly saturated electric-cyan corona that radiates outward into the celestial particle atmosphere.
+> - **Exact Code Changes Applied:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - **Shader-Driven 3D Luminous Energy Body (`NeutronNucleusBodyVertexShader` & `NeutronNucleusBodyFragmentShader`):**
+>       - Added dedicated 3D sphere shader with view-incidence falloff (`coreLuminance = pow(NdotV, 0.55)`), blazing white-hot center (`vec3(1.0, 1.0, 1.0)`), rich electric-cyan limb glow (`cElectricCyan * limbGlow * 1.8`), micro-plasma internal shimmer (`0.95 + 0.05 * plasmaNoise`), and soft silhouette edge (`smoothstep(0.0, 0.20, NdotV)`) to prevent hard polygonal boundaries.
+>     - **Particle Fragment Shader (`NeutronCoreFragmentShader`):**
+>       - Enhanced particle palette with saturated electric cyan (`vec3(0.05, 0.92, 1.0)`) and luminous sky blue (`vec3(0.12, 0.60, 1.0)`), increasing particle radiance so surrounding particles sparkle against the radiant cyan background.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - **3D Nucleus Body Mesh:** Added `nucleusMesh` (`THREE.Mesh(new THREE.SphereGeometry(44, 48, 48), nucleusMat)`) at `renderOrder = 2` with additive blending, establishing a substantial physical core mass matching Reference A proportions without flat discs or wireframes.
+>     - **Dual-Layer Radial Corona:**
+>       - Inner Radiant Corona Sprite: Scaled to $220\text{ units}$ with a 512x512 radial gradient from pure white (`rgba(255,255,255,1.0)`) through saturated electric cyan (`rgba(0,235,255,0.92)`).
+>       - Outer Atmospheric Aura Sprite: Scaled to $380\text{ units}$ with broad electric-cyan and celestial azure gradient (`rgba(0,235,255,0.72)` $\to$ `rgba(14,140,255,0.35)` $\to$ transparent space void).
+>     - Layer composite rendering order: Outer Corona (`renderOrder=0`) $\to$ Inner Corona (`renderOrder=1`) $\to$ 3D Nucleus Body (`renderOrder=2`) $\to$ 3D Orbiting Particle Cloud (`renderOrder=3`), allowing particles to seamlessly orbit both in front of and behind the white-hot nucleus.
+> - **Preserved Invariants & Locked Elements:**
+>   - Baseline calm macro rotation: **$38.49\text{s / revolution}$** ($\omega_0 = 0.1632\text{ rad/s}$).
+>   - Volumetric 3D spherical particle field and movement.
+>   - 360° camera orbit, scroll zoom depth navigation, HUD, greeting, and command bar.
+>   - Reduced motion compliance.
+>   - Zero changes to Milestone 02 or speech/audio animation.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Visual Verification Artifacts Captured (CDP on `http://localhost:3000`):
+>     - `nucleus_frontal_view.png`: Default CORE view verifying substantial white-hot nucleus with radiant electric-cyan corona and outer particle cloud matching Reference A.
+>     - `nucleus_closeup_view.png`: Optical close-up on the nucleus verifying continuous luminous energy mass, soft silhouette, and zero hard polygon or concentric ring edges.
+>     - `nucleus_orbit_90deg.png`: 90° orbit view verifying complete 3D spherical symmetry.
+>     - `nucleus_motion_recording.webm`: 4s canvas recording confirming calm rotation and living micro-plasma shimmer.
+>     - `nucleus_verification_results.json`: Telemetry confirmation ($T = 38.49\text{s / rev}$).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+> - **Objective:** Refined the inner CORE so that it reads as a concentrated, luminous neutron-star-like white-hot intelligence nucleus, while preserving 100% of the approved calm baseline rotation (~38.4s / rev), spherical particle structure, and outer particle field.
+> - **Defects Corrected in the Nucleus:**
+>   - Previously, center particles experienced turbulent displacement singularities near $r=0$ and linear radial wave perturbations that tore the center apart into a chaotic "particle knot" / "breathing beast-like vortex".
+>   - In point sprite rendering, nucleus particles lacked cohesive additive coalescence, appearing as disjointed speckles rather than a solid luminous energy body.
+> - **Exact Code Changes Applied:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - **Stabilized Center Kinematics:** Tapered convective displacement inside the nucleus using `smoothstep(2.0, 24.0, origR)` and surface wave displacement using `smoothstep(4.0, 28.0, origR)`. This gives the innermost core a solid, cohesive, stable geometry with subtle micro-plasma shimmer, while fully unleashing organic convective fluid circulation across the mantle ($r > 28$).
+>     - **Cohesive Point Size Scaling:** Evaluated `coreSizing = smoothstep(36.0, 0.0, vDistToCenter)` to blend point sizes up to 28.0 in the nucleus, allowing overlapping Gaussian particles to coalesce additively into a seamless white-hot energy body.
+>     - **Multi-Tier Radiance Profile & Color Palette:**
+>       - Fragment shader now computes high-density multi-tier Gaussians: `coreGauss = exp(-dist * dist * 5.5)`, `auraGauss = exp(-dist * 2.6) * 0.42`, `hotCenter = exp(-dist * 10.0) * 0.85`.
+>       - Radial zone transition: Inner Neutron Nucleus ($r \in [0, 22]$) $\to$ Electric-Cyan Corona ($r \in [18, 46]$) $\to$ Radiant Blue Mantle ($r \in [40, 125]$) $\to$ Atmospheric Envelope ($r \in [110, 220+]$).
+>       - Micro-plasma shimmer: `vNoise` modulated high-energy luminance fluctuations (`0.85 + 0.15 * vNoise`).
+>       - Zero flat white disc, zero hard circular edges, zero shell boundaries, zero concentric rings.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - Concentrated nucleus particle distribution with cubic power law: $r = \text{rand}^{2.2} \times 36.0$, packing high density into the $r < 16$ white-hot core body.
+>     - Replaced 256x256 sprite with a 512x512 high-precision cosmic glow texture featuring smooth non-linear falloff: pure white core $\to$ soft white-cyan $\to$ electric cyan $\to$ radiant blue $\to$ transparent space void.
+>   - `growforge-ui/src/components/spatial/SpatialCanvas.tsx`:
+>     - Exposed `window.__THREE_CAMERA` and `window.__THREE_CONTROLS` for telemetry and visual validation.
+> - **Preserved Invariants:**
+>   - Calm baseline macro rotation preserved at **$38.4\text{s / revolution}$** ($\omega_0 = 0.1635\text{ rad/s}$).
+>   - 3D volumetric spherical particle silhouette.
+>   - Mantle & atmospheric particle field counts and dynamics.
+>   - 360° camera orbit, scroll zoom depth navigation, and HUD.
+>   - Reduced motion compliance.
+>   - Zero changes to Milestone 02 or speech/audio animation.
+> - **Verification & Motion Measurements:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Visual Verification Artifacts Captured (CDP in brain artifacts directory):**
+>     - `nucleus_frontal_view.png`: Default frontal view showing concentrated luminous white-hot nucleus with electric-cyan corona and outer spherical particle cloud.
+>     - `nucleus_closeup_view.png`: Optical close-up on the nucleus verifying seamless additive coalescence, smooth corona falloff, and zero hard disc/shell edges.
+>     - `nucleus_orbit_90deg.png`: 90-degree side orbit confirming 3D volumetric spherical symmetry.
+>     - `nucleus_motion_recording.webm`: 4s canvas recording of the close-up nucleus in motion confirming stable, living micro-plasma shimmer and calm rotation.
+>     - `nucleus_verification_results.json`: Telemetry metrics log ($T = 38.4\text{s / rev}$).
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments. Milestone 02 untouched.
+
+> **CORE Calm Baseline Structural Rotation Speed Calibration (2026-09-26, 09:25, Antigravity).**
+> - **Objective:** Reduced baseline perceived structural particle rotation to a calm, majestic revolution rate (targeting ~30–45s per revolution) while preserving 100% of the fine individual particle activity, organic convective turbulence, micro-plasma shimmer, Image A luminous white-hot nucleus, 3D volumetric spherical distribution, glow sprite, camera orbit, HUD, and zero-drift phase integration.
+> - **Parameters & Kinematics Calibrated:**
+>   - **Perceived Structural Rotation Parameters Identified:** The apparent macro rotation of the formation in world space is governed by the differential angular velocity profile $\omega(r)$ evaluated in the GPU vertex shader (`NeutronCoreVertexShader` in `NeutronCoreShader.ts`), driven by the integrated time phase `uFlowTime`.
+>   - **Angular Velocity Tuning:**
+>     - Previous base profile: $\omega(r) = \frac{0.72}{1.0 + (r / 85.0)^{0.75}}\text{ rad/s}$ ($T_{\text{core}} \approx 8.7\text{s}$, visually fast vortex).
+>     - Calibrated calm profile: $\omega(r) = \frac{0.165}{1.0 + (r / 95.0)^{0.65}}\text{ rad/s}$.
+>       - Central Core ($r = 0$): $\omega \approx 0.1632\text{ rad/s}$ ($9.35^\circ/\text{s}$), producing an exact revolution period of **$T = 38.5\text{ seconds}$** (perfectly centered within the requested 30–45s visual target).
+>       - Spherical Mantle ($r = 50$): $\omega \approx 0.098\text{ rad/s}$ ($5.6^\circ/\text{s}$, $T \approx 64.0\text{s}$).
+>       - Outer Halo ($r = 150$): $\omega \approx 0.070\text{ rad/s}$ ($4.0^\circ/\text{s}$, $T \approx 89.7\text{s}$).
+>   - **Fine Particle Activity & Convective Turbulence Preserved:** Decoupled convective 3D currents (`uTurbTime` phase) and micro-shimmer frequencies operate in the rest frame independently from macro polar rotation, keeping the living fluid shimmer and plasma energy vibrant while the macro sphere revolves serenely.
+>   - **Inner Nucleus Structure Untouched:** Zero changes to nucleus particle distribution, color gradients, glow sprites, temperature mapping, or camera controls.
+> - **Verification & Motion Measurements:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Live Automated CDP Motion Benchmark (120-Second Continuous Fixed-Camera Test):**
+>     - **Core Revolution Period:** **$38.5\text{ seconds / revolution}$** (Initial at $t=2\text{s}$, $t=15\text{s}$, $t=30\text{s}$, $t=60\text{s}$, $t=120\text{s}$).
+>     - **Core Angular Velocity:** $0.1631 \sim 0.1632\text{ rad/s}$ ($9.35^\circ/\text{s}$).
+>     - **Mantle Revolution Period:** $63.9\text{ seconds / revolution}$.
+>     - **120-Second Drift:** **$0.06\%$** (mathematically bounded, stable, zero runaway acceleration).
+>   - **Visual Artifacts Captured (in brain artifacts directory):**
+>     - `core_calm_initial.png`: Calm spherical CORE state at $t=0\text{s}$.
+>     - `core_calm_120s.png`: Calm spherical CORE state at $t=120\text{s}$.
+>     - `core_calm_motion_initial.webm`: 4s canvas recording at initial load confirming calm ~38.5s revolution with organic turbulence intact.
+>     - `core_calm_motion_120s.webm`: 4s canvas recording after 2 minutes confirming identical calm speed and zero drift.
+>     - `core_calm_motion_metrics.json`: Telemetry metrics log.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments. Inner nucleus structure untouched. Milestone 02 untouched.
+
+> **CORE Runaway Rotation Defect Correction (2026-09-26, 09:08, Antigravity).**
+> - **Objective:** Corrected the progressively accelerating CORE particle rotation while preserving 100% of the approved volumetric spherical particle structure, Image A luminous white-hot nucleus, energetic living circulation, 360° camera orbit, and radial navigation.
+> - **Verified Root Causes Diagnosed:**
+>   1. **Unbounded Time × Variable Speed Multiplier ($\theta(t) = \omega(t) \cdot t$ instead of continuous phase integration $\int \omega(t) dt$):** In `NeutronCoreShader.ts`, the GLSL vertex shader computed `angle = angSpeed * uTime` where `angSpeed` was dynamically modulated by `uFlowSpeed`. Differentiating with respect to time gives $\frac{d\theta}{dt} = \omega(t) + t \frac{d\omega}{dt}$. Because elapsed time $t$ multiplied the rate of speed changes, any state transition (or smooth profile lerping) produced angular acceleration spikes that scaled linearly with elapsed time $t$. At $t=120\text{s}$, a minor transition caused an instantaneous angular rate spike over 10× larger than at $t=1\text{s}$, producing runaway acceleration over time.
+>   2. **Double Compounding of Group Rotation and Shader Circulation:** `NeutronCoreEngine.ts` rotated `this.group.rotation.y` in JS by $+0.4\text{ rad/s}$ while `NeutronCoreShader.ts` simultaneously rotated particle vertices around the Y-axis by $\text{angSpeed}$ ($1.1 \sim 8.1\text{ rad/s}$). The two independent rotation mechanisms added together in world space, compounding the overall apparent speed to $>8.5\text{ rad/s}$ ($>80\text{ RPM}$).
+>   3. **Innermost Radius Singularity & Excessive Angular Velocity:** The previous radial speed formula $\text{angSpeed} = 36.0 / (r + 10.0)^{0.65}$ evaluated to $\approx 8.1\text{ rad/s}$ at $r=0$ and $>6\text{ rad/s}$ throughout the nucleus ($r \in [0, 20]$), turning the core into a frantic centrifuge rather than a composed, majestic white-hot nucleus.
+>   4. **Nested Non-Linear FM Convective Phase Modulation:** In `NeutronCoreShader.ts`, `pos.x` and `pos.z` were transformed by the vortex rotation first, and their rotating values were plugged into $\cos(\text{convPhase} + 0.04 \cdot \text{pos.x})$ and $\sin(\text{convPhase} + 0.04 \cdot \text{pos.z})$. This created high-frequency harmonic modulation whose perceived turbulence compounded with the polar rotation.
+>   5. **Unclamped Frame Deltas on Backgrounding / Hitching:** Raw `deltaMs` was accumulated into group rotation without bounds, causing sudden rotational jumps when background tabs were restored.
+> - **Exact Code Changes Applied:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - Introduced integrated circulation phase accumulators `accumulatedFlowTime` and `accumulatedTurbTime`: $\Delta t_{\text{safe}} = \min(\max(\Delta t_{\text{ms}}, 0), 64.0) / 1000.0$; $\phi_{\text{flow}}(t + \Delta t) = \phi_{\text{flow}}(t) + \Delta t_{\text{safe}} \cdot (0.55 + \text{flowSpeed} \cdot 2.0)$. This ensures $\frac{d\theta}{dt}$ is strictly constant and bounded, completely eliminating $t \cdot \frac{d\omega}{dt}$ runaway acceleration.
+>     - Eliminated compounding group self-rotation (`this.group.rotation.y += deltaMs * 0.0004`), making the GPU vertex shader the single deterministic authority for particle kinematics.
+>     - Clamped frame delta times to $\le 64\text{ ms}$, preventing tab suspension jumps.
+>     - Passed `uFlowTime` and `uTurbTime` uniforms to the shader and exposed `shaderMaterial` as public for telemetry inspection.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - Implemented smooth, bounded radius-dependent angular velocity profile: $\omega(r) = \frac{0.72}{1.0 + (r / 85.0)^{0.75}}\text{ rad/s}$.
+>       - Center nucleus ($r=0$): $\omega \approx 0.72\text{ rad/s}$ ($41.2^\circ/\text{s}$, $\approx 0.11\text{ rev/s}$), providing a calm, composed, luminous white-hot core.
+>       - Spherical mantle ($r=50$): $\omega \approx 0.44\text{ rad/s}$ ($25.2^\circ/\text{s}$), maintaining living fluid circulation.
+>       - Outer halo ($r=150$): $\omega \approx 0.28\text{ rad/s}$ ($16.0^\circ/\text{s}$), creating serene atmospheric dissipation.
+>     - Decoupled convective 3D currents and plasma waves to evaluate from the rest frame before polar rotation, eliminating non-linear FM beating.
+>     - Unified vertex shader rotation: $\text{angle} = \omega(r) \cdot \text{uFlowTime} + \phi_0$.
+>   - `growforge-ui/src/components/spatial/SpatialCanvas.tsx`:
+>     - Exposed `window.__THREE_NEUTRON_ENGINE` for test telemetry validation.
+> - **Verification & Motion Measurements:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - **Live Automated CDP Motion Benchmark (120-Second Continuous Fixed-Camera Test):**
+>     - Initial Baseline ($t \in [1\text{s}, 3\text{s}]$): **$0.9926\text{ phase/s}$** ($\omega_{\text{core}} = 0.72\text{ rad/s}$, $\text{flowSpeed}=0.22$).
+>     - At $t = 15\text{s}$: **$0.9928\text{ phase/s}$** (drift $+0.02\%$).
+>     - At $t = 30\text{s}$: **$0.9887\text{ phase/s}$** (drift $-0.39\%$).
+>     - At $t = 60\text{s}$: **$0.9921\text{ phase/s}$** (drift $-0.05\%$).
+>     - At $t = 120\text{s}$: **$0.9911\text{ phase/s}$** (drift $-0.15\%$).
+>     - **120-Second Drift:** **$0.15\%$** (perfect mathematical stability; runaway acceleration completely resolved).
+>   - **Interaction & Navigation Stress Tests:**
+>     - Rate immediately after 360° horizontal drag release: **$0.9889\text{ phase/s}$** (0 velocity spike).
+>     - Rate after scroll dive to Brain and return to CORE: **$0.9900\text{ phase/s}$** (0 accumulated speed).
+>     - Rate under `prefers-reduced-motion`: **$0.0000\text{ phase/s}$** (calm static glow confirmed).
+>     - 0 particle freezing, 0 spherical silhouette distortion, 100% telemetry and HUD intact.
+>   - **Visual Artifacts Captured (in brain artifacts directory):**
+>     - `core_motion_initial.png`: Initial spherical CORE state at $t=0\text{s}$.
+>     - `core_motion_15s.png`, `core_motion_30s.png`, `core_motion_60s.png`, `core_motion_120s.png`: Stable spherical silhouettes at 15s, 30s, 60s, 120s.
+>     - `core_motion_orbit_yaw.png`: 360° drag orbit confirmation.
+>     - `core_motion_to_brain.png` & `core_motion_after_scroll_return.png`: Bi-directional Brain/CORE navigation confirmation.
+>     - `core_motion_reduced.png`: Reduced motion compliance.
+>     - `core_motion_recording_initial.webm` & `core_motion_recording_120s.webm`: WebM motion recordings demonstrating identical, composed fluid rotation at initial load vs after 2 minutes.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments. Milestone 02 untouched.
+
+> **Milestone 01: Final Spherical CORE Visual Refinement (2026-09-26, 02:22, Antigravity).**
+> - **Objective:** Transformed the GPU-driven CORE visual from an inclined spiral-galaxy/accretion-disc shape into a seamless, volumetric, living spherical energy intelligence matching user-approved Image A, while preserving the fluid particle motion of Image B, continuous 360° camera orbit, radial navigation, and telemetry interfaces.
+> - **Visual & Architectural Transformations:**
+>   - **Volumetric Spherical Distribution:** Eliminated the 2D planar/disc particle allocation. Particle sampling in `NeutronCoreEngine.ts` now populates the entire 3D sphere uniformly over $4\pi$ steradians with smoothly overlapping radial density functions:
+>     - Dense central nucleus ($r \in [0, 42]$): concentrated cubic-root power sampling for dense white-hot core structure.
+>     - Volumetric spherical mantle ($r \in [25, 120]$): continuous electric-cyan body filling full 3D spherical volume without empty poles or disc collapse.
+>     - Atmospheric halo ($r \in [70, 220]$): gentle outward falloff dissolving seamlessly into the surrounding cinematic void.
+>   - **3D Spherical Circulation Shader:** Replaced 2D planar rotation with 3D differential spherical circulation (`vortex around polar axis` with $\omega \propto r^{-0.65}$), 3D organic convective currents across all three axes, and harmonic micro-plasma wave breathing.
+>   - **Continuous Gradient & Zero Layer Divisions:** Replaced discrete layer branching with a continuous radial falloff function across 3D distance $r = \text{length}(pos)$ in `NeutronCoreFragmentShader`. Nucleus blends smoothly from pure white-hot center through electric cyan corona (`#38BDF8`/`#3DE0FF`) to radiant instrument blue (`#0F80FA`) and deep space blue without any visible concentric rings, shells, or wireframe lines.
+>   - **Central Luminous Flare (Matching Image A):** Replaced harsh disc with a 256×256 high-precision radial gradient sprite featuring white-hot core (95% opacity), vibrant cyan transition (55%), and soft outer dissipation (22% to 0%).
+> - **Files Modified:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`: Implemented 3D spherical differential rotation, convective 3D currents, continuous 3D radial color transitions, and plasma texture.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`: Refactored particle generation to 3D volumetric spherical coordinate sampling across overlapping radial bands, passed `aRadius`, and updated the Image A-aligned multi-stage core glow sprite.
+> - **Verification & QA:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Visual QA (Screenshots & Recordings in brain artifacts directory):
+>     - Frontal CORE 1920×1080 (`core_spherical_frontal_1920x1080.png`): Distinct spherical white-hot nucleus with electric-cyan aura and soft dissolving halo; 0 flat disc or galactic spiral arms.
+>     - 90° Yaw Orbit (`core_spherical_90deg_yaw.png`): Confirmed complete volumetric round silhouette from side angle without collapsing into an edge or oval.
+>     - 180° Yaw Orbit (`core_spherical_180deg_yaw.png`): Confirmed symmetrical 3D spherical integrity.
+>     - Animated Motion WebP (`core_spherical_motion_recording.webp`, 3.10 MB, 72 frames): Confirmed continuous fluid particle circulation, 360° drag orbit, radial scroll dive, and reverse return.
+>   - Frame Pacing (Sampled 120 frames via CDP): **6.94 ms (~144.0 FPS)** avg, min 6.10 ms, max 8.20 ms. 0 frame drops, sustained High quality tier (21k particles).
+> - **Preserved Functionality:** All navigation, OrbitControls, tier transitions, HUD telemetry, voice recognition, and fallback states remain 100% operational.
+> - **Working Tree Integrity:** Preserved all pre-existing uncommitted files. 0 git commits, 0 pushes, 0 deployments. Milestone 02 not started.
+
+> **Milestone 01 Regression Correction (2026-09-26, 02:08, Antigravity).**
+> - **Objective:** Corrected the 4 confirmed user-observed interaction and visual regressions from the initial Milestone 01 GPU particle engine implementation without starting Milestone 02 or introducing a UI redesign.
+> - **Reproduced Defects & Root Causes:**
+>   - **Defect A (Particle animation freezes during scrolling):**
+>     - *Root Cause 1 (Interaction timeout):* `scene.rotation.y += 0.00045` in `SpatialCanvas.tsx` was wrapped in `if (now - lastInteractionRef.current > 3500)`. Wheel scrolling continuously updated `lastInteractionRef.current = performance.now()`, freezing overall scene rotation during any scroll navigation.
+>     - *Root Cause 2 (State oscillation):* In the animate loop, scalar interpolation `camera.position.z += (targetCameraZRef.current - camera.position.z) * 0.08` continuously fought the wheel listener's incremental updates every frame.
+>     - *Root Cause 3 (Missing self-rotation):* `NeutronCoreEngine.group` lacked independent continuous polar self-rotation, so when scene rotation halted during interaction, the core appeared completely static.
+>     - *Root Cause 4 (Uniform velocity balance):* Layer 1 Keplerian flow had a slow base angular speed and Layer 2 lacked polar orbital drift, causing particles to look frozen when viewed head-on under depth motion.
+>   - **Defect B (Dragging conflicts with zoom/navigation):**
+>     - *Root Cause:* In Three.js OrbitControls, mouse dragging orbits along a spherical coordinate system $(\theta, \phi, R)$ centered on target $(0,0,0)$. However, `SpatialCanvas.tsx` treated Cartesian `camera.position.z` as both the physical camera target and the logical navigation tier metric. When dragging in yaw, $x$ and $z$ rotate along the circle $x^2 + z^2 = R^2$, dropping $z$ toward 0 at 90° azimuth. The lerp loop `camera.position.z += (targetCameraZ - z) * 0.08` attempted to force $z$ back to 880 while $x$ remained non-zero, warping the spherical radius outward ($R = \sqrt{x^2 + z^2} > 1200$) and causing severe camera zooming/snapping. Furthermore, $z \le 50$ thresholding falsely classified a 90° orbit around CORE as an accidental tier dive into `"core"`.
+>   - **Defect C (Brain graph bleeds through CORE arrival):**
+>     - *Root Cause:* In `SpatialCanvas.tsx`, `depthProgress` was hard-clamped with `Math.max(0.12, ...)`, and `SPATIAL_GRAPH_GROUP.visible` was never toggled off. At default CORE arrival ($z=880$), graph node materials retained 12% opacity and link materials retained 2% opacity directly behind the nucleus.
+>   - **Defect D (Overexposed nucleus & dim peripheral HUD):**
+>     - *Root Cause 1:* Central flare sprite had a large radius of 130 units with 0.98 peak opacity combined with 42px additive Gaussian nucleus points, saturating the center into an undifferentiated flat white circle (`#FFFFFF`).
+>     - *Root Cause 2:* Missions, Systems, and Approvals `HudCard`s in `CoreCommandCenter.tsx` used low border opacity (`rgba(t.rgb, 0.22)`) and flat dark labels without glowing accents or depth contrast.
+> - **Exact Fixes Applied:**
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`:
+>     - Reduced nucleus `baseSize` from 42 to 22; atmosphere `baseSize` 16.
+>     - Refined soft falloff function: changed from flat gaussian to multi-scale falloff with hot spot `exp(-dist * 8.5) * 0.55` and soft body `exp(-dist * dist * 4.2)`, revealing filament plasma detail, electric blue core contours, and preserving white-hot core intensity without blowout.
+>     - Accelerated Layer 1 Keplerian accretion flow: `(62.0 / pow(r, 0.72)) * (0.35 + uFlowSpeed * 0.65)` for continuous energetic orbital circulation.
+>     - Added continuous polar orbital drift to Layer 2 atmospheric particles (`vAng += uTime * 0.08`).
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`:
+>     - Reduced central flare sprite size from 130 to 48 units; softened radial gradient center opacity from 0.98 to 0.65 decaying to 0.0.
+>     - Added independent polar self-rotation in `update()`: `this.group.rotation.y += deltaMs * 0.0004`, guaranteeing continuous core rotation independent of scene interaction timeouts or wheel scrolling.
+>   - `growforge-ui/src/components/spatial/SpatialCanvas.tsx`:
+>     - Replaced Cartesian scalar `targetCameraZRef` with radial distance tracker `targetDistanceRef`.
+>     - Configured OrbitControls with bounded pitch and clamped spherical distance: `minPolarAngle = 0.15`, `maxPolarAngle = Math.PI - 0.15`, `minDistance = 60`, `maxDistance = 1200`.
+>     - Decoupled orbit rotation from depth translation: wheel scrolling increments `targetDistanceRef` radially along the view vector (`camera.position.clone().sub(controls.target).normalize()`), preserving existing azimuth and pitch without radius distortion or snapping.
+>     - Paused camera auto-lerp during active dragging (`isInteractingRef.current`) and active scrolling, resuming smooth spherical radial adjustment when idle.
+>     - Refactored tier resolution to evaluate spherical distance $d = \text{distanceTo}(target)$ rather than Cartesian $z$: $d > 680 \to$ `home`, $680 \ge d > 240 \to$ `brain`, $d \le 240 \to$ `core`.
+>     - Eliminated Brain graph bleed-through: computed `depthProgress = clamp((680 - d) / 220, 0.0, 1.0)` and set `SPATIAL_GRAPH_GROUP.visible = depthProgress > 0.005`, completely hiding graph nodes and links at CORE arrival.
+>     - Added continuous cosmic drift to background starfield (`starField.rotation.y += deltaMs * 0.00008`).
+>   - `growforge-ui/src/components/spatial/CoreCommandCenter.tsx`:
+>     - Re-styled `HudCard` with high-contrast glowing neon borders (`rgba(t.rgb, 0.45)`), drop-shadow accents, glowing text shadows, and distinct badge indicators for Missions, Systems, and Approvals.
+> - **Verification & Observed Results:**
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Live CDP automated test suite (`scratch/cdp_verify_all.mjs`) on `http://localhost:3000`:
+>     - Frame-Pacing:
+>       - Idle CORE: **6.88 ms (~145.3 FPS)**, min 6.2 ms, max 7.9 ms.
+>       - Active Orbit Drag (360° yaw): **17.1 ms (~58.5 FPS)** sustained.
+>       - Scroll Navigation: **61.07 ms (~16.4 FPS)** during rapid wheel events, settling back to 6.8 ms immediately on completion.
+>     - Visual Assertions:
+>       - Particle motion continuous throughout idle, active drag, and wheel scroll.
+>       - Continuous 360° horizontal yaw orbit without unwanted zoom or snapping (`core_orbit_yaw.png`).
+>       - Bounded vertical pitch without triggering accidental tier shifts.
+>       - 0 Brain graph bleed-through at default CORE arrival (`core_desktop_fixed.png`).
+>       - Detailed white-hot nucleus with discernible internal filaments; bright, readable peripheral HUD cards.
+>       - Responsive mobile presentation confirmed (`core_mobile_fixed.png`).
+>       - Clean bi-directional transitions between CORE and Brain (`core_scroll_transition.png` & `core_scroll_return.png`).
+>     - Screen Recording Captured:
+>       - `core_orbit_scroll_recording.webp` (3.37 MB, 72 frames at 65ms/frame): Full interactive loop demonstrating idle particle circulation, 360° drag orbit, scroll dive to Brain graph, and reverse scroll return to CORE.
+> - **Rejected Approaches & Rationale:**
+>   - *Rejected:* Forcing continuous React rerenders or hooking into React state for camera position. (Would degrade frame pacing and introduce GC pauses).
+>   - *Rejected:* Resetting camera to canonical $(0, 0, 880)$ on mouse drag release. (Violates user expectation of continuous spatial immersion and causes visual snapping).
+>   - *Rejected:* Disabling OrbitControls in favor of custom pointer drag math. (OrbitControls provides robust spherical physics, inertia, and touch support; reconciling its spherical coordinates with distance-based navigation is the clean architectural solution).
+> - **Remaining Limitations:**
+>   - Scroll navigation during extreme polar angles ($\phi < 0.2$ rad, looking almost directly top-down) moves radially along that steep vector; pitch bounds prevent singularity flips, but approaching strictly along $(0, 0, 1)$ requires user yaw/pitch adjustment.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments. Milestone 02 untouched.
+
+> **Milestone 01: GPU Neutron-Star Core Refinement (2026-09-26, 01:48, Antigravity).**
+> - **Objective:** Replaced legacy canvas orbital rendering with the approved GPU-driven Three.js neutron star nucleus inside the shared WebGL scene (`SpatialCanvas.tsx`), preserving complete spatial continuity, camera journey, real microphone listening reactions, and truthful telemetry without any component swaps or pops.
+> - **Files Created:**
+>   - `growforge-ui/src/components/spatial/neutronCore/neutronCoreTypes.ts`: Defines operational states (`idle`, `listening`, `thinking`, `speaking`, `executing`), quality tiers (`high`: 21k, `medium`: 12k, `low`: 6.5k particles), and uniform configuration types.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreShader.ts`: High-performance GLSL vertex and fragment shaders featuring distance attenuation, dynamic pulsation, Keplerian differential accretion flow with ~22° inclination, micro-turbulence, and analytical soft-gaussian point rendering with additive blending.
+>   - `growforge-ui/src/components/spatial/neutronCore/NeutronCoreEngine.ts`: Unified Three.js particle system packaging nucleus, equatorial accretion disc, and atmospheric void into a single `BufferGeometry` (single draw call), dynamic EMA frame-time monitor (downshifting if >20ms sustained), analytical central flare sprite, and full resource disposal.
+> - **Files Modified:**
+>   - `growforge-ui/src/components/spatial/SpatialCanvas.tsx`: Deep space void `#010206`; initialized `NeutronCoreEngine` under feature flag `USE_GPU_CORE = true`; connected camera distance attenuation scaling; wired real microphone speech recognition and telemetry execution state; disposed resources cleanly on unmount.
+>   - `growforge-ui/src/components/spatial/SpatialHud.tsx`: Added `useGpuCore` and `onListeningChange` props and forwarded them to `CoreCommandCenter`.
+>   - `growforge-ui/src/components/spatial/CoreCommandCenter.tsx`: Added `useGpuCore` prop and `onListeningChange` callback; when `useGpuCore` is active, rendered `bg-transparent` without mounting `CoreOrbField`, eliminating dual animation loops while keeping `CoreOrbField.tsx` intact on disk as fallback.
+> - **Verification & QA:**
+>   - `tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
+>   - Visual QA (CDP screenshots captured to brain artifacts directory):
+>     - Desktop 1920×1080 (`core_desktop_1920x1080.png`): Living white-blue neutron star with dense visible particle structure, organic accretion disc, positioned between greeting and command bar.
+>     - Mobile 390×844 (`core_mobile_390x844.png`): Centered nucleus and responsive layout.
+>     - Spatial Continuity (`core_to_brain.png` & `core_to_missions.png`): Seamless transitions to Brain knowledge graph and 5th zoom tier (`CoreZoomTier`) with zero geometry pops or renderer swaps.
+>     - Reduced Motion (`core_reduced_motion.png`): Verified calm static luminous state with animated pulses suppressed.
+>     - Voice Interaction (`core_voice_interaction.png`): Microphone button triggers truthful speech recognition state and displays real permission error without faking audio playback.
+>   - Frame Pacing & Performance: Measured 120 frames on local hardware $\to$ avg frame time **6.93 ms (~144.3 FPS)**, min 5.4 ms, max 7.5 ms. 0 frame drops, sustained High quality tier (21k particles).
+> - **Fallback Status:** Feature flag `USE_GPU_CORE = true` active in `SpatialCanvas.tsx`. `CoreOrbField.tsx` preserved on disk for instant rollback if needed.
+> - **Working Tree Integrity:** All pre-existing uncommitted files preserved untouched. 0 git commits, 0 pushes, 0 deployments.
+
+> **Spatial CORE canvas & background refinement (2026-09-25, 17:41, Antigravity).**
+> - **Background & Stars:** Removed all background clouds and procedural wisps per user request for a cleaner, high-contrast cinematic void (`#010206` deep gradient with soft vignette). Normalized bright hero stars down to 4 circular glowing points without 4-way crosshair flare tails (`CoreOrbField.tsx`). Kept distant twinkling dust stars isolated outside an exclusion zone around the central core.
+> - **Core & Orbitals:** Cleaned up unnatural line circles, reticles, tilted wireframe rings, and crosshair lasers. Preserved the rotating 3D constellation particle sphere and 5 concentric Keplerian horizontal particle rings (`RING_DEFS`) with orbiting energy beads.
+> - **Command Center:** Removed bottom status indicator row (`VOICE READY · SECURE · LOCAL-FIRST`) from `CoreCommandCenter.tsx`.
+> - **Verification:** TypeScript (`tsc --noEmit`) and ESLint pass with 0 errors and 0 warnings.
 
 > **Target HUD and interaction visual pass (2026-09-25, 14:54, Codex).** Restored the requested Assistant header control, removed the legacy CORE State card, added chevrons and neon status bars to the Missions, Systems, and Approvals cards, and changed the bottom status row to Voice Ready, Secure, and Local-first indicators. The command bar remains a single capsule with microphone and send controls. TypeScript and ESLint pass.
 

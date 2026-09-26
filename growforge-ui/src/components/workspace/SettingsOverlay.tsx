@@ -61,15 +61,8 @@ function resolveCategoryId(tab?: string): string {
 
 export function SettingsOverlay() {
   const { isSettingsOpen, settingsTab, closeSettings } = useAppState();
-  const [activeCategoryId, setActiveCategoryId] = useState<string>(() => resolveCategoryId(settingsTab));
-  const [prevSettingsTab, setPrevSettingsTab] = useState(settingsTab);
-
-  if (settingsTab !== prevSettingsTab) {
-    setPrevSettingsTab(settingsTab);
-    if (settingsTab) {
-      setActiveCategoryId(resolveCategoryId(settingsTab));
-    }
-  }
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const activeCategoryId = selectedCategoryId ?? resolveCategoryId(settingsTab);
 
   if (!isSettingsOpen) return null;
 
@@ -111,7 +104,7 @@ export function SettingsOverlay() {
                   <li key={item.id}>
                     <button
                       type="button"
-                      onClick={() => setActiveCategoryId(item.id)}
+                      onClick={() => setSelectedCategoryId(item.id)}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-medium font-inter transition-all ${
                         active
                           ? "bg-electric/20 text-white ring-1 ring-electric/40 font-semibold shadow-sm"

@@ -6,7 +6,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { GraphNode, GraphLink, SpatialGraphData } from "@/lib/spatial/obsidianReader";
 import {
-  ZOOM_TIERS,
   CORE_DEPTH,
   type ZoomTierName,
   layoutSpatialGlobe,
@@ -17,15 +16,17 @@ import {
   getStarDotTexture,
   type GrowthPlan,
 } from "./spatialGeometry";
+import { NeutronCoreEngine } from "./neutronCore/NeutronCoreEngine";
+import type { NeutronCoreState } from "./neutronCore/neutronCoreTypes";
 import { SpatialHud } from "./SpatialHud";
 import { CoreZoomTier } from "./CoreZoomTier";
 import { NoteReaderModal } from "./NoteReaderModal";
 import { BusinessHubModal } from "./BusinessHubModal";
-import { SpatialChatDrawer } from "./SpatialChatDrawer";
 
 interface SpatialTelemetryData {
   activeJobCount: number;
   totalJobCount: number;
+  pendingApprovals?: number;
   recentJobs: { id: string; title: string; status: string; currentStep: string; percent: number }[];
   mcp: {
     totalConnected: number;
@@ -48,10 +49,21 @@ interface SpatialCanvasProps {
   initialTier?: ZoomTierName;
 }
 
-export function SpatialCanvas({ className = "", initialTier = "brain" }: SpatialCanvasProps) {
+const USE_GPU_CORE = true;
+
+export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isListening, setIsListening] = useState(false);
+  const isListeningRef = useRef(isListening);
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
   const [graphData, setGraphData] = useState<SpatialGraphData | null>(null);
   const [telemetryData, setTelemetryData] = useState<SpatialTelemetryData | null>(null);
+  const telemetryDataRef = useRef(telemetryData);
+  useEffect(() => {
+    telemetryDataRef.current = telemetryData;
+  }, [telemetryData]);
   const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
   const activeCategoriesRef = useRef<Set<string>>(activeCategories);
   useEffect(() => {
@@ -59,9 +71,18 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
   }, [activeCategories]);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isBusinessHubOpen, setIsBusinessHubOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
   const [currentTier, setCurrentTier] = useState<ZoomTierName>(initialTier);
+  const [coreZoomProgress, setCoreZoomProgress] = useState(0);
+  const lastCoreZoomPaintRef = useRef(0);
+  // Camera depth can cross legacy thresholds during a CORE zoom journey. Keep
+  // the visual owner separate so that depth never swaps in the Missions scene.
+  const [visualMode, setVisualMode] = useState<"core" | "brain" | "missions">(
+    initialTier === "brain" ? "brain" : initialTier === "core" ? "missions" : "core",
+  );
+  const visualModeRef = useRef(visualMode);
+  useEffect(() => {
+    visualModeRef.current = visualMode;
+  }, [visualMode]);
   const coreOverlayRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (currentTier === "core") coreOverlayRef.current?.scrollTo({ top: 0 });
@@ -82,7 +103,9 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const targetCameraZRef = useRef<number>(ZOOM_TIERS[initialTier.toUpperCase() as keyof typeof ZOOM_TIERS]?.z ?? 460);
+  const targetDistanceRef = useRef<number>(initialTier === "core" ? 90 : initialTier === "brain" ? 460 : 880);
+  const currentTierRef = useRef<ZoomTierName>(initialTier);
+  const isInteractingRef = useRef<boolean>(false);
   const growthPlanRef = useRef<GrowthPlan | null>(null);
   const hoveredNodeIdRef = useRef<string | null>(null);
   const isCoreHoveredRef = useRef<boolean>(false);
@@ -185,8 +208,10 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
   // Fast-travel zoom navigation
   const handleSelectTier = useCallback((tier: ZoomTierName) => {
     setCurrentTier(tier);
-    const targetZ = ZOOM_TIERS[tier.toUpperCase() as keyof typeof ZOOM_TIERS]?.z ?? 460;
-    targetCameraZRef.current = targetZ;
+    currentTierRef.current = tier;
+    setVisualMode(tier === "brain" ? "brain" : tier === "core" ? "missions" : "core");
+    const targetDist = tier === "home" ? 880 : tier === "brain" ? 460 : 90;
+    targetDistanceRef.current = targetDist;
   }, []);
 
   // Dashboard → CORE: the camera accelerates through the core (nodes streak
@@ -210,13 +235,13 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
 
     // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x070b14);
-    scene.fog = new THREE.FogExp2(0x070b14, 0.00085);
+    scene.background = new THREE.Color(0x010206);
+    scene.fog = new THREE.FogExp2(0x010206, 0.00085);
     sceneRef.current = scene;
 
     // Camera
     const camera = new THREE.PerspectiveCamera(48, width / height, 1, 3500);
-    camera.position.set(0, 15, targetCameraZRef.current);
+    camera.position.set(0, 15, targetDistanceRef.current);
     cameraRef.current = camera;
 
     // WebGL Renderer
@@ -224,38 +249,40 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.05;
     container.replaceChildren(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Controls
+    // Controls: Bounded pitch & decoupled orbit vs guided depth navigation
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.minDistance = 0;
-    controls.maxDistance = 1400;
-    controls.rotateSpeed = 0.65;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 60;
+    controls.maxDistance = 1200;
+    controls.minPolarAngle = 0.15; // Controlled pitch: prevents flipping at zenith
+    controls.maxPolarAngle = Math.PI - 0.15; // Prevents flipping at nadir
+    controls.rotateSpeed = 0.75;
     controls.zoomSpeed = 0.9;
     controlsRef.current = controls;
 
-    // Any manual drag/zoom/pan should "win" over the fast-travel tier target —
-    // otherwise the per-frame correction below fights the user's own scroll-zoom
-    // every frame, which is what made zoom feel capped/stuck. Must use
-    // "start"/"end" (fired only at real user-gesture boundaries), NOT "change"
-    // — "change" also fires every frame during the fast-travel lerp itself
-    // (since that lerp moves the camera and controls.update() notices), which
-    // would sync the target back to the lerp's current mid-flight position and
-    // cancel the animation after a single frame. That was a real bug caught
-    // by re-testing the nav buttons after adding this fix, not assumed safe.
     const onInteractionStart = () => {
+      isInteractingRef.current = true;
       lastInteractionRef.current = performance.now();
     };
     const onInteractionEnd = () => {
-      targetCameraZRef.current = camera.position.z;
+      isInteractingRef.current = false;
+      targetDistanceRef.current = camera.position.distanceTo(controls.target);
       lastInteractionRef.current = performance.now();
+    };
+    const onControlsChange = () => {
+      lastInteractionRef.current = performance.now();
+      if (isInteractingRef.current) {
+        targetDistanceRef.current = camera.position.distanceTo(controls.target);
+      }
     };
     controls.addEventListener("start", onInteractionStart);
     controls.addEventListener("end", onInteractionEnd);
+    controls.addEventListener("change", onControlsChange);
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
@@ -270,7 +297,18 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
     scene.add(dirLight2);
 
     // AI Core & Orbitals
-    const orbitals = createCoreOrbitals(scene);
+    const neutronCore = USE_GPU_CORE ? new NeutronCoreEngine(scene) : null;
+    if (typeof window !== "undefined") {
+      const win = window as unknown as {
+        __THREE_NEUTRON_ENGINE?: NeutronCoreEngine;
+        __THREE_CAMERA?: THREE.PerspectiveCamera;
+        __THREE_CONTROLS?: OrbitControls;
+      };
+      if (neutronCore) win.__THREE_NEUTRON_ENGINE = neutronCore;
+      win.__THREE_CAMERA = camera;
+      win.__THREE_CONTROLS = controls;
+    }
+    const orbitals = USE_GPU_CORE ? null : createCoreOrbitals(scene);
 
     // Distant Ambient Starfield — soft glow-textured points, not hard flat
     // dots, so the background reads as a light-filled nebula rather than a
@@ -333,7 +371,8 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
 
     // Animation Loop
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    let lastFrameTime = performance.now();
+    const animationStartedAt = performance.now();
     const ROTATION_RESUME_DELAY_MS = 7000;
     // Start already "idle" so ambient rotation begins immediately on load,
     // rather than waiting out the resume delay on first mount.
@@ -365,7 +404,7 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - animationStartedAt) / 1000;
 
       const dive = diveRef.current;
       if (dive) {
@@ -380,57 +419,86 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         camera.rotation.z = e * 0.6;
         camera.fov = 48 + 72 * e;
         camera.updateProjectionMatrix();
-        renderer.toneMappingExposure = 1.15 + 3.4 * e * e;
+        renderer.toneMappingExposure = 1.05 + 3.4 * e * e;
         if (t >= 1 && !dive.navigated) {
           dive.navigated = true;
-          targetCameraZRef.current = CORE_DEPTH;
-          camera.position.z = CORE_DEPTH;
+          targetDistanceRef.current = 90;
+          camera.position.set(0, 15, CORE_DEPTH);
           camera.rotation.z = 0;
           camera.fov = 48;
           camera.updateProjectionMatrix();
-          renderer.toneMappingExposure = 1.15;
+          renderer.toneMappingExposure = 1.05;
           controls.enabled = true;
           setIsDiving(false);
           diveRef.current = null;
           setCurrentTier("core");
+          currentTierRef.current = "core";
+          setVisualMode("missions");
         }
       } else {
-        // Smooth camera interpolation for fast-travel zoom only — once the user
-        // manually drags/zooms, syncTargetToCamera() keeps this a no-op so it
-        // never fights their input (see the OrbitControls "change" listener above).
-        if (Math.abs(camera.position.z - targetCameraZRef.current) > 1.5) {
-          camera.position.z += (targetCameraZRef.current - camera.position.z) * 0.08;
+        // Smooth radial distance interpolation when fast-traveling
+        if (!isInteractingRef.current) {
+          const currentDist = camera.position.distanceTo(controls.target);
+          if (Math.abs(currentDist - targetDistanceRef.current) > 1.0) {
+            const newDist = currentDist + (targetDistanceRef.current - currentDist) * 0.08;
+            const ray = new THREE.Vector3().subVectors(camera.position, controls.target);
+            if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
+            ray.normalize();
+            camera.position.copy(controls.target).addScaledVector(ray, newDist);
+          }
         }
 
-        // controls.update() MUST run before any .project(camera) calls below
         controls.update();
       }
 
-      // Update current zoom tier based on real camera depth
-      const cz = camera.position.z;
-      if (cz > 700) setCurrentTier("home");
-      else if (cz <= 700 && cz > 300) setCurrentTier("brain");
-      else if (cz <= 300 && cz > 50) setCurrentTier("dashboard");
-      else if (cz <= 50) setCurrentTier("core");
+      // Distance from orbit target (depth progression)
+      const d = camera.position.distanceTo(controls.target);
+      if (performance.now() - lastCoreZoomPaintRef.current > 50) {
+        lastCoreZoomPaintRef.current = performance.now();
+        setCoreZoomProgress(THREE.MathUtils.clamp((880 - d) / 780, 0, 1));
+      }
 
-      // Continuous, distance-driven progressive reveal of nodes & links
-      const depthProgress = THREE.MathUtils.clamp((880 - cz) / 380, 0.12, 1.0);
+      // Logical tier resolution based on spherical distance from target
+      if (d > 680) {
+        if (currentTierRef.current !== "home") {
+          currentTierRef.current = "home";
+          setCurrentTier("home");
+          setVisualMode("core");
+        }
+      } else if (d <= 680 && d > 240) {
+        if (currentTierRef.current !== "brain") {
+          currentTierRef.current = "brain";
+          setCurrentTier("brain");
+          setVisualMode("brain");
+        }
+      } else if (d <= 240) {
+        if (currentTierRef.current !== "core") {
+          currentTierRef.current = "core";
+          setCurrentTier("core");
+          setVisualMode("missions");
+        }
+      }
+
+      // Brain graph reveal: 0.0 at CORE arrival (d >= 680), smooth progressive reveal as d -> 460
+      const graphGroup = scene.getObjectByName("SPATIAL_GRAPH_GROUP") as THREE.Group | undefined;
+      const isBrainTierActive = visualModeRef.current === "brain" || d < 680;
+      const depthProgress = isBrainTierActive
+        ? THREE.MathUtils.clamp((680 - d) / 220, 0.0, 1.0)
+        : 0.0;
+
+      if (graphGroup) {
+        graphGroup.visible = depthProgress > 0.005;
+      }
+
       const somethingHovered = !!hoveredNodeIdRef.current;
 
-      // Runs unconditionally every frame now (previously gated behind
-      // `!hoveredNodeIdRef.current`, which meant this smooth per-frame system
-      // simply stopped running the instant a node was precisely hovered,
-      // silently handing off to a second, instant-snap system that used to
-      // live in the pointermove handler — that handoff is exactly what read
-      // as "instant on/off" on nodes/links even though the core, which never
-      // had that second system, faded correctly. Now there's only one path.
       nodeMeshMap.current.forEach((item, id) => {
         const isCategoryActive = activeCategoriesRef.current.has(item.node.source);
-        if (!isCategoryActive) {
-          item.outerMaterial.opacity = 0.04;
-          item.outerMaterial.emissiveIntensity = 0.04;
-          item.coreMaterial.emissiveIntensity = 0.1;
-          item.haloSprite.material.opacity = 0.03;
+        if (!isCategoryActive || depthProgress <= 0.005) {
+          item.outerMaterial.opacity = 0;
+          item.outerMaterial.emissiveIntensity = 0;
+          item.coreMaterial.emissiveIntensity = 0;
+          item.haloSprite.material.opacity = 0;
           return;
         }
 
@@ -438,14 +506,11 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         const proximityFactor = THREE.MathUtils.clamp(1.15 - Math.abs(distToNode - 320) / 450, 0.35, 1.0);
 
         // Cursor-proximity glow — eased toward its target here (single
-        // smoothing layer) so it ramps up gradually as the cursor nears,
-        // instead of snapping the moment it's close enough.
+        // smoothing layer) so it ramps up gradually as the cursor nears.
         item.proximity.v += (proximityTargetFor(item.group.position) - item.proximity.v) * 0.05;
         const cursorBoost = 1 + item.proximity.v * 0.7;
 
-        // Connection-highlight (Obsidian-style: hovering an exact node
-        // highlights its direct connections, dims the rest) — same eased
-        // treatment as everything else now, not a snap.
+        // Connection-highlight
         const connectionTarget = somethingHovered ? (connectedTargetsRef.current.has(id) ? 1.4 : 0.12) : 1.0;
         item.connectionGlow.v += (connectionTarget - item.connectionGlow.v) * 0.09;
 
@@ -457,7 +522,11 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       });
 
       linkObjectMap.current.forEach((item) => {
-        const linkDepth = THREE.MathUtils.clamp((800 - cz) / 350, 0.02, 1.0);
+        if (depthProgress <= 0.005) {
+          item.material.opacity = 0;
+          return;
+        }
+        const linkDepth = depthProgress;
         item.proximity.v += (proximityTargetFor(item.midpoint) - item.proximity.v) * 0.05;
 
         const sId = typeof item.link.source === "object" ? (item.link.source as { id: string }).id : item.link.source;
@@ -470,20 +539,32 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         item.material.opacity = Math.min(1, 0.22 * linkDepth * (1 + item.proximity.v * 1.6) * item.connectionGlow.v);
       });
 
-      // Ambient self-rotation: paused by any click/drag/zoom (see
-      // syncTargetToCamera and handleClick), auto-resumes once the user has
-      // left it alone for ROTATION_RESUME_DELAY_MS.
-      const idleMs = performance.now() - lastInteractionRef.current;
-      if (idleMs > ROTATION_RESUME_DELAY_MS) {
-        scene.rotation.y += 0.00045;
+      const now = performance.now();
+      const deltaMs = now - lastFrameTime;
+      lastFrameTime = now;
+
+      // Continuous cosmic starfield rotation
+      starField.rotation.y += deltaMs * 0.00008;
+
+      // Update CORE visualization
+      const coreProximityTarget = proximityTargetFor(ZERO_VEC);
+      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (neutronCore) {
+        // Truthful operational state: listening > executing > idle
+        const isExecuting = (telemetryDataRef.current?.activeJobCount ?? 0) > 0;
+        const targetState: NeutronCoreState = isListeningRef.current
+          ? "listening"
+          : isExecuting
+            ? "executing"
+            : "idle";
+        neutronCore.setState(targetState);
+        neutronCore.update(elapsedTime, d, coreProximityTarget, isReducedMotion, deltaMs);
+      } else if (orbitals) {
+        orbitals.group.visible = visualModeRef.current !== "brain";
+        orbitals.update(elapsedTime, somethingHovered, d, coreProximityTarget);
       }
 
-      // Core glow reacts to real cursor-to-core screen distance, not a
-      // hover boolean — the raw (unsmoothed) target is passed straight to
-      // orbitals.update(), which does the easing internally (single
-      // smoothing layer, see its own comment for why).
-      const coreProximityTarget = proximityTargetFor(ZERO_VEC);
-      orbitals.update(elapsedTime, somethingHovered, camera.position.z, coreProximityTarget);
       renderer.render(scene, camera);
     };
 
@@ -494,7 +575,9 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       window.removeEventListener("resize", handleResize);
       controls.removeEventListener("start", onInteractionStart);
       controls.removeEventListener("end", onInteractionEnd);
-      orbitals.dispose();
+      controls.removeEventListener("change", onControlsChange);
+      neutronCore?.dispose();
+      orbitals?.dispose();
       renderer.dispose();
     };
   }, []);
@@ -685,13 +768,6 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
 
-      // Check if Core Orb is clicked -> Open AI Assistant Chat
-      const coreHit = intersects.find((i) => i.object.userData?.isCoreOrb);
-      if (coreHit) {
-        setIsChatOpen(true);
-        return;
-      }
-
       // Check if Graph Node is clicked -> Open Note Reader
       const nodeHit = intersects.find((i) => i.object.userData?.node);
       if (nodeHit) {
@@ -773,6 +849,8 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
       {/* Spatial HUD Overlay — dissolves while the camera dives into the core */}
       <div className={isDiving ? "pointer-events-none opacity-0 transition-opacity duration-300" : "transition-opacity duration-300"}>
       <SpatialHud
+        visualMode={visualMode}
+        coreZoomProgress={coreZoomProgress}
         onEnterCore={handleEnterCore}
         currentTier={currentTier}
         onSelectTier={handleSelectTier}
@@ -801,24 +879,23 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         telemetryData={telemetryData}
         onOpenBusinessHub={() => setIsBusinessHubOpen(true)}
         isNoteOpen={!!selectedNode}
-        isChatOpen={isChatOpen}
-        onOpenChat={(prompt?: string) => {
-          setChatInitialPrompt(prompt);
-          setIsChatOpen(true);
-        }}
+        useGpuCore={USE_GPU_CORE}
+        onListeningChange={setIsListening}
       />
       </div>
 
       {/* 5. CORE Pipeline 5th Zoom Tier Overlay (z=-70) */}
       <div
         ref={coreOverlayRef}
-        className={`absolute inset-0 z-20 transition-all duration-500 overflow-y-auto bg-[#050811] ${
-          currentTier === "core"
+        aria-hidden={currentTier !== "core"}
+        inert={currentTier !== "core" ? true : undefined}
+        className={`absolute inset-0 z-20 transition-all duration-500 overflow-x-hidden overflow-y-auto bg-[#050811] ${
+          currentTier === "core" && visualMode === "missions"
             ? "opacity-100 pointer-events-auto translate-y-0"
             : "opacity-0 pointer-events-none translate-y-4"
         }`}
       >
-        <CoreZoomTier className="pt-20 pb-28 px-4 md:px-8 max-w-7xl mx-auto" />
+        <CoreZoomTier className="pt-24 pb-28 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto" />
       </div>
 
       {/* Note Reader Modal (Wikilinks & Markdown Previews) */}
@@ -841,16 +918,7 @@ export function SpatialCanvas({ className = "", initialTier = "brain" }: Spatial
         onClose={() => setIsBusinessHubOpen(false)}
         telemetryData={telemetryData}
       />
-
-      {/* AI Assistant Spatial Holographic Chat Drawer */}
-      <SpatialChatDrawer
-        isOpen={isChatOpen}
-        onClose={() => {
-          setIsChatOpen(false);
-          setChatInitialPrompt(undefined);
-        }}
-        initialPrompt={chatInitialPrompt}
-      />
     </div>
   );
 }
+

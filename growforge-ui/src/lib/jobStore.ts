@@ -93,7 +93,11 @@ export interface Job {
   approvedBy?: string;
   /** Snapshots that let resumePipeline() redo just one stage without
    *  re-deriving everything from scratch — see orchestrator.ts. */
-  planSnapshot?: { title: string; assignments: { departmentId: string; task: string; activity: string; vaultRecommendation?: VaultDispatchRecommendation }[] };
+  planSnapshot?: {
+    title: string;
+    researchQuestions: string[];
+    assignments: { departmentId: string; task: string; activity: string; vaultRecommendation?: VaultDispatchRecommendation }[];
+  };
   dossierSnapshot?: { text: string; sources: Source[]; verified: boolean };
 }
 

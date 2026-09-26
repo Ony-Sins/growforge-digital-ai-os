@@ -19,16 +19,16 @@ export function AgentRosterOverlay() {
   if (!isAgentRosterOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-app">
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border-metal bg-white/80 px-4 backdrop-blur-xl md:px-6">
-        <h1 className="font-heading text-sm font-semibold text-navy">Agent Roster</h1>
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#070B14] text-white">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-[#0B1220]/95 px-4 backdrop-blur-xl md:px-6">
+        <h1 className="font-heading text-sm font-semibold text-white">Quick Agent Roster</h1>
         <span className="font-mono text-[11px] text-muted">{liveAgents.length} agents</span>
         <div className="ml-auto">
           <button
             type="button"
             onClick={closeAgentRoster}
             aria-label="Close Agent Roster"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-metal bg-white text-secondary hover:text-navy"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -37,17 +37,17 @@ export function AgentRosterOverlay() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-4xl">
-          <ul className="divide-y divide-border-metal glass-card rounded-xl">
+          <ul className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-[#0B1220]">
             {liveAgents.map((agent) => (
               <li key={agent.id}>
                 <button
                   type="button"
                   onClick={() => openAgentPanel(agent.id)}
-                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-sunken"
+                  className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-white/5"
                 >
                   <StatusDot status={agent.status} pulse={agent.status === "active"} />
                   <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 truncate text-sm font-medium text-navy">
+                    <p className="flex items-center gap-1.5 truncate text-sm font-medium text-white">
                       {agent.name}
                       {isAgentLocked(agent.id) && !canAccessAgent(agent.id) && (
                         <Lock className="h-3 w-3 shrink-0 text-muted" />

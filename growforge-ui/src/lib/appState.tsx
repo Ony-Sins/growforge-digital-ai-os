@@ -258,11 +258,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const closeAdminDrawer = useCallback(() => {
     setIsAdminDrawerOpen(false);
-    setActiveViewState((current) => {
-      writeLocationParams({ view: current === "chat" ? undefined : current });
-      return current;
-    });
-  }, []);
+    writeLocationParams({ view: activeView === "chat" ? undefined : activeView });
+  }, [activeView]);
 
   const openUserProfile = useCallback((tab: "brain" | "profile" = "brain") => {
     setUserProfileTab(tab);
@@ -272,11 +269,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const closeUserProfile = useCallback(() => {
     setIsUserProfileOpen(false);
-    setActiveViewState((current) => {
-      writeLocationParams({ view: current === "chat" ? undefined : current });
-      return current;
-    });
-  }, []);
+    writeLocationParams({ view: activeView === "chat" ? undefined : activeView });
+  }, [activeView]);
 
   const openSettings = useCallback((tab?: string) => {
     if (tab) setSettingsTab(tab);
@@ -286,11 +280,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const closeSettings = useCallback(() => {
     setIsSettingsOpen(false);
-    setActiveViewState((current) => {
-      writeLocationParams({ view: current === "chat" ? undefined : current });
-      return current;
-    });
-  }, []);
+    writeLocationParams({ view: activeView === "chat" ? undefined : activeView });
+  }, [activeView]);
 
   const openAgentRoster = useCallback(() => {
     setIsAgentRosterOpen(true);
@@ -299,11 +290,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const closeAgentRoster = useCallback(() => {
     setIsAgentRosterOpen(false);
-    setActiveViewState((current) => {
-      writeLocationParams({ view: current === "chat" ? undefined : current });
-      return current;
-    });
-  }, []);
+    writeLocationParams({ view: activeView === "chat" ? undefined : activeView });
+  }, [activeView]);
 
   const openVaultLibrary = useCallback(() => {
     setIsVaultLibraryOpen(true);
@@ -312,11 +300,8 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
 
   const closeVaultLibrary = useCallback(() => {
     setIsVaultLibraryOpen(false);
-    setActiveViewState((current) => {
-      writeLocationParams({ view: current === "chat" ? undefined : current });
-      return current;
-    });
-  }, []);
+    writeLocationParams({ view: activeView === "chat" ? undefined : activeView });
+  }, [activeView]);
 
   const setActiveView = useCallback(
     (view: ActiveView) => {

@@ -336,8 +336,13 @@ export function AiModelManager() {
             const brand = getAiBrandIcon(preset.providerType, preset.modelName, preset.baseUrl);
             const isConfigured = models.some(
               (m) =>
+                m.status !== "archived" &&
+                m.status !== "disconnected" &&
                 m.modelName === preset.modelName ||
-                (m.baseUrl === preset.baseUrl && m.providerType === preset.providerType)
+                (m.status !== "archived" &&
+                  m.status !== "disconnected" &&
+                  m.baseUrl === preset.baseUrl &&
+                  m.providerType === preset.providerType)
             );
             const matchingModel = models.find(
               (m) =>

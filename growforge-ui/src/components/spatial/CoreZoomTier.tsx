@@ -213,6 +213,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
   const [selectedJobId, setSelectedJobId] = useState<string | null>(initialJobId);
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
   const [launcherOpen, setLauncherOpen] = useState(false);
+  const [showTestMissions, setShowTestMissions] = useState(false);
   const [brief, setBrief] = useState("");
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
@@ -400,14 +401,14 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
   const usage = job?.usage ?? null;
 
   return (
-    <div className={`text-[#E0E6ED] ${className}`}>
+    <div className={`max-w-full overflow-x-hidden text-[#E0E6ED] ${className}`}>
       <style>{`@keyframes coreglow{0%{box-shadow:0 0 0 0 rgba(0,245,255,.65)}100%{box-shadow:0 0 30px 8px rgba(0,245,255,0)}}`}</style>
       {/* Header */}
       <div className="mb-5 flex flex-wrap items-center gap-4 rounded-2xl border border-[#1E293B] bg-[#070B14]/85 p-4 backdrop-blur-xl">
         <Ring percent={job?.percent ?? 0} state={jobState} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-white">Live Pipeline</h1>
+            <h1 className="text-xl font-bold text-white">Missions</h1>
             {job && <Pill state={jobState} label={job.status === "running" ? "executing" : job.status} />}
             {job && !job.verified && job.status === "done" && <Pill state="queued" label="unverified research" />}
           </div>
@@ -423,7 +424,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
             <div className="font-mono text-[11px] text-slate-500">{elapsed(job.createdAt, job.finishedAt)} elapsed</div>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {state && state.jobs.length > 0 && (
             <select
               aria-label="Select project"
@@ -435,13 +436,19 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
               className="max-w-[220px] rounded-lg border border-[#1E293B] bg-[#0B1220] px-3 py-2 text-xs font-semibold text-slate-200 outline-none focus:border-cyan-400"
             >
               {state.jobs
-                .filter((j) => !j.isTest || j.id === job?.id)
+                .filter((j) => showTestMissions || !j.isTest || j.id === job?.id)
                 .map((j) => (
                   <option key={j.id} value={j.id}>
                     {j.title} ({j.status})
                   </option>
                 ))}
             </select>
+          )}
+          {state?.jobs.some((item) => item.isTest) && (
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <input type="checkbox" checked={showTestMissions} onChange={(event) => setShowTestMissions(event.target.checked)} className="accent-cyan-400" />
+              Show test runs
+            </label>
           )}
           <button
             type="button"

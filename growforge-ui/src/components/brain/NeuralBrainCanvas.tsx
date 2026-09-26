@@ -483,7 +483,7 @@ export function NeuralBrainCanvas({
   const controlsRef = useRef<OrbitControls | null>(null);
   const brainGroupRef = useRef<THREE.Group | null>(null);
   const dynamicGroupRef = useRef<THREE.Group | null>(null);
-  const clockRef = useRef<THREE.Clock | null>(null);
+  const animationStartedAtRef = useRef<number | null>(null);
 
   // Persistent Camera Target
   const cameraTargetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, -2, 0));
@@ -984,7 +984,7 @@ export function NeuralBrainCanvas({
         tubeMat,
         innerMat,
         branchMats,
-        startTime: clockRef.current?.getElapsedTime() || 0,
+        startTime: animationStartedAtRef.current ? (performance.now() - animationStartedAtRef.current) / 1000 : 0,
         duration: 0.38, // 380ms fast flash
       };
     };
@@ -1066,12 +1066,12 @@ export function NeuralBrainCanvas({
 
     // 11. Animation Loop
     let animationFrameId: number;
-    const clock = new THREE.Clock();
-    clockRef.current = clock;
+    const animationStartedAt = performance.now();
+    animationStartedAtRef.current = animationStartedAt;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - animationStartedAt) / 1000;
 
       // Camera Intro Reveal Animation (dollying back from tight macro to resting)
       if (introStartTimeRef.current === null) {

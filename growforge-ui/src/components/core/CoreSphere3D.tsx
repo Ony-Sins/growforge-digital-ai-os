@@ -247,11 +247,11 @@ export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark" }: Cor
     const observer = new ResizeObserver(resize);
     observer.observe(container);
 
-    const clock = new THREE.Clock();
+    const animationStartedAt = performance.now();
     let frame = 0;
     const animate = () => {
       frame = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
+      const t = (performance.now() - animationStartedAt) / 1000;
       const { hubs: liveHubs, selectedId: sel } = liveRef.current;
       const anyActive = liveHubs.some((h) => h.status === "active");
 

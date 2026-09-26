@@ -1,32 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import {
-  Search,
-  Zap,
-  Play,
-  Pause,
-  RotateCcw,
-  Sparkles,
-  Layers,
-  Activity,
-  ChevronDown,
-  LayoutDashboard,
-  Brain,
-  Home,
-  CheckCircle2,
-  ExternalLink,
-  MessageSquare,
-  Send,
-  Bot,
-  Radio,
-} from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Brain, BriefcaseBusiness, CircleUserRound, Database, Film, RotateCcw, Search, Settings2, Sparkles, X } from "lucide-react";
 import type { GraphNode, GraphCategory } from "@/lib/spatial/obsidianReader";
 import type { ZoomTierName } from "./spatialGeometry";
+import { useAppState } from "@/lib/appState";
+import { ApprovalBanner } from "@/components/workspace/ApprovalBanner";
+import { CoreCommandCenter } from "./CoreCommandCenter";
 
 interface SpatialHudProps {
   currentTier: ZoomTierName;
+  visualMode?: "core" | "brain" | "missions";
+  coreZoomProgress?: number;
   onSelectTier: (tier: ZoomTierName) => void;
   categories: GraphCategory[];
   activeCategories: Set<string>;
@@ -43,679 +28,352 @@ interface SpatialHudProps {
   telemetryData: {
     activeJobCount: number;
     totalJobCount: number;
+    pendingApprovals?: number;
     recentJobs: { id: string; title: string; status: string; currentStep: string; percent: number }[];
-    mcp: {
-      totalConnected: number;
-      servers: { id: string; name: string; toolCount: number }[];
-      connectors: {
-        slack: { connected: boolean; name: string };
-        notion: { connected: boolean; name: string };
-        hubspot: { connected: boolean; name: string };
-      };
-    };
+    mcp: { totalConnected: number; servers: { id: string; name: string; toolCount: number }[]; connectors: Record<string, { connected: boolean; name: string }> };
     models: { totalConfigured: number; active: { id: string; name: string; isPrimary: boolean; latencyMs: number | null }[] };
     telemetry: { executionState: string };
   } | null;
   onOpenBusinessHub: () => void;
   isNoteOpen?: boolean;
-  isChatOpen?: boolean;
-  onOpenChat: (prompt?: string) => void;
-  /** Dive the camera through the core and arrive on the CORE page. */
   onEnterCore?: () => void;
+  useGpuCore?: boolean;
+  onListeningChange?: (listening: boolean) => void;
 }
 
-export function SpatialHud({
-  currentTier,
-  onSelectTier,
-  categories,
-  activeCategories,
-  onToggleCategory,
-  onSoloCategory,
-  allNodes,
-  onSelectNode,
-  isCinema,
-  onToggleCinema,
-  isReplaying,
-  replayTime,
-  onToggleReplay,
-  onResetReplay,
-  telemetryData,
-  onOpenBusinessHub,
-  isNoteOpen = false,
-  isChatOpen = false,
-  onOpenChat,
-  onEnterCore,
-}: SpatialHudProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isNavDropdownOpen, setIsNavDropdownOpen] = useState(false);
-  const [homePrompt, setHomePrompt] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
+const NAV = [
+  { id: "core", label: "CORE", icon: Sparkles },
+  { id: "missions", label: "Missions", icon: BriefcaseBusiness },
+  { id: "brain", label: "Brain", icon: Brain },
+  { id: "systems", label: "Systems", icon: Settings2 },
+] as const;
 
-  // Global keyboard shortcut '/' for search
+export function SpatialHud({
+  currentTier, visualMode, coreZoomProgress = 0, onSelectTier, categories, activeCategories, onToggleCategory, onSoloCategory,
+  allNodes, onSelectNode, isCinema, onToggleCinema, onResetReplay, telemetryData,
+  isNoteOpen = false, useGpuCore = true, onListeningChange,
+}: SpatialHudProps) {
+  const { openSettings, openUserProfile, openVaultLibrary, openAgentRoster } = useAppState();
+  const [conversationView, setConversationView] = useState<"closed" | "compact" | "expanded">("closed");
+  const [approvalsOpen, setApprovalsOpen] = useState(false);
+  const hudRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const approvalsRef = useRef<HTMLButtonElement>(null);
+
+  // Measure real chrome; visualViewport also covers keyboards that overlay the layout viewport.
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
-        e.preventDefault();
-        setIsSearchOpen(true);
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      } else if (e.key === "Escape") {
-        setIsSearchOpen(false);
-        setIsNavDropdownOpen(false);
-      }
+    const hud = hudRef.current;
+    if (!hud) return;
+    const vv = window.visualViewport;
+    const measure = () => {
+      const height = vv?.height ?? window.innerHeight;
+      const top = vv?.offsetTop ?? 0;
+      hud.style.setProperty("--kb-offset", Math.max(0, window.innerHeight - height - top) + "px");
+      hud.style.setProperty("--visible-height", height + "px");
+      hud.style.setProperty("--workspace-top", Math.max(0, Math.max(headerRef.current?.getBoundingClientRect().bottom ?? 54, approvalsRef.current?.getBoundingClientRect().bottom ?? 0) - top) + 12 + "px");
+      hud.style.setProperty("--mobile-nav-height", (navRef.current?.getBoundingClientRect().height ?? 65) + "px");
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const observer = new ResizeObserver(measure);
+    if (navRef.current) observer.observe(navRef.current);
+    if (headerRef.current) observer.observe(headerRef.current);
+    if (approvalsRef.current) observer.observe(approvalsRef.current);
+    vv?.addEventListener("resize", measure);
+    vv?.addEventListener("scroll", measure);
+    window.addEventListener("resize", measure);
+    measure();
+    return () => {
+      observer.disconnect();
+      vv?.removeEventListener("resize", measure);
+      vv?.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
-  const searchResults = searchQuery.trim()
-    ? allNodes
-        .filter(
-          (n) =>
-            n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            n.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 8)
-    : [];
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const surface = visualMode ?? (currentTier === "core" ? "missions" : currentTier === "brain" || currentTier === "dashboard" ? "brain" : "core");
 
-  const primaryModel = telemetryData?.models.active.find((m) => m.isPrimary) || telemetryData?.models.active[0];
-
-  const handleHomePromptSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!homePrompt.trim()) return;
-    onOpenChat(homePrompt.trim());
-    setHomePrompt("");
+  const selectSurface = (id: (typeof NAV)[number]["id"]) => {
+    if (id === "systems") return openSettings("connectors");
+    onSelectTier(id === "missions" ? "core" : id === "brain" ? "brain" : "home");
   };
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "/" && surface === "brain") {
+        event.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchRef.current?.focus(), 20);
+      }
+      if (event.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [surface]);
+
+  const results = useMemo(
+    () => query.trim()
+      ? allNodes.filter((node) => `${node.title} ${node.excerpt}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
+      : [],
+    [allNodes, query],
+  );
+
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-4 md:p-6 select-none overflow-hidden font-sans">
-      {/* 0. SOFT OVERHEAD AMBIENT LIGHT BAR */}
-      <div className="fixed top-0 inset-x-0 h-1 pointer-events-none z-50 flex justify-center">
-        <div className="w-full max-w-4xl h-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-90 shadow-[0_0_24px_rgba(56,189,248,0.9)] animate-pulse" />
-      </div>
+    <div ref={hudRef} className={`spatial-hud pointer-events-none fixed inset-0 z-30 text-slate-100 ${isNoteOpen ? "opacity-40" : ""}`}>
+      {/* FLOATING COMMAND SPINE */}
+      <header ref={headerRef} className="spatial-header pointer-events-none absolute inset-x-0 top-3 z-50 flex items-center justify-between px-3 sm:px-6">
+        {/* STRUCTURAL DATA RAIL & SIGNAL PULSE CONDUIT */}
+        <div className="pointer-events-none absolute inset-x-4 sm:inset-x-8 top-1/2 -z-10 -translate-y-1/2 flex items-center">
+          {/* Main datum rail layer */}
+          <div className="relative w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent">
+            {/* Secondary layered cyan beam */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/25 to-transparent" />
 
-      {/* 1. TOP BAR */}
-      <div className="flex items-center justify-between gap-4 w-full">
-        {/* Left: 3D Hover-Glow Dropdown Nav */}
-        <div className="relative pointer-events-auto">
-          <button
-            onClick={() => setIsNavDropdownOpen(!isNavDropdownOpen)}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[#0B1220]/80 hover:bg-[#0B1220]/95 border border-white/10 hover:border-cyan-400/40 backdrop-blur-xl shadow-lg transition-all group"
-          >
-            <div className="w-5 h-5 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-heading font-bold text-xs tracking-wide text-white">GrowForge Canvas</span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                isNavDropdownOpen ? "rotate-180 text-white" : ""
-              }`}
-            />
-          </button>
+            {/* Micro segmented data track lines */}
+            <div className="hidden sm:block absolute inset-x-16 inset-y-0 opacity-35 bg-[linear-gradient(90deg,rgba(34,211,238,0.5)_2px,transparent_2px)] bg-[length:14px_1px]" />
 
-          {/* 3D Dropdown Navigation Menu */}
-          {isNavDropdownOpen && (
-            <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl bg-[#0B1220]/95 border border-white/10 shadow-2xl backdrop-blur-2xl p-2 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-              <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 border-b border-white/5">
-                Spatial Operations
-              </div>
-              <button
-                onClick={() => {
-                  onSelectTier("home");
-                  setIsNavDropdownOpen(false);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all ${
-                  currentTier === "home"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                    : "text-slate-300 hover:bg-white/5"
-                }`}
-              >
-                <Home className="w-4 h-4 text-cyan-400" />
-                <span>Home Assistant Core</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectTier("brain");
-                  setIsNavDropdownOpen(false);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all ${
-                  currentTier === "brain"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                    : "text-slate-300 hover:bg-white/5"
-                }`}
-              >
-                <Brain className="w-4 h-4 text-pink-400" />
-                <span>AI Brain Knowledge Graph</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectTier("dashboard");
-                  setIsNavDropdownOpen(false);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all ${
-                  currentTier === "dashboard"
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                    : "text-slate-300 hover:bg-white/5"
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4 text-emerald-400" />
-                <span>Operational Dashboard</span>
-              </button>
-              <button
-                onClick={() => {
-                  onSelectTier("core");
-                  setIsNavDropdownOpen(false);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all ${
-                  currentTier === "core"
-                    ? "bg-[#0078ff]/20 text-[#0078ff] border border-[#0078ff]/30 font-bold"
-                    : "text-slate-300 hover:bg-white/5"
-                }`}
-              >
-                <Zap className="w-4 h-4 text-[#ffc432]" />
-                <span>CORE Pipeline (Tier 5)</span>
-              </button>
-              <div className="pt-1 border-t border-white/5">
-                <button
-                  onClick={() => {
-                    onOpenChat();
-                    setIsNavDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-cyan-300 hover:bg-cyan-500/10 transition-all"
-                >
-                  <span className="flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-cyan-400" />
-                    AI Assistant Chat
-                  </span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-cyan-500/20 text-cyan-300">Live</span>
-                </button>
-                <button
-                  onClick={() => {
-                    onOpenBusinessHub();
-                    setIsNavDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-slate-300 hover:bg-white/5 transition-all"
-                >
-                  <span className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    Business Comms Triage
-                  </span>
-                  <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-amber-500/20 text-amber-300">MCP</span>
-                </button>
-                <Link
-                  href="/core"
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-emerald-300 hover:bg-emerald-500/10 transition-all"
-                >
-                  <span className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-emerald-400" />
-                    CORE
-                  </span>
-                </Link>
-                <Link
-                  href="/workspace"
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  <span>Workspace (projects, vault, settings)</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+            {/* Glowing Anchor Nodes / Junction Diamonds along the rail */}
+            <span className="node-breathe hidden md:block absolute left-[19%] -top-[2.5px] h-1.5 w-1.5 rotate-45 rounded-[0.5px] border border-cyan-400/60 bg-[#030712] shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
+            <span className="node-breathe hidden md:block absolute left-[33%] -top-[2.5px] h-1.5 w-1.5 rotate-45 rounded-[0.5px] border border-cyan-400/60 bg-[#030712] shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
+            <span className="node-breathe hidden md:block absolute right-[33%] -top-[2.5px] h-1.5 w-1.5 rotate-45 rounded-[0.5px] border border-cyan-400/60 bg-[#030712] shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
+            <span className="node-breathe hidden md:block absolute right-[19%] -top-[2.5px] h-1.5 w-1.5 rotate-45 rounded-[0.5px] border border-cyan-400/60 bg-[#030712] shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
 
-        {/* Center: Search Bar */}
-        {!isCinema && (
-          <div className="relative pointer-events-auto max-w-md w-full mx-auto">
-            <div className="relative flex items-center">
-              <Search className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                placeholder="Search notes, agents, pipelines, skills... [ / ]"
-                className="w-full pl-10 pr-9 py-2 rounded-xl bg-[#0B1220]/75 hover:bg-[#0B1220]/90 focus:bg-[#0B1220]/95 border border-white/10 focus:border-cyan-400/50 backdrop-blur-xl text-xs text-white placeholder-slate-400 focus:outline-none shadow-lg transition-all"
-              />
-              <span className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono rounded bg-white/10 text-slate-400 pointer-events-none">
-                /
-              </span>
-            </div>
-
-            {/* Search Results Dropdown */}
-            {isSearchOpen && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#0B1220]/95 border border-white/10 shadow-2xl backdrop-blur-2xl p-2 space-y-1 z-50 animate-in fade-in duration-150">
-                <div className="px-3 py-1 text-[10px] font-mono uppercase text-slate-400">
-                  Matching Graph Nodes ({searchResults.length})
-                </div>
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    onClick={() => {
-                      onSelectNode(result);
-                      setIsSearchOpen(false);
-                      setSearchQuery("");
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-white/5 text-left transition-all group"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-medium text-white group-hover:text-cyan-300 truncate">
-                        {result.title}
-                      </p>
-                      <p className="text-[11px] text-slate-400 truncate">{result.excerpt}</p>
-                    </div>
-                    <span
-                      className="px-2 py-0.5 text-[10px] font-mono uppercase rounded shrink-0 border"
-                      style={{
-                        backgroundColor: `${result.color}15`,
-                        borderColor: `${result.color}30`,
-                        color: result.color,
-                      }}
-                    >
-                      {result.categoryLabel}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Right: Quick Status Pill & Assistant Trigger */}
-        {!isCinema && (
-          <div className="pointer-events-auto flex items-center gap-2">
-            <button
-              onClick={() => onOpenChat()}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-300 backdrop-blur-xl text-xs font-semibold shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all group"
-              title="Open AI Assistant Chat"
-            >
-              <Bot className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline">AI Assistant</span>
-            </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0B1220]/80 border border-white/10 backdrop-blur-xl text-xs text-slate-300">
-              <span className="relative flex h-2 w-2">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
-                    telemetryData?.telemetry.executionState === "processing" ? "bg-amber-400 opacity-75" : "bg-emerald-400 opacity-75"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${
-                    telemetryData?.telemetry.executionState === "processing" ? "bg-amber-400" : "bg-emerald-400"
-                  }`}
-                />
-              </span>
-              <span className="font-mono text-[11px] capitalize">
-                {telemetryData?.telemetry.executionState || "Idle"}
+            {/* Animated Signal Pulse packet traveling between pods */}
+            <div className="spine-pulse hidden sm:flex absolute -top-[4px] items-center">
+              <span className="h-[1.5px] w-14 bg-gradient-to-r from-transparent via-cyan-400/50 to-cyan-300" />
+              <span className="relative -ml-1 h-2.5 w-2.5 rounded-full bg-cyan-200 shadow-[0_0_8px_#22d3ee,0_0_16px_rgba(6,182,212,0.85)]">
+                <span className="absolute inset-0 rounded-full bg-white opacity-70 animate-ping" />
               </span>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* 2. DISTINCT CORNER / PERIPHERAL CHROME BY TIER */}
-      {!isCinema && currentTier !== "core" && (
-        <>
-          {/* A. HOME TIER DISTINCT PERIPHERAL TICKER CARDS */}
-          {currentTier === "home" ? (
-            <div className="flex items-start justify-between w-full pointer-events-none gap-4 animate-in fade-in duration-300 my-auto">
-              {/* Top-Left Peripheral System Health Ticker */}
-              <div className="pointer-events-auto flex flex-col p-3 rounded-2xl bg-[#0B1220]/85 border border-cyan-500/25 backdrop-blur-2xl shadow-xl max-w-xs w-full space-y-2 text-xs">
-                <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    AI Core // Online
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 capitalize">
-                    {telemetryData?.telemetry.executionState || "Idle"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
-                  <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col">
-                    <span className="text-[9px] text-slate-400 uppercase">Pipelines</span>
-                    <span className="text-white font-bold text-sm">{telemetryData?.activeJobCount ?? 0} active</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col">
-                    <span className="text-[9px] text-slate-400 uppercase">MCP Tools</span>
-                    <span className="text-cyan-300 font-bold text-sm">{telemetryData?.mcp.totalConnected ?? 0} servers</span>
-                  </div>
-                </div>
-                {primaryModel && (
-                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-cyan-500/[0.04] border border-cyan-500/15 text-[10px] font-mono">
-                    <span className="text-slate-300 truncate max-w-[130px]" title={primaryModel.name}>
-                      {primaryModel.name}
-                    </span>
-                    <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {primaryModel.latencyMs ? `${primaryModel.latencyMs}ms` : "Active"}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Left-Side Operational Readiness / Channel Status Ticker */}
-              <div className="pointer-events-auto flex flex-col p-3.5 rounded-2xl bg-[#0B1220]/85 border border-white/10 backdrop-blur-2xl shadow-xl max-w-xs w-full space-y-2.5 text-xs text-slate-300">
-                <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                    Operational Pulse
-                  </span>
-                  <button
-                    onClick={onOpenBusinessHub}
-                    className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
-                  >
-                    Comms &rarr;
-                  </button>
-                </div>
-                <div className="space-y-1.5 font-mono text-[11px]">
-                  <div className="flex items-center justify-between text-slate-300">
-                    <span className="text-slate-400">Knowledge Nodes:</span>
-                    <span className="font-bold text-white">{allNodes.length} Verified</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-300">
-                    <span className="text-slate-400">Department Agents:</span>
-                    <span className="font-bold text-cyan-300">10 Active</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/5">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-mono border ${
-                      telemetryData?.mcp.connectors?.slack?.connected
-                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        : "bg-slate-800/40 text-slate-500 border-white/5"
-                    }`}
-                  >
-                    Slack
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-mono border ${
-                      telemetryData?.mcp.connectors?.notion?.connected
-                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        : "bg-slate-800/40 text-slate-500 border-white/5"
-                    }`}
-                  >
-                    Notion
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-mono border ${
-                      telemetryData?.mcp.connectors?.hubspot?.connected
-                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        : "bg-slate-800/40 text-slate-500 border-white/5"
-                    }`}
-                  >
-                    HubSpot
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* B. BRAIN & DASHBOARD FLOATING CORNER DOCKS */
-            <div className="flex items-end justify-between w-full pointer-events-none gap-4">
-              {/* Bottom-Left: Source / Category Filter Dock */}
-              <div className="pointer-events-auto flex flex-col p-3 rounded-2xl bg-[#0B1220]/80 border border-white/10 backdrop-blur-2xl shadow-xl max-w-xs w-full space-y-2">
-                <div className="flex items-center justify-between px-1 pb-1 border-b border-white/5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                    <Layers className="w-3 h-3 text-cyan-400" />
-                    Knowledge Sources
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    {allNodes.length} notes &bull; {categories.length} sources
-                  </span>
-                </div>
-
-                <div className="space-y-1 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
-                  {categories.map((cat) => {
-                    const isActive = activeCategories.has(cat.id);
-                    return (
-                      <div
-                        key={cat.id}
-                        className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all text-xs group"
-                      >
-                        <button
-                          onClick={() => onToggleCategory(cat.id)}
-                          className="flex items-center gap-2 min-w-0 text-left"
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
-                            style={{
-                              backgroundColor: cat.color,
-                              opacity: isActive ? 1 : 0.25,
-                            }}
-                          />
-                          <span className={`truncate text-xs ${isActive ? "text-slate-200" : "text-slate-500 line-through"}`}>
-                            {cat.label}
-                          </span>
-                        </button>
-
-                        <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-400 shrink-0">
-                          <span>{cat.count}</span>
-                          <button
-                            onClick={() => onSoloCategory(cat.id)}
-                            className="opacity-0 group-hover:opacity-100 text-[10px] px-1 rounded bg-white/10 hover:bg-white/20 text-slate-300 transition-opacity"
-                            title="Solo this source"
-                          >
-                            solo
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Bottom-Right: Live Telemetry & Quick MCP Dock */}
-              <div
-                className={`flex flex-col p-3.5 rounded-2xl bg-[#0B1220]/80 border border-white/10 backdrop-blur-2xl shadow-xl max-w-xs w-full space-y-2.5 text-xs text-slate-300 transition-all duration-300 ${
-                  isNoteOpen || isChatOpen ? "opacity-0 translate-x-4 pointer-events-none" : "opacity-100 translate-x-0 pointer-events-auto"
-                }`}
-              >
-                <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                    <Activity className="w-3 h-3 text-emerald-400" />
-                    Live Telemetry
-                  </span>
-                  <button
-                    onClick={onOpenBusinessHub}
-                    className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
-                  >
-                    Comms Hub &rarr;
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-center font-mono">
-                  <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 flex flex-col">
-                    <span className="text-base font-bold text-white">
-                      {telemetryData?.activeJobCount ?? 0}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Active Pipelines</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 flex flex-col">
-                    <span className="text-base font-bold text-cyan-300">
-                      {telemetryData?.mcp.totalConnected ?? 0}
-                    </span>
-                    <span className="text-[10px] text-slate-400">MCP Connectors</span>
-                  </div>
-                </div>
-
-                {primaryModel && (
-                  <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-mono">
-                    <span className="text-slate-400 truncate max-w-[120px]" title={primaryModel.name}>
-                      {primaryModel.name}
-                    </span>
-                    <span className="text-emerald-400 flex items-center gap-1 shrink-0">
-                      <CheckCircle2 className="w-3 h-3" />
-                      {primaryModel.latencyMs ? `${primaryModel.latencyMs}ms` : "Active"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* 3. BOTTOM AUDIO/FREQUENCY WAVEFORM DOCK (HOME TIER SPECIFIC) — hidden
-          once the chat drawer is open, since it duplicates that drawer's own
-          input once you're already looking at it. This is a "start talking"
-          quick-launch affordance, not a second parallel chat. */}
-      {!isCinema && currentTier === "home" && !isChatOpen && (
-        <div className="pointer-events-auto flex flex-col items-center justify-center gap-2.5 w-full max-w-xl mx-auto my-2 animate-in fade-in slide-in-from-bottom-3 duration-300">
-          {/* Audio Equalizer Waveform Bars */}
-          <div className="flex items-center justify-center gap-1 px-4 py-1.5 rounded-full bg-[#050b16]/70 border border-cyan-400/20 backdrop-blur-xl shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-            <Radio className="w-3 h-3 text-cyan-400 animate-pulse mr-1" />
-            <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-300/80 mr-2">
-              Neural Audio Resonance
-            </span>
-            <div className="flex items-center gap-[2px] h-3.5">
-              {[6, 12, 9, 16, 22, 14, 8, 18, 24, 16, 10, 20, 26, 15, 9, 18, 22, 14, 8, 12, 19, 11, 7].map((h, idx) => (
-                <span
-                  key={idx}
-                  className="w-[2px] rounded-full bg-cyan-400 animate-pulse"
-                  style={{
-                    height: `${h}px`,
-                    animationDuration: `${0.6 + (idx % 5) * 0.25}s`,
-                    animationDelay: `${idx * 0.04}s`,
-                    opacity: 0.4 + ((idx * 7) % 6) * 0.1,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Prompt Input Dock */}
-          <form
-            onSubmit={handleHomePromptSubmit}
-            className="relative flex items-center w-full max-w-md shadow-2xl"
-          >
-            <Bot className="absolute left-3.5 w-4 h-4 text-cyan-400 pointer-events-none" />
-            <input
-              type="text"
-              value={homePrompt}
-              onChange={(e) => setHomePrompt(e.target.value)}
-              placeholder="Ask GrowForge AI Assistant... [Press Enter or click Core]"
-              className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-[#050b16]/90 border border-cyan-400/40 focus:border-cyan-400 text-xs text-white placeholder-slate-400 backdrop-blur-2xl shadow-[0_0_25px_rgba(6,182,212,0.15)] focus:outline-none transition-all"
-            />
-            <button
-              type="submit"
-              className="absolute right-2 p-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all font-bold shadow-md shadow-cyan-500/30"
-              title="Send to AI Assistant"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* 4. FAST-TRAVEL BOTTOM DOCK & CINEMA/REPLAY CONTROLS */}
-      <div className="flex items-center justify-center gap-3 w-full pointer-events-auto">
-        {/* Fast-Travel Tier Switcher */}
-        <div className="flex items-center p-1.5 rounded-2xl bg-[#0B1220]/90 border border-white/10 backdrop-blur-2xl shadow-2xl space-x-1">
-          <button
-            onClick={() => onSelectTier("home")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              currentTier === "home"
-                ? "bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20"
-                : "text-slate-300 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span>Home</span>
-          </button>
-
-          <button
-            onClick={() => onSelectTier("brain")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              currentTier === "brain"
-                ? "bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold shadow-md shadow-pink-500/20"
-                : "text-slate-300 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>AI Brain</span>
-          </button>
-
-          <button
-            onClick={() => onSelectTier("dashboard")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              currentTier === "dashboard"
-                ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
-                : "text-slate-300 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Dashboard</span>
-          </button>
         </div>
 
-        {/* Drill-down from the Dashboard tier into CORE */}
-        {currentTier === "dashboard" && (
+        {/* LEFT INSTRUMENT: Brand Identity Anchor */}
+        <div className="pointer-events-auto relative flex items-center">
+          {/* Connector socket on the right side of Brand Pod */}
+          <span className="hidden md:flex pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 items-center z-20">
+            <span className="h-3 w-1.5 rounded-r-[2px] border-r border-y border-cyan-400/40 bg-[#050b14] shadow-[0_0_6px_rgba(34,211,238,0.25)]" />
+            <span className="h-1 w-1 -ml-0.5 rounded-full bg-cyan-400/80 shadow-[0_0_4px_#22d3ee]" />
+          </span>
+
           <button
             type="button"
-            onClick={onEnterCore}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-emerald-400/50 bg-emerald-500/15 backdrop-blur-2xl text-xs font-bold text-emerald-300 shadow-xl shadow-emerald-500/10 transition-all hover:bg-emerald-500/25 animate-in fade-in slide-in-from-bottom-2 duration-300"
-            title="Dive into CORE — the live execution pipeline"
+            onClick={() => selectSurface("core")}
+            className="group relative flex items-center gap-2.5 rounded-xl border border-white/10 ring-1 ring-cyan-500/10 bg-[#040813]/85 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-1px_0_rgba(6,182,212,0.15),0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition hover:border-cyan-400/40 hover:bg-[#071122]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+            aria-label="GrowForge CORE home"
           >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Enter CORE</span>
-            <span aria-hidden>&rarr;</span>
-          </button>
-        )}
+            {/* Top highlight line */}
+            <span className="pointer-events-none absolute inset-x-2 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
+            {/* Bottom subtle underglow edge */}
+            <span className="pointer-events-none absolute inset-x-3 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
+            {/* Chamfered corner brackets */}
+            <span className="pointer-events-none absolute top-1 left-1 h-1.5 w-1.5 border-t border-l border-cyan-400/40" />
+            <span className="pointer-events-none absolute bottom-1 right-1 h-1.5 w-1.5 border-b border-r border-cyan-400/40" />
 
-        {/* AI Assistant Chat Quick Button */}
-        <button
-          onClick={() => onOpenChat()}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border backdrop-blur-2xl text-xs font-medium transition-all shadow-xl ${
-            isChatOpen
-              ? "bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-cyan-500/30"
-              : "bg-[#0B1220]/90 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20"
-          }`}
-          title="Toggle AI Assistant Chat"
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>AI Chat</span>
-        </button>
-
-        {/* Growth Replay & Cinema Toggle */}
-        <div className="flex items-center p-1.5 rounded-2xl bg-[#0B1220]/90 border border-white/10 backdrop-blur-2xl shadow-2xl space-x-1.5">
-          <button
-            onClick={onToggleReplay}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              isReplaying
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                : "text-slate-300 hover:text-white hover:bg-white/5"
-            }`}
-            title="Play connectivity replay growth animation"
-          >
-            {isReplaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-            <span>{isReplaying ? `Replaying (${Math.round(replayTime)}s)` : "Play Demo"}</span>
-          </button>
-
-          {isReplaying && (
-            <button
-              onClick={onResetReplay}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Reset Replay"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          <button
-            onClick={onToggleCinema}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              isCinema
-                ? "bg-white/20 text-white border border-white/30"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-            title="Toggle Cinema presentation mode"
-          >
-            Cinema
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.4)] transition group-hover:shadow-[0_0_16px_rgba(6,182,212,0.6)]">
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-xs tracking-tight text-white leading-none">GrowForge</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-cyan-400/80 leading-none mt-0.5">AI OS</span>
+            </div>
           </button>
         </div>
-      </div>
+
+        {/* CENTER INSTRUMENT: Four-Environment Navigation Instrument (Viewport Centered) */}
+        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2 hidden md:flex items-center">
+          {/* Left connector socket */}
+          <span className="pointer-events-none absolute -left-2 top-1/2 -translate-y-1/2 flex items-center z-20">
+            <span className="h-1 w-1 rounded-full bg-cyan-400/80 shadow-[0_0_4px_#22d3ee]" />
+            <span className="h-3 w-1.5 -ml-0.5 rounded-l-[2px] border-l border-y border-cyan-400/40 bg-[#050b14] shadow-[0_0_6px_rgba(34,211,238,0.25)]" />
+          </span>
+
+          {/* Right connector socket */}
+          <span className="pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 flex items-center z-20">
+            <span className="h-3 w-1.5 -mr-0.5 rounded-r-[2px] border-r border-y border-cyan-400/40 bg-[#050b14] shadow-[0_0_6px_rgba(34,211,238,0.25)]" />
+            <span className="h-1 w-1 rounded-full bg-cyan-400/80 shadow-[0_0_4px_#22d3ee]" />
+          </span>
+
+          <nav
+            className="relative flex items-center gap-1 rounded-xl border border-white/12 ring-1 ring-cyan-500/15 bg-[#040813]/90 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(6,182,212,0.2),0_14px_36px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+            aria-label="Primary navigation"
+          >
+            {/* Top highlight edge */}
+            <span className="pointer-events-none absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/45 to-transparent" />
+            {/* Bottom underglow edge */}
+            <span className="pointer-events-none absolute inset-x-5 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+            {/* Corner brackets */}
+            <span className="pointer-events-none absolute top-1 left-1.5 h-1.5 w-1.5 border-t border-l border-cyan-400/40" />
+            <span className="pointer-events-none absolute top-1 right-1.5 h-1.5 w-1.5 border-t border-r border-cyan-400/40" />
+            <span className="pointer-events-none absolute bottom-1 left-1.5 h-1.5 w-1.5 border-b border-l border-cyan-400/40" />
+            <span className="pointer-events-none absolute bottom-1 right-1.5 h-1.5 w-1.5 border-b border-r border-cyan-400/40" />
+
+            {/* Center Nav Underside Detail: Floating Ventral Keel & Support Brackets */}
+            <div className="pointer-events-none absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1 z-20">
+              <span className="h-1 w-1 rotate-45 border border-cyan-400/50 bg-[#050b14]" />
+              <span className="h-[2px] w-20 rounded-full bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent shadow-[0_2px_8px_rgba(34,211,238,0.6)]" />
+              <span className="h-1 w-1 rotate-45 border border-cyan-400/50 bg-[#050b14]" />
+            </div>
+            {/* Downward diffused soft ambient glow */}
+            <div className="pointer-events-none absolute -bottom-2.5 left-1/2 -translate-x-1/2 h-3 w-36 -z-10 rounded-full bg-cyan-400/15 blur-sm" />
+
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              const active = surface === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => selectSurface(item.id)}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[background-color,border-color,box-shadow,filter,color] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 motion-reduce:transition-none ${
+                    active
+                      ? "bg-gradient-to-b from-cyan-200 via-cyan-300 to-cyan-400 text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_0_14px_rgba(34,211,238,0.45)] hover:brightness-110 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_0_22px_rgba(34,211,238,0.7)]"
+                      : "text-slate-300 hover:bg-white/10 hover:text-white hover:shadow-[0_0_10px_rgba(34,211,238,0.15)]"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* RIGHT INSTRUMENT: Settings & Persistent Assistant Controls */}
+        <div className="pointer-events-auto relative flex items-center">
+          {/* Connector socket on the left side of Right Pod */}
+          <span className="hidden md:flex pointer-events-none absolute -left-2 top-1/2 -translate-y-1/2 items-center z-20">
+            <span className="h-1 w-1 rounded-full bg-cyan-400/80 shadow-[0_0_4px_#22d3ee]" />
+            <span className="h-3 w-1.5 -ml-0.5 rounded-l-[2px] border-l border-y border-cyan-400/40 bg-[#050b14] shadow-[0_0_6px_rgba(34,211,238,0.25)]" />
+          </span>
+
+          <div className="relative flex items-center gap-1.5 rounded-xl border border-white/10 ring-1 ring-cyan-500/10 bg-[#040813]/85 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-1px_0_rgba(6,182,212,0.15),0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            {/* Top highlight line */}
+            <span className="pointer-events-none absolute inset-x-2 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent" />
+            {/* Bottom subtle underglow edge */}
+            <span className="pointer-events-none absolute inset-x-3 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent" />
+            {/* Corner brackets */}
+            <span className="pointer-events-none absolute top-1 right-1 h-1.5 w-1.5 border-t border-r border-cyan-400/40" />
+            <span className="pointer-events-none absolute bottom-1 left-1 h-1.5 w-1.5 border-b border-l border-cyan-400/40" />
+
+            <button
+              type="button"
+              onClick={() => openSettings()}
+              aria-label="Settings"
+              title="Settings"
+              className="grid h-8 w-8 place-items-center rounded-lg text-slate-300 transition duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+            >
+              <Settings2 className="h-4 w-4" />
+            </button>
+
+            {/* Inset panel divider */}
+            <span className="h-4 w-[1px] bg-white/10 mx-0.5" />
+
+            <button
+              type="button"
+              onClick={() => {
+                if (surface !== "core") onSelectTier("home");
+                setConversationView(conversationView === "expanded" ? "closed" : "expanded");
+              }}
+              aria-expanded={conversationView === "expanded"}
+              aria-controls="core-conversation"
+              aria-label="Toggle AI Assistant Conversation"
+              title="Toggle Assistant Conversation Workspace"
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 ${
+                conversationView !== "closed"
+                  ? "border-cyan-400 bg-cyan-500/25 text-white shadow-[0_0_12px_rgba(34,211,238,0.3)]"
+                  : "border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:border-cyan-400/50 hover:bg-cyan-500/20 hover:text-white"
+              }`}
+            >
+              <Bot className="h-3.5 w-3.5 text-cyan-300" />
+              <span className="hidden sm:inline">Assistant</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {surface === "core" && (
+        <CoreCommandCenter
+          telemetryData={telemetryData}
+          zoomProgress={coreZoomProgress}
+          conversationView={conversationView}
+          onConversationViewChange={setConversationView}
+          onOpenMissions={() => onSelectTier("core")}
+          onOpenSystems={() => openSettings("connectors")}
+          onOpenApprovals={() => setApprovalsOpen(true)}
+          useGpuCore={useGpuCore}
+          onListeningChange={onListeningChange}
+        />
+      )}
+
+      {surface === "brain" && (
+        <aside className="pointer-events-auto absolute bottom-24 left-3 top-24 flex w-[min(340px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#07101f]/92 shadow-2xl backdrop-blur-xl sm:left-5">
+          <div className="border-b border-white/10 p-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300">Knowledge architecture</p>
+            <h2 className="mt-1 text-xl font-semibold">Brain</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-400">Memory, departments, specialists, and the connected knowledge graph.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 border-b border-white/10 p-3">
+            <button onClick={openAgentRoster} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10"><strong className="block text-cyan-300">7</strong><span className="text-[10px] text-slate-400">Quick Agents</span></button>
+            <div className="rounded-xl bg-white/5 p-2"><strong className="block text-violet-300">8</strong><span className="text-[10px] text-slate-400">Departments</span></div>
+            <button onClick={openVaultLibrary} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10"><strong className="block text-amber-300">207</strong><span className="text-[10px] text-slate-400">Blueprints</span></button>
+          </div>
+          <div className="flex gap-2 p-3">
+            <button onClick={() => openUserProfile("profile")} className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs hover:bg-white/10"><CircleUserRound className="h-4 w-4" />Memory</button>
+            <button onClick={openVaultLibrary} className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs hover:bg-white/10"><Database className="h-4 w-4" />Library</button>
+          </div>
+          <div className="px-3 pb-2">
+            <button onClick={() => setSearchOpen((value) => !value)} className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300"><Search className="h-4 w-4" />Search knowledge <kbd className="ml-auto text-slate-500">/</kbd></button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 pb-3">
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-500">Graph layers</p>
+            <div className="flex flex-wrap gap-1.5">{categories.map((category) => (
+              <button key={category.id} onClick={() => onToggleCategory(category.id)} onDoubleClick={() => onSoloCategory(category.id)} className={`rounded-full border px-2 py-1 text-[10px] ${activeCategories.has(category.id) ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-200" : "border-white/10 text-slate-500"}`}>{category.label}</button>
+            ))}</div>
+          </div>
+          <div className="flex items-center gap-2 border-t border-white/10 p-3">
+            <button onClick={onToggleCinema} className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] ${isCinema ? "bg-cyan-400 text-slate-950" : "bg-white/5 text-slate-400"}`}><Film className="h-3.5 w-3.5" />Explore</button>
+            <button onClick={onResetReplay} className="rounded-lg bg-white/5 p-1.5 text-slate-400" aria-label="Reset view"><RotateCcw className="h-3.5 w-3.5" /></button>
+          </div>
+        </aside>
+      )}
+
+      {searchOpen && surface === "brain" && (
+        <div className="pointer-events-auto absolute left-1/2 top-24 w-[min(560px,92vw)] -translate-x-1/2 overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#07101f]/95 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-2 border-b border-white/10 p-3"><Search className="h-4 w-4 text-cyan-300" /><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search notes and knowledge…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-500" /><button onClick={() => setSearchOpen(false)}><X className="h-4 w-4" /></button></div>
+          <div className="max-h-80 overflow-y-auto p-2">{results.map((node) => <button key={node.id} onClick={() => { onSelectNode(node); setSearchOpen(false); }} className="block w-full rounded-xl p-3 text-left hover:bg-white/5"><span className="block text-sm font-medium text-white">{node.title}</span><span className="mt-1 line-clamp-2 text-xs text-slate-400">{node.excerpt}</span></button>)}{query && results.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No matching knowledge found.</p>}</div>
+        </div>
+      )}
+
+      <ApprovalBanner isOpen={approvalsOpen} onClose={() => setApprovalsOpen(false)} />
+      <button ref={approvalsRef} type="button" onClick={() => setApprovalsOpen(true)} aria-label="Open approvals"
+        className="mobile-approvals pointer-events-auto absolute right-3 rounded-lg border border-amber-400/25 bg-[#07101f]/90 px-3 py-2 text-xs text-amber-200 lg:hidden">
+        Approvals{telemetryData?.pendingApprovals !== undefined ? " · " + telemetryData.pendingApprovals : ""}
+      </button>
+      <nav
+        ref={navRef}
+        className="spatial-mobile-nav pointer-events-auto absolute inset-x-3 bottom-3 z-40 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#07101f]/95 p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.6)] backdrop-blur-xl md:hidden"
+        aria-label="Primary navigation"
+      >
+        {NAV.map((item) => {
+          const Icon = item.icon;
+          const active = surface === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => selectSurface(item.id)}
+              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-semibold transition ${
+                active ? "bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.5)]" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }

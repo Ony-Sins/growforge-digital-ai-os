@@ -281,7 +281,7 @@ Rules:
     updateJob(job.id, {
       title: plan.title,
       steps,
-      planSnapshot: { title: plan.title, assignments: plan.assignments },
+      planSnapshot: { title: plan.title, researchQuestions: plan.researchQuestions, assignments: plan.assignments },
     });
 
     updateStep(job.id, "plan", {
@@ -667,7 +667,7 @@ export async function resumePipeline(jobId: string): Promise<void> {
 
   const plan: Plan =
     stepStatus("plan") === "done"
-      ? { ...getJob(jobId)!.planSnapshot!, researchQuestions: [] }
+      ? getJob(jobId)!.planSnapshot!
       : await runPlanStage(getJob(jobId)!);
 
   const dossier: Dossier =
@@ -676,13 +676,16 @@ export async function resumePipeline(jobId: string): Promise<void> {
   const pendingAssignments = plan.assignments.filter((a) => stepStatus(`dept:${a.departmentId}`) === "pending");
   updateStep(jobId, "reconcile", { activity: `Waiting for ${plan.assignments.length} department drafts` });
   logJobStateChange(getJob(jobId)!);
-  const freshDrafts = pendingAssignments.length > 0 ? await runDepartmentsStage(jobId, pendingAssignments) : [];
+  if (pendingAssignments.length > 0) await runDepartmentsStage(jobId, pendingAssignments);
 
   const reusedDrafts: Draft[] = getJob(jobId)!
     .steps.filter((s): s is JobStep & { departmentId: string } => s.kind === "department" && s.status === "done" && !!s.output)
     .map((s) => ({ departmentId: s.departmentId, name: getDepartment(s.departmentId)!.name, output: s.output! }));
-  const drafts = [...reusedDrafts, ...freshDrafts];
-  if (drafts.length === 0) throw new Error("Every department failed to produce a draft.");
+  const drafts = reusedDrafts;
+  const missingDrafts = plan.assignments.filter((assignment) => !drafts.some((draft) => draft.departmentId === assignment.departmentId));
+  if (missingDrafts.length > 0) {
+    throw new Error(`Department execution failed: ${missingDrafts.map((assignment) => getDepartment(assignment.departmentId)?.name ?? assignment.departmentId).join(", ")} did not produce a draft.`);
+  }
 
   const review = stepStatus("reconcile") === "pending" ? await runReconcileStage(jobId, drafts, dossier) : getJob(jobId)!.steps.find((s) => s.id === "reconcile")!.output!;
   const qa = stepStatus("qa") === "pending" ? await runQaStage(jobId, drafts, review, dossier) : getJob(jobId)!.steps.find((s) => s.id === "qa")!.output!;

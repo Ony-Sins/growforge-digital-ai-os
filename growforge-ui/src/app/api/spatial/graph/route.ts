@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { loadSpatialGraph } from "@/lib/spatial/obsidianReader";
-import { getSession } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 
 export async function GET() {
   try {
     const session = await getSession();
-    // Public preview or authenticated user both get read access to the system graph topology
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (isPublicPreviewVisitor(session)) {
+      return NextResponse.json({ error: "Not available in public preview." }, { status: 403 });
+    }
     const graphData = await loadSpatialGraph();
     return NextResponse.json({
       ok: true,

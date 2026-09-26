@@ -131,7 +131,7 @@ function ExecutionCard({ dispatch }: { dispatch: DispatchInfo }) {
 }
 
 const WELCOME_CONTENT =
-  "Hi, I'm the GrowForge AI Assistant. Describe a project in plain language (in any language), and I'll ask the right questions, confirm what I understood, then hand it to the departments. You can watch them work live under **Live Projects**.\n\nTry: *\"My client just started a roofing business and needs a complete plan to get real leads and grow.\"*";
+  "Command channel open. Tell me what you want to accomplish, and I’ll turn it into a clear mission.";
 
 export interface ChatViewProps {
   embedded?: boolean;
@@ -166,9 +166,27 @@ export function ChatView({ embedded = false, onClose, className = "", initialPro
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setMessages([
+    let initialList: ChatMessageUI[] = [
       { id: nextId++, role: "assistant", content: WELCOME_CONTENT, timestamp: new Date().toISOString() },
-    ]);
+    ];
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("growforge.chat.history");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            initialList = parsed.map((m: { role?: "user" | "assistant"; content?: string; timestamp?: string; provider?: string }) => ({
+              id: nextId++,
+              role: (m.role === "user" || m.role === "assistant" ? m.role : "assistant") as "user" | "assistant",
+              content: m.content || "",
+              timestamp: m.timestamp || new Date().toISOString(),
+              provider: m.provider,
+            }));
+          }
+        }
+      } catch {}
+    }
+    setMessages(initialList);
   }, []);
 
   useEffect(() => {
@@ -365,23 +383,28 @@ export function ChatView({ embedded = false, onClose, className = "", initialPro
       }
 
       const assistantId = nextId++;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantId,
-          role: "assistant",
-          content: data.reply,
-          timestamp: new Date().toISOString(),
-          provider: data.provider,
-          media: data.media ?? (data.imageUrl ? [{ type: "image", url: data.imageUrl }] : undefined),
-          dispatch: data.dispatch ?? null,
-          dispatchError: data.dispatchError,
-          locked: data.locked ?? null,
-          handoff: data.handoff ?? null,
-          confirmBrief: data.mode === "confirm" ? data.brief : null,
-          job: data.job ?? null,
-        },
-      ]);
+      const assistantMessage: ChatMessageUI = {
+        id: assistantId,
+        role: "assistant",
+        content: data.reply,
+        timestamp: new Date().toISOString(),
+        provider: data.provider,
+        media: data.media ?? (data.imageUrl ? [{ type: "image", url: data.imageUrl }] : undefined),
+        dispatch: data.dispatch ?? null,
+        dispatchError: data.dispatchError,
+        locked: data.locked ?? null,
+        handoff: data.handoff ?? null,
+        confirmBrief: data.mode === "confirm" ? data.brief : null,
+        job: data.job ?? null,
+      };
+
+      setMessages((prev) => {
+        const nextList = [...prev, assistantMessage];
+        if (typeof window !== "undefined") {
+          localStorage.setItem("growforge.chat.history", JSON.stringify(nextList.map((m) => ({ role: m.role, content: m.content, timestamp: m.timestamp, provider: m.provider }))));
+        }
+        return nextList;
+      });
 
       if (data.mode === "confirm" && data.brief) {
         setPendingBrief(data.brief);
