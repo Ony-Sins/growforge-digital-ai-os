@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { removeSecret } from "@/lib/serverVault";
 import { deleteAiModel, archiveAiModel, getAiModel } from "@/lib/aiModelStore";
@@ -12,6 +12,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ provi
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (isPublicPreviewVisitor(session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json(
+      { error: "Forbidden. Authoritative owner authorization required to delete system vault credentials or models." },
+      { status: 403 }
+    );
   }
 
   const { provider } = await params;

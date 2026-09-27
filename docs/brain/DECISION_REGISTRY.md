@@ -687,3 +687,156 @@
   
   ### Contradictions
   1. **Ad Spend vs. Budget Priorities**: The document suggests prioritizing lead generation over direct conversions, yet the ad spend allocation implies
+
+### Decision: HQ Assigned 7 Departments for "GrowForge Digital - NA Tech Startup & Enterprise Engagement"
+- **Recorded:** 2026-09-27T02:35:48.097Z
+- **Department/Context:** GrowForge HQ · Job job-muj7h43j-vk6x
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Identify local lead sources and opportunities
+  - **Marketing & Brand Strategy**: Develop targeted marketing and content strategy
+  - **Finance & Operations**: Create budget and financial projections
+  - **Client Success & Program Management**: Draft project plans and timelines
+  - **Product Architecture & UX**: Create optimized website/landing pages
+  - **Web Development & Engineering**: Implement technical solutions
+  - **AI Systems & Intelligent Automation**: Implement automation and CRM workflows
+
+### Decision: Automatic Crash Recovery for Job job-muj7h43j-vk6x
+- **Recorded:** 2026-09-27T02:35:57.897Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 27% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research].
+
+### Decision: Automatic Crash Recovery for Job job-muj7h43j-vk6x
+- **Recorded:** 2026-09-27T02:36:14.996Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 30% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research].
+
+### Decision: Automatic Crash Recovery for Job job-muj7h43j-vk6x
+- **Recorded:** 2026-09-27T02:39:44.662Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 60% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research, dept:sales-bd, dept:web-design, dept:web-dev].
+
+### Decision: Automatic Crash Recovery for Job job-muj7h43j-vk6x
+- **Recorded:** 2026-09-27T02:39:52.846Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 60% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research, dept:sales-bd, dept:web-design, dept:web-dev].
+
+### Decision: Automatic Crash Recovery for Job job-muj7h43j-vk6x
+- **Recorded:** 2026-09-27T02:39:57.958Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 60% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research, dept:sales-bd, dept:web-design, dept:web-dev].
+
+### Decision: HQ Assigned 7 Departments for "P&E Flooring Solutions: Tech Stack Expansion"
+- **Recorded:** 2026-09-27T02:41:04.056Z
+- **Department/Context:** GrowForge HQ · Job job-muj7mm3a-2c2d
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Define ICP for tech startups
+  - **Marketing & Brand Strategy**: Create brand positioning
+  - **Growth & Demand**: Research ad targeting and bidding strategy
+  - **Finance & Operations**: Propose service pricing model
+  - **Client Success & Program Management**: Outline project milestones
+  - **Web Development & Engineering**: Build optimized website
+  - **AI Systems & Intelligent Automation**: Create CRM workflows
+
+### Decision: Automatic Crash Recovery for Job job-muj7mm3a-2c2d
+- **Recorded:** 2026-09-27T02:41:08.328Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 22% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan].
+
+### Decision: Automatic Crash Recovery for Job job-muj7mm3a-2c2d
+- **Recorded:** 2026-09-27T02:41:24.828Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 28% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan, research].
+
+### Decision: Automatic Crash Recovery for Job job-muj7mm3a-2c2d
+- **Recorded:** 2026-09-27T02:41:34.867Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 19% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, research].
+
+### Decision: HQ Assigned 5 Departments for "AI Solutions for P&E Flooring Solutions - North America"
+- **Recorded:** 2026-09-27T02:42:05.958Z
+- **Department/Context:** GrowForge HQ · Job job-muj7mm3a-2c2d
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Mapping local lead sources
+  - **Product Architecture & UX**: UX optimization for landing pages
+  - **Web Development & Engineering**: Website build
+  - **AI Systems & Intelligent Automation**: CRM workflow setup
+  - **Client Success & Program Management**: Project sequencing
+
+### Decision: Automatic Crash Recovery for Job job-muj7mm3a-2c2d
+- **Recorded:** 2026-09-27T02:42:19.075Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 18% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, research].
+
+### Decision: Automatic Crash Recovery for Job job-muj7mm3a-2c2d
+- **Recorded:** 2026-09-27T02:42:22.054Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 24% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, research].
+
+### Decision: HQ Assigned 8 Departments for "AI Solutions for P&E Flooring Solutions"
+- **Recorded:** 2026-09-27T02:43:46.628Z
+- **Department/Context:** GrowForge HQ · Job job-muj7mm3a-2c2d
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Identify local lead sources
+  - **Marketing & Brand Strategy**: Develop brand positioning
+  - **Growth & Demand**: Optimize ad targeting
+  - **Finance & Operations**: Create pricing model
+  - **Client Success & Program Management**: Set up project milestones
+  - **Product Architecture & UX**: Design landing page
+  - **Web Development & Engineering**: Build client website
+  - **AI Systems & Intelligent Automation**: Implement AI integrations
+
+### Decision: HQ Assigned 4 Departments for "GrowForge Digital Client Engagement: Tech Startup AI Solutio"
+- **Recorded:** 2026-09-27T02:44:34.841Z
+- **Department/Context:** GrowForge HQ · Job job-muj7mm3a-2c2d
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Identify local lead sources and opportunities
+  - **Marketing & Brand Strategy**: Develop targeted marketing strategy and content
+  - **AI Systems & Intelligent Automation**: Develop AI-driven lead follow-up systems
+  - **Client Success & Program Management**: Plan project milestones and coordination
+
+### Decision: HQ Assigned 8 Departments for "AI Solutions for Global Tech Startups"
+- **Recorded:** 2026-09-27T02:47:50.316Z
+- **Department/Context:** GrowForge HQ · Job job-muj7mm3a-2c2d
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Research ICP and competitor landscape
+  - **Marketing & Brand Strategy**: Develop marketing strategy and messaging
+  - **Growth & Demand**: Create lead generation campaigns
+  - **Finance & Operations**: Create pricing and budget proposals
+  - **Client Success & Program Management**: Define project milestones and timelines
+  - **Product Architecture & UX**: Design optimized website and landing pages
+  - **Web Development & Engineering**: Develop and integrate tech stack
+  - **AI Systems & Intelligent Automation**: Implement AI tools and lead follow-up systems
+
+### Decision: HQ Assigned 7 Departments for "AI Agency Launch & Growth Plan"
+- **Recorded:** 2026-09-27T03:09:15.660Z
+- **Department/Context:** GrowForge HQ · Job job-muj8og2f-wjb4
+- **Agreed Resolution & Direction:**
+  - **Strategy & Intelligence**: Market research and competitor analysis for AI services
+  - **Marketing & Brand Strategy**: Develop organic growth marketing strategy and content calendar
+  - **Finance & Operations**: Create pricing model, unit economics, KPI dashboard
+  - **Client Success & Program Management**: Project plan, milestones, quarterly review schedule
+  - **Product Architecture & UX**: Design lightweight website architecture and UX for GitHub Pages
+  - **Web Development & Engineering**: Build and deploy website on GitHub Pages with free tools
+  - **AI Systems & Intelligent Automation**: Set up free‑tool automation for lead capture and KPI reporting
+
+### Decision: Automatic Crash Recovery for Job job-muj8og2f-wjb4
+- **Recorded:** 2026-09-27T03:11:33.709Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 10% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan].
+
+### Decision: Automatic Crash Recovery for Job job-muj8og2f-wjb4
+- **Recorded:** 2026-09-27T03:13:49.480Z
+- **Department/Context:** Durable Dispatch Engine · Process restart detected with job in state "running" at 10% completion
+- **Agreed Resolution & Direction:**
+  Durable execution engine automatically restored job context and resumed pipeline execution without data loss. Reused finished steps: [brief, plan].

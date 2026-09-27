@@ -1,5 +1,5 @@
 import type { ChatMessage, GenerationOptions } from "@/lib/llm";
-import { LlmError } from "@/lib/llm";
+import { LlmError, getOllamaTimeoutMs } from "@/lib/llm";
 
 /**
  * Dynamic Model Router (src/lib/model-router.ts)
@@ -330,7 +330,7 @@ export async function callOpenRouterWithFallback(
  *  (better quality when free-tier quota allows it) then falls back local. */
 export type VisionStrategy = "auto" | "local" | "cloud";
 
-async function callOpenRouterVision(
+export async function callOpenRouterVision(
   imageBase64: string,
   mimeType: string,
   prompt: string,
@@ -398,51 +398,70 @@ async function callOpenRouterVision(
 async function callOllamaVision(imageBase64: string, prompt: string): Promise<{ text: string; modelUsed: string }> {
   const baseUrl = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
   const model = process.env.OLLAMA_VISION_MODEL || "llava";
+  const timeoutMs = getOllamaTimeoutMs();
 
-  const res = await fetch(`${baseUrl}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      messages: [{ role: "user", content: prompt, images: [imageBase64] }],
-    }),
-  });
-  if (!res.ok) throw new LlmError(`Local Ollama vision model "${model}" failed (HTTP ${res.status}) — is it pulled? Try: ollama pull ${model}`, "ollama");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const data = (await res.json()) as { message?: { content?: string }; error?: string };
-  if (data.error) throw new LlmError(`Local Ollama vision model "${model}" error: ${data.error} — is it pulled? Try: ollama pull ${model}`, "ollama");
-  const text = data.message?.content ?? "";
-  if (!text.trim()) throw new LlmError(`Local Ollama vision model "${model}" returned an empty response.`, "ollama");
-  return { text, modelUsed: `ollama/${model}` };
+  try {
+    const res = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [{ role: "user", content: prompt, images: [imageBase64] }],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!res.ok) throw new LlmError(`Local Ollama vision model "${model}" failed (HTTP ${res.status}) — is it pulled? Try: ollama pull ${model}`, "ollama");
+
+    const data = (await res.json()) as { message?: { content?: string }; error?: string };
+    if (data.error) throw new LlmError(`Local Ollama vision model "${model}" error: ${data.error} — is it pulled? Try: ollama pull ${model}`, "ollama");
+    const text = data.message?.content ?? "";
+    if (!text.trim()) throw new LlmError(`Local Ollama vision model "${model}" returned an empty response.`, "ollama");
+    return { text, modelUsed: `ollama/${model}` };
+  } catch (err) {
+    clearTimeout(timer);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new LlmError(`Local Ollama vision request timed out after ${timeoutMs / 1000}s.`, "ollama");
+    }
+    throw err;
+  }
 }
 
-/** Describes an image for the brief-intake chat: what's in it, any visible
- *  text/branding/pricing, and anything strategically relevant. Tries the
- *  path(s) implied by `strategy`, falling through to the other when one
- *  fails, so a rate-limited OpenRouter model or an unpulled local model
- *  doesn't just dead-end the upload. */
+/**
+ * Describes an image for the brief-intake chat: what's in it, any visible
+ * text/branding/pricing, and anything strategically relevant.
+ *
+ * CEO Policy for this milestone:
+ * - Prefer an operational local Ollama vision model.
+ * - Cloud vision APIs (OpenRouter / external services) are DISABLED by default.
+ * - Stored keys, :free suffixes, or auto-routing do not authorize cloud execution.
+ * - When local Ollama vision fails, returns an honest error without calling cloud APIs.
+ */
 export async function analyzeImageWithFallback(
   imageBase64: string,
-  mimeType: string,
-  openRouterKey: string | null,
-  strategy: VisionStrategy,
+  _mimeType: string,
+  _openRouterKey: string | null,
+  _strategy: VisionStrategy,
 ): Promise<{ text: string; modelUsed: string }> {
+  void _mimeType;
+  void _openRouterKey;
+  void _strategy;
   const prompt =
     "Describe this image for a business growth/marketing team: what it shows, any visible text, branding, " +
     "pricing, product/service details, or competitor/storefront context. Be specific and concise — bullet points, no preamble.";
 
-  const attempts: (() => Promise<{ text: string; modelUsed: string }>)[] = [];
-  if (strategy !== "local" && openRouterKey) attempts.push(() => callOpenRouterVision(imageBase64, mimeType, prompt, openRouterKey));
-  if (strategy !== "cloud") attempts.push(() => callOllamaVision(imageBase64, prompt));
-
-  const errors: string[] = [];
-  for (const attempt of attempts) {
-    try {
-      return await attempt();
-    } catch (err) {
-      errors.push(err instanceof Error ? err.message : String(err));
-    }
+  // Zero-spend boundary: Only local Ollama vision is executed by default.
+  try {
+    return await callOllamaVision(imageBase64, prompt);
+  } catch (err) {
+    throw new LlmError(
+      `Local Ollama vision unavailable (${err instanceof Error ? err.message : String(err)}). Cloud vision APIs are disabled under strict zero-spend policy.`,
+      "ollama",
+    );
   }
-  throw new LlmError(`Image analysis unavailable:\n${errors.join("\n") || "no vision path configured"}`, "none");
 }

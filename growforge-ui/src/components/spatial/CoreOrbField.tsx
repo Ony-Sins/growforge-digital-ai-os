@@ -38,10 +38,10 @@ while (DUST.length < 380) {
 
 // 4 normalized hero stars placed unevenly across the UI, away from the core
 const HERO_STARS = [
-  { x: 0.26, y: 0.23, r: 2.8 },
-  { x: 0.74, y: 0.28, r: 2.4 },
-  { x: 0.15, y: 0.64, r: 2.3 },
-  { x: 0.89, y: 0.84, r: 2.2 },
+  { x: 0.22, y: 0.2, r: 1.5 },
+  { x: 0.78, y: 0.31, r: 1.3 },
+  { x: 0.14, y: 0.68, r: 1.35 },
+  { x: 0.87, y: 0.8, r: 1.2 },
 ].map((s, i) => ({ ...s, ph: i * 1.7, sp: 0.5 + (i % 4) * 0.25 }));
 
 const SPHERE_COUNT = 1800;

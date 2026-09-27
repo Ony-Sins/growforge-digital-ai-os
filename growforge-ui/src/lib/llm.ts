@@ -21,6 +21,9 @@
  * its display metadata to `CLOUD_PROVIDERS` — nothing else needs to change.
  */
 
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { getSecretForServerUse } from "@/lib/serverVault";
 import { classifyTask, callOpenRouterWithFallback } from "@/lib/model-router";
 import type { UsageRecord } from "@/lib/usage";
@@ -126,10 +129,57 @@ export function jobPrefersCloud(): boolean {
 function resolveApiKey(provider: CloudProvider): string | null {
   const fromVault = getSecretForServerUse(SYSTEM_VAULT_ID, provider);
   if (fromVault) return fromVault;
-  return process.env[CLOUD_PROVIDERS[provider].envKey] || null;
+  const envVal = process.env[CLOUD_PROVIDERS[provider].envKey];
+  if (envVal) return envVal;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const modelsPath = path.join(process.cwd(), "data", "ai_models.json");
+    if (fs.existsSync(modelsPath)) {
+      const raw = fs.readFileSync(modelsPath, "utf8");
+      const models = JSON.parse(raw);
+      if (Array.isArray(models)) {
+        const entry = models.find(
+          (m: { providerType?: string; id?: string }) =>
+            m.providerType === provider || m.id === `${provider}-default` || m.id === provider,
+        );
+        if (entry?.id) {
+          const modelKey = getSecretForServerUse(SYSTEM_VAULT_ID, `model_${entry.id}`);
+          if (modelKey) return modelKey;
+        }
+      }
+    }
+  } catch {}
+
+  return null;
 }
 
-function resolveModel(provider: CloudProvider): string {
+export function resolveModel(provider: CloudProvider): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const modelsPath = path.join(process.cwd(), "data", "ai_models.json");
+    if (fs.existsSync(modelsPath)) {
+      const raw = fs.readFileSync(modelsPath, "utf8");
+      const models = JSON.parse(raw);
+      if (Array.isArray(models)) {
+        const entry = models.find(
+          (m: { providerType?: string; id?: string; modelName?: string; status?: string }) =>
+            (m.providerType === provider || m.id === `${provider}-default` || m.id === provider) &&
+            m.modelName &&
+            m.status !== "archived" &&
+            m.status !== "disconnected",
+        );
+        if (entry?.modelName) return entry.modelName;
+      }
+    }
+  } catch {}
+
   const { envModel, defaultModel } = CLOUD_PROVIDERS[provider];
   return process.env[envModel] || defaultModel;
 }
@@ -148,21 +198,9 @@ export function hasKey(provider: CloudProvider): boolean {
   return Boolean(resolveApiKey(provider));
 }
 
-function cloudProviderOrder(): LlmProvider[] {
-  return (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).filter(hasKey);
-}
-
-/** Which providers to try, in order, for the current strategy. */
-export function providerOrder(strategy: LlmStrategy = getStrategy()): LlmProvider[] {
-  switch (strategy) {
-    case "local":
-      return ["ollama"];
-    case "cloud":
-      return ["omniroute", ...cloudProviderOrder()];
-    case "auto":
-    default:
-      return ["omniroute", "ollama", ...cloudProviderOrder()];
-  }
+/** Which providers to try, in order, for the current strategy. Single authoritative resolver. */
+export function providerOrder(): LlmProvider[] {
+  return getEffectiveRoutingChain().chain;
 }
 
 interface GeminiResponse {
@@ -424,12 +462,21 @@ interface OllamaResponse {
   choices?: { message?: { content?: string } }[];
 }
 
+export function getOllamaTimeoutMs(): number {
+  const envVal = process.env.OLLAMA_TIMEOUT_MS ? parseInt(process.env.OLLAMA_TIMEOUT_MS, 10) : NaN;
+  if (!isNaN(envVal) && envVal >= 5000 && envVal <= 180000) {
+    return envVal;
+  }
+  return 45000; // 45s default accommodates local cold-start model weights loading while bounding hangs
+}
+
 async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: GenerationOptions = {}): Promise<ProviderResult> {
   const { baseUrl: rawBaseUrl, model } = resolveOllamaConfig();
   const cleanUrl = (rawBaseUrl || "http://localhost:11434/v1").trim().replace(/\/+$/, "");
   const baseWithoutV1 = cleanUrl.replace(/\/v1$/, "");
   const isV1 = cleanUrl.endsWith("/v1") || cleanUrl.includes("/v1");
   const v1Endpoint = isV1 ? `${cleanUrl}/chat/completions` : `${cleanUrl}/v1/chat/completions`;
+  const nativeEndpoint = `${baseWithoutV1}/api/chat`;
 
   const formattedMessages = [
     { role: "system", content: systemPrompt },
@@ -438,62 +485,88 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
 
   let text = "";
   let rawUsage: RawUsage = { inputTokens: null, outputTokens: null };
+  const totalTimeoutMs = getOllamaTimeoutMs();
+  const startTime = Date.now();
+  const getRemainingTimeout = () => Math.max(1000, totalTimeoutMs - (Date.now() - startTime));
 
-  // Attempt 1: Standard OpenAI-compatible format (/v1/chat/completions)
+  // Attempt 1: Native Ollama /api/chat (fastest, direct token counts, native to all Ollama installs)
+  const ctrl1 = new AbortController();
+  const timeout1 = getRemainingTimeout();
+  const t1 = setTimeout(() => ctrl1.abort(), timeout1);
+  let attempt1Error: string | null = null;
   try {
-    const res = await fetch(v1Endpoint, {
+    const res = await fetch(nativeEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        messages: formattedMessages,
         stream: false,
-        ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
+        ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
+        messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
       }),
+      signal: ctrl1.signal,
     });
+    clearTimeout(t1);
 
     if (res.ok) {
-      const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
-      text = data.choices?.[0]?.message?.content ?? "";
-      if (data.usage) {
-        rawUsage = { inputTokens: data.usage.prompt_tokens ?? null, outputTokens: data.usage.completion_tokens ?? null };
-      }
+      const data = (await res.json()) as OllamaResponse & { prompt_eval_count?: number; eval_count?: number };
+      text = data.message?.content ?? "";
+      rawUsage = {
+        inputTokens: data.prompt_eval_count ?? null,
+        outputTokens: data.eval_count ?? null,
+      };
+    } else {
+      attempt1Error = `native /api/chat returned ${res.status}`;
     }
-  } catch {
-    // Fall back to native /api/chat
+  } catch (err) {
+    clearTimeout(t1);
+    attempt1Error = err instanceof Error ? err.message : String(err);
+    if (Date.now() - startTime >= totalTimeoutMs) {
+      throw new LlmError(
+        `Local Ollama request timed out after ${totalTimeoutMs / 1000}s. Ensure the local model is loaded and responsive.`,
+        "ollama",
+        "OLLAMA_OFFLINE",
+      );
+    }
   }
 
-  // Attempt 2: Native Ollama /api/chat fallback
+  // Attempt 2: Fallback to OpenAI-compatible format (/v1/chat/completions) with remaining timeout
   if (!text) {
+    const remainingTime = getRemainingTimeout();
+    const ctrl2 = new AbortController();
+    const t2 = setTimeout(() => ctrl2.abort(), remainingTime);
     try {
-      const nativeEndpoint = `${baseWithoutV1}/api/chat`;
-      const res = await fetch(nativeEndpoint, {
+      const res = await fetch(v1Endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model,
+          messages: formattedMessages,
           stream: false,
-          ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
-          messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
+          ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
         }),
+        signal: ctrl2.signal,
       });
+      clearTimeout(t2);
 
       if (res.ok) {
-        const data = (await res.json()) as OllamaResponse & { prompt_eval_count?: number; eval_count?: number };
-        text = data.message?.content ?? "";
-        // Ollama's native API returns prompt_eval_count and eval_count at the top level
-        rawUsage = {
-          inputTokens: data.prompt_eval_count ?? null,
-          outputTokens: data.eval_count ?? null,
-        };
+        const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+        text = data.choices?.[0]?.message?.content ?? "";
+        if (data.usage) {
+          rawUsage = { inputTokens: data.usage.prompt_tokens ?? null, outputTokens: data.usage.completion_tokens ?? null };
+        }
       } else {
         const errText = await res.text().catch(() => "");
         throw new LlmError(`Ollama request failed (${res.status}): ${errText.slice(0, 160)}`, "ollama", "OLLAMA_OFFLINE");
       }
     } catch (err) {
+      clearTimeout(t2);
       if (err instanceof LlmError) throw err;
+      const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
       throw new LlmError(
-        `Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.`,
+        isTimeout
+          ? `Local Ollama request timed out after ${totalTimeoutMs / 1000}s. Ensure the local model is loaded and responsive.`
+          : `Local Ollama is offline (Attempt 1: ${attempt1Error ?? "failed"}; Attempt 2: ${err instanceof Error ? err.message : String(err)}). Spin up your local Ollama instance for 100% free execution, or configure an approved free route in Settings.`,
         "ollama",
         "OLLAMA_OFFLINE",
       );
@@ -511,25 +584,70 @@ interface OmniRouteResponse {
   error?: { message?: string };
 }
 
+function resolveOmniRouteConfig(): { baseUrl: string; model: string; apiKey: string | null } {
+  const envUrl = process.env.OMNIROUTE_BASE_URL;
+  const envModel = process.env.OMNIROUTE_MODEL;
+  const envKey = process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_TOKEN || null;
+
+  try {
+    // Dynamic import to prevent cyclic module dependency
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const modelsPath = path.join(process.cwd(), "data", "ai_models.json");
+    if (fs.existsSync(modelsPath)) {
+      const raw = fs.readFileSync(modelsPath, "utf8");
+      const models = JSON.parse(raw);
+      if (Array.isArray(models)) {
+        const omniModel = models.find(
+          (m: { providerType?: string; id?: string; modelName?: string; baseUrl?: string }) =>
+            m.providerType === "omniroute" || m.id === "omniroute-default" || m.id?.includes("omniroute"),
+        );
+        if (omniModel) {
+          const secretKey = omniModel.id === "omniroute-default" ? "omniroute" : `model_${omniModel.id}`;
+          const vaultKey = getSecretForServerUse(SYSTEM_VAULT_ID, secretKey);
+          return {
+            baseUrl: (omniModel.baseUrl || envUrl || "http://localhost:20128").trim().replace(/\/+$/, ""),
+            model: (omniModel.modelName || envModel || "auto").trim(),
+            apiKey: vaultKey || envKey,
+          };
+        }
+      }
+    }
+  } catch {}
+
+  const vaultKey = getSecretForServerUse(SYSTEM_VAULT_ID, "omniroute");
+  return {
+    baseUrl: (envUrl || "http://localhost:20128").trim().replace(/\/+$/, ""),
+    model: (envModel || "auto").trim(),
+    apiKey: vaultKey || envKey,
+  };
+}
+
 async function callOmniRoute(
   systemPrompt: string,
   messages: ChatMessage[],
   opts: GenerationOptions = {},
 ): Promise<ProviderResult> {
-  const baseUrl = (process.env.OMNIROUTE_BASE_URL || "http://localhost:20128").replace(/\/+$/, "");
-  const model = process.env.OMNIROUTE_MODEL || "auto";
+  const { baseUrl, model, apiKey } = resolveOmniRouteConfig();
   const endpoint = baseUrl.endsWith("/v1") ? `${baseUrl}/chat/completions` : `${baseUrl}/v1/chat/completions`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout for rapid failover
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (apiKey) {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+  }
+
   let res: Response;
   try {
     res = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         model,
         temperature: 0.4,
@@ -541,11 +659,20 @@ async function callOmniRoute(
   } catch (err) {
     clearTimeout(timeoutId);
     throw new LlmError(
-      `Could not reach OmniRoute at ${endpoint} (${err instanceof Error ? err.message : String(err)}).`,
+      `Could not reach OmniRoute at ${endpoint} (${err instanceof Error ? err.message : String(err)}). Ensure the local omniroute service is running on port 20128.`,
       "omniroute",
+      "OLLAMA_OFFLINE",
     );
   }
   clearTimeout(timeoutId);
+
+  if (res.status === 401 || res.status === 403) {
+    throw new LlmError(
+      "OmniRoute authentication required (HTTP 401). Please configure your OmniRoute API key in Settings → AI Models & Gateways or via OMNIROUTE_API_KEY in .env.local.",
+      "omniroute",
+      "BYOK_REQUIRED",
+    );
+  }
 
   const data = (await res.json().catch(() => ({}))) as OmniRouteResponse;
   if (!res.ok) {
@@ -557,7 +684,7 @@ async function callOmniRoute(
   }
   return {
     text,
-    model: data.model ?? model,
+    model: data.model ?? (model === "auto" ? "auto (Omniroute)" : model),
     usage: {
       inputTokens: data.usage?.prompt_tokens ?? null,
       outputTokens: data.usage?.completion_tokens ?? null,
@@ -629,6 +756,10 @@ export async function testCustomModel(config: {
     return { ok: false, message: "Model name cannot be empty.", latencyMs: 0 };
   }
 
+  const TEST_TIMEOUT_MS = 10_000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
+
   try {
     // Anthropic API format
     if (config.providerType === "anthropic" || cleanUrl.includes("anthropic.com")) {
@@ -644,6 +775,8 @@ export async function testCustomModel(config: {
           max_tokens: 16,
           messages: [{ role: "user", content: "ping" }],
         }),
+        signal: controller.signal,
+        redirect: "error",
       });
       const latency = Date.now() - start;
       if (!res.ok) {
@@ -661,6 +794,8 @@ export async function testCustomModel(config: {
           Authorization: `Bearer ${config.apiKey || ""}`,
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
+        redirect: "error",
       });
       const latency = Date.now() - start;
       if (!res.ok && res.status !== 404 && res.status !== 405) {
@@ -683,6 +818,8 @@ export async function testCustomModel(config: {
           contents: [{ role: "user", parts: [{ text: "ping" }] }],
           generationConfig: { maxOutputTokens: 16 },
         }),
+        signal: controller.signal,
+        redirect: "error",
       });
       const latency = Date.now() - start;
       if (!res.ok) {
@@ -698,6 +835,8 @@ export async function testCustomModel(config: {
       const res = await fetch(modelsEndpoint, {
         method: "GET",
         headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+        signal: controller.signal,
+        redirect: "error",
       });
       const latency = Date.now() - start;
       if (!res.ok) {
@@ -717,6 +856,8 @@ export async function testCustomModel(config: {
           stream: false,
           messages: [{ role: "user", content: "ping" }],
         }),
+        signal: controller.signal,
+        redirect: "error",
       });
       const latency = Date.now() - start;
       if (!res.ok) {
@@ -724,6 +865,52 @@ export async function testCustomModel(config: {
         return { ok: false, message: `Ollama error (HTTP ${res.status}): ${errText.slice(0, 160)}`, latencyMs: latency };
       }
       return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
+    }
+
+    // Omniroute Local Gateway (port 20128 or providerType === "omniroute")
+    if (config.providerType === "omniroute" || cleanUrl.includes("20128") || model.includes("omniroute")) {
+      const endpoint = cleanUrl.endsWith("/v1")
+        ? `${cleanUrl}/chat/completions`
+        : cleanUrl.endsWith("/chat/completions")
+          ? cleanUrl
+          : `${cleanUrl}/v1/chat/completions`;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (config.apiKey) {
+        headers["Authorization"] = `Bearer ${config.apiKey}`;
+      }
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: config.modelName || "auto",
+          max_tokens: 16,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+        signal: controller.signal,
+        redirect: "error",
+      });
+
+      const latency = Date.now() - start;
+      if (res.status === 401 || res.status === 403) {
+        return {
+          ok: false,
+          message: "Authentication required (HTTP 401). Please configure your Omniroute API key.",
+          latencyMs: latency,
+        };
+      }
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        return {
+          ok: false,
+          message: `Omniroute error (HTTP ${res.status}): ${errText.slice(0, 160)}`,
+          latencyMs: latency,
+        };
+      }
+      return { ok: true, message: `Connected to Omniroute in ${latency}ms`, latencyMs: latency };
     }
 
     // Standard OpenAI-compatible format (OpenAI, Groq, OpenRouter, DeepSeek, Mistral, Ollama /v1, LM Studio, vLLM, etc.)
@@ -738,9 +925,6 @@ export async function testCustomModel(config: {
       headers["Authorization"] = `Bearer ${config.apiKey}`;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-
     const res = await fetch(endpoint, {
       method: "POST",
       headers,
@@ -750,8 +934,8 @@ export async function testCustomModel(config: {
         messages: [{ role: "user", content: "ping" }],
       }),
       signal: controller.signal,
+      redirect: "error",
     });
-    clearTimeout(timeoutId);
 
     const latency = Date.now() - start;
     if (!res.ok) {
@@ -761,45 +945,228 @@ export async function testCustomModel(config: {
     return { ok: true, message: `Connected in ${latency}ms`, latencyMs: latency };
   } catch (err) {
     const latency = Date.now() - start;
+    if (err instanceof Error && err.name === "AbortError") {
+      return { ok: false, message: `Connection timed out after ${TEST_TIMEOUT_MS / 1000}s.`, latencyMs: latency };
+    }
+    if (err instanceof Error && /redirect/i.test(err.message)) {
+      return { ok: false, message: `Unsafe outbound redirect blocked (${err.message}).`, latencyMs: latency };
+    }
     const msg = err instanceof Error ? err.message : String(err);
     return { ok: false, message: `Connection failed: ${msg}`, latencyMs: latency };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
+export interface ChatCompleteOptions extends GenerationOptions {
+  allowPaid?: boolean;
+}
+
+export function getPrimaryModel(): { id: string; providerType: string; name: string; modelName: string } | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path");
+    const modelsPath = path.join(process.cwd(), "data", "ai_models.json");
+    if (fs.existsSync(modelsPath)) {
+      const raw = fs.readFileSync(modelsPath, "utf8");
+      const models = JSON.parse(raw);
+      if (Array.isArray(models)) {
+        const primary = models.find((m: { isPrimary?: boolean }) => m.isPrimary);
+        if (primary) return primary;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+export interface EffectiveRouting {
+  primary: { id: string; providerType: string; name: string; modelName: string } | null;
+  chain: LlmProvider[];
+  primaryApproved: boolean;
+  exclusionReason?: string;
+}
+
+export interface ApprovedFreeRoute {
+  provider: string;
+  model: string;
+  credentialFingerprint: string;
+  approvedAt: string;
+}
+
+const DATA_DIR = path.join(process.cwd(), "data");
+const FREE_ROUTES_FILE = path.join(DATA_DIR, "approved_free_routes.json");
+
+export function computeCredentialFingerprint(key: string): string {
+  return crypto.createHash("sha256").update(key).digest("hex");
+}
+
+export function getApprovedFreeRoutes(): Record<string, ApprovedFreeRoute> {
+  try {
+    if (!fs.existsSync(FREE_ROUTES_FILE)) return {};
+    const raw = fs.readFileSync(FREE_ROUTES_FILE, "utf8");
+    if (!raw.trim()) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function approveGroqFreeRoute(apiKey: string, model: string = "openai/gpt-oss-120b"): void {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const current = getApprovedFreeRoutes();
+    current["groq"] = {
+      provider: "groq",
+      model,
+      credentialFingerprint: computeCredentialFingerprint(apiKey),
+      approvedAt: new Date().toISOString(),
+    };
+    const tmp = `${FREE_ROUTES_FILE}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+    fs.writeFileSync(tmp, JSON.stringify(current, null, 2), "utf8");
+    fs.renameSync(tmp, FREE_ROUTES_FILE);
+  } catch (err) {
+    console.error("[llm] failed to persist free route authorization:", err);
+  }
+}
+
+export function revokeGroqFreeRoute(): void {
+  try {
+    const current = getApprovedFreeRoutes();
+    delete current["groq"];
+    const tmp = `${FREE_ROUTES_FILE}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+    fs.writeFileSync(tmp, JSON.stringify(current, null, 2), "utf8");
+    fs.renameSync(tmp, FREE_ROUTES_FILE);
+  } catch {}
+}
 
 /**
- * Runs the current strategy's provider order in sequence, returning the
- * first success. In "auto" mode this means a down/unpulled local Ollama
- * transparently fails over to a configured cloud key, and vice versa.
+ * CEO Approved Free-Plan Routing Invariant:
+ * Groq is ONLY eligible for zero-spend routing when:
+ * 1. Provider is "groq".
+ * 2. Model is exactly "openai/gpt-oss-120b" (the CEO approved Free Plan model).
+ * 3. A valid Groq API key is present in vault or environment.
+ * 4. The API key matches the approved Free Plan credential fingerprint in approved_free_routes.json.
+ * Any other model (e.g. llama-3.3-70b-versatile), replacement credential without re-approval,
+ * or unapproved cloud provider is NOT zero-spend eligible and must fail closed / fall back to Ollama.
+ */
+export function isGroqApprovedFreeRoute(modelOverride?: string): boolean {
+  const model = modelOverride || resolveModel("groq");
+  const key = resolveApiKey("groq");
+  if (!key || model !== "openai/gpt-oss-120b") return false;
+
+  const freeRoutes = getApprovedFreeRoutes();
+  const groqApproval = freeRoutes["groq"];
+
+  // Missing, deleted or unapproved records fail closed.
+  // Initial authorization or replacement credential must be explicitly authorized by the owner.
+  if (!groqApproval) return false;
+  if (groqApproval.model !== "openai/gpt-oss-120b") return false;
+
+  const currentFingerprint = computeCredentialFingerprint(key);
+  return currentFingerprint === groqApproval.credentialFingerprint;
+}
+
+/**
+ * Single Authoritative Routing Resolver:
+ * Derives the effective execution chain for both the chat dispatcher (chatComplete)
+ * and the GET /api/router metadata endpoint.
+ */
+export function getEffectiveRoutingChain(): EffectiveRouting {
+  const primary = getPrimaryModel();
+  const primaryProvider: LlmProvider | null =
+    primary?.providerType === "omniroute" || primary?.id === "omniroute-default"
+      ? "omniroute"
+      : primary?.providerType === "ollama" || primary?.id === "ollama-local"
+        ? "ollama"
+        : (primary?.providerType as LlmProvider) || null;
+
+  // Case 1: Groq selected as Primary
+  if (primaryProvider === "groq") {
+    const key = resolveApiKey("groq");
+    const currentModel = resolveModel("groq");
+
+    if (!key) {
+      return {
+        primary,
+        chain: ["ollama"],
+        primaryApproved: false,
+        exclusionReason: `Groq has no active credential configured in vault or environment. Falling back to local Ollama.`,
+      };
+    }
+
+    if (currentModel !== "openai/gpt-oss-120b") {
+      return {
+        primary,
+        chain: ["ollama"],
+        primaryApproved: false,
+        exclusionReason: `Groq model "${currentModel}" is not an approved zero-spend Free Plan route. Only "openai/gpt-oss-120b" is authorized. Falling back to local Ollama.`,
+      };
+    }
+
+    if (!isGroqApprovedFreeRoute()) {
+      return {
+        primary,
+        chain: ["ollama"],
+        primaryApproved: false,
+        exclusionReason: `Groq credential has been replaced or is not the CEO-approved Free Plan credential. Re-approval required. Falling back to local Ollama.`,
+      };
+    }
+
+    return {
+      primary,
+      chain: ["groq", "ollama"],
+      primaryApproved: true,
+    };
+  }
+
+  // Case 2: Local Ollama selected as Primary
+  if (primaryProvider === "ollama") {
+    return {
+      primary,
+      chain: ["ollama"],
+      primaryApproved: true,
+    };
+  }
+
+  // Case 3: Any other selected primary (OmniRoute unverified upstream, OpenAI, Anthropic, Gemini, OpenRouter)
+  // Excluded from automatic verified-free dispatch; falls back to local Ollama.
+  return {
+    primary,
+    chain: ["ollama"],
+    primaryApproved: false,
+    exclusionReason: `Selected primary "${primary?.name || primaryProvider || "unknown"}" is not an authorized zero-spend route. Routing to local Ollama.`,
+  };
+}
+
+/**
+ * Runs provider order with enforced zero-spend mode by default for CORE chat.
+ * Respects primary gateway selection (Groq Free Plan / Ollama) and stops
+ * without automatic paid fallback when all free providers fail.
  */
 export async function chatComplete(
   systemPrompt: string,
   messages: ChatMessage[],
-  opts: GenerationOptions = {},
-): Promise<{ text: string; provider: LlmProvider; usage: UsageRecord }> {
-  const strategy = getStrategy();
-  const order: LlmProvider[] =
-    opts.preferCloud && strategy === "auto"
-      ? ["omniroute", ...cloudProviderOrder(), "ollama"]
-      : providerOrder(strategy);
+  opts: ChatCompleteOptions = {},
+): Promise<{
+  text: string;
+  provider: LlmProvider;
+  model: string;
+  fallbackOccurred: boolean;
+  fallbackFrom?: LlmProvider;
+  usage: UsageRecord;
+}> {
+  // Derive order strictly from the single authoritative server-side resolver
+  const routing = getEffectiveRoutingChain();
+  const order: LlmProvider[] = routing.chain;
 
-  if (order.length === 0) {
-    if (strategy === "cloud") {
-      throw new LlmError(
-        "No cloud API key configured. Plug in your own API key in Settings → AI Models & API Keys to run cloud models.",
-        "none",
-        "BYOK_REQUIRED",
-      );
-    }
-    throw new LlmError(
-      "Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.",
-      "ollama",
-      "OLLAMA_OFFLINE",
-    );
-  }
+  const failures: { provider: string; error: string }[] = [];
+  let firstAttempted: LlmProvider | null = null;
 
-  const failures: string[] = [];
   for (const provider of order) {
+    if (!firstAttempted) firstAttempted = provider;
     try {
       const callStart = Date.now();
       const result = await callProvider(provider, systemPrompt, messages, opts);
@@ -812,25 +1179,27 @@ export async function chatComplete(
         durationMs,
         timestamp: new Date().toISOString(),
       };
-      return { text: result.text, provider, usage };
+      const fallbackOccurred = firstAttempted !== null && provider !== firstAttempted;
+      return {
+        text: result.text,
+        provider,
+        model: result.model,
+        fallbackOccurred,
+        fallbackFrom: fallbackOccurred ? (firstAttempted ?? undefined) : undefined,
+        usage,
+      };
     } catch (err) {
-      failures.push(`${provider}: ${err instanceof Error ? err.message : String(err)}`);
+      failures.push({
+        provider,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
-  // If Ollama failed and no cloud providers are active
-  const hasCloudKey = cloudProviderOrder().length > 0;
-  if (!hasCloudKey) {
-    throw new LlmError(
-      "Local Ollama is offline. Spin up your local Ollama instance for 100% free execution, or plug in your own API key in Settings for cloud-based models.",
-      "ollama",
-      "OLLAMA_OFFLINE",
-    );
-  }
-
+  const failureSummary = failures.map((f) => `• ${f.provider}: ${f.error}`).join("\n");
   throw new LlmError(
-    `All configured providers failed for strategy "${strategy}":\n${failures.join("\n")}`,
-    order[order.length - 1],
+    `Zero-spend routing policy enforced: All eligible zero-spend providers failed:\n${failureSummary}\n\nNo automatic fallback to billable cloud providers was executed to prevent unapproved spending.`,
+    "none",
     "PROVIDER_ERROR",
   );
 }

@@ -4,8 +4,49 @@ import { listJobSummaries } from "@/lib/jobStore";
 import { listAiModels } from "@/lib/aiModelStore";
 import { telemetryStore } from "@/lib/telemetryStore";
 import { listPendingApprovals } from "@/lib/approvalStore";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+
+export const runtime = "nodejs";
 
 export async function GET() {
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+
+  // A public preview visitor gets a clean, non-sensitive demo telemetry shape —
+  // real private jobs, configured MCP servers, and models are protected.
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({
+      ok: true,
+      data: {
+        activeJobCount: 0,
+        totalJobCount: 0,
+        pendingApprovals: 0,
+        recentJobs: [],
+        mcp: {
+          totalConnected: 0,
+          servers: [],
+          connectors: {
+            slack: { connected: false, name: "Slack" },
+            notion: { connected: false, name: "Notion" },
+            hubspot: { connected: false, name: "HubSpot" },
+          },
+        },
+        models: {
+          totalConfigured: 0,
+          active: [],
+        },
+        telemetry: {
+          executionState: "idle",
+          activeJobId: null,
+          activeLobe: "core",
+        },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   try {
     // Real MCP connectors
     const mcpServers = await listMcpServers();

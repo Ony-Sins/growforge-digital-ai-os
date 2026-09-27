@@ -44,6 +44,21 @@ interface SpatialTelemetryData {
 const DIVE_MS = 1150;
 const DIVE_END_Z = -70;
 
+const CORE_CAMERA_DIST = 880;
+const BRAIN_CAMERA_DIST = 460;
+const MISSIONS_CAMERA_DIST = 90;
+const BRAIN_JOURNEY_MS = 2400; // Calibrated ~2.4s cinematic timeline
+
+interface TravelTransition {
+  startTime: number;
+  duration: number;
+  startDist: number;
+  targetDist: number;
+  fromTier: ZoomTierName;
+  toTier: ZoomTierName;
+  targetVisualMode: "core" | "brain" | "missions";
+}
+
 interface SpatialCanvasProps {
   className?: string;
   initialTier?: ZoomTierName;
@@ -89,6 +104,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   }, [currentTier]);
   const [isDiving, setIsDiving] = useState(false);
   const diveRef = useRef<{ start: number; startZ: number; navigated: boolean } | null>(null);
+  const travelTransitionRef = useRef<TravelTransition | null>(null);
   const router = useRouter();
   const routerRef = useRef(router);
   useEffect(() => {
@@ -103,7 +119,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const targetDistanceRef = useRef<number>(initialTier === "core" ? 90 : initialTier === "brain" ? 460 : 880);
+  const targetDistanceRef = useRef<number>(initialTier === "core" ? MISSIONS_CAMERA_DIST : initialTier === "brain" ? BRAIN_CAMERA_DIST : CORE_CAMERA_DIST);
   const currentTierRef = useRef<ZoomTierName>(initialTier);
   const isInteractingRef = useRef<boolean>(false);
   const growthPlanRef = useRef<GrowthPlan | null>(null);
@@ -205,26 +221,91 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     };
   }, [refreshData]);
 
-  // Fast-travel zoom navigation
-  const handleSelectTier = useCallback((tier: ZoomTierName) => {
-    setCurrentTier(tier);
-    currentTierRef.current = tier;
-    setVisualMode(tier === "brain" ? "brain" : tier === "core" ? "missions" : "core");
-    const targetDist = tier === "home" ? 880 : tier === "brain" ? 460 : 90;
-    targetDistanceRef.current = targetDist;
-  }, []);
-
-  // Dashboard → CORE: the camera accelerates through the core (nodes streak
-  // past, FOV widens, exposure blows out to white) and CORE emerges in Tier 5.
+  // Dashboard → CORE (Missions): camera accelerates through the core into Tier 5.
   const handleEnterCore = useCallback(() => {
     if (diveRef.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !cameraRef.current) {
-      handleSelectTier("core");
+      setCurrentTier("core");
+      currentTierRef.current = "core";
+      setVisualMode("missions");
+      targetDistanceRef.current = MISSIONS_CAMERA_DIST;
+      if (cameraRef.current) {
+        cameraRef.current.position.set(0, 15, CORE_DEPTH);
+      }
       return;
     }
     diveRef.current = { start: performance.now(), startZ: cameraRef.current.position.z, navigated: false };
     setIsDiving(true);
-  }, [handleSelectTier]);
+  }, []);
+
+  // Fast-travel zoom navigation with calibrated cinematic acceleration / deceleration
+  const handleSelectTier = useCallback((tier: ZoomTierName) => {
+    const isReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const targetDist = tier === "home" ? CORE_CAMERA_DIST : tier === "brain" ? BRAIN_CAMERA_DIST : MISSIONS_CAMERA_DIST;
+    targetDistanceRef.current = targetDist;
+
+    if (tier === "core") {
+      // Missions tier requested
+      setCurrentTier("core");
+      currentTierRef.current = "core";
+      setVisualMode("missions");
+      if (cameraRef.current && controlsRef.current) {
+        if (isReducedMotion) {
+          cameraRef.current.position.set(0, 15, CORE_DEPTH);
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        } else {
+          handleEnterCore();
+        }
+      }
+      return;
+    }
+
+    // Leaving Missions back to CORE or Brain
+    if (visualModeRef.current === "missions") {
+      setVisualMode(tier === "brain" ? "brain" : "core");
+      setCurrentTier(tier);
+      currentTierRef.current = tier;
+    }
+
+    if (!cameraRef.current || !controlsRef.current) {
+      setCurrentTier(tier);
+      currentTierRef.current = tier;
+      setVisualMode(tier === "brain" ? "brain" : "core");
+      return;
+    }
+
+    const currentDist = cameraRef.current.position.distanceTo(controlsRef.current.target);
+
+    if (isReducedMotion) {
+      const ray = new THREE.Vector3().subVectors(cameraRef.current.position, controlsRef.current.target).normalize();
+      if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
+      cameraRef.current.position.copy(controlsRef.current.target).addScaledVector(ray, targetDist);
+      controlsRef.current.update();
+      cameraRef.current.fov = 48;
+      cameraRef.current.updateProjectionMatrix();
+      if (rendererRef.current) rendererRef.current.toneMappingExposure = 1.05;
+      setCurrentTier(tier);
+      currentTierRef.current = tier;
+      setVisualMode(tier === "brain" ? "brain" : "core");
+      travelTransitionRef.current = null;
+      return;
+    }
+
+    // Start or redirect cinematic travel timeline
+    const distDelta = Math.abs(targetDist - currentDist);
+    const duration = Math.max(600, Math.min(BRAIN_JOURNEY_MS, (distDelta / Math.abs(CORE_CAMERA_DIST - BRAIN_CAMERA_DIST)) * BRAIN_JOURNEY_MS));
+
+    travelTransitionRef.current = {
+      startTime: performance.now(),
+      duration,
+      startDist: currentDist,
+      targetDist,
+      fromTier: currentTierRef.current,
+      toTier: tier,
+      targetVisualMode: tier === "brain" ? "brain" : "core",
+    };
+  }, [handleEnterCore]);
 
   // 2. Initialize Three.js WebGL Scene
   useEffect(() => {
@@ -266,6 +347,12 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     controlsRef.current = controls;
 
     const onInteractionStart = () => {
+      if (travelTransitionRef.current) {
+        travelTransitionRef.current = null;
+        if (cameraRef.current && controlsRef.current) {
+          targetDistanceRef.current = cameraRef.current.position.distanceTo(controlsRef.current.target);
+        }
+      }
       isInteractingRef.current = true;
       lastInteractionRef.current = performance.now();
     };
@@ -407,6 +494,8 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       const elapsedTime = (performance.now() - animationStartedAt) / 1000;
 
       const dive = diveRef.current;
+      const travel = travelTransitionRef.current;
+
       if (dive) {
         // Accelerating (cubic) run straight through the core, with FOV warp,
         // a slight roll and exposure blow-out. OrbitControls is bypassed.
@@ -422,7 +511,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
         renderer.toneMappingExposure = 1.05 + 3.4 * e * e;
         if (t >= 1 && !dive.navigated) {
           dive.navigated = true;
-          targetDistanceRef.current = 90;
+          targetDistanceRef.current = MISSIONS_CAMERA_DIST;
           camera.position.set(0, 15, CORE_DEPTH);
           camera.rotation.z = 0;
           camera.fov = 48;
@@ -435,8 +524,58 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
           currentTierRef.current = "core";
           setVisualMode("missions");
         }
+      } else if (travel) {
+        // Cinematic continuous CORE <-> BRAIN journey
+        controls.enabled = false;
+        const elapsed = performance.now() - travel.startTime;
+        const tau = Math.min(elapsed / travel.duration, 1.0);
+        // Smooth quintic ease-in-out for graceful acceleration & deceleration
+        const e = tau < 0.5 ? 16 * tau * tau * tau * tau * tau : 1 - Math.pow(-2 * tau + 2, 5) / 2;
+
+        const currentDist = travel.startDist + (travel.targetDist - travel.startDist) * e;
+        const ray = new THREE.Vector3().subVectors(camera.position, controls.target);
+        if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
+        ray.normalize();
+        camera.position.copy(controls.target).addScaledVector(ray, currentDist);
+
+        // Subtle perspective lens breathing (smooth expansion during peak mid-dive)
+        const lensWave = Math.sin(tau * Math.PI);
+        camera.fov = 48 + 3.2 * lensWave;
+        camera.updateProjectionMatrix();
+        renderer.toneMappingExposure = 1.05 + 0.10 * lensWave;
+
+        // Evolve visual mode during travel
+        if (travel.toTier === "brain") {
+          if (tau > 0.40 && visualModeRef.current !== "brain") {
+            setVisualMode("brain");
+          }
+          if (tau > 0.70 && currentTierRef.current !== "brain") {
+            currentTierRef.current = "brain";
+            setCurrentTier("brain");
+          }
+        } else if (travel.toTier === "home") {
+          if (tau > 0.40 && visualModeRef.current !== "core") {
+            setVisualMode("core");
+          }
+          if (tau > 0.70 && currentTierRef.current !== "home") {
+            currentTierRef.current = "home";
+            setCurrentTier("home");
+          }
+        }
+
+        if (tau >= 1.0) {
+          camera.fov = 48;
+          camera.updateProjectionMatrix();
+          renderer.toneMappingExposure = 1.05;
+          currentTierRef.current = travel.toTier;
+          setCurrentTier(travel.toTier);
+          setVisualMode(travel.targetVisualMode);
+          targetDistanceRef.current = travel.targetDist;
+          travelTransitionRef.current = null;
+          controls.enabled = true;
+        }
       } else {
-        // Smooth radial distance interpolation when fast-traveling
+        // Smooth radial distance interpolation when fast-traveling / damping
         if (!isInteractingRef.current) {
           const currentDist = camera.position.distanceTo(controls.target);
           if (Math.abs(currentDist - targetDistanceRef.current) > 1.0) {
@@ -453,37 +592,39 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
 
       // Distance from orbit target (depth progression)
       const d = camera.position.distanceTo(controls.target);
-      if (performance.now() - lastCoreZoomPaintRef.current > 50) {
+      if (performance.now() - lastCoreZoomPaintRef.current > 40) {
         lastCoreZoomPaintRef.current = performance.now();
-        setCoreZoomProgress(THREE.MathUtils.clamp((880 - d) / 780, 0, 1));
+        setCoreZoomProgress(THREE.MathUtils.clamp((CORE_CAMERA_DIST - d) / (CORE_CAMERA_DIST - BRAIN_CAMERA_DIST), 0, 1));
       }
 
-      // Logical tier resolution based on spherical distance from target
-      if (d > 680) {
-        if (currentTierRef.current !== "home") {
-          currentTierRef.current = "home";
-          setCurrentTier("home");
-          setVisualMode("core");
-        }
-      } else if (d <= 680 && d > 240) {
-        if (currentTierRef.current !== "brain") {
-          currentTierRef.current = "brain";
-          setCurrentTier("brain");
-          setVisualMode("brain");
-        }
-      } else if (d <= 240) {
-        if (currentTierRef.current !== "core") {
-          currentTierRef.current = "core";
-          setCurrentTier("core");
-          setVisualMode("missions");
+      // Logical tier resolution based on spherical distance from target (when not under travel controller)
+      if (!travelTransitionRef.current && !diveRef.current) {
+        if (d > 660) {
+          if (currentTierRef.current !== "home") {
+            currentTierRef.current = "home";
+            setCurrentTier("home");
+            setVisualMode("core");
+          }
+        } else if (d <= 660 && d > 240) {
+          if (currentTierRef.current !== "brain") {
+            currentTierRef.current = "brain";
+            setCurrentTier("brain");
+            setVisualMode("brain");
+          }
+        } else if (d <= 240) {
+          if (currentTierRef.current !== "core") {
+            currentTierRef.current = "core";
+            setCurrentTier("core");
+            setVisualMode("missions");
+          }
         }
       }
 
-      // Brain graph reveal: 0.0 at CORE arrival (d >= 680), smooth progressive reveal as d -> 460
+      // Brain graph reveal: 0.0 at CORE arrival (d >= 760), smooth progressive reveal as d -> 460
       const graphGroup = scene.getObjectByName("SPATIAL_GRAPH_GROUP") as THREE.Group | undefined;
-      const isBrainTierActive = visualModeRef.current === "brain" || d < 680;
+      const isBrainTierActive = visualModeRef.current === "brain" || d < 780;
       const depthProgress = isBrainTierActive
-        ? THREE.MathUtils.clamp((680 - d) / 220, 0.0, 1.0)
+        ? THREE.MathUtils.clamp((760 - d) / 300, 0.0, 1.0)
         : 0.0;
 
       if (graphGroup) {
@@ -895,7 +1036,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
             : "opacity-0 pointer-events-none translate-y-4"
         }`}
       >
-        <CoreZoomTier className="pt-24 pb-28 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto" />
+        <CoreZoomTier className="pt-28 pb-28 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto" />
       </div>
 
       {/* Note Reader Modal (Wikilinks & Markdown Previews) */}

@@ -5,6 +5,7 @@ import { getDefaultTools, type Tool } from "@/lib/tools";
 import { dispatchSafeTool, scrubSecrets } from "@/lib/security/toolBroker";
 import { convertToolUsageToSchema } from "@/lib/mcp/growforgeMcpServer";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,20 @@ function convertToolToGeminiFunction(tool: Tool) {
 }
 
 export async function POST(req: Request) {
+  // 1. Mandatory server-side authentication
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+
+  // 2. Public preview visitors are read-only and cannot call direct model/tool execution
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { ok: false, error: "Public preview is read-only. Sign in to execute intelligence endpoints." },
+      { status: 403 }
+    );
+  }
+
   try {
     const body = await req.json();
     const {

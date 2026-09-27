@@ -53,6 +53,14 @@ export const AI_BRAND_ICONS: Record<string, AiBrandIcon> = {
     textClass: "text-indigo-500",
     path: "M12 0L1.5 6v12L12 24l10.5-6V6L12 0zm0 3.36l7.5 4.29v8.7L12 20.64l-7.5-4.29v-8.7L12 3.36zM12 7.5L6.5 10.65v5.7L12 19.5l5.5-3.15v-5.7L12 7.5z",
   },
+  omniroute: {
+    title: "Omniroute Gateway",
+    hex: "06B6D4",
+    bgClass: "bg-cyan-500/10",
+    borderClass: "border-cyan-500/20",
+    textClass: "text-cyan-400",
+    path: "M12 2L2 7l10 5 10-5-10-5zm0 9l-10-5v6l10 5 10-5v-6l-10 5zm0 6l-10-5v6l10 5 10-5v-6l-10 5z",
+  },
   ollama: {
     title: "Ollama (Local)",
     hex: "1F2937",
@@ -130,6 +138,9 @@ export function getAiBrandIcon(
   }
   if (normType.includes("openrouter") || normModel.includes("openrouter") || normUrl.includes("openrouter")) {
     return AI_BRAND_ICONS.openrouter;
+  }
+  if (normType.includes("omniroute") || normModel.includes("omniroute") || normUrl.includes("20128") || normUrl.includes("omniroute")) {
+    return AI_BRAND_ICONS.omniroute;
   }
   if (normType.includes("ollama") || normModel.includes("llama3") || normUrl.includes("11434") || normUrl.includes("ollama")) {
     return AI_BRAND_ICONS.ollama;

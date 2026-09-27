@@ -1,11 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import crypto from "node:crypto";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { getSecretForServerUse } from "@/lib/serverVault";
 import { listAiModels, getAiModelApiKey } from "@/lib/aiModelStore";
 import { isCapabilityActive } from "@/lib/capabilityStore";
 import type { MediaItem } from "@/lib/tools";
+import { saveMediaArtifact } from "@/lib/mediaStorage";
 
 export interface ImageGenResult {
   ok: boolean;
@@ -15,23 +13,14 @@ export interface ImageGenResult {
   media?: MediaItem[];
 }
 
-const OUTPUT_DIR = process.env.COMFYUI_OUTPUT_DIR || path.join(process.cwd(), "public", "generated", "images");
-const PUBLIC_URL_PREFIX = "/generated/images";
-
-function ensureOutputDir(): void {
-  try {
-    fs.mkdirSync(/* turbopackIgnore: true */ OUTPUT_DIR, { recursive: true });
-  } catch {
-    // best-effort
-  }
-}
-
-function saveImageBytes(bytes: Buffer, ext: string = "png"): string {
-  ensureOutputDir();
-  const filename = `${crypto.randomUUID()}.${ext}`;
-  const filePath = path.join(/* turbopackIgnore: true */ OUTPUT_DIR, filename);
-  fs.writeFileSync(/* turbopackIgnore: true */ filePath, bytes);
-  return `${PUBLIC_URL_PREFIX}/${filename}`;
+function saveImageBytes(bytes: Buffer, ext: string = "png", prompt: string = "", provider: string = "cloud"): string {
+  const artifact = saveMediaArtifact(bytes, ext, {
+    prompt,
+    provider,
+    mediaType: "image",
+    status: "completed",
+  });
+  return artifact.url;
 }
 
 export interface AvailableImageKeys {
@@ -146,7 +135,7 @@ export function resolveImageKeys(agentId?: string): AvailableImageKeys {
 /**
  * Generates an image using OpenAI DALL-E 3 API.
  */
-async function generateViaOpenAI(prompt: string, apiKey: string): Promise<ImageGenResult> {
+export async function generateViaOpenAI(prompt: string, apiKey: string): Promise<ImageGenResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
@@ -223,7 +212,7 @@ async function generateViaOpenAI(prompt: string, apiKey: string): Promise<ImageG
 /**
  * Generates an image using Google Imagen 3 API.
  */
-async function generateViaGemini(prompt: string, apiKey: string): Promise<ImageGenResult> {
+export async function generateViaGemini(prompt: string, apiKey: string): Promise<ImageGenResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60_000);
 
@@ -315,7 +304,7 @@ async function pollHiggsfieldStatus(statusUrl: string, apiKey: string, deadlineM
  * Generates an image using Higgsfield AI's "soul" text-to-image model.
  * Job-based API: submit, then poll status until images are ready.
  */
-async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<ImageGenResult> {
+export async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<ImageGenResult> {
   const deadlineMs = Date.now() + 90_000;
   try {
     // v2/standard confirmed against Higgsfield's official docs; resolution
@@ -383,41 +372,24 @@ async function generateViaHiggsfield(prompt: string, apiKey: string): Promise<Im
 }
 
 /**
- * Main image generation entrypoint with BYO cloud key routing & local ComfyUI fallback.
+ * Main image generation entrypoint with zero-spend boundary enforcement.
+ *
+ * CEO Policy for this milestone:
+ * - Local ComfyUI is the primary and only operational route.
+ * - Stored cloud keys (OpenAI DALL-E 3, Gemini Imagen 3, Higgsfield) do NOT authorize expenditure.
+ * - Cloud image generation is disabled by default.
+ * - When ComfyUI is unavailable or fails, returns an honest error without calling cloud APIs.
  */
 export async function generateImageWithByoFallback(
   prompt: string,
-  agentId?: string,
+  _agentId?: string,
   localFallbackFn?: (prompt: string) => Promise<{ ok: boolean; output: string; imageUrl?: string; media?: MediaItem[] }>
 ): Promise<ImageGenResult> {
-  const keys = resolveImageKeys(agentId);
-
-  // 1. Try ChatGPT / OpenAI DALL-E 3 if key is available
-  if (keys.openaiKey) {
-    const res = await generateViaOpenAI(prompt, keys.openaiKey);
-    if (res.ok) return res;
-    console.warn(`[imageGen] OpenAI image generation failed, trying next provider or local fallback: ${res.output}`);
-  }
-
-  // 2. Try Google Gemini / Imagen 3 if key is available
-  if (keys.geminiKey) {
-    const res = await generateViaGemini(prompt, keys.geminiKey);
-    if (res.ok) return res;
-    console.warn(`[imageGen] Gemini image generation failed, trying next provider or local fallback: ${res.output}`);
-  }
-
-  // 3. Try Higgsfield AI if key is available
-  if (keys.higgsfieldKey) {
-    const res = await generateViaHiggsfield(prompt, keys.higgsfieldKey);
-    if (res.ok) return res;
-    console.warn(`[imageGen] Higgsfield image generation failed, trying next provider or local fallback: ${res.output}`);
-  }
-
-  // 4. Fall back to existing local ComfyUI generator if available
+  // 1. Primary route: local ComfyUI
   if (localFallbackFn) {
     const localRes = await localFallbackFn(prompt);
     if (localRes.ok) {
-      const match = localRes.output.match(/\/generated\/images\/[^\s,"]+/);
+      const match = localRes.output.match(/\/(?:api\/media|generated\/images)\/[^\s,"]+/);
       const url = localRes.imageUrl || (match ? match[0] : undefined);
       const media = localRes.media || (url ? [{ type: "image" as const, url }] : undefined);
       return {
@@ -430,13 +402,13 @@ export async function generateImageWithByoFallback(
     }
     return {
       ok: false,
-      output: `No BYO cloud image generation key (OpenAI/Gemini/Higgsfield) configured in Settings or agent vault, and local fallback failed: ${localRes.output}`,
+      output: `Local ComfyUI image generation unavailable: ${localRes.output}. Cloud image generation (DALL-E 3, Imagen, Higgsfield) is disabled under strict zero-spend policy.`,
     };
   }
 
   return {
     ok: false,
     output:
-      "No image generation key configured. Add an OpenAI (DALL-E 3), Gemini (Imagen 3), or Higgsfield key in Settings → AI Providers / Vault, or start local ComfyUI.",
+      "Local ComfyUI is not available. Cloud image generation is disabled under strict zero-spend policy.",
   };
 }

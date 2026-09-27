@@ -80,6 +80,7 @@ interface ChatMessageUI {
   content: string;
   timestamp: string;
   provider?: string;
+  model?: string;
   media?: MediaItem[];
   dispatch?: DispatchInfo | null;
   dispatchError?: string;
@@ -389,6 +390,7 @@ export function ChatView({ embedded = false, onClose, className = "", initialPro
         content: data.reply,
         timestamp: new Date().toISOString(),
         provider: data.provider,
+        model: data.model,
         media: data.media ?? (data.imageUrl ? [{ type: "image", url: data.imageUrl }] : undefined),
         dispatch: data.dispatch ?? null,
         dispatchError: data.dispatchError,
@@ -401,7 +403,18 @@ export function ChatView({ embedded = false, onClose, className = "", initialPro
       setMessages((prev) => {
         const nextList = [...prev, assistantMessage];
         if (typeof window !== "undefined") {
-          localStorage.setItem("growforge.chat.history", JSON.stringify(nextList.map((m) => ({ role: m.role, content: m.content, timestamp: m.timestamp, provider: m.provider }))));
+          localStorage.setItem(
+            "growforge.chat.history",
+            JSON.stringify(
+              nextList.map((m) => ({
+                role: m.role,
+                content: m.content,
+                timestamp: m.timestamp,
+                provider: m.provider,
+                model: m.model,
+              }))
+            )
+          );
         }
         return nextList;
       });
@@ -813,7 +826,7 @@ export function ChatView({ embedded = false, onClose, className = "", initialPro
                 )}
                 <p className={`mt-1 font-mono text-[10px] text-muted ${isUser ? "text-right" : ""}`}>
                   {formatTime(m.timestamp)}
-                  {m.provider && ` · via ${m.provider}`}
+                  {m.provider && ` · via ${m.provider}${m.model ? ` (${m.model})` : ""}`}
                 </p>
               </div>
             </div>

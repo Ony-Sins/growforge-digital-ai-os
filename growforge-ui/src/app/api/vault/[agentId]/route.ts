@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { getAgent } from "@/lib/agentStore";
 import { listProviders, purgeAgent, setSecret } from "@/lib/serverVault";
 
@@ -38,6 +38,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
   }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Owner authorization required to modify agent vault." }, { status: 403 });
+  }
 
   const { agentId } = await params;
   if (!getAgent(agentId)) return NextResponse.json({ error: `Unknown agent: ${agentId}` }, { status: 404 });
@@ -73,6 +76,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ agen
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Owner authorization required to purge agent vault." }, { status: 403 });
   }
 
   const { agentId } = await params;

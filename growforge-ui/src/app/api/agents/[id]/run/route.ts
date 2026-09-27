@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAgent, runAgent } from "@/lib/agentStore";
-import { canAccessAgentWith, isAgentLocked, type Role } from "@/lib/security";
+import { canSessionAccessAgent } from "@/lib/security";
 import { detectHandoff } from "@/lib/handoff";
+import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+
+export const runtime = "nodejs";
 
 interface RunRequestBody {
-  /** Access-control fields the client self-reports (see security.ts —
-   *  there is no real server session, so this is a soft gate enforced at
-   *  this one choke point every dispatch path funnels through). */
-  role?: Role;
-  unlockedAgentIds?: string[];
+  /** Optional department or owner PIN for accessing locked agents */
+  pin?: string;
+  ownerPin?: string;
   /** Bypasses the hand-off suggestion for this one call (used when the
    *  user picks "run here anyway" after already seeing the suggestion). */
   skipHandoffCheck?: boolean;
@@ -16,6 +17,20 @@ interface RunRequestBody {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  // 1. Mandatory server-side authentication
+  const session = await getSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  // 2. Public preview visitors are read-only and cannot execute agents
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json(
+      { error: "Public preview is read-only. Sign in to execute agents." },
+      { status: 403 }
+    );
+  }
+
   const { id } = await params;
   if (!getAgent(id)) {
     return NextResponse.json({ error: `Unknown agent: ${id}` }, { status: 404 });
@@ -28,15 +43,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     body = {};
   }
 
-  const { role, unlockedAgentIds, skipHandoffCheck, ...agentParams } = body;
+  const { pin, ownerPin, skipHandoffCheck, ...agentParams } = body;
 
-  if (isAgentLocked(id) && !canAccessAgentWith(id, role === "owner" ? "owner" : "employee", unlockedAgentIds ?? [])) {
+  // 3. Authoritative server-side authorization check (never trusts self-reported role)
+  const isAuthorized = canSessionAccessAgent(id, session.user.role, pin, ownerPin);
+  if (!isAuthorized) {
     return NextResponse.json(
       { error: `${id} is locked. Enter the security key to access it.`, locked: true },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
+  // 4. Handoff check (only applies if authorized)
   if (!skipHandoffCheck) {
     const handoff = detectHandoff(id, agentParams);
     if (handoff) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import {
   CLOUD_PROVIDERS,
   SYSTEM_VAULT_ID,
@@ -87,6 +87,9 @@ export async function POST(req: Request) {
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only. Sign in to save provider settings." }, { status: 403 });
   }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to modify system vault credentials, models, or route approvals." }, { status: 403 });
+  }
 
   let body: SaveModelRequestBody;
   try {
@@ -121,7 +124,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Handle legacy provider key update
+  // Handle legacy provider key update or explicit free-route authorization
   const provider = body.provider?.trim();
   const value = body.value?.trim();
   if (provider && (provider in CLOUD_PROVIDERS || provider === "higgsfield" || provider === "higgsfield_ai")) {
@@ -132,6 +135,12 @@ export async function POST(req: Request) {
       setSecret(SYSTEM_VAULT_ID, provider, value);
       reactivateCapability(provider);
       void logContextEvent(`Added capability key: ${provider}`);
+
+      if (provider === "groq" && (body as { approveFreeRoute?: boolean }).approveFreeRoute) {
+        const { approveGroqFreeRoute } = await import("@/lib/llm");
+        approveGroqFreeRoute(value, "openai/gpt-oss-120b");
+      }
+
       return NextResponse.json({ ok: true });
     } catch (err) {
       return NextResponse.json(
@@ -139,6 +148,19 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+  }
+
+  // Handle explicit route authorization action
+  if ((body as { action?: string }).action === "approve_free_route") {
+    const targetProvider = (body as { targetProvider?: string }).targetProvider || provider;
+    const model = (body as { model?: string }).model || "openai/gpt-oss-120b";
+    const apiKey = (body as { apiKey?: string }).apiKey || value || (targetProvider === "groq" ? (await import("@/lib/llm")).getProviderKey("groq") : null);
+    if (targetProvider === "groq" && apiKey && model === "openai/gpt-oss-120b") {
+      const { approveGroqFreeRoute } = await import("@/lib/llm");
+      approveGroqFreeRoute(apiKey, model);
+      return NextResponse.json({ ok: true, message: "Groq free route explicitly authorized." });
+    }
+    return NextResponse.json({ error: "Invalid free-route approval request." }, { status: 400 });
   }
 
   return NextResponse.json(

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { SYSTEM_VAULT_ID } from "@/lib/llm";
 import { hasSecret, setSecret, removeSecret, getSecretForServerUse } from "@/lib/serverVault";
 
@@ -72,6 +72,9 @@ export async function POST(req: Request) {
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
   }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Owner authorization required to modify n8n vault credentials." }, { status: 403 });
+  }
 
   let body: N8nConfigBody;
   try {
@@ -126,6 +129,9 @@ export async function DELETE() {
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Owner authorization required to clear n8n vault credentials." }, { status: 403 });
   }
 
   removeSecret(SYSTEM_VAULT_ID, N8N_HOST_KEY);

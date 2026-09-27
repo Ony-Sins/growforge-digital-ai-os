@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { listProviders, removeSecret } from "@/lib/serverVault";
 
 export async function DELETE(
@@ -10,6 +10,12 @@ export async function DELETE(
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (isPublicPreviewVisitor(session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json(
+      { error: "Forbidden. Authoritative owner authorization required to delete agent vault credentials." },
+      { status: 403 }
+    );
   }
 
   const { agentId, provider } = await params;

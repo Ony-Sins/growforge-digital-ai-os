@@ -44,8 +44,12 @@ function publicPreviewSession(): Session {
  * everywhere, not just at the login screen.
  */
 export async function getSession(): Promise<Session | null> {
-  const real = await auth();
-  if (real) return real;
+  try {
+    const real = await auth();
+    if (real) return real;
+  } catch {
+    // Outside of Next.js request scope (e.g. standalone test scripts)
+  }
 
   if (process.env.PUBLIC_PREVIEW_MODE === "true") {
     return publicPreviewSession();
@@ -74,4 +78,12 @@ export async function getSession(): Promise<Session | null> {
  *  this session, rather than gating on `role` alone. */
 export function isPublicPreviewVisitor(session: Session | null): boolean {
   return session?.user?.email === "preview@growforge.local";
+}
+
+/** True ONLY if the session represents an authoritative owner.
+ *  Rejects anonymous requests, public preview visitors, and non-owner employees. */
+export function isOwnerSession(session: Session | null): boolean {
+  if (!session?.user) return false;
+  if (isPublicPreviewVisitor(session)) return false;
+  return session.user.role === "owner";
 }

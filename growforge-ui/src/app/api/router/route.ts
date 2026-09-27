@@ -4,10 +4,10 @@ import { logContextEvent } from "@/lib/spatial/dailyContext";
 import {
   chatComplete,
   CLOUD_PROVIDERS,
+  getEffectiveRoutingChain,
   getStrategy,
   hasKey,
   LlmError,
-  providerOrder,
   setStrategy,
   UNIVERSAL_CONTEXT_POLICY,
   type ChatMessage,
@@ -17,6 +17,7 @@ import {
 import type { Agent } from "@/lib/agents";
 import { createAndStartJob } from "@/lib/orchestrator";
 import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { TOTAL_ATTACHMENT_CONTEXT_BUDGET } from "@/lib/attachments";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,7 @@ function availableKeys(): Record<CloudProvider, boolean> {
 export async function GET() {
   const strategy = getStrategy();
   const session = await getSession();
+  const routing = getEffectiveRoutingChain();
   // Hide which specific providers have keys configured — that reveals the
   // owner's subscription/setup state to an anonymous preview visitor.
   const keys = isPublicPreviewVisitor(session)
@@ -38,7 +40,10 @@ export async function GET() {
     : availableKeys();
   return NextResponse.json({
     strategy,
-    providerOrder: providerOrder(strategy),
+    providerOrder: routing.chain,
+    selectedPrimary: routing.primary,
+    primaryApproved: routing.primaryApproved,
+    exclusionReason: routing.exclusionReason,
     availableKeys: keys,
   });
 }
@@ -66,9 +71,13 @@ export async function PATCH(req: Request) {
   }
 
   setStrategy(strategy as LlmStrategy);
+  const routing = getEffectiveRoutingChain();
   return NextResponse.json({
     strategy,
-    providerOrder: providerOrder(strategy as LlmStrategy),
+    providerOrder: routing.chain,
+    selectedPrimary: routing.primary,
+    primaryApproved: routing.primaryApproved,
+    exclusionReason: routing.exclusionReason,
     availableKeys: availableKeys(),
   });
 }
@@ -90,7 +99,7 @@ interface RouterRequestBody {
   attachmentContext?: string;
 }
 
-type RouteMode = "chat" | "dispatch" | "clarify" | "confirm" | "launch";
+type RouteMode = "chat" | "dispatch" | "clarify" | "confirm" | "launch" | "image_gen";
 
 interface RouteDecision {
   mode: RouteMode;
@@ -139,6 +148,7 @@ function buildSystemPrompt(pendingBrief: string | null, forceProceed: boolean): 
     "",
     "Choose exactly ONE mode per message:",
     '- "chat": greetings, thanks, small talk, or questions about what you can do.',
+    '- "image_gen": the user explicitly requests generating or creating an image (e.g. "Generate an image of a cup of coffee", "Create a picture of a sunset", "Generate an image of X using ComfyUI"). Put the visual description in params as {"prompt": "<detailed visual prompt>"}. Set reply to a brief friendly confirmation.',
     '- "dispatch": a small, clear, one-off ANALYSIS/TEXT task that one roster agent can do alone with pure reasoning. Set agentId to its exact id and params to {"taskDescription": "..."}. Roster agents have NO tool access at all — never dispatch a request that needs a real action taken (creating/activating an n8n or Zapier workflow, calling a connector, touching any live external system). Anything like that needs "launch" instead, which reaches the department pipeline\'s real tools through the owner-approval gate.',
     '- "clarify": the user wants a project but you do not know enough. Ask 1 to 3 focused questions in your reply.',
     '- "confirm": you know enough for a project. In reply, summarize your understanding in short bullets and ask "Shall I send this to the team?". Put the complete structured brief in the brief field.',
@@ -169,7 +179,7 @@ If the user agrees (yes, go, looks good, proceed, send it — in any language) c
     "STRICT RULE FOR reply: plain natural language (Markdown bullets allowed) in the SAME language as the user — never JSON, never curly braces, never a code fence. It is shown in a chat bubble.",
     "",
     "Respond with ONLY one JSON object, no code fences, no text before or after, in exactly this shape:",
-    '{"mode": "chat" | "dispatch" | "clarify" | "confirm" | "launch", "agentId": string | null, "params": object, "reply": string, "brief": string | null}',
+    '{"mode": "chat" | "dispatch" | "clarify" | "confirm" | "launch" | "image_gen", "agentId": string | null, "params": object, "reply": string, "brief": string | null}',
   ].join("\n");
 }
 
@@ -244,7 +254,7 @@ function sanitizeReplyText(text: string): string {
  *  in prose or code fences, omit the reply field, or (with weaker models)
  *  echo the decision JSON itself as the reply text. In every case the
  *  final reply is guaranteed to be scrubbed of JSON/code-fence syntax. */
-const MODES: RouteMode[] = ["chat", "dispatch", "clarify", "confirm", "launch"];
+const MODES: RouteMode[] = ["chat", "dispatch", "clarify", "confirm", "launch", "image_gen"];
 
 function parseDecision(raw: string): RouteDecision {
   for (const span of findBalancedJsonSpans(raw)) {
@@ -342,6 +352,75 @@ export async function POST(req: Request) {
   // Daily context node v1 — log-and-forget, never blocks the actual chat response.
   void logContextEvent(`User chatted: ${message.slice(0, 140)}`);
 
+  // P1.7: Video capability check - evaluate before text LLM
+  const isExplainingOrQuestion = /\b(?:how\s+(?:to|do|can)|can\s+you\s+(?:explain|tell|help)|what\s+is|where\s+can|tell\s+me\s+about|why\s+(?:is|do|does)|difference\s+between|tutorial|guide)\b/i.test(message);
+
+  const isExplicitVideoGen =
+    !isExplainingOrQuestion &&
+    ((/\b(?:generate|create|make|render)\s+(?:(?:an?|the)\s+)?(?:[a-zA-Z-]+\s+)*(?:video|animation|clip)\s+(?:of|about|with|showing|depicting)\b/i.test(message) ||
+      /\b(?:video|animation)\s+generation\b/i.test(message) ||
+      /\b(?:generate|create|render)\s+(?:an?\s+)?(?:[a-zA-Z-]+\s+)*(?:video|animation|clip)\b/i.test(message)));
+
+  if (isExplicitVideoGen) {
+    return NextResponse.json({
+      reply:
+        "Local video generation is currently unsupported in this release. A compatible local video workflow (such as ComfyUI AnimateDiff or Stable Video Diffusion) is not configured. Cloud video APIs are disabled under the strict zero-spend policy.",
+      provider: "System",
+      mode: "chat",
+      dispatch: null,
+      videoUnavailable: true,
+    });
+  }
+
+  // P1.6: Deterministic Image Generation Intent - execute without requiring or awaiting text LLM
+  const isExplicitImageGen =
+    !isExplainingOrQuestion &&
+    ((/\b(?:generate|create|make|render|draw)\s+(?:(?:an?|the)\s+)?(?:[a-zA-Z-]+\s+)*(?:image|picture|photo|illustration|graphic|render|artwork|portrait)\s+(?:of|showing|depicting|with|for)\b/i.test(message) ||
+      /\b(?:generate|create|render|draw)\s+(?:an?\s+)?(?:[a-zA-Z-]+\s+)*(?:image|picture|photo|illustration|artwork|portrait)\b/i.test(message)));
+
+  if (isExplicitImageGen) {
+    const match = message.match(
+      /\b(?:generate|create|make|render|draw)\s+(?:(?:an?|the)\s+)?(?:[a-zA-Z-]+\s+)*(?:image|picture|photo|illustration|graphic|render|artwork|portrait)\s+(?:of|showing|depicting|with|for)?\s*(.+)/i
+    );
+    const rawPrompt = match ? match[1] : message;
+    const cleanPrompt =
+      rawPrompt
+        .replace(/\busing\s+(?:any\s+)?(?:available\s+)?(?:free\s+)?tool\s+(?:such\s+as\s+)?comfyui\b/gi, "")
+        .replace(/\b(?:please\s+)?generate\s+(?:an?\s+)?(?:image|picture|photo)\s+(?:of\s+)?/gi, "")
+        .trim() || rawPrompt;
+
+    try {
+      const { comfyuiTool } = await import("@/lib/tools/comfyui");
+      const imgResult = await comfyuiTool.execute({ prompt: cleanPrompt });
+
+      if (imgResult.ok && imgResult.media && imgResult.media.length > 0) {
+        return NextResponse.json({
+          reply: `Generated image for "${cleanPrompt}":`,
+          provider: "comfyui",
+          mode: "image_gen",
+          media: imgResult.media,
+          dispatch: null,
+        });
+      }
+
+      return NextResponse.json({
+        reply: `Local ComfyUI is currently offline (http://127.0.0.1:8188) or unconfigured. Start your local ComfyUI instance with a loaded checkpoint to enable free local image generation. Cloud image APIs are disabled under the strict zero-spend policy.`,
+        provider: "comfyui",
+        mode: "image_gen",
+        mediaError: imgResult.output,
+        dispatch: null,
+      });
+    } catch (err) {
+      return NextResponse.json({
+        reply: `Local image generation failed (${err instanceof Error ? err.message : String(err)}). Cloud image APIs are disabled under zero-spend policy.`,
+        provider: "comfyui",
+        mode: "image_gen",
+        mediaError: String(err),
+        dispatch: null,
+      });
+    }
+  }
+
   const history: ChatMessage[] = (body.history ?? [])
     .slice(-10)
     .filter((m) => m.role === "user" || m.role === "assistant")
@@ -350,16 +429,22 @@ export async function POST(req: Request) {
   const pendingBrief = body.pendingBrief?.trim().slice(0, 8000) || null;
   const forceProceed = OVERRIDE_PATTERNS.test(message);
   const systemPrompt = buildSystemPrompt(pendingBrief, forceProceed);
-  const attachmentContext = body.attachmentContext?.trim().slice(0, 20000);
+  const attachmentContext = body.attachmentContext?.trim().slice(0, TOTAL_ATTACHMENT_CONTEXT_BUDGET + 4000);
   const messageWithAttachments = attachmentContext ? `${message}\n\n${attachmentContext}` : message;
   const messages: ChatMessage[] = [...history, { role: "user", content: messageWithAttachments }];
 
   let raw: string;
   let provider: string;
+  let model: string | undefined;
+  let fallbackOccurred: boolean | undefined;
+  let fallbackFrom: string | undefined;
   try {
     const result = await chatComplete(systemPrompt, messages, { maxTokens: 2000, preferCloud: false });
     raw = result.text;
     provider = result.provider;
+    model = result.model;
+    fallbackOccurred = result.fallbackOccurred;
+    fallbackFrom = result.fallbackFrom;
   } catch (err) {
     if (err instanceof LlmError) {
       return NextResponse.json({
@@ -376,6 +461,57 @@ export async function POST(req: Request) {
   }
 
   const decision = parseDecision(raw);
+
+  // If the text LLM classified the intent as image_gen, execute via local ComfyUI
+  if (decision.mode === "image_gen") {
+    const rawPrompt = typeof decision.params?.prompt === "string" && decision.params.prompt.trim()
+      ? decision.params.prompt.trim()
+      : message;
+    const cleanPrompt = rawPrompt
+      .replace(/\busing\s+(?:any\s+)?(?:available\s+)?(?:free\s+)?tool\s+(?:such\s+as\s+)?comfyui\b/gi, "")
+      .replace(/\b(?:please\s+)?generate\s+(?:an?\s+)?(?:image|picture)\s+(?:of\s+)?/gi, "")
+      .trim() || rawPrompt;
+
+    try {
+      const { comfyuiTool } = await import("@/lib/tools/comfyui");
+      const imgResult = await comfyuiTool.execute({ prompt: cleanPrompt });
+
+      if (imgResult.ok && imgResult.media && imgResult.media.length > 0) {
+        return NextResponse.json({
+          reply: decision.reply || `Generated image for "${cleanPrompt}":`,
+          provider,
+          model,
+          fallbackOccurred,
+          fallbackFrom,
+          mode: "image_gen",
+          media: imgResult.media,
+          dispatch: null,
+        });
+      }
+
+      return NextResponse.json({
+        reply: `Local ComfyUI is currently offline (http://127.0.0.1:8188) or unconfigured. Start your local ComfyUI instance with a loaded checkpoint to enable free local image generation. Cloud image APIs are disabled under the strict zero-spend policy.`,
+        provider,
+        model,
+        fallbackOccurred,
+        fallbackFrom,
+        mode: "image_gen",
+        mediaError: imgResult.output,
+        dispatch: null,
+      });
+    } catch (err) {
+      return NextResponse.json({
+        reply: `Local image generation failed (${err instanceof Error ? err.message : String(err)}). Cloud image APIs are disabled under zero-spend policy.`,
+        provider,
+        model,
+        fallbackOccurred,
+        fallbackFrom,
+        mode: "image_gen",
+        mediaError: String(err),
+        dispatch: null,
+      });
+    }
+  }
 
   // Only "launch" actually starts real, trackable work this turn — any
   // other mode narrating a team/department "now" doing something is a
@@ -405,6 +541,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: "On it — sending this to the team now with reasonable assumptions filled in wherever you didn't specify. Watch it work live in the Live Projects panel below.",
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       mode: "launch",
       dispatch: null,
       job: { id: job.id, title: job.title },
@@ -412,23 +551,51 @@ export async function POST(req: Request) {
   }
 
   if (decision.mode === "clarify") {
-    return NextResponse.json({ reply: decision.reply, provider, mode: "clarify", dispatch: null });
+    return NextResponse.json({
+      reply: decision.reply,
+      provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
+      mode: "clarify",
+      dispatch: null,
+    });
   }
 
   if (decision.mode === "confirm" && decision.brief) {
-    return NextResponse.json({ reply: decision.reply, provider, mode: "confirm", brief: decision.brief, dispatch: null });
+    return NextResponse.json({
+      reply: decision.reply,
+      provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
+      mode: "confirm",
+      brief: decision.brief,
+      dispatch: null,
+    });
   }
 
   if (decision.mode === "launch") {
     const briefToLaunch = decision.brief || pendingBrief;
     if (!briefToLaunch) {
-      return NextResponse.json({ reply: decision.reply, provider, mode: "chat", dispatch: null });
+      return NextResponse.json({
+        reply: decision.reply,
+        provider,
+        model,
+        fallbackOccurred,
+        fallbackFrom,
+        mode: "chat",
+        dispatch: null,
+      });
     }
     const session = await getSession();
     const job = createAndStartJob(briefToLaunch, session?.user?.email ?? undefined);
     return NextResponse.json({
       reply: decision.reply,
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       mode: "launch",
       dispatch: null,
       job: { id: job.id, title: job.title },
@@ -439,7 +606,15 @@ export async function POST(req: Request) {
     decision.mode === "dispatch" && decision.agentId ? agents.find((a) => a.id === decision.agentId) : undefined;
 
   if (!targetAgent) {
-    return NextResponse.json({ reply: decision.reply, provider, mode: "chat", dispatch: null });
+    return NextResponse.json({
+      reply: decision.reply,
+      provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
+      mode: "chat",
+      dispatch: null,
+    });
   }
 
   // Every payload dispatched through the conversational router carries the
@@ -462,6 +637,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: decision.reply,
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       dispatch: null,
       dispatchError: err instanceof Error ? err.message : "Failed to reach the agent dispatch endpoint.",
     });
@@ -473,6 +651,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: decision.reply,
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       dispatch: null,
       locked: { agentId: targetAgent.id, agentName: targetAgent.name },
     });
@@ -482,6 +663,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: decision.reply,
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       dispatch: null,
       handoff: {
         sourceAgentId: dispatchData.sourceAgentId,
@@ -500,6 +684,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: decision.reply,
       provider,
+      model,
+      fallbackOccurred,
+      fallbackFrom,
       dispatch: null,
       dispatchError: dispatchData.error ?? `Dispatch failed (${dispatchRes.status}).`,
     });
@@ -508,6 +695,9 @@ export async function POST(req: Request) {
   return NextResponse.json({
     reply: decision.reply,
     provider,
+    model,
+    fallbackOccurred,
+    fallbackFrom,
     dispatch: {
       agentId: targetAgent.id,
       agentName: targetAgent.name,

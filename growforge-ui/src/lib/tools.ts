@@ -42,7 +42,7 @@ export { transferTaskTool, completeDirectiveTool, askOperatorTool, n8nTool, n8nT
  */
 
 export interface MediaItem {
-  type: "image";
+  type: "image" | "video";
   url: string;
   label?: string;
 }

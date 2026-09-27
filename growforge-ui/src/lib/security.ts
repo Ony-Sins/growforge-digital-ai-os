@@ -47,3 +47,27 @@ export function verifyOwnerPin(pin: string): boolean {
 export function canAccessAgentWith(agentId: string, role: Role, unlockedAgentIds: readonly string[]): boolean {
   return role === "owner" || !isAgentLocked(agentId) || unlockedAgentIds.includes(agentId);
 }
+
+/** Authoritative server-side agent access verification.
+ *  Never trusts self-reported client roles or unlocked IDs.
+ *  Requires verified server session role, owner PIN, or valid agent PIN. */
+export function canSessionAccessAgent(
+  agentId: string,
+  sessionRole?: Role | string | null,
+  pin?: string,
+  ownerPin?: string
+): boolean {
+  // 1. Verified owner session from auth provider
+  if (sessionRole === "owner") return true;
+
+  // 2. Verified owner PIN
+  if (typeof ownerPin === "string" && verifyOwnerPin(ownerPin)) return true;
+
+  // 3. Unlocked/open agents are accessible by any authenticated team member
+  if (!isAgentLocked(agentId)) return true;
+
+  // 4. Locked agents require verified department PIN
+  if (typeof pin === "string" && verifyAgentPin(agentId, pin)) return true;
+
+  return false;
+}

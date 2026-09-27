@@ -1,4 +1,4 @@
-import { getProviderKey, getProviderModel } from "@/lib/llm";
+import { getProviderModel } from "@/lib/llm";
 
 /**
  * Live web research: Gemini's Google Search grounding when a working key is
@@ -36,7 +36,7 @@ export function isResearchAvailable(): boolean {
   return true;
 }
 
-async function researchViaGemini(question: string, context: string, apiKey: string): Promise<ResearchFinding> {
+export async function researchViaGemini(question: string, context: string, apiKey: string): Promise<ResearchFinding> {
   const model = getProviderModel("gemini");
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
@@ -173,24 +173,17 @@ async function researchViaSearXNG(question: string): Promise<ResearchFinding> {
   return { question, answer, sources };
 }
 
-export async function researchQuestion(question: string, context: string): Promise<ResearchFinding> {
-  const apiKey = getProviderKey("gemini");
-  if (apiKey) {
-    try {
-      return await researchViaGemini(question, context, apiKey);
-    } catch (err) {
-      console.warn(
-        `[research] Gemini grounding unavailable (${err instanceof Error ? err.message : String(err)}) — falling back to SearXNG`,
-      );
-    }
-  }
-
+export async function researchQuestion(question: string, _context: string): Promise<ResearchFinding> {
+  void _context;
+  // In zero-spend mode, live research uses self-hosted SearXNG (free, local).
+  // Gemini Google Search Grounding is a potentially billable cloud service and is DISABLED by default.
+  // Stored Gemini API key is NOT spending authorization.
   try {
     return await researchViaSearXNG(question);
   } catch (err) {
     return {
       question,
-      answer: `No reliable data found — both Gemini grounding and SearXNG search were unavailable (${err instanceof Error ? err.message : String(err)}).`,
+      answer: `Live research unavailable: SearXNG search failed (${err instanceof Error ? err.message : String(err)}). Cloud search grounding is disabled under strict zero-spend policy.`,
       sources: [],
     };
   }

@@ -16,6 +16,7 @@ import {
 export type TaskRole = "general" | "planning" | "coding" | "utility" | "image";
 export type ProviderType =
   | "openai-compatible"
+  | "omniroute"
   | "ollama"
   | "anthropic"
   | "gemini"
@@ -52,19 +53,30 @@ function getDefaultModels(): StoredAiModel[] {
   const now = new Date().toISOString();
   return [
     {
+      id: "omniroute-default",
+      name: "Omniroute",
+      providerType: "omniroute",
+      baseUrl: process.env.OMNIROUTE_BASE_URL || "http://localhost:20128/v1",
+      modelName: process.env.OMNIROUTE_MODEL || "auto",
+      taskRole: "general",
+      isPrimary: false,
+      source: hasSecret(SYSTEM_VAULT_ID, "omniroute") ? "vault" : "local",
+      createdAt: now,
+    },
+    {
       id: "gemini-default",
-      name: "Google Gemini (Flash 3.6)",
+      name: "Google Gemini",
       providerType: "gemini",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
       modelName: "gemini-3.6-flash",
       taskRole: "general",
-      isPrimary: true,
+      isPrimary: false,
       source: hasKey("gemini") ? (hasSecret(SYSTEM_VAULT_ID, "gemini") ? "vault" : "env") : "env",
       createdAt: now,
     },
     {
       id: "groq-default",
-      name: "Groq (Llama 3.3 70B Fast)",
+      name: "Groq",
       providerType: "groq",
       baseUrl: "https://api.groq.com/openai/v1",
       modelName: "llama-3.3-70b-versatile",
@@ -74,7 +86,7 @@ function getDefaultModels(): StoredAiModel[] {
     },
     {
       id: "openai-default",
-      name: "OpenAI (GPT-4o Mini)",
+      name: "OpenAI",
       providerType: "openai-compatible",
       baseUrl: "https://api.openai.com/v1",
       modelName: "gpt-4o-mini",
@@ -84,7 +96,7 @@ function getDefaultModels(): StoredAiModel[] {
     },
     {
       id: "anthropic-default",
-      name: "Anthropic (Claude 3.5 Sonnet)",
+      name: "Anthropic",
       providerType: "anthropic",
       baseUrl: "https://api.anthropic.com/v1",
       modelName: "claude-3-5-sonnet-latest",
@@ -94,7 +106,7 @@ function getDefaultModels(): StoredAiModel[] {
     },
     {
       id: "openrouter-default",
-      name: "OpenRouter (Gateway)",
+      name: "OpenRouter",
       providerType: "openrouter",
       baseUrl: "https://openrouter.ai/api/v1",
       modelName: "openrouter/auto",
@@ -104,7 +116,7 @@ function getDefaultModels(): StoredAiModel[] {
     },
     {
       id: "ollama-local",
-      name: "Local Ollama (Private)",
+      name: "Local Ollama",
       providerType: "ollama",
       baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1",
       modelName: process.env.OLLAMA_MODEL || "qwen2.5:7b-instruct",
@@ -131,6 +143,14 @@ function loadModelsFile(): StoredAiModel[] {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
+      // Ensure omniroute-default is present if missing from existing configuration
+      if (!parsed.some((m: StoredAiModel) => m.id === "omniroute-default" || m.providerType === "omniroute")) {
+        const omni = getDefaultModels().find((m) => m.id === "omniroute-default");
+        if (omni) {
+          parsed.unshift(omni);
+          saveModelsFile(parsed);
+        }
+      }
       return parsed;
     }
     const defaults = getDefaultModels();
@@ -142,22 +162,21 @@ function loadModelsFile(): StoredAiModel[] {
   }
 }
 
-let writeQueue: Promise<void> = Promise.resolve();
-
 function saveModelsFile(models: StoredAiModel[]): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  const json = JSON.stringify(models, null, 2);
-  const tmp = MODELS_FILE + ".tmp";
-  writeQueue = writeQueue
-    .then(() => fs.promises.writeFile(tmp, json, "utf8"))
-    .then(() => fs.promises.rename(tmp, MODELS_FILE))
-    .catch((err) => {
-      console.error("[aiModelStore] failed to persist ai_models.json:", err);
-    });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const json = JSON.stringify(models, null, 2);
+    const tmp = `${MODELS_FILE}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+    fs.writeFileSync(tmp, json, "utf8");
+    fs.renameSync(tmp, MODELS_FILE);
+  } catch (err) {
+    console.error("[aiModelStore] failed to persist ai_models.json:", err);
+  }
 }
 
 function resolveModelSecretKey(model: StoredAiModel): string {
   // Built-in standard providers share the canonical provider key
+  if (model.id === "omniroute-default" || model.providerType === "omniroute") return "omniroute";
   if (model.id === "gemini-default") return "gemini";
   if (model.id === "groq-default") return "groq";
   if (model.id === "openai-default") return "openai";
@@ -173,20 +192,21 @@ export function listAiModels(): ClientAiModel[] {
     const hasVaultSecret = hasSecret(SYSTEM_VAULT_ID, secretKey);
     const isCloudProvider = m.providerType in CLOUD_PROVIDERS;
     const hasEnvKey = isCloudProvider ? Boolean(process.env[CLOUD_PROVIDERS[m.providerType as CloudProvider]?.envKey]) : false;
+    const hasOmniEnv = m.providerType === "omniroute" ? Boolean(process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_TOKEN) : false;
     const isConfigured = m.status === "archived" || m.status === "disconnected"
       ? false
-      : (m.providerType === "ollama" ? true : hasVaultSecret || hasEnvKey);
+      : (m.providerType === "ollama" || m.providerType === "omniroute" ? true : hasVaultSecret || hasEnvKey);
 
     let source = m.source;
     if (hasVaultSecret) source = "vault";
-    else if (hasEnvKey) source = "env";
-    else if (m.providerType === "ollama") source = "local";
+    else if (hasEnvKey || hasOmniEnv) source = "env";
+    else if (m.providerType === "ollama" || m.providerType === "omniroute") source = "local";
 
     return {
       ...m,
       status: m.status ?? (isConfigured ? "active" : "disconnected"),
       source,
-      hasApiKey: hasVaultSecret || hasEnvKey,
+      hasApiKey: hasVaultSecret || hasEnvKey || hasOmniEnv,
       isConfigured,
     };
   });
@@ -324,4 +344,16 @@ export function updateAiModelTestStatus(
   models[idx].lastErrorMessage = result.ok ? undefined : result.message;
 
   saveModelsFile(models);
+}
+
+export function setPrimaryModel(id: string): boolean {
+  const models = loadModelsFile();
+  const target = models.find((m) => m.id === id);
+  if (!target) return false;
+
+  for (const m of models) {
+    m.isPrimary = m.id === id;
+  }
+  saveModelsFile(models);
+  return true;
 }

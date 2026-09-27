@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { CLOUD_PROVIDERS, testProvider, testCustomModel, type CloudProvider } from "@/lib/llm";
 import { getAiModel, getAiModelApiKey, updateAiModelTestStatus } from "@/lib/aiModelStore";
 
@@ -8,6 +8,15 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (isPublicPreviewVisitor(session)) {
+    return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json(
+      { error: "Forbidden. Authoritative owner authorization required to test custom models or provider connections." },
+      { status: 403 }
+    );
+  }
 
   let body: {
     provider?: string;

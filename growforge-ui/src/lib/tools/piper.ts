@@ -39,6 +39,53 @@ function setupInstructions(): string {
   );
 }
 
+export function getPiperEnv(): NodeJS.ProcessEnv {
+  const ALLOWED_VARS = [
+    "PATH",
+    "Path",
+    "SYSTEMROOT",
+    "SystemRoot",
+    "SYSTEMDRIVE",
+    "SystemDrive",
+    "TEMP",
+    "TMP",
+    "COMSPEC",
+    "ComSpec",
+    "PATHEXT",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "USERPROFILE",
+    "USERNAME",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "ALLUSERSPROFILE",
+    "PROGRAMDATA",
+    "ProgramData",
+    "PROGRAMFILES",
+    "ProgramFiles",
+    "PROGRAMFILES(X86)",
+    "ProgramFiles(x86)",
+    "WINDIR",
+    "windir",
+    "NUMBER_OF_PROCESSORS",
+    "PROCESSOR_ARCHITECTURE",
+    "OS",
+    "PIPER_CACHE",
+    "ESPEAK_DATA_PATH",
+    "LD_LIBRARY_PATH",
+    "DYLD_LIBRARY_PATH",
+  ];
+  const env: NodeJS.ProcessEnv = {
+    NODE_ENV: process.env.NODE_ENV || "production",
+  };
+  for (const v of ALLOWED_VARS) {
+    if (process.env[v] !== undefined) {
+      env[v] = process.env[v];
+    }
+  }
+  return env;
+}
+
 function synthesize(text: string): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -49,7 +96,9 @@ function synthesize(text: string): Promise<{ ok: boolean; output: string }> {
     try {
       // Same rationale as isConfigured() above — BINARY/MODEL_PATH are
       // operator-configured, not project source paths.
-      proc = spawn(/* turbopackIgnore: true */ BINARY, ["--model", MODEL_PATH, "--output_file", outputPath]);
+      proc = spawn(/* turbopackIgnore: true */ BINARY, ["--model", MODEL_PATH, "--output_file", outputPath], {
+        env: getPiperEnv(),
+      });
     } catch (err) {
       resolve({ ok: false, output: `Couldn't launch the Piper binary (${BINARY}): ${err instanceof Error ? err.message : String(err)}` });
       return;

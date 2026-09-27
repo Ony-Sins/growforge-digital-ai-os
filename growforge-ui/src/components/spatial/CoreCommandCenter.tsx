@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, FileText, History, Image as ImageIcon, Loader2, Mic, MicOff, Minimize2, Paperclip, RefreshCw, Send, Settings2, Sparkles, Trash2, X } from "lucide-react";
+import { ChevronRight, FileText, History, Image as ImageIcon, Info, Loader2, Maximize2, Mic, MicOff, Minimize2, Paperclip, Pin, PinOff, RefreshCw, Send, Settings2, Sparkles, Trash2, X } from "lucide-react";
 import { CoreOrbField } from "./CoreOrbField";
 import { useAppState } from "@/lib/appState";
 import { Markdown } from "@/components/ui/Markdown";
@@ -16,7 +16,7 @@ interface SpeechRecognitionInstance {
   stop: () => void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event?: { error?: string }) => void) | null;
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
@@ -49,13 +49,31 @@ export interface AttachmentUI {
   errorMsg?: string;
 }
 
+export interface MediaArtifactUI {
+  id?: string;
+  url: string;
+  type?: "image" | "video";
+  prompt?: string;
+  provider?: string;
+  workflow?: string;
+  dimensions?: { width: number; height: number };
+  createdAt?: string;
+  status?: "completed" | "failed";
+  error?: string;
+}
+
 interface SpatialChatMessage {
   id: string;
   role: "user" | "assistant" | "error";
   content: string;
   timestamp: string;
   provider?: string;
+  model?: string;
+  fallbackOccurred?: boolean;
+  fallbackFrom?: string;
   attachments?: { name: string; kind: string }[];
+  media?: MediaArtifactUI[];
+  mediaError?: string;
   dispatch?: {
     agentId?: string;
     agentName?: string;
@@ -376,317 +394,37 @@ function ReactiveOrb({
   );
 }
 
-interface SpatialResponseLayerProps {
-  isOpen: boolean;
-  viewMode: "compact" | "expanded";
-  onToggleViewMode: () => void;
-  isResponding: boolean;
-  assistantName: string;
-  userName: string;
-  userPrompt: string | null;
-  userAttachments?: Array<{ name: string; kind: string }>;
-  response: SpatialChatMessage | null;
-  history: Array<{ role: "user" | "assistant"; content: string; timestamp?: string; attachments?: { name: string; kind: string }[] }>;
-  error: string | null;
-  onClose: () => void;
-  onRetry: () => void;
-  onOpenSettings: () => void;
-  onClearHistory: () => void;
-}
-
-function SpatialResponseLayer({
-  isOpen,
-  viewMode,
-  onToggleViewMode,
-  isResponding,
-  assistantName,
-  userName,
-  userPrompt,
-  userAttachments,
-  response,
-  history,
-  error,
-  onClose,
-  onRetry,
-  onOpenSettings,
-  onClearHistory,
-}: SpatialResponseLayerProps) {
-  const historyScrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (viewMode === "expanded" && historyScrollRef.current) {
-      historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
-    }
-  }, [history, isResponding, viewMode]);
-
-  if (!isOpen) return null;
-
-  const isExpanded = viewMode === "expanded";
-
+function AudioWaveVisualizer({ active }: { active?: boolean }) {
   return (
-    <div
-      role="region"
-      aria-live="polite"
-      aria-label="Assistant Spatial Workspace"
-      id="core-conversation"
-      data-view={viewMode}
-      className={`pointer-events-auto relative spatial-response-layer-wrapper z-20 flex flex-col rounded-2xl bg-[#060e1d]/95 border border-cyan-400/25 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_28px_rgba(34,211,238,0.14)] p-3 sm:p-4 text-slate-200 select-none spatial-response-layer transition-all duration-200 w-[min(650px,calc(100vw-1.5rem))] ${
-        isExpanded ? "max-h-[44vh] sm:max-h-[48vh] md:max-h-[52vh]" : "max-h-[30vh] sm:max-h-[34vh] md:max-h-[38vh]"
-      }`}
-    >
-      {/* Corner bracket accents */}
-      <span className="pointer-events-none absolute top-1 left-1 h-2 w-2 core-instrument-corner-tl" />
-      <span className="pointer-events-none absolute bottom-1 right-1 h-2 w-2 core-instrument-corner-br" />
-
-      {/* Top highlight line */}
-      <span className="pointer-events-none absolute inset-x-4 top-[1px] h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between pb-2.5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-cyan-400" />
-          <span className="font-sora text-xs font-semibold text-white tracking-wide">
-            {assistantName || "Nora"}
-          </span>
-          {isExpanded ? (
-            <span className="rounded bg-cyan-950/60 border border-cyan-400/20 px-1.5 py-0.5 text-[9px] font-mono font-medium text-cyan-300 uppercase tracking-wider">
-              {history.length} {history.length === 1 ? "Turn" : "Turns"}
-            </span>
-          ) : response?.provider ? (
-            <span className="rounded bg-cyan-950/60 border border-cyan-400/20 px-1.5 py-0.5 text-[9px] font-mono font-medium text-cyan-300 uppercase tracking-wider">
-              {response.provider}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="flex items-center gap-1">
-          {/* Toggle Mode Button */}
-          <button
-            type="button"
-            onClick={onToggleViewMode}
-            aria-label={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
-            title={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
-          >
-            {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <History className="h-3.5 w-3.5" />}
-          </button>
-
-          {/* Conversation Settings Button */}
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            aria-label="Conversation Settings"
-            title="Conversation Settings"
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-          </button>
-
-          {/* Dismiss / Close Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Dismiss workspace"
-            title="Dismiss workspace"
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* COMPACT MODE */}
-      {!isExpanded && (
-        <div className="conversation-compact min-h-0 overflow-y-auto">
-          {!userPrompt && !response && !error && !isResponding && <p className="py-4 text-xs text-slate-400">No previous messages. Start a conversation from the dock below.</p>}
-          {/* User prompt context */}
-          {userPrompt && (
-            <div className="mt-2.5 flex flex-col gap-1 rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 text-xs text-slate-300">
-              <div className="flex items-start gap-1.5">
-                <span className="font-semibold text-cyan-400/90 shrink-0">{userName || "You"}:</span>
-                <span className="line-clamp-2 text-slate-200">{userPrompt}</span>
-              </div>
-              {userAttachments && userAttachments.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-0.5">
-                  {userAttachments.map((att, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 rounded bg-cyan-950/70 border border-cyan-400/20 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
-                      <Paperclip className="h-2.5 w-2.5" />
-                      {att.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Thinking State */}
-          {isResponding && (
-            <div className="mt-3.5 space-y-2.5 py-1">
-              <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
-                </span>
-                <span>{assistantName || "Nora"} is processing...</span>
-              </div>
-              <div className="space-y-2 pt-1 animate-pulse">
-                <div className="h-2.5 w-5/6 rounded-full bg-gradient-to-r from-cyan-500/20 via-sky-500/30 to-cyan-500/10" />
-                <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-cyan-500/15 via-sky-500/25 to-cyan-500/10" />
-                <div className="h-2.5 w-3/4 rounded-full bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-cyan-500/5" />
-              </div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !isResponding && (
-            <div className="mt-3 rounded-lg bg-rose-950/40 border border-rose-500/30 p-3 text-xs text-rose-200">
-              <div className="font-semibold text-rose-300 mb-1">Request failed</div>
-              <p className="text-slate-300 mb-2.5">{error}</p>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-medium border border-rose-500/40 transition"
-              >
-                <RefreshCw className="h-3 w-3" /> Retry
-              </button>
-            </div>
-          )}
-
-          {/* Response Content */}
-          {response && !isResponding && !error && (
-            <div className="mt-3 overflow-y-auto max-h-[18vh] sm:max-h-[22vh] md:max-h-[26vh] pr-1 select-text space-y-2 text-xs sm:text-sm text-slate-100 leading-relaxed font-sans scrollbar-thin">
-              <Markdown content={response.content} size="sm" />
-
-              {/* Dispatch Info Card */}
-              {response.dispatch && (
-                <div className="mt-3 flex items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-950/30 px-2.5 py-1.5 text-xs text-cyan-200">
-                  <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                  <span className="font-medium text-white">{response.dispatch.agentName}</span>
-                  <span className="text-[11px] text-slate-400">({response.dispatch.status})</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Compact Footer Actions */}
-          <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
-            <button
-              type="button"
-              onClick={onToggleViewMode}
-              className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 transition"
-            >
-              <History className="h-3 w-3" /> View history ({history.length})
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="hover:text-slate-200 transition"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* EXPANDED HISTORY MODE */}
-      {isExpanded && (
-        <div className="mt-2.5 flex flex-col flex-1 min-h-0">
-          <div
-            ref={historyScrollRef}
-            className="min-h-0 overflow-y-auto max-h-[28vh] sm:max-h-[32vh] md:max-h-[38vh] pr-1.5 space-y-3.5 text-xs select-text scrollbar-thin"
-          >
-            {history.length === 0 && !isResponding && (
-              <div className="py-8 text-center text-slate-400 text-xs">
-                No previous messages. Start a conversation from the dock below.
-              </div>
-            )}
-
-            {history.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                {msg.role === "user" ? (
-                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-cyan-500/15 border border-cyan-400/25 px-3 py-2 text-cyan-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
-                    <div className="text-[10px] font-semibold text-cyan-400/80 mb-0.5">{userName || "You"}</div>
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {msg.attachments.map((att, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 rounded bg-black/40 border border-cyan-400/25 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
-                            <Paperclip className="h-2.5 w-2.5" />
-                            {att.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)] leading-relaxed">
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-cyan-300 mb-1">
-                      <Sparkles className="h-3 w-3 text-cyan-400" />
-                      <span>{assistantName || "Nora"}</span>
-                    </div>
-                    <Markdown content={msg.content} size="sm" />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Thinking Indicator in History */}
-            {isResponding && (
-              <div className="flex flex-col items-start max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100">
-                <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium mb-1.5">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
-                  </span>
-                  <span>{assistantName || "Nora"} is processing...</span>
-                </div>
-                <div className="space-y-1.5 w-48 animate-pulse pt-1">
-                  <div className="h-2 rounded-full bg-cyan-500/20" />
-                  <div className="h-2 w-36 rounded-full bg-cyan-500/15" />
-                </div>
-              </div>
-            )}
-
-            {/* Error Banner in History */}
-            {error && !isResponding && (
-              <div className="rounded-lg bg-rose-950/40 border border-rose-500/30 p-2.5 text-xs text-rose-200 flex items-center justify-between">
-                <span>{error}</span>
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-[11px] text-rose-200 transition"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Expanded Footer Actions */}
-          <div className="shrink-0 mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400">
-            <button
-              type="button"
-              onClick={onClearHistory}
-              disabled={history.length === 0}
-              className="inline-flex items-center gap-1 hover:text-rose-300 disabled:opacity-40 disabled:hover:text-slate-400 transition"
-            >
-              <Trash2 className="h-3 w-3" /> Clear history
-            </button>
-            <button
-              type="button"
-              onClick={onToggleViewMode}
-              className="text-cyan-400 hover:text-cyan-300 transition"
-            >
-              Collapse to latest
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="flex items-center gap-[3px] sm:gap-1 px-1 sm:px-1.5 h-4" aria-hidden="true">
+      <span
+        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
+          active
+            ? "bg-cyan-300 shadow-[0_0_6px_#22d3ee] audio-wave-bar-1"
+            : "bg-cyan-400/30 h-1"
+        }`}
+      />
+      <span
+        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
+          active
+            ? "bg-cyan-200 shadow-[0_0_6px_#22d3ee] audio-wave-bar-2"
+            : "bg-cyan-400/30 h-1"
+        }`}
+      />
+      <span
+        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
+          active
+            ? "bg-cyan-300 shadow-[0_0_6px_#22d3ee] audio-wave-bar-3"
+            : "bg-cyan-400/30 h-1"
+        }`}
+      />
+      <span
+        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
+          active
+            ? "bg-cyan-200 shadow-[0_0_6px_#22d3ee] audio-wave-bar-4"
+            : "bg-cyan-400/30 h-1"
+        }`}
+      />
     </div>
   );
 }
@@ -831,6 +569,742 @@ function ConversationSettingsPopover({
   );
 }
 
+function InlineMediaCard({ media }: { media: MediaArtifactUI[]; onRetry?: () => void }) {
+  const [activeZoomUrl, setActiveZoomUrl] = useState<string | null>(null);
+
+  if (!media || media.length === 0) return null;
+
+  return (
+    <div className="mt-2.5 flex flex-col gap-2">
+      {media.map((item, idx) => {
+        const isVideo = item.type === "video" || item.url.endsWith(".mp4") || item.url.endsWith(".webm");
+        const attribution = item.provider || item.workflow ? `${item.provider || "Local"}${item.workflow ? ` · ${item.workflow}` : ""}` : "ComfyUI";
+
+        return (
+          <div
+            key={item.id || idx}
+            className="group relative overflow-hidden rounded-xl border border-cyan-500/25 bg-[#040915]/90 p-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition hover:border-cyan-400/50"
+          >
+            {/* Top metadata badge */}
+            <div className="flex items-center justify-between pb-1.5 text-[10px] text-slate-400">
+              <span className="flex items-center gap-1 font-mono uppercase text-cyan-300">
+                <ImageIcon className="h-3 w-3" />
+                <span>{attribution}</span>
+              </span>
+              {item.dimensions && (
+                <span className="font-mono text-[9px] text-slate-500">
+                  {item.dimensions.width}×{item.dimensions.height}
+                </span>
+              )}
+            </div>
+
+            {/* Media Content */}
+            <div className="relative aspect-auto max-h-64 sm:max-h-80 w-full overflow-hidden rounded-lg bg-black/50 flex items-center justify-center">
+              {isVideo ? (
+                <video
+                  src={item.url}
+                  controls
+                  className="max-h-64 sm:max-h-80 w-full rounded-lg object-contain"
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={item.url}
+                  alt={item.prompt || "Generated media"}
+                  className="max-h-64 sm:max-h-80 w-full rounded-lg object-contain cursor-zoom-in transition duration-200 hover:scale-[1.01]"
+                  onClick={() => setActiveZoomUrl(item.url)}
+                  loading="lazy"
+                />
+              )}
+            </div>
+
+            {/* Prompt label and Actions */}
+            <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-white/[0.06]">
+              {item.prompt && (
+                <p className="line-clamp-1 flex-1 text-[10px] text-slate-300 italic" title={item.prompt}>
+                  &ldquo;{item.prompt}&rdquo;
+                </p>
+              )}
+              <div className="flex items-center gap-1 shrink-0 ml-auto">
+                <a
+                  href={item.url}
+                  download={item.prompt ? `${item.prompt.slice(0, 30).replace(/[^a-z0-9]/gi, "_")}.png` : "growforge-generated.png"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded bg-white/10 px-2 py-1 text-[10px] font-medium text-cyan-200 hover:bg-cyan-500/20 hover:text-white transition"
+                  title="Download media"
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Lightbox Modal */}
+      {activeZoomUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setActiveZoomUrl(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#050b16] p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setActiveZoomUrl(null)}
+              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-slate-200 hover:text-white transition"
+              aria-label="Close zoom preview"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={activeZoomUrl} alt="Expanded preview" className="max-h-[82vh] max-w-[85vw] rounded-xl object-contain" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VoiceMediaCenterCard({
+  media,
+  onClose,
+  assistantName,
+}: {
+  media: MediaArtifactUI[];
+  onClose: () => void;
+  assistantName: string;
+}) {
+  const [activeZoomUrl, setActiveZoomUrl] = useState<string | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isPinned || isHovered) return;
+    const timer = setTimeout(() => {
+      onClose();
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [isPinned, isHovered, onClose]);
+
+  if (!media || media.length === 0) return null;
+  const firstItem = media[0];
+  const isVideo = firstItem.type === "video" || firstItem.url.endsWith(".mp4") || firstItem.url.endsWith(".webm");
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Voice Generated Media Presentation"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className="relative max-w-[min(560px,92vw)] w-full overflow-hidden rounded-2xl border border-cyan-400/40 bg-[#040813]/98 p-4 sm:p-5 shadow-[0_0_50px_rgba(34,211,238,0.25),0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl transition-all animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Holographic corner accents */}
+        <span className="pointer-events-none absolute top-1.5 left-1.5 h-3 w-3 border-t-2 border-l-2 border-cyan-400/70" />
+        <span className="pointer-events-none absolute top-1.5 right-1.5 h-3 w-3 border-t-2 border-r-2 border-cyan-400/70" />
+        <span className="pointer-events-none absolute bottom-1.5 left-1.5 h-3 w-3 border-b-2 border-l-2 border-cyan-400/70" />
+        <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-3 w-3 border-b-2 border-r-2 border-cyan-400/70" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
+            <span className="font-sora text-sm font-semibold text-white tracking-wide">
+              {assistantName || "Nora"}
+            </span>
+            <span className="rounded bg-cyan-950/80 border border-cyan-400/30 px-2 py-0.5 text-[10px] font-mono font-medium text-cyan-300 uppercase">
+              Voice Generation Ready
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsPinned(!isPinned)}
+              className={`px-2 py-1 rounded-lg text-xs font-medium border transition ${
+                isPinned
+                  ? "bg-cyan-500/20 border-cyan-400 text-cyan-300"
+                  : "bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {isPinned ? "Pinned" : "Keep Viewing"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+              aria-label="Close media preview"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Nora announcement text */}
+        <p className="mt-3 text-xs sm:text-sm text-cyan-100 font-sans leading-relaxed">
+          &ldquo;Your image is ready. I created a scene based on your voice request. If you&apos;d like anything changed, just say the words.&rdquo;
+        </p>
+
+        {/* Media Preview Container */}
+        <div className="mt-3 relative aspect-auto max-h-[50vh] w-full overflow-hidden rounded-xl bg-black/60 border border-cyan-500/20 flex items-center justify-center">
+          {isVideo ? (
+            <video src={firstItem.url} controls className="max-h-[50vh] w-full object-contain rounded-lg" />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={firstItem.url}
+              alt={firstItem.prompt || "Voice generated media"}
+              className="max-h-[50vh] w-full object-contain rounded-lg cursor-zoom-in hover:scale-[1.01] transition duration-200"
+              onClick={() => setActiveZoomUrl(firstItem.url)}
+            />
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="mt-3.5 flex items-center justify-between gap-2 pt-2 border-t border-white/[0.08]">
+          <div className="text-[11px] text-slate-400 truncate max-w-[240px]">
+            {firstItem.prompt ? `"${firstItem.prompt}"` : "Local ComfyUI"}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isVideo && (
+              <button
+                type="button"
+                onClick={() => setActiveZoomUrl(firstItem.url)}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-medium text-slate-200 hover:text-white transition"
+              >
+                Open Fullscreen
+              </button>
+            )}
+            <a
+              href={firstItem.url}
+              download={firstItem.prompt ? `${firstItem.prompt.slice(0, 30).replace(/[^a-z0-9]/gi, "_")}.png` : "growforge-generated.png"}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-sky-500 text-xs font-semibold text-slate-950 hover:brightness-110 shadow-[0_0_12px_rgba(34,211,238,0.4)] transition"
+            >
+              Download
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox Modal */}
+      {activeZoomUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setActiveZoomUrl(null)}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-2xl border border-cyan-400/30 bg-[#050b16] p-2 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setActiveZoomUrl(null)}
+              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-black/60 text-slate-200 hover:text-white transition"
+              aria-label="Close zoom preview"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={activeZoomUrl} alt="Expanded preview" className="max-h-[82vh] max-w-[85vw] rounded-xl object-contain" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SpatialResponseLayerProps {
+  isOpen: boolean;
+  viewMode: "compact" | "expanded";
+  onToggleViewMode: () => void;
+  isResponding: boolean;
+  processingStatus?: string;
+  assistantName: string;
+  userName: string;
+  userPrompt: string | null;
+  userAttachments?: Array<{ name: string; kind: string }>;
+  response: SpatialChatMessage | null;
+  history: Array<{
+    role: "user" | "assistant";
+    content: string;
+    timestamp?: string;
+    provider?: string;
+    model?: string;
+    fallbackOccurred?: boolean;
+    fallbackFrom?: string;
+    attachments?: { name: string; kind: string }[];
+    media?: MediaArtifactUI[];
+  }>;
+  error: string | null;
+  onClose: () => void;
+  onRetry: () => void;
+  onOpenSettings: () => void;
+  onClearHistory: () => void;
+  isSettingsOpen?: boolean;
+  onCloseSettings?: () => void;
+  onUserNameChange?: (name: string) => void;
+  onAssistantNameChange?: (name: string) => void;
+  voiceInputEnabled?: boolean;
+  onVoiceInputToggle?: () => void;
+  voiceOutputEnabled?: boolean;
+  onVoiceOutputToggle?: () => void;
+  onSelectPrompt?: (prompt: string) => void;
+}
+
+function SpatialResponseLayer({
+  isOpen,
+  viewMode,
+  onToggleViewMode,
+  isResponding,
+  processingStatus,
+  assistantName,
+  userName,
+  userPrompt,
+  userAttachments,
+  response,
+  history,
+  error,
+  onClose,
+  onRetry,
+  onOpenSettings,
+  onClearHistory,
+  isSettingsOpen = false,
+  onCloseSettings,
+  onUserNameChange,
+  onAssistantNameChange,
+  voiceInputEnabled = true,
+  onVoiceInputToggle,
+  voiceOutputEnabled = false,
+  onVoiceOutputToggle,
+  onSelectPrompt,
+}: SpatialResponseLayerProps) {
+  const historyScrollRef = useRef<HTMLDivElement>(null);
+  const [isPinned, setIsPinned] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+
+  useEffect(() => {
+    if (viewMode === "expanded" && historyScrollRef.current) {
+      historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
+    }
+  }, [history, isResponding, viewMode]);
+
+  // Phase 1.4: Auto-dismiss completed transient cards in compact mode after ~5.5s of inactivity
+  useEffect(() => {
+    if (viewMode !== "compact" || isResponding || error || isPinned || isHovered || isSettingsOpen || isInfoOpen || !response) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5500);
+    return () => clearTimeout(timer);
+  }, [viewMode, isResponding, error, isPinned, isHovered, isSettingsOpen, isInfoOpen, response, onClose]);
+
+  if (!isOpen) return null;
+
+  const isExpanded = viewMode === "expanded";
+
+  return (
+    <div
+      role="region"
+      aria-live="polite"
+      aria-label="Assistant Spatial Workspace"
+      id="core-conversation"
+      data-view={viewMode}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`pointer-events-auto absolute z-30 flex flex-col rounded-2xl bg-[#060e1d]/95 border border-cyan-400/25 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_28px_rgba(34,211,238,0.14)] p-3 sm:p-4 text-slate-200 select-none spatial-response-layer transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 motion-reduce:transition-none motion-reduce:transform-none ${
+        isExpanded
+          ? "left-1/2 -translate-x-1/2 bottom-[calc(var(--dock-base)+var(--kb-offset,0px)+var(--composer-height,52px)+16px)] w-[min(650px,calc(100vw-1.5rem))] max-h-[min(52dvh,var(--panel-space))] lg:left-auto lg:right-6 xl:right-8 lg:translate-x-0 lg:top-[76px] lg:bottom-24 lg:w-[390px] xl:w-[410px] lg:max-h-[calc(100%-170px)]"
+          : "left-1/2 -translate-x-1/2 bottom-[calc(var(--dock-base)+var(--kb-offset,0px)+var(--composer-height,52px)+16px)] w-[min(650px,calc(100vw-1.5rem))] max-h-[30vh] sm:max-h-[34vh] md:max-h-[38vh]"
+      }`}
+    >
+      {/* Corner bracket accents */}
+      <span className="pointer-events-none absolute top-1 left-1 h-2 w-2 core-instrument-corner-tl" />
+      <span className="pointer-events-none absolute bottom-1 right-1 h-2 w-2 core-instrument-corner-br" />
+
+      {/* Top highlight line */}
+      <span className="pointer-events-none absolute inset-x-4 top-[1px] h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between pb-2.5 border-b border-white/[0.08]">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
+          <span className="font-sora text-xs font-semibold text-white tracking-wide">
+            {assistantName || "Nora"}
+          </span>
+
+          {/* Restrained live indicator */}
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400" />
+          </span>
+
+          {isExpanded ? (
+            <span className="rounded bg-cyan-950/60 border border-cyan-400/20 px-1.5 py-0.5 text-[9px] font-mono font-medium text-cyan-300 uppercase tracking-wider">
+              {history.length} {history.length === 1 ? "Turn" : "Turns"}
+            </span>
+          ) : response?.provider ? (
+            <button
+              type="button"
+              onClick={() => setIsInfoOpen(!isInfoOpen)}
+              className="group flex items-center gap-1 rounded bg-white/[0.04] border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-slate-400 hover:text-cyan-300 hover:border-cyan-400/30 transition"
+              title="Inspect model attribution & execution details"
+            >
+              <Info className="h-2.5 w-2.5 text-cyan-400" />
+              <span>Details</span>
+            </button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* Keep Viewing / Pin button in compact mode */}
+          {!isExpanded && response && (
+            <button
+              type="button"
+              onClick={() => setIsPinned(!isPinned)}
+              aria-label={isPinned ? "Unpin card auto-dismissal" : "Pin card (keep viewing)"}
+              title={isPinned ? "Pinned (will stay open)" : "Keep Viewing (pause auto-dismiss)"}
+              className={`grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg transition ${
+                isPinned
+                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
+                  : "text-slate-400 hover:text-cyan-300 hover:bg-white/10"
+              }`}
+            >
+              {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+            </button>
+          )}
+
+          {/* Toggle Mode Button (1-Click access to full history) */}
+          <button
+            type="button"
+            onClick={onToggleViewMode}
+            aria-label={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
+            title={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
+            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
+          >
+            {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          </button>
+
+          {/* Conversation Settings Button */}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Conversation Settings"
+            title="Conversation Settings"
+            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Single Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close workspace"
+            title="Close workspace"
+            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Model Attribution Popover (Phase 3 Clean Identity) */}
+      {isInfoOpen && response?.provider && (
+        <div className="absolute top-12 left-3 sm:left-4 z-50 rounded-xl border border-cyan-400/35 bg-[#040915]/98 p-3 shadow-2xl backdrop-blur-2xl text-[11px] text-slate-300 w-64 animate-in fade-in zoom-in-95 duration-150">
+          <div className="font-semibold text-white mb-2 flex items-center justify-between pb-1 border-b border-white/[0.08]">
+            <span className="text-cyan-300">Model Attribution</span>
+            <button type="button" onClick={() => setIsInfoOpen(false)} className="text-slate-400 hover:text-white">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="space-y-1.5 font-mono text-[10px]">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Provider:</span>
+              <span className="text-cyan-200 capitalize">{response.provider}</span>
+            </div>
+            {response.model && (
+              <div className="flex justify-between">
+                <span className="text-slate-400">Model:</span>
+                <span className="text-slate-200">{response.model}</span>
+              </div>
+            )}
+            {response.fallbackOccurred && (
+              <div className="flex justify-between text-amber-300">
+                <span>Fallback:</span>
+                <span>from {response.fallbackFrom || "primary"}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-1 border-t border-white/[0.06] text-slate-500">
+              <span>Zero-Spend:</span>
+              <span className="text-emerald-400">Verified Free</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Popover inside Layer */}
+      {isSettingsOpen && onCloseSettings && onUserNameChange && onAssistantNameChange && onVoiceInputToggle && (
+        <ConversationSettingsPopover
+          isOpen={true}
+          onClose={onCloseSettings}
+          position="layer"
+          userName={userName}
+          onUserNameChange={onUserNameChange}
+          assistantName={assistantName}
+          onAssistantNameChange={onAssistantNameChange}
+          voiceInputEnabled={voiceInputEnabled}
+          onVoiceInputToggle={onVoiceInputToggle}
+          voiceOutputEnabled={voiceOutputEnabled}
+          onVoiceOutputToggle={onVoiceOutputToggle}
+        />
+      )}
+
+      {/* COMPACT MODE */}
+      {!isExpanded && (
+        <div className="conversation-compact min-h-0 overflow-y-auto">
+          {!userPrompt && !response && !error && !isResponding && <p className="py-4 text-xs text-slate-400">No previous messages. Start a conversation from the dock below.</p>}
+
+          {/* Phase 1.1: Immediate user message bubble above dock */}
+          {userPrompt && (
+            <div className="mt-2.5 flex flex-col gap-1 rounded-xl bg-cyan-500/10 border border-cyan-400/20 px-3 py-2 text-xs text-cyan-100 shadow-sm animate-in fade-in duration-200">
+              <div className="flex items-start gap-1.5">
+                <span className="font-semibold text-cyan-300 shrink-0">{userName || "You"}:</span>
+                <span className="line-clamp-2 text-slate-200">{userPrompt}</span>
+              </div>
+              {userAttachments && userAttachments.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {userAttachments.map((att, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 rounded bg-black/40 border border-cyan-400/25 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {att.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Phase 1.2: Real processing and execution states */}
+          {isResponding && (
+            <div className="mt-3 space-y-2 py-1.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+                </span>
+                <span className="tracking-wide">{processingStatus || `${assistantName || "Nora"} is working on it...`}</span>
+              </div>
+              <div className="space-y-1.5 pt-0.5 animate-pulse">
+                <div className="h-2 w-5/6 rounded-full bg-gradient-to-r from-cyan-500/25 via-sky-500/35 to-cyan-500/15" />
+                <div className="h-2 w-full rounded-full bg-gradient-to-r from-cyan-500/20 via-sky-500/30 to-cyan-500/10" />
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !isResponding && (
+            <div className="mt-3 rounded-lg bg-rose-950/40 border border-rose-500/30 p-3 text-xs text-rose-200">
+              <div className="font-semibold text-rose-300 mb-1">Request failed</div>
+              <p className="text-slate-300 mb-2.5">{error}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-medium border border-rose-500/40 transition"
+              >
+                <RefreshCw className="h-3 w-3" /> Retry
+              </button>
+            </div>
+          )}
+
+          {/* Response Content (Phase 1.3: Smooth entrance) */}
+          {response && !isResponding && !error && (
+            <div className="mt-3 overflow-y-auto max-h-[18vh] sm:max-h-[22vh] md:max-h-[26vh] pr-1 select-text space-y-2 text-xs sm:text-sm text-slate-100 leading-relaxed font-sans scrollbar-thin animate-in fade-in slide-in-from-bottom-1 duration-200">
+              <Markdown content={response.content} size="sm" />
+
+              {response.media && response.media.length > 0 && (
+                <InlineMediaCard media={response.media} onRetry={onRetry} />
+              )}
+
+              {/* Dispatch Info Card */}
+              {response.dispatch && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-950/30 px-2.5 py-1.5 text-xs text-cyan-200">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                  <span className="font-medium text-white">{response.dispatch.agentName}</span>
+                  <span className="text-[11px] text-slate-400">({response.dispatch.status})</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Compact Footer Actions (Phase 2: single clear action) */}
+          <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
+            <button
+              type="button"
+              onClick={onToggleViewMode}
+              className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 transition"
+            >
+              <History className="h-3 w-3" /> View full history ({history.length})
+            </button>
+            {isPinned && (
+              <span className="text-[10px] text-cyan-400/80 font-mono">Pinned</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* EXPANDED HISTORY MODE */}
+      {isExpanded && (
+        <div className="mt-2.5 flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div
+            ref={historyScrollRef}
+            className="flex-1 min-h-0 overflow-y-auto pr-1.5 space-y-3.5 text-xs select-text scrollbar-thin"
+          >
+            {history.length === 0 && !isResponding && (
+              <div className="py-6 px-2 text-center text-xs">
+                <div className="inline-grid h-10 w-10 place-items-center rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 mb-2.5 shadow-[0_0_16px_rgba(34,211,238,0.2)]">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="font-semibold text-white mb-1">How can I assist you today?</div>
+                <p className="text-slate-400 text-[11px] leading-relaxed mb-4 max-w-[280px] mx-auto">
+                  Ask a question, analyze documents, generate media, or route tasks to specialist departments.
+                </p>
+                <div className="space-y-1.5 text-left">
+                  {[
+                    "Generate a cup of coffee using ComfyUI",
+                    "Summarize active department status",
+                    "Audit system connections & models",
+                  ].map((suggestion, sIdx) => (
+                    <button
+                      key={sIdx}
+                      type="button"
+                      onClick={() => onSelectPrompt?.(suggestion)}
+                      className="w-full flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-cyan-500/10 hover:border-cyan-400/30 px-3 py-2 text-[11px] text-slate-300 hover:text-cyan-200 transition group"
+                    >
+                      <span>{suggestion}</span>
+                      <ChevronRight className="h-3 w-3 text-slate-500 group-hover:text-cyan-300 transition" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {history.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex flex-col ${
+                  msg.role === "user" ? "items-end" : "items-start"
+                }`}
+              >
+                {msg.role === "user" ? (
+                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-cyan-500/15 border border-cyan-400/25 px-3 py-2 text-cyan-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+                    <div className="text-[10px] font-semibold text-cyan-400/80 mb-0.5">{userName || "You"}</div>
+                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {msg.attachments.map((att, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 rounded bg-black/40 border border-cyan-400/25 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
+                            <Paperclip className="h-2.5 w-2.5" />
+                            {att.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)] leading-relaxed">
+                    <div className="flex items-center justify-between gap-1.5 text-[10px] font-semibold text-cyan-300 mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3 text-cyan-400" />
+                        <span>{assistantName || "Nora"}</span>
+                      </div>
+                      {msg.provider && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-mono font-normal text-slate-400">
+                            {msg.provider}{msg.model ? ` · ${msg.model}` : ""}
+                          </span>
+                          {msg.fallbackOccurred && (
+                            <span className="rounded bg-amber-950/60 border border-amber-400/30 px-1 py-0 text-[8px] font-mono font-medium text-amber-300 uppercase" title={`Fallback from ${msg.fallbackFrom || "primary"}`}>
+                              Fallback
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <Markdown content={msg.content} size="sm" />
+                    {msg.media && msg.media.length > 0 && (
+                      <InlineMediaCard media={msg.media} />
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Thinking Indicator in History */}
+            {isResponding && (
+              <div className="flex flex-col items-start max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100">
+                <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium mb-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+                  </span>
+                  <span>{processingStatus || `${assistantName || "Nora"} is working on it...`}</span>
+                </div>
+                <div className="space-y-1.5 w-48 animate-pulse pt-1">
+                  <div className="h-2 rounded-full bg-cyan-500/20" />
+                  <div className="h-2 w-36 rounded-full bg-cyan-500/15" />
+                </div>
+              </div>
+            )}
+
+            {/* Error Banner in History */}
+            {error && !isResponding && (
+              <div className="rounded-lg bg-rose-950/40 border border-rose-500/30 p-2.5 text-xs text-rose-200 flex items-center justify-between">
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-[11px] text-rose-200 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Expanded Footer Actions */}
+          <div className="shrink-0 mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400">
+            <button
+              type="button"
+              onClick={onClearHistory}
+              disabled={history.length === 0}
+              className="inline-flex items-center gap-1 hover:text-rose-300 disabled:opacity-40 disabled:hover:text-slate-400 transition"
+            >
+              <Trash2 className="h-3 w-3" /> Clear history
+            </button>
+            <button
+              type="button"
+              onClick={onToggleViewMode}
+              className="text-cyan-400 hover:text-cyan-300 transition"
+            >
+              Collapse to latest
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CoreCommandCenter({
   telemetryData,
   zoomProgress = 0,
@@ -866,7 +1340,16 @@ export function CoreCommandCenter({
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [conversationHistory, setConversationHistory] = useState<Array<{ role: "user" | "assistant"; content: string; attachments?: { name: string; kind: string }[] }>>(() => {
+  const [conversationHistory, setConversationHistory] = useState<Array<{
+    role: "user" | "assistant";
+    content: string;
+    provider?: string;
+    model?: string;
+    fallbackOccurred?: boolean;
+    fallbackFrom?: string;
+    attachments?: { name: string; kind: string }[];
+    media?: MediaArtifactUI[];
+  }>>(() => {
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("growforge.chat.history");
@@ -895,6 +1378,8 @@ export function CoreCommandCenter({
 
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [voiceMediaArtifacts, setVoiceMediaArtifacts] = useState<MediaArtifactUI[] | null>(null);
   const stackRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1061,8 +1546,8 @@ export function CoreCommandCenter({
     }, 380);
   };
 
-  // Real Assistant Request Submission (Task C2/C3/C4)
-  const submit = async (overrideValue?: string) => {
+  // Real Assistant Request Submission (Phase 1, 2, 4, 5)
+  const submit = async (overrideValue?: string, origin: "text" | "voice" = "text") => {
     const readyAttachments = attachments.filter((a) => a.status === "done");
     const value = (overrideValue ?? prompt).trim();
     if ((!value && readyAttachments.length === 0) || isResponding || isUploadingAttachments) return;
@@ -1073,9 +1558,28 @@ export function CoreCommandCenter({
     setEngaged(true);
     setIsResponding(true);
     setResponseError(null);
-    onConversationViewChange("compact");
+
+    // Phase 1.1: Immediately append user message to conversation history & state
+    const userTurn = {
+      role: "user" as const,
+      content: promptText,
+      attachments: readyAttachments.map((a) => ({ name: a.name, kind: a.kind })),
+    };
+    const updatedHistory = [...conversationHistory, userTurn];
+    setConversationHistory(updatedHistory);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("growforge.chat.history", JSON.stringify(updatedHistory));
+    }
+
     setActiveUserPrompt(promptText);
     setActiveUserAttachments(readyAttachments.map((a) => ({ name: a.name, kind: a.kind })));
+    setActiveResponse(null);
+    if (conversationView === "closed") {
+      onConversationViewChange("compact");
+    }
+
+    // Truthful neutral processing status without invented timer progression
+    setProcessingStatus("Waiting for response...");
 
     const draftText = prompt;
     const draftAttachments = [...attachments];
@@ -1088,7 +1592,7 @@ export function CoreCommandCenter({
       ? `The client attached ${readyAttachments.length} file${readyAttachments.length === 1 ? "" : "s"} — use this as real context, not as something to ask the client to re-explain:\n\n${readyAttachments.map((a) => `--- Attached file: ${a.name} (${a.kind}) ---\n${a.extractedText}`).join("\n\n")}`
       : undefined;
 
-    const historyPayload = conversationHistory.slice(-8).map((m) => ({
+    const historyPayload = updatedHistory.slice(-8).map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     }));
@@ -1112,21 +1616,19 @@ export function CoreCommandCenter({
         throw new Error(data.error || `Request failed (${res.status})`);
       }
 
-      const newHistory = [
-        ...conversationHistory,
-        {
-          role: "user" as const,
-          content: promptText,
-          attachments: readyAttachments.map((a) => ({ name: a.name, kind: a.kind })),
-        },
-        {
-          role: "assistant" as const,
-          content: data.reply,
-        },
-      ];
-      setConversationHistory(newHistory);
+      const assistantTurn = {
+        role: "assistant" as const,
+        content: data.reply,
+        provider: data.provider,
+        model: data.model,
+        fallbackOccurred: data.fallbackOccurred,
+        fallbackFrom: data.fallbackFrom,
+        media: data.media,
+      };
+      const finalHistory = [...updatedHistory, assistantTurn];
+      setConversationHistory(finalHistory);
       if (typeof window !== "undefined") {
-        localStorage.setItem("growforge.chat.history", JSON.stringify(newHistory));
+        localStorage.setItem("growforge.chat.history", JSON.stringify(finalHistory));
       }
 
       setActiveResponse({
@@ -1135,8 +1637,18 @@ export function CoreCommandCenter({
         content: data.reply,
         timestamp: new Date().toISOString(),
         provider: data.provider || "Router",
+        model: data.model,
+        fallbackOccurred: data.fallbackOccurred,
+        fallbackFrom: data.fallbackFrom,
+        media: data.media,
+        mediaError: data.mediaError,
         dispatch: data.dispatch ?? null,
       });
+
+      // Phase 5.3: Center-stage presentation for voice-triggered media
+      if (origin === "voice" && data.media && data.media.length > 0) {
+        setVoiceMediaArtifacts(data.media);
+      }
 
       setSuccessPulse(true);
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
@@ -1155,7 +1667,20 @@ export function CoreCommandCenter({
       setAttachments((prev) => (prev.length > 0 ? prev : draftAttachments));
     } finally {
       setIsResponding(false);
+      setProcessingStatus("");
     }
+  };
+
+  const handleVoiceInputToggle = () => {
+    setVoiceInputEnabled((prev) => {
+      const next = !prev;
+      if (!next && listening) {
+        recognitionRef.current?.stop();
+        setListening(false);
+        onListeningChange?.(false);
+      }
+      return next;
+    });
   };
 
   const toggleVoice = () => {
@@ -1164,6 +1689,17 @@ export function CoreCommandCenter({
       recognitionRef.current?.stop();
       setListening(false);
       onListeningChange?.(false);
+      return;
+    }
+
+    if (!voiceInputEnabled) {
+      setVoiceError("Voice input is disabled in Settings.");
+      setHasError(true);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
+        setHasError(false);
+        setVoiceError(null);
+      }, 2000);
       return;
     }
 
@@ -1176,7 +1712,10 @@ export function CoreCommandCenter({
       setVoiceError("Voice input is not supported by this browser.");
       setHasError(true);
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => setHasError(false), 1500);
+      errorTimerRef.current = setTimeout(() => {
+        setHasError(false);
+        setVoiceError(null);
+      }, 2000);
       return;
     }
 
@@ -1191,20 +1730,41 @@ export function CoreCommandCenter({
           setVoiceActive(true);
           if (voiceActiveTimerRef.current) clearTimeout(voiceActiveTimerRef.current);
           voiceActiveTimerRef.current = setTimeout(() => setVoiceActive(false), 1200);
-          submit(transcript);
+          submit(transcript, "voice");
         }
       };
       recognition.onend = () => {
         setListening(false);
         onListeningChange?.(false);
       };
-      recognition.onerror = () => {
+      recognition.onerror = (event?: { error?: string }) => {
         setListening(false);
         onListeningChange?.(false);
-        setVoiceError("Microphone access was unavailable.");
-        setHasError(true);
+        const errType = event?.error || "unknown";
+        let msg = "Voice recognition failed.";
+        let isQuiet = false;
+        if (errType === "not-allowed" || errType === "service-not-allowed") {
+          msg = "Microphone permission denied.";
+        } else if (errType === "no-speech") {
+          msg = "No speech detected.";
+          isQuiet = true;
+        } else if (errType === "audio-capture") {
+          msg = "Microphone capture unavailable.";
+        } else if (errType === "network") {
+          msg = "Speech recognition network error.";
+        } else if (errType === "aborted") {
+          msg = "Voice input cancelled.";
+          isQuiet = true;
+        }
+        setVoiceError(msg);
+        if (!isQuiet) {
+          setHasError(true);
+        }
         if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-        errorTimerRef.current = setTimeout(() => setHasError(false), 1500);
+        errorTimerRef.current = setTimeout(() => {
+          setHasError(false);
+          setVoiceError(null);
+        }, 2000);
       };
       recognitionRef.current = recognition;
       setListening(true);
@@ -1213,9 +1773,13 @@ export function CoreCommandCenter({
     } catch {
       setListening(false);
       onListeningChange?.(false);
+      setVoiceError("Could not start voice recognition.");
       setHasError(true);
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => setHasError(false), 1500);
+      errorTimerRef.current = setTimeout(() => {
+        setHasError(false);
+        setVoiceError(null);
+      }, 2000);
     }
   };
 
@@ -1314,13 +1878,13 @@ export function CoreCommandCenter({
         </div>
       </div>
 
-      <div ref={stackRef} className="pointer-events-auto absolute left-1/2 studio-command-dock-wrapper z-30 flex w-[min(650px,calc(100vw-1.5rem))] -translate-x-1/2 flex-col gap-3">
-      {/* Response, attachments and composer share one flow so their bounds cannot overlap. */}
+      {/* ASSISTANT WORKSPACE LAYER (Responsive: Desktop Right-Side Spatial Panel / Mobile Centered Sheet / Compact Dock-Anchored) */}
       <SpatialResponseLayer
         isOpen={isSpatialLayerVisible}
         viewMode={activeViewMode}
         onToggleViewMode={() => onConversationViewChange(activeViewMode === "compact" ? "expanded" : "compact")}
         isResponding={isResponding}
+        processingStatus={processingStatus}
         assistantName={assistantName}
         userName={userCustomName}
         userPrompt={activeUserPrompt ?? latestUser?.content ?? null}
@@ -1332,177 +1896,198 @@ export function CoreCommandCenter({
         onRetry={() => submit(activeUserPrompt || undefined)}
         onOpenSettings={() => setIsLayerSettingsOpen(!isLayerSettingsOpen)}
         onClearHistory={handleClearHistory}
+        isSettingsOpen={isLayerSettingsOpen}
+        onCloseSettings={() => setIsLayerSettingsOpen(false)}
+        onUserNameChange={handleUserNameChange}
+        onAssistantNameChange={handleAssistantNameChange}
+        voiceInputEnabled={voiceInputEnabled}
+        onVoiceInputToggle={() => setVoiceInputEnabled(!voiceInputEnabled)}
+        voiceOutputEnabled={voiceOutputEnabled}
+        onVoiceOutputToggle={() => setVoiceOutputEnabled(!voiceOutputEnabled)}
+        onSelectPrompt={(suggestionPrompt) => submit(suggestionPrompt)}
       />
 
-      {/* OPTION D — STUDIO COMMAND DOCK AND REACTIVE ORB (WITH ATTACHMENTS SUPPORT - MOBILE CALIBRATED) */}
-      <div
-        ref={composerRef}
-        className="studio-composer relative z-30 shrink-0"
-      >
-        {/* Staged Attachment Chips Strip */}
-        {attachments.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2 px-1 max-h-[64px] sm:max-h-[80px] overflow-x-auto scrollbar-none">
-            {attachments.map((att) => (
-              <span
-                key={att.name}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md sm:rounded-lg border border-cyan-400/30 bg-[#061122]/95 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-xs text-cyan-200 shadow-md backdrop-blur-md"
-              >
-                {att.status === "uploading" ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-cyan-400" />
-                ) : att.kind === "image" ? (
-                  <ImageIcon className="h-3 w-3 text-cyan-300" />
-                ) : (
-                  <FileText className="h-3 w-3 text-cyan-300" />
-                )}
-                <span className="max-w-[110px] sm:max-w-[140px] truncate font-mono text-[10px] sm:text-[11px]">{att.name}</span>
-                {att.status === "error" && <span className="text-[10px] text-rose-400">({att.errorMsg || "failed"})</span>}
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(att.name)}
-                  aria-label={`Remove ${att.name}`}
-                  className="ml-0.5 text-slate-400 hover:text-white transition"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+      {/* VOICE GENERATED MEDIA CENTER PRESENTATION (Phase 5.3) */}
+      {voiceMediaArtifacts && voiceMediaArtifacts.length > 0 && (
+        <VoiceMediaCenterCard
+          media={voiceMediaArtifacts}
+          onClose={() => setVoiceMediaArtifacts(null)}
+          assistantName={assistantName}
+        />
+      )}
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className="studio-command-dock relative flex h-[52px] sm:h-[60px] md:h-[68px] items-center gap-1 sm:gap-2 md:gap-2.5 rounded-full pl-3 pr-2 sm:pl-4 sm:pr-3 md:pl-5 md:pr-3.5"
+      {/* STUDIO COMMAND DOCK WRAPPER (Centered at bottom) */}
+      <div ref={stackRef} className="pointer-events-auto absolute left-1/2 studio-command-dock-wrapper z-30 flex w-[min(650px,calc(100vw-1.5rem))] -translate-x-1/2 flex-col gap-3">
+
+        {/* OPTION D — STUDIO COMMAND DOCK AND REACTIVE ORB (WITH ATTACHMENTS SUPPORT - MOBILE CALIBRATED) */}
+        <div
+          ref={composerRef}
+          className="studio-composer relative z-30 shrink-0"
         >
-          {/* Subtle glossy top highlight line */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-6 sm:inset-x-8 top-[1px] h-[1px] rounded-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
-          />
+          {/* Staged Attachment Chips Strip */}
+          {attachments.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2 px-1 max-h-[64px] sm:max-h-[80px] overflow-x-auto scrollbar-none">
+              {attachments.map((att) => (
+                <span
+                  key={att.name}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md sm:rounded-lg border border-cyan-400/30 bg-[#061122]/95 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-xs text-cyan-200 shadow-md backdrop-blur-md transition-all hover:border-cyan-400/50 hover:bg-[#08172e]"
+                >
+                  {att.status === "uploading" ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-cyan-400" />
+                  ) : att.kind === "image" ? (
+                    <ImageIcon className="h-3 w-3 text-cyan-300" />
+                  ) : (
+                    <FileText className="h-3 w-3 text-cyan-300" />
+                  )}
+                  <span className="max-w-[110px] sm:max-w-[140px] truncate font-mono text-[10px] sm:text-[11px]">{att.name}</span>
+                  {att.status === "error" && <span className="text-[10px] text-rose-400">({att.errorMsg || "failed"})</span>}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(att.name)}
+                    aria-label={`Remove ${att.name}`}
+                    className="ml-0.5 text-slate-400 hover:text-white transition"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
 
-          {/* 1. LEFT: Small luminous reactive orb */}
-          <ReactiveOrb state={orbState} />
-
-          {/* 2. CENTER: Editable text input */}
-          <input
-            value={prompt}
-            onFocus={() => {
-              setEngaged(true);
-              setIsFocused(true);
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
             }}
-            onBlur={() => setIsFocused(false)}
-            onChange={handleInputChange}
-            placeholder={
-              listening
-                ? "Listening..."
-                : isUploadingAttachments
-                  ? "Processing..."
-                  : voiceError || (attachments.length > 0 ? "Ask about attached..." : "Start a conversation...")
-            }
-            aria-label="Start a conversation"
-            className="relative min-w-0 flex-1 bg-transparent px-1.5 sm:px-2 text-xs sm:text-sm md:text-[1.05rem] text-white outline-none placeholder:text-slate-400/65"
-          />
-
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => {
-              handleFilesSelected(e.target.files);
-              e.target.value = "";
-            }}
-            multiple
-            accept=".pdf,.docx,.txt,.md,.csv,image/*"
-            className="hidden"
-            aria-label="Upload files"
-          />
-
-          {/* 3. Attachment Button (Paperclip) */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploadingAttachments}
-            aria-label="Attach files"
-            title="Attach files (PDF, DOCX, TXT, CSV, images up to 15MB)"
-            className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
-              attachments.length > 0 ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30" : "bg-transparent"
-            }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="studio-command-dock relative flex h-[52px] sm:h-[60px] md:h-[68px] items-center gap-1 sm:gap-2 md:gap-2.5 rounded-full pl-3 pr-2 sm:pl-4 sm:pr-3 md:pl-5 md:pr-3.5"
           >
-            {isUploadingAttachments ? (
-              <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-cyan-400" />
-            ) : (
-              <Paperclip className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            )}
-          </button>
+            {/* Subtle glossy top highlight line */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-6 sm:inset-x-8 top-[1px] h-[1px] rounded-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
+            />
 
-          {/* 4. Conversation Settings Button */}
-          <button
-            type="button"
-            onClick={() => setIsDockSettingsOpen(!isDockSettingsOpen)}
-            aria-label="Conversation Settings"
-            title="Conversation Settings"
-            className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
-              isDockSettingsOpen ? "bg-white/15 text-cyan-300" : "bg-transparent"
-            }`}
-          >
-            <Settings2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+            {/* 1. LEFT: Small luminous reactive orb & live audio wave if listening */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <ReactiveOrb state={orbState} />
+              {listening && <AudioWaveVisualizer active={voiceActive} />}
+            </div>
 
-          {/* Subtle vertical separator */}
-          <span className="relative h-4 sm:h-5 md:h-6 w-px bg-white/12 mx-0.5 sm:mx-1 flex-shrink-0" aria-hidden="true" />
+            {/* 2. CENTER: Editable text input */}
+            <input
+              value={prompt}
+              onFocus={() => {
+                setEngaged(true);
+                setIsFocused(true);
+              }}
+              onBlur={() => setIsFocused(false)}
+              onChange={handleInputChange}
+              placeholder={
+                listening
+                  ? "Listening..."
+                  : isUploadingAttachments
+                    ? "Processing..."
+                    : voiceError || (attachments.length > 0 ? "Ask about attached..." : "Start a conversation...")
+              }
+              aria-label="Start a conversation"
+              className="relative min-w-0 flex-1 bg-transparent px-1.5 sm:px-2 text-xs sm:text-sm md:text-[1.05rem] text-white outline-none placeholder:text-slate-400/65"
+            />
 
-          {/* 5. Microphone Button */}
-          <button
-            type="button"
-            onClick={toggleVoice}
-            aria-label={listening ? "Stop listening" : "Start voice input"}
-            title={listening ? "Stop listening" : "Start voice input"}
-            className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 active:scale-95 ${
-              listening
-                ? "bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_16px_rgba(244,63,94,0.5)]"
-                : "bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/[0.12] border border-white/10"
-            }`}
-          >
-            {listening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />}
-          </button>
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                handleFilesSelected(e.target.files);
+                e.target.value = "";
+              }}
+              multiple
+              accept=".pdf,.docx,.txt,.md,.csv,image/*"
+              className="hidden"
+              aria-label="Upload files"
+            />
 
-          {/* 6. Send / Submit Button */}
-          <button
-            type="submit"
-            aria-label="Send message"
-            disabled={(!prompt.trim() && attachments.length === 0) || isUploadingAttachments}
-            className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 ${
-              (prompt.trim() || attachments.length > 0) && !isUploadingAttachments
-                ? "bg-gradient-to-b from-cyan-300 via-cyan-400 to-sky-500 text-slate-950 font-bold shadow-[0_0_18px_rgba(34,211,238,0.70)] hover:brightness-110 active:scale-95"
-                : "bg-white/[0.04] text-slate-600 border border-white/[0.06] cursor-not-allowed"
-            }`}
-          >
-            <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-          </button>
+            {/* 3. Attachment Button (Paperclip) */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAttachments}
+              aria-label="Attach files"
+              title="Attach files (PDF, DOCX, TXT, CSV, images up to 15MB)"
+              className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
+                attachments.length > 0 ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30" : "bg-transparent"
+              }`}
+            >
+              {isUploadingAttachments ? (
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-cyan-400" />
+              ) : (
+                <Paperclip className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              )}
+            </button>
 
-        </form>
-          {/* Conversation Settings Popover from Dock or Layer */}
+            {/* 4. Conversation Settings Button */}
+            <button
+              type="button"
+              onClick={() => setIsDockSettingsOpen(!isDockSettingsOpen)}
+              aria-label="Conversation Settings"
+              title="Conversation Settings"
+              className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
+                isDockSettingsOpen ? "bg-white/15 text-cyan-300" : "bg-transparent"
+              }`}
+            >
+              <Settings2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+
+            {/* Subtle vertical separator */}
+            <span className="relative h-4 sm:h-5 md:h-6 w-px bg-white/12 mx-0.5 sm:mx-1 flex-shrink-0" aria-hidden="true" />
+
+            {/* 5. Microphone Button */}
+            <button
+              type="button"
+              onClick={toggleVoice}
+              aria-label={listening ? "Stop listening" : "Start voice input"}
+              title={listening ? "Stop listening" : "Start voice input"}
+              className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 active:scale-95 ${
+                listening
+                  ? "bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_16px_rgba(244,63,94,0.5)]"
+                  : "bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/[0.12] border border-white/10"
+              }`}
+            >
+              {listening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />}
+            </button>
+
+            {/* 6. Send / Submit Button */}
+            <button
+              type="submit"
+              aria-label="Send message"
+              disabled={(!prompt.trim() && attachments.length === 0) || isUploadingAttachments}
+              className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 ${
+                (prompt.trim() || attachments.length > 0) && !isUploadingAttachments
+                  ? "bg-gradient-to-b from-cyan-300 via-cyan-400 to-sky-500 text-slate-950 font-bold shadow-[0_0_18px_rgba(34,211,238,0.70)] hover:brightness-110 active:scale-95"
+                  : "bg-white/[0.04] text-slate-600 border border-white/[0.06] cursor-not-allowed"
+              }`}
+            >
+              <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+            </button>
+          </form>
+
+          {/* Conversation Settings Popover from Dock */}
           <ConversationSettingsPopover
-            isOpen={isDockSettingsOpen || isLayerSettingsOpen}
-            onClose={() => {
-              setIsDockSettingsOpen(false);
-              setIsLayerSettingsOpen(false);
-            }}
+            isOpen={isDockSettingsOpen}
+            onClose={() => setIsDockSettingsOpen(false)}
             position="dock"
             userName={userCustomName}
             onUserNameChange={handleUserNameChange}
             assistantName={assistantName}
             onAssistantNameChange={handleAssistantNameChange}
             voiceInputEnabled={voiceInputEnabled}
-            onVoiceInputToggle={() => setVoiceInputEnabled(!voiceInputEnabled)}
+            onVoiceInputToggle={handleVoiceInputToggle}
             voiceOutputEnabled={voiceOutputEnabled}
             onVoiceOutputToggle={() => setVoiceOutputEnabled(!voiceOutputEnabled)}
           />
-      </div>
+        </div>
       </div>
     </section>
   );

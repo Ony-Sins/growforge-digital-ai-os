@@ -19,9 +19,11 @@ import {
   ExternalLink,
   Sparkles,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import { getAiBrandIcon } from "@/lib/aiBrandIcons";
 import type { ClientAiModel, TaskRole, ProviderType } from "@/lib/aiModelStore";
+import type { DiscoveredModel } from "@/lib/modelDiscovery";
 
 export interface Preset {
   id: string;
@@ -37,9 +39,42 @@ export interface Preset {
 
 export const PRESETS: Preset[] = [
   {
+    id: "omniroute",
+    label: "Omniroute Gateway (Local Port 20128)",
+    name: "Omniroute",
+    baseUrl: "http://localhost:20128/v1",
+    modelName: "auto",
+    providerType: "omniroute",
+    taskRole: "general",
+    tokenLabel: "Omniroute API Key / Token",
+    helpUrl: "https://github.com/omniroute",
+  },
+  {
+    id: "groq",
+    label: "Groq Cloud LPU",
+    name: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    modelName: "llama-3.3-70b-versatile",
+    providerType: "groq",
+    taskRole: "utility",
+    tokenLabel: "Groq API Key (gsk_...)",
+    helpUrl: "https://console.groq.com/keys",
+  },
+  {
+    id: "gemini",
+    label: "Google Gemini",
+    name: "Google Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    modelName: "gemini-3.6-flash",
+    providerType: "gemini",
+    taskRole: "general",
+    tokenLabel: "Google AI Studio API Key",
+    helpUrl: "https://aistudio.google.com/app/apikey",
+  },
+  {
     id: "openai",
-    label: "OpenAI (GPT-4o Mini)",
-    name: "OpenAI GPT-4o Mini",
+    label: "OpenAI",
+    name: "OpenAI",
     baseUrl: "https://api.openai.com/v1",
     modelName: "gpt-4o-mini",
     providerType: "openai-compatible",
@@ -49,8 +84,8 @@ export const PRESETS: Preset[] = [
   },
   {
     id: "anthropic",
-    label: "Anthropic (Claude 3.5)",
-    name: "Anthropic Claude 3.5 Sonnet",
+    label: "Anthropic",
+    name: "Anthropic",
     baseUrl: "https://api.anthropic.com/v1",
     modelName: "claude-3-5-sonnet-latest",
     providerType: "anthropic",
@@ -59,31 +94,9 @@ export const PRESETS: Preset[] = [
     helpUrl: "https://console.anthropic.com/settings/keys",
   },
   {
-    id: "gemini",
-    label: "Google Gemini",
-    name: "Google Gemini 3.6 Flash",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    modelName: "gemini-3.6-flash",
-    providerType: "gemini",
-    taskRole: "general",
-    tokenLabel: "Google AI Studio API Key",
-    helpUrl: "https://aistudio.google.com/app/apikey",
-  },
-  {
-    id: "groq",
-    label: "Groq (Llama 3.3)",
-    name: "Groq Llama 3.3 70B",
-    baseUrl: "https://api.groq.com/openai/v1",
-    modelName: "llama-3.3-70b-versatile",
-    providerType: "groq",
-    taskRole: "utility",
-    tokenLabel: "Groq API Key (gsk_...)",
-    helpUrl: "https://console.groq.com/keys",
-  },
-  {
     id: "openrouter",
     label: "OpenRouter Gateway",
-    name: "OpenRouter Auto",
+    name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
     modelName: "openrouter/auto",
     providerType: "openrouter",
@@ -94,7 +107,7 @@ export const PRESETS: Preset[] = [
   {
     id: "deepseek",
     label: "DeepSeek API",
-    name: "DeepSeek Chat",
+    name: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
     modelName: "deepseek-chat",
     providerType: "openai-compatible",
@@ -105,7 +118,7 @@ export const PRESETS: Preset[] = [
   {
     id: "mistral",
     label: "Mistral AI",
-    name: "Mistral Large",
+    name: "Mistral AI",
     baseUrl: "https://api.mistral.ai/v1",
     modelName: "mistral-large-latest",
     providerType: "openai-compatible",
@@ -149,7 +162,7 @@ export const PRESETS: Preset[] = [
   {
     id: "ollama",
     label: "Local Ollama (Private)",
-    name: "Local Ollama (Qwen 2.5 7B)",
+    name: "Local Ollama",
     baseUrl: "http://localhost:11434/v1",
     modelName: "qwen2.5:7b-instruct",
     providerType: "ollama",
@@ -334,21 +347,16 @@ export function AiModelManager() {
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
           {PRESETS.map((preset) => {
             const brand = getAiBrandIcon(preset.providerType, preset.modelName, preset.baseUrl);
-            const isConfigured = models.some(
-              (m) =>
-                m.status !== "archived" &&
-                m.status !== "disconnected" &&
-                m.modelName === preset.modelName ||
-                (m.status !== "archived" &&
-                  m.status !== "disconnected" &&
-                  m.baseUrl === preset.baseUrl &&
-                  m.providerType === preset.providerType)
-            );
             const matchingModel = models.find(
               (m) =>
+                m.id === `${preset.id}-default` ||
+                m.id === preset.id ||
                 m.modelName === preset.modelName ||
                 (m.baseUrl === preset.baseUrl && m.providerType === preset.providerType)
             );
+            const isConfigured = matchingModel
+              ? matchingModel.status !== "archived" && matchingModel.status !== "disconnected" && matchingModel.isConfigured
+              : false;
 
             return (
               <div
@@ -398,7 +406,7 @@ export function AiModelManager() {
                     >
                       {TASK_ROLE_LABELS[preset.taskRole]?.label || "General"}
                     </span>
-                    <span className="text-[10px] text-muted font-mono truncate">{preset.modelName}</span>
+                    <span className="text-[10px] text-muted font-mono truncate">{matchingModel ? matchingModel.modelName : preset.modelName}</span>
                   </div>
                 </div>
 
@@ -1066,6 +1074,77 @@ function AiModelInspectorModal({
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string; latencyMs?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Dynamic Model Discovery State
+  const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModel[]>([]);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [isCustomSlug, setIsCustomSlug] = useState(false);
+  const [discoverySource, setDiscoverySource] = useState<"live" | "fallback" | null>(null);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+
+  async function handleDiscoverModels() {
+    setIsDiscovering(true);
+    setDiscoveryError(null);
+    try {
+      const res = await fetch("/api/vault/system/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelId: model.id,
+          providerType: model.providerType,
+          baseUrl: baseUrl || model.baseUrl,
+          apiKey: apiKey.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.models && Array.isArray(data.models)) {
+        setDiscoveredModels(data.models);
+        setDiscoverySource(data.source);
+        if (data.error && data.source === "fallback") {
+          setDiscoveryError(data.error);
+        }
+      }
+    } catch (err) {
+      setDiscoveryError(err instanceof Error ? err.message : "Discovery request failed");
+    } finally {
+      setIsDiscovering(false);
+    }
+  }
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/vault/system/discover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        modelId: model.id,
+        providerType: model.providerType,
+        baseUrl: model.baseUrl,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.models && Array.isArray(data.models)) {
+          setDiscoveredModels(data.models);
+          setDiscoverySource(data.source);
+          if (data.error && data.source === "fallback") {
+            setDiscoveryError(data.error);
+          }
+        }
+      })
+      .catch((err) => {
+        if (!active) return;
+        setDiscoveryError(err instanceof Error ? err.message : "Discovery request failed");
+      })
+      .finally(() => {
+        if (active) setIsDiscovering(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [model.id, model.providerType, model.baseUrl]);
+
   async function handleTest() {
     setTesting(true);
     setTestResult(null);
@@ -1095,7 +1174,7 @@ function AiModelInspectorModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: model.id,
-          name: name.trim() || modelName.trim(),
+          name: name.trim() || model.name,
           baseUrl: baseUrl.trim(),
           modelName: modelName.trim(),
           apiKey: apiKey.trim() || undefined,
@@ -1147,7 +1226,9 @@ function AiModelInspectorModal({
             </div>
             <div>
               <h3 className="font-heading text-base font-semibold text-white">{model.name}</h3>
-              <p className="text-xs text-muted font-mono">{model.modelName}</p>
+              <p className="text-xs text-muted font-mono">
+                Selected Model: <span className="text-electric font-medium">{modelName}</span>
+              </p>
             </div>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-[#111827] hover:text-white">
@@ -1185,11 +1266,12 @@ function AiModelInspectorModal({
 
         <form onSubmit={handleSave} className="space-y-3 pt-2">
           <div>
-            <label className="block text-xs font-medium text-white">Display Name</label>
+            <label className="block text-xs font-medium text-white">Provider Identity</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Groq"
               className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white outline-none focus:border-electric"
             />
           </div>
@@ -1204,29 +1286,79 @@ function AiModelInspectorModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs font-medium text-white">Model Slug</label>
+          {/* DYNAMIC MODEL SELECTOR WITH OFFICIAL DISCOVERY */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-white">Selected Model</label>
+              <div className="flex items-center gap-2">
+                {discoverySource === "live" && (
+                  <span className="text-[10px] text-emerald font-medium flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald" /> Live Discovery
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleDiscoverModels}
+                  disabled={isDiscovering}
+                  title="Discover models from official provider API"
+                  className="text-[11px] text-electric hover:underline flex items-center gap-1 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isDiscovering ? "animate-spin" : ""}`} />
+                  <span>{isDiscovering ? "Discovering…" : "Refresh Models"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomSlug(!isCustomSlug)}
+                  className="text-[11px] text-muted hover:text-white"
+                >
+                  {isCustomSlug ? "Pick from List" : "Manual Slug"}
+                </button>
+              </div>
+            </div>
+
+            {!isCustomSlug && discoveredModels.length > 0 ? (
+              <select
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 text-xs text-white font-mono outline-none focus:border-electric"
+              >
+                {!discoveredModels.some((dm) => dm.id === modelName) && (
+                  <option value={modelName}>{modelName} (Current)</option>
+                )}
+                {discoveredModels.map((dm) => (
+                  <option key={dm.id} value={dm.id}>
+                    {dm.name} ({dm.id})
+                  </option>
+                ))}
+              </select>
+            ) : (
               <input
                 type="text"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+                placeholder="e.g. llama-3.3-70b-versatile or openai/gpt-oss-120b"
+                required
+                className="w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-white">Update Key (leave blank to keep)</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
-              />
-            </div>
+            )}
+
+            {discoveryError && (
+              <p className="text-[11px] text-amber-400 mt-1">{discoveryError}</p>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs font-medium text-white">Provider API Key (leave blank to keep current credential)</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="••••••••"
+              className="mt-1 w-full rounded-lg border border-[#333333] bg-[#111827] px-3 py-2 font-mono text-xs text-white outline-none focus:border-electric"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <div>
               <label className="block text-xs font-medium text-white">Task Role</label>
               <select
@@ -1264,7 +1396,7 @@ function AiModelInspectorModal({
               disabled={busy}
               className="flex items-center gap-1.5 text-xs text-crimson hover:underline"
             >
-              <Trash2 className="h-3.5 w-3.5" /> Disconnect Model
+              <Trash2 className="h-3.5 w-3.5" /> Disconnect Provider
             </button>
             <div className="flex gap-2">
               <button
