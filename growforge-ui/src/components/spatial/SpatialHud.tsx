@@ -8,6 +8,11 @@ import { useAppState } from "@/lib/appState";
 import { ApprovalBanner } from "@/components/workspace/ApprovalBanner";
 import { CoreCommandCenter } from "./CoreCommandCenter";
 
+import { useLiveAgents } from "@/lib/useLiveAgents";
+import vaultDataRaw from "@/data/vaultCapabilities.json";
+
+const CORE_DEPARTMENT_COUNT = 8;
+
 interface SpatialHudProps {
   currentTier: ZoomTierName;
   visualMode?: "core" | "brain" | "missions";
@@ -56,6 +61,8 @@ export function SpatialHud({
   isNoteOpen = false, useGpuCore = true, onListeningChange, onHoverNode, onOpenNode,
 }: SpatialHudProps) {
   const { openSettings, openUserProfile, openVaultLibrary, openAgentRoster } = useAppState();
+  const liveAgents = useLiveAgents();
+  const blueprintCount = Array.isArray(vaultDataRaw) ? vaultDataRaw.length : 0;
   const [conversationView, setConversationView] = useState<"closed" | "compact" | "expanded">("closed");
   const [approvalsOpen, setApprovalsOpen] = useState(false);
   const hudRef = useRef<HTMLDivElement>(null);
@@ -347,9 +354,18 @@ export function SpatialHud({
           <p className="mt-1 text-xs leading-5 text-slate-400">Memory, departments, specialists, and the connected knowledge graph.</p>
         </div>
         <div className="grid grid-cols-3 gap-2 border-b border-white/10 p-3">
-          <button onClick={openAgentRoster} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10 transition"><strong className="block text-cyan-300">7</strong><span className="text-[10px] text-slate-400">Quick Agents</span></button>
-          <div className="rounded-xl bg-white/5 p-2"><strong className="block text-violet-300">8</strong><span className="text-[10px] text-slate-400">Departments</span></div>
-          <button onClick={openVaultLibrary} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10 transition"><strong className="block text-amber-300">207</strong><span className="text-[10px] text-slate-400">Blueprints</span></button>
+          <button onClick={openAgentRoster} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10 transition">
+            <strong className="block text-cyan-300">{liveAgents.length}</strong>
+            <span className="text-[10px] text-slate-400">Agent Templates</span>
+          </button>
+          <div className="rounded-xl bg-white/5 p-2">
+            <strong className="block text-violet-300">{CORE_DEPARTMENT_COUNT}</strong>
+            <span className="text-[10px] text-slate-400">Departments</span>
+          </div>
+          <button onClick={openVaultLibrary} className="rounded-xl bg-white/5 p-2 text-left hover:bg-white/10 transition">
+            <strong className="block text-amber-300">{blueprintCount}</strong>
+            <span className="text-[10px] text-slate-400">Blueprint Catalog</span>
+          </button>
         </div>
         <div className="flex gap-2 p-3">
           <button onClick={() => openUserProfile("profile")} className="flex flex-1 items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs hover:bg-white/10 transition"><CircleUserRound className="h-4 w-4 text-cyan-300" />Memory</button>
@@ -359,34 +375,46 @@ export function SpatialHud({
           <button onClick={() => setSearchOpen((value) => !value)} className="flex w-full items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300 hover:border-cyan-400/40 hover:text-white transition"><Search className="h-4 w-4 text-cyan-400" />Search knowledge <kbd className="ml-auto text-slate-500 font-mono text-[10px] border border-white/10 rounded px-1.5 py-0.5">/</kbd></button>
         </div>
         <div className="flex-1 overflow-y-auto px-3 pb-3">
-          <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-500">Graph layers</p>
-          <div className="flex flex-wrap gap-1.5">{categories.map((category) => (
-            <button key={category.id} onClick={() => onToggleCategory(category.id)} onDoubleClick={() => onSoloCategory(category.id)} className={`rounded-full border px-2.5 py-1 text-[10px] font-medium transition ${activeCategories.has(category.id) ? "border-cyan-400/50 bg-cyan-400/15 text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]" : "border-white/10 text-slate-500 hover:text-slate-300"}`}>{category.label}</button>
-          ))}</div>
-          <p className="mb-2 mt-4 text-[10px] uppercase tracking-wider text-slate-500">Nodes in field <span className="text-slate-600">· hover to locate</span></p>
-          <ul className="space-y-0.5" onMouseLeave={() => onHoverNode?.(null)}>
-            {[...allNodes]
-              .filter((node) => activeCategories.has(node.source))
-              .sort((a, b) => b.degree - a.degree || a.categoryLabel.localeCompare(b.categoryLabel) || a.title.localeCompare(b.title))
-              .map((node) => {
-                const cat = categories.find((c) => c.id === node.source);
-                return (
-                  <li key={node.id}>
-                    <button
-                      onMouseEnter={() => onHoverNode?.(node.id)}
-                      onFocus={() => onHoverNode?.(node.id)}
-                      onBlur={() => onHoverNode?.(null)}
-                      onClick={() => (onOpenNode ?? onSelectNode)(node)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[11px] text-slate-300 transition hover:bg-cyan-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/50"
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cat?.color ?? "#38bdf8", boxShadow: `0 0 4px ${cat?.color ?? "#38bdf8"}` }} />
-                      <span className="min-w-0 flex-1 truncate">{node.title}</span>
-                      {node.degree > 0 && <span className="shrink-0 font-mono text-[9px] text-cyan-300/70">{node.degree}</span>}
-                    </button>
-                  </li>
-                );
-              })}
-          </ul>
+          {allNodes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400">
+              <Brain className="h-8 w-8 text-cyan-400/40 mb-2" />
+              <p className="text-xs font-medium text-slate-300">No Knowledge Nodes Connected</p>
+              <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
+                Connect your Obsidian vault or knowledge sources to populate the spatial graph. The atmospheric particle field remains active.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-500">Graph layers</p>
+              <div className="flex flex-wrap gap-1.5">{categories.map((category) => (
+                <button key={category.id} onClick={() => onToggleCategory(category.id)} onDoubleClick={() => onSoloCategory(category.id)} className={`rounded-full border px-2.5 py-1 text-[10px] font-medium transition ${activeCategories.has(category.id) ? "border-cyan-400/50 bg-cyan-400/15 text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]" : "border-white/10 text-slate-500 hover:text-slate-300"}`}>{category.label}</button>
+              ))}</div>
+              <p className="mb-2 mt-4 text-[10px] uppercase tracking-wider text-slate-500">Nodes in field <span className="text-slate-600">· hover to locate</span></p>
+              <ul className="space-y-0.5" onMouseLeave={() => onHoverNode?.(null)}>
+                {[...allNodes]
+                  .filter((node) => activeCategories.has(node.source))
+                  .sort((a, b) => b.degree - a.degree || a.categoryLabel.localeCompare(b.categoryLabel) || a.title.localeCompare(b.title))
+                  .map((node) => {
+                    const cat = categories.find((c) => c.id === node.source);
+                    return (
+                      <li key={node.id}>
+                        <button
+                          onMouseEnter={() => onHoverNode?.(node.id)}
+                          onFocus={() => onHoverNode?.(node.id)}
+                          onBlur={() => onHoverNode?.(null)}
+                          onClick={() => (onOpenNode ?? onSelectNode)(node)}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[11px] text-slate-300 transition hover:bg-cyan-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/50"
+                        >
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cat?.color ?? "#38bdf8", boxShadow: `0 0 4px ${cat?.color ?? "#38bdf8"}` }} />
+                          <span className="min-w-0 flex-1 truncate">{node.title}</span>
+                          {node.degree > 0 && <span className="shrink-0 font-mono text-[9px] text-cyan-300/70">{node.degree}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2 border-t border-white/10 p-3">
           <button onClick={onToggleCinema} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition ${isCinema ? "bg-cyan-400 text-slate-950 font-semibold shadow-[0_0_10px_rgba(34,211,238,0.4)]" : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"}`}><Film className="h-3.5 w-3.5" />Explore</button>

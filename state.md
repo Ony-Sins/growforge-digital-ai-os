@@ -1,6 +1,6 @@
 # GrowForge Digital AI OS — Handoff State (slim/current)
 
-> **Last updated:** 2026-09-28, 13:05, Antigravity (CENTRALIZED PUBLIC PREVIEW ISOLATION & DATA EXPOSURE FIX — see §A). Earlier: 2026-09-28, 11:03, Claude Code (GitHub/Vercel reconciliation — BRAIN-03 work committed `781c4b6` + scratch cleanup `8e59960`, both pushed; Vercel PRODUCTION still on stale `master @ 670ec5b` by user decision, see §A). Earlier: 2026-09-28, 10:20, Claude Code (BRAIN-03g uniform labels, deep-zoom names, volume opening, core lightning). 2026-09-28, 09:51, Claude Code (BRAIN-03f stability + verification pass and BRAIN depth pass). 2026-09-28, 09:10, Claude Code (BRAIN-03c/d/e semantic structure, label-lifecycle fix, inward journey); 2026-09-28, 07:35, Claude Code (BRAIN-03b atmosphere-links correction; BRAIN-03 arbor rewrite superseded).
+> **Last updated:** 2026-09-28, 13:42, Antigravity (CENTRALIZED PUBLIC PREVIEW ISOLATION, LOCAL OWNER RESTORATION & DYNAMIC HUD COUNTERS — see §A). Earlier: 2026-09-28, 11:03, Claude Code (GitHub/Vercel reconciliation — BRAIN-03 work committed `781c4b6` + scratch cleanup `8e59960`, both pushed; Vercel PRODUCTION still on stale `master @ 670ec5b` by user decision, see §A). Earlier: 2026-09-28, 10:20, Claude Code (BRAIN-03g uniform labels, deep-zoom names, volume opening, core lightning). 2026-09-28, 09:51, Claude Code (BRAIN-03f stability + verification pass and BRAIN depth pass). 2026-09-28, 09:10, Claude Code (BRAIN-03c/d/e semantic structure, label-lifecycle fix, inward journey); 2026-09-28, 07:35, Claude Code (BRAIN-03b atmosphere-links correction; BRAIN-03 arbor rewrite superseded).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `review/brain02-source-audit-20260927` (dedicated review branch for source-level audit)
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan, then `PRODUCT.md`/`DESIGN.md` before any design/UI work. **Full history before 2026-09-21 22:09 — the entire public-preview security saga, the Phase 0-3 UI/UX buildout, every earlier redesign attempt — lives in `state-archive.md`, not here.** Don't read the archive by default; only reach for it if you need the specific reasoning behind an old, settled decision that isn't summarized below.
@@ -9,38 +9,32 @@
 
 ## A. Session Handoff (2026-09-28, latest) — READ THIS FIRST
 
-> **CENTRALIZED PUBLIC PREVIEW ISOLATION & DATA EXPOSURE FIX (2026-09-28, 13:05, Antigravity). Committed on `review/brain02-source-audit-20260927`.**
-> - **Problem & Objective:** Vercel public preview deployments previously risked exposing personal names, Brain knowledge nodes, configured models, integration status, and credential metadata. Implemented a centralized, server-enforced public preview isolation boundary where both anonymous visitors AND authenticated owners receive an isolated fresh-user experience, while the owner's local AI OS and on-disk files remain 100% intact.
-> - **Root Causes Identified & Remediated:**
->   1. *Session Escalation on Preview:* `getSession()` previously called `auth()` first; if an authenticated owner visited the preview URL, `getSession()` returned their real owner session, granting access to real vault secrets, AI models, and memory. **Fix (`src/lib/session.ts`):** `isPublicPreviewMode()` (`PUBLIC_PREVIEW_MODE` and `NEXT_PUBLIC_PREVIEW_MODE`) is evaluated first. In preview mode, `getSession()` ALWAYS returns an isolated preview session (`name: "Operator"`, `email: "preview@growforge.local"`, non-owner `role: "employee"`).
->   2. *Store & Subsystem Isolation:* Individual stores previously read from disk even in preview mode. **Fixes:**
->      - `serverVault.ts`: `loadFile()`, `listProviders()`, `hasSecret()`, `getSecretForServerUse()` immediately return empty/null in preview mode without reading `data/vault.json`.
->      - `userMemory.ts`: `getUserMemory()`, `updateUserMemory()`, `clearUserMemory()` return clean unconfigured memory in preview mode and never persist to disk.
->      - `jobStore.ts`: `getStore()`, `listJobSummaries()`, `getJob()` return `[]` / `undefined` and write operations are no-ops.
->      - `mcp/store.ts`: `listMcpServers()` returns `[]`.
->      - `aiModelStore.ts`: `listAiModels()` returns disconnected default catalog options with `hasApiKey: false, isConfigured: false, status: "disconnected"`.
->      - `capabilityStore.ts`: `isCapabilityActive()` returns `false`.
->      - `coreState.ts`: `buildCoreState()` returns clean zero-state without probing local loopback ports or reading vault directory.
->      - `obsidianReader.ts`: `loadSpatialGraph()` returns empty graph `{ nodes: [], links: [], categories: [], summary: { totalNotes: 0, totalConnections: 0, totalSources: 0 } }` and removed hardcoded `DEFAULT_VAULT_DIR` path.
->      - `agentStore.ts`: `getLogs()` and `getLogsCount()` return `[]` and `0`.
->   3. *API Route Parity & UI Resilience:*
->      - `/api/spatial/graph`: Returns HTTP 200 with empty nodes and user `"Operator"`, allowing the Brain 3D canvas and particle atmosphere to render smoothly without 403 crashes.
->      - `/api/core/state`: Returns HTTP 200 with clean zero-state `CoreState`.
->      - `/api/logs`: Returns HTTP 200 with `{ logs: [], total: 0 }`.
->      - `/api/mcp/connect/route.ts`: Removed illegal non-HTTP exports (`handleListByoMcp`, etc.) fixing Next.js build type check.
+> **CENTRALIZED PUBLIC PREVIEW ISOLATION, LOCAL OWNER RESTORATION & TRUTHFUL HUD COUNTERS (2026-09-28, 13:42, Antigravity). Working branch `review/brain02-source-audit-20260927`.**
+> - **Problem & Scope:**
+>   1. *Preview Privacy:* Public Vercel preview deployments must behave as a completely isolated new-user installation with zero owner personal identity, empty knowledge records, 0 missions/jobs, 0 credentials, and disconnected provider options.
+>   2. *Local Owner Experience:* The local developer/owner environment must remain 100% intact with the owner's real profile ("Arif Md. Anjum Ony" -> "Ony"), existing user memories, obsidian vault, agent runs, and real metrics.
+>   3. *Truthful Counters & Empty States:* Removed hardcoded "7 Quick Agents", "8 Departments", "207 Blueprints" in `SpatialHud.tsx`. Derived counts from real data sources with explicit template labeling and clean onboarding empty state for unconfigured knowledge graphs.
+> - **Root Causes & Remediations:**
+>   1. *Dual-Environment Name & Session Resolution:*
+>      - `src/lib/session.ts`: `isPublicPreviewMode()` is evaluated server-side. In preview mode (`PUBLIC_PREVIEW_MODE="true"`), `getSession()` returns an unprivileged preview session (`role: "employee"`, email `preview@growforge.local`, name `Operator`). In local development (`PUBLIC_PREVIEW_MODE` unset), `getSession()` resolves the owner email (`anjum.ony96@gmail.com` with `role: "owner"`).
+>      - `src/components/spatial/CoreCommandCenter.tsx`: `firstName` dynamically resolves from `userCustomName` (conversation settings) -> `profileName` (from `/api/profile/memory` / `useAppState`) -> `"Operator"`. In local mode, owner's profile resolves to `"Ony"` with dynamic time-of-day greeting ("Good afternoon, Ony."); in preview mode, resolves to `"Operator"`.
+>   2. *Store & Vault Confinement:*
+>      - `serverVault.ts`: `loadFile()`, `listProviders()`, `hasSecret()`, `getSecretForServerUse()` return empty/null in preview mode without reading `data/vault.json`.
+>      - `userMemory.ts`: `getUserMemory()`, `updateUserMemory()`, `clearUserMemory()` return clean unconfigured memory in preview mode and never persist to disk; local owner reads/writes `data/user_memories.json` normally.
+>      - `jobStore.ts`: `listJobSummaries()`, `getJob()` return `[]` / `undefined` in preview mode.
+>      - `mcp/store.ts`: `listMcpServers()` returns `[]` in preview mode.
+>      - `aiModelStore.ts`: `listAiModels()` returns unconfigured catalog options in preview mode.
+>      - `coreState.ts`: `buildCoreState()` returns clean zero-state without probing local loopback ports in preview mode.
+>      - `obsidianReader.ts`: `loadSpatialGraph()` returns empty graph `{ nodes: [], links: [], categories: [] }` in preview mode.
+>   3. *HUD Metric Truthfulness & Onboarding (`SpatialHud.tsx`):*
+>      - Replaced hardcoded counts with dynamic `liveAgents.length` ("Agent Templates"), `CORE_DEPARTMENT_COUNT` ("Departments"), and `blueprintCount` ("Blueprint Catalog").
+>      - Added a clean onboarding empty state when `allNodes.length === 0` ("No Knowledge Nodes Connected — Connect your Obsidian vault or knowledge sources to populate the spatial graph. The atmospheric particle field remains active.").
 >   4. *Authorization Hardening:*
->      - `src/lib/security.ts` & `src/components/workspace/PinPromptModal.tsx`: Removed client-visible `"0000"` owner PIN bypass. Server authorization relies strictly on verified session roles and per-department PINs.
->   5. *UI String & Path Sanitization:*
->      - `CoreCommandCenter.tsx`: Replaced hardcoded "Ony" defaults with generic "Operator".
->      - `ProfileDashboard.tsx`: Replaced placeholder name with "Alex Mercer".
->      - `comfyui.ts`: Removed hardcoded `C:/Ony/ComfyUI` paths.
-> - **Verification & QA Gates (All Passed 100%):**
->   - `scripts/test-preview-isolation.ts`: 100% PASS (session boundary, vault seal, model catalog, empty jobs/logs, unconfigured memory, empty spatial graph, zero core state, API route status).
->   - `scripts/test-c11-p0a-security.ts`: 11/11 PASS
->   - `scripts/test-c11-security-closure.ts`: 13/13 PASS
->   - `scripts/test-mcp-gemini-e2e.ts`: 6/6 PASS
->   - `npx tsc --noEmit`: 0 errors
->   - `npm run lint`: 0 errors, 0 warnings
+>      - Removed hardcoded client-visible `"0000"` PIN bypass from `security.ts` and `PinPromptModal.tsx`.
+> - **Verification Results (100% PASS across both environments):**
+>   - `scripts/test-preview-isolation.ts`: 13/13 PASS (dual-environment suite verifying session, vault, models, mcp, jobs, memory, spatial graph, core state, API routes, local profile restoration, and greeting name resolution).
+>   - `npx tsc --noEmit`: 0 errors.
+>   - `npm run lint`: 0 errors, 0 warnings.
 >   - `npm run build`: 100% compile & prerender success across all 35 routes.
 >
 > ---

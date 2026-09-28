@@ -14,7 +14,7 @@ import {
   listMcpServersByOrigin,
   type DetectedMcpTool,
 } from "@/lib/mcp/store";
-import { callCustomMcpTool, generateDynamicTopology, toPluginShape } from "@/lib/mcp/pluginRegistry";
+import { generateDynamicTopology, toPluginShape } from "@/lib/mcp/pluginRegistry";
 import { isSafeOutboundUrl, scrubSecrets } from "@/lib/security/toolBroker";
 import { telemetryStore, type BrainLobe } from "@/lib/telemetryStore";
 import { logContextEvent } from "@/lib/spatial/dailyContext";

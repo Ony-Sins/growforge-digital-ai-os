@@ -1316,7 +1316,7 @@ export function CoreCommandCenter({
   useGpuCore = true,
   onListeningChange,
 }: CoreCommandCenterProps) {
-  const { role, unlockedAgentIds, setProfileName } = useAppState();
+  const { role, unlockedAgentIds, profileName, setProfileName } = useAppState();
   const [prompt, setPrompt] = useState("");
   const [engaged, setEngaged] = useState(false);
   const [listening, setListening] = useState(false);
@@ -1371,9 +1371,9 @@ export function CoreCommandCenter({
   });
   const [userCustomName, setUserCustomName] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("growforge.userName") || "Operator";
+      return localStorage.getItem("growforge.userName") || "";
     }
-    return "Operator";
+    return "";
   });
 
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
@@ -1514,7 +1514,15 @@ export function CoreCommandCenter({
   const approvalsEmphasized = useStatusEmphasis(telemetryData?.pendingApprovals);
 
   const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
-  const firstName = userCustomName?.trim() || "Operator";
+  const firstName = useMemo(() => {
+    if (userCustomName?.trim()) return userCustomName.trim();
+    if (profileName?.trim()) {
+      if (profileName.includes("Ony")) return "Ony";
+      const parts = profileName.trim().split(/\s+/);
+      return parts[0] || "Operator";
+    }
+    return "Operator";
+  }, [userCustomName, profileName]);
   const executionState = telemetryData?.telemetry.executionState || "standing by";
   const peripheralOpacity = Math.max(0, 1 - zoomProgress * 1.8);
   const systemLine = telemetryData?.activeJobCount

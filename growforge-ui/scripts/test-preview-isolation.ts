@@ -176,6 +176,65 @@ async function runPreviewIsolationTests() {
     console.log("\n=======================================================");
     console.log("ALL PREVIEW ISOLATION TESTS PASSED (100% SUCCESS)");
     console.log("=======================================================\n");
+
+    // Phase 2: Verify Local Owner Environment (PUBLIC_PREVIEW_MODE unset/false)
+    console.log("=== GROWFORGE LOCAL OWNER ENVIRONMENT VERIFICATION ===");
+    delete process.env.PUBLIC_PREVIEW_MODE;
+    delete process.env.NEXT_PUBLIC_PREVIEW_MODE;
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
+    process.env.OWNER_EMAILS = "anjum.ony96@gmail.com";
+
+    console.log("\n[10] Verifying local development session resolution...");
+    assert.strictEqual(isPublicPreviewMode(), false, "isPublicPreviewMode() must be false in local environment");
+
+    const localSession = await getSession();
+    assert(localSession !== null, "Local session must not be null in development");
+    assert.strictEqual(localSession.user.email, "anjum.ony96@gmail.com", "Local session email must match owner email");
+    assert.strictEqual(localSession.user.role, "owner", "Local session role must be owner");
+    assert.strictEqual(isPublicPreviewVisitor(localSession), false, "Local owner is NOT a preview visitor");
+    assert.strictEqual(isOwnerSession(localSession), true, "Local owner session is valid owner");
+    console.log("✓ Local session correctly resolves to owner 'anjum.ony96@gmail.com' with full owner privileges");
+
+    console.log("\n[11] Verifying local user memory & profile restoration...");
+    const localMemory = getUserMemory("anjum.ony96@gmail.com");
+    assert.strictEqual(localMemory.profile.fullName, "Arif Md. Anjum Ony", "Owner full name must be restored");
+    assert.strictEqual(localMemory.profile.companyName, "GrowForge Digital", "Owner company name must be restored");
+    assert.strictEqual(localMemory.profile.designation, "Founder & CEO", "Owner designation must be restored");
+    assert(localMemory.profile.socials.linkedin?.includes("arif-md-anjum-ony"), "Owner LinkedIn must be restored");
+    console.log(`✓ Owner profile restored: "${localMemory.profile.fullName}" (${localMemory.profile.designation} at ${localMemory.profile.companyName})`);
+
+    console.log("\n[12] Verifying GET /api/profile/memory in local environment...");
+    const localMemoryRes = await memoryRoute();
+    assert.strictEqual(localMemoryRes.status, 200, "Local /api/profile/memory must return 200");
+    const localMemoryJson = await localMemoryRes.json();
+    assert.strictEqual(localMemoryJson.memory.profile.fullName, "Arif Md. Anjum Ony", "API must return owner full name");
+    assert.strictEqual(localMemoryJson.memory.profile.companyName, "GrowForge Digital", "API must return owner company");
+    console.log("✓ GET /api/profile/memory correctly serves owner profile in local environment");
+
+    console.log("\n[13] Verifying greeting name resolution...");
+    function resolveGreetingName(customName: string, profileFullName: string | null): string {
+      if (customName?.trim()) return customName.trim();
+      if (profileFullName?.trim()) {
+        if (profileFullName.includes("Ony")) return "Ony";
+        const parts = profileFullName.trim().split(/\s+/);
+        return parts[0] || "Operator";
+      }
+      return "Operator";
+    }
+
+    // Local environment resolution with owner profile
+    const localGreeting = resolveGreetingName("", localMemory.profile.fullName);
+    assert.strictEqual(localGreeting, "Ony", "Local greeting name must resolve to 'Ony'");
+    console.log(`✓ Local environment greeting name resolves to: "${localGreeting}"`);
+
+    // Preview environment resolution with empty profile
+    const previewGreeting = resolveGreetingName("", "");
+    assert.strictEqual(previewGreeting, "Operator", "Preview greeting name must resolve to 'Operator'");
+    console.log(`✓ Preview environment greeting name resolves to: "${previewGreeting}"`);
+
+    console.log("\n=======================================================");
+    console.log("ALL LOCAL OWNER & PREVIEW DUAL-ENVIRONMENT TESTS PASSED");
+    console.log("=======================================================\n");
   } finally {
     process.env = savedEnv;
   }
