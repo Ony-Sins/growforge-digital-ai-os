@@ -1,0 +1,307 @@
+{
+  "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5050 (0x00002D83) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "parityCore": {
+    "coreMaxErr": 0.00004691286548603638,
+    "flowBlend": 0,
+    "members": 22
+  },
+  "mapping": {
+    "nodes": 35,
+    "records": 35,
+    "allMapped": true,
+    "uniqueParticles": 35
+  },
+  "journey": [
+    "d=880 links=0 edges=0 longest=0 nucleus=0.046",
+    "d=875 links=0 edges=0 longest=0 nucleus=0.046",
+    "d=861 links=0 edges=0 longest=0 nucleus=0.04605",
+    "d=839 links=0 edges=0 longest=0 nucleus=0.04621",
+    "d=811 links=0 edges=0 longest=0 nucleus=0.04659",
+    "d=777 links=0 edges=0 longest=0 nucleus=0.04727",
+    "d=741 links=0.005 edges=0 longest=0 nucleus=0.0482",
+    "d=696 links=0.058 edges=870 longest=0 nucleus=0.04959",
+    "d=654 links=0.149 edges=870 longest=0 nucleus=0.05107",
+    "d=606 links=0.297 edges=955 longest=49.5 nucleus=0.05285",
+    "d=564 links=0.442 edges=955 longest=49.5 nucleus=0.05442",
+    "d=522 links=0.597 edges=955 longest=49.5 nucleus=0.05592",
+    "d=487 links=0.724 edges=1021 longest=49.8 nucleus=0.05708",
+    "d=453 links=0.834 edges=1021 longest=49.8 nucleus=0.05804",
+    "d=423 links=0.912 edges=1021 longest=49.8 nucleus=0.05875",
+    "d=398 links=0.963 edges=1085 longest=51.5 nucleus=0.05923",
+    "d=377 links=0.99 edges=1085 longest=51.5 nucleus=0.05952",
+    "d=360 links=1 edges=1085 longest=51.5 nucleus=0.05968",
+    "d=348 links=1 edges=1119 longest=49.7 nucleus=0.05976",
+    "d=339 links=1 edges=1119 longest=49.7 nucleus=0.05979",
+    "d=333 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=331 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=330 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=330 links=1 edges=1097 longest=47.3 nucleus=0.0598",
+    "d=330 links=1 edges=1097 longest=47.3 nucleus=0.0598",
+    "d=330 links=1 edges=1097 longest=47.3 nucleus=0.0598"
+  ],
+  "swirlRate": {
+    "early": 0.99,
+    "peakDuringDive": 3.38,
+    "settledAtBrain": 1.37
+  },
+  "semantic": {
+    "info": {
+      "hubs": 1,
+      "linked": 12,
+      "records": 35,
+      "alive": 1104,
+      "ordinary": 969,
+      "local": 123,
+      "relation": 12,
+      "longestOrdinary": 50.13315811618461,
+      "longestKey": 32.91542459677322,
+      "maxLen": 52
+    },
+    "radial": {
+      "n": 969,
+      "maxR": 141,
+      "minR": 49,
+      "fractions": [
+        0.14,
+        0.21,
+        0.14,
+        0.1,
+        0.1,
+        0.09,
+        0.1,
+        0.13
+      ]
+    },
+    "discoverability": {
+      "realInView": 35,
+      "ordinarySampled": 70,
+      "realMedianContrast": 26.4,
+      "ordinaryMedianContrast": 15.32,
+      "ratio": 1.72
+    },
+    "pulseEdge": {
+      "screenLengthPx": 70
+    },
+    "pulse": {
+      "framesOn": 1152,
+      "framesOff": 1154,
+      "meanLumOn": 189.3,
+      "meanLumOff": 145.1,
+      "propagationOn": {
+        "lagSec": -1.2,
+        "peakCorr": 0.71,
+        "seconds": 8
+      },
+      "propagationOff": {
+        "lagSec": 0.02,
+        "peakCorr": 0.58,
+        "seconds": 8
+      },
+      "expectedLagSec": 1.32,
+      "isolatedMeanOn": 91.9,
+      "isolatedMeanOff": 70
+    },
+    "labelsIdle": [
+      {
+        "t": "GrowForge HQ Department",
+        "o": 0.5
+      }
+    ],
+    "labelsHover": [
+      {
+        "t": "2026-09-23 Context",
+        "o": 1
+      },
+      {
+        "t": "2026-09-25 Context",
+        "o": 0.57
+      },
+      {
+        "t": "2026-09-27 Context",
+        "o": 0.09
+      },
+      {
+        "t": "GrowForge HQ Department",
+        "o": 0.5
+      }
+    ],
+    "hoveredRecord": "2026-09-23 Context",
+    "listLocate": {
+      "hi": 1,
+      "labels": 2
+    },
+    "pointSize": {
+      "maxRestingPx": 5.4,
+      "hoverScale": 1.9
+    }
+  },
+  "carriers": {
+    "records": 35,
+    "distinctParticles": 35,
+    "unassigned": 0
+  },
+  "parityBrain": {
+    "coreMaxErr": 0.00006770618592643967,
+    "flowBlend": 58.20145574322684,
+    "members": 22
+  },
+  "hoverCursor": "pointer",
+  "clicked": "vault:2026-09-23-context",
+  "noteOpened": true,
+  "soak": [
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1082,
+      "ordinary": 944,
+      "local": 126,
+      "relation": 12,
+      "longestEdge": 50.7,
+      "longestKey": 70.5,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 77,
+      "flowTotal": 106.16654702631824,
+      "nucleusApparent": 0.0598,
+      "frames": 10170,
+      "t": 77563
+    },
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1092,
+      "ordinary": 952,
+      "local": 128,
+      "relation": 12,
+      "longestEdge": 49.3,
+      "longestKey": 84.9,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 97,
+      "flowTotal": 133.72666499631495,
+      "nucleusApparent": 0.0598,
+      "frames": 13033,
+      "t": 97588.3999999999
+    },
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1094,
+      "ordinary": 951,
+      "local": 133,
+      "relation": 10,
+      "longestEdge": 50.3,
+      "longestKey": 77.6,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 117,
+      "flowTotal": 161.3057731463009,
+      "nucleusApparent": 0.0598,
+      "frames": 15908,
+      "t": 117630.3999999999
+    }
+  ],
+  "categoryFilter": {
+    "afterToggle": [
+      1,
+      1,
+      1,
+      0,
+      1,
+      1
+    ],
+    "afterRefreshes": [
+      1,
+      1,
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  "reverse": [
+    "d=330 links=1 edges=1094 nucleus=0.0598",
+    "d=335 links=1 edges=1094 nucleus=0.0598",
+    "d=350 links=1 edges=1097 nucleus=0.05975",
+    "d=372 links=1 edges=1097 nucleus=0.05958",
+    "d=399 links=0.992 edges=1097 nucleus=0.05921",
+    "d=437 links=0.951 edges=1102 nucleus=0.05843",
+    "d=475 links=0.875 edges=1102 nucleus=0.05742",
+    "d=516 links=0.764 edges=1104 nucleus=0.05613",
+    "d=558 links=0.622 edges=1104 nucleus=0.05465",
+    "d=601 links=0.473 edges=1104 nucleus=0.05306",
+    "d=642 links=0.325 edges=1101 nucleus=0.0515",
+    "d=682 links=0.195 edges=1101 nucleus=0.05007",
+    "d=721 links=0.087 edges=1101 nucleus=0.04879",
+    "d=757 links=0.024 edges=1084 nucleus=0.04775",
+    "d=786 links=0.001 edges=1084 nucleus=0.04707",
+    "d=812 links=0 edges=1084 nucleus=0.04659",
+    "d=833 links=0 edges=1084 nucleus=0.04629",
+    "d=850 links=0 edges=1084 nucleus=0.04612",
+    "d=862 links=0 edges=1084 nucleus=0.04604",
+    "d=871 links=0 edges=1084 nucleus=0.04601",
+    "d=876 links=0 edges=1084 nucleus=0.046",
+    "d=879 links=0 edges=1084 nucleus=0.046",
+    "d=880 links=0 edges=1084 nucleus=0.046",
+    "d=880 links=0 edges=1084 nucleus=0.046",
+    "d=880 links=0 edges=1084 nucleus=0.046",
+    "d=880 links=0 edges=1084 nucleus=0.046"
+  ],
+  "backToCore": {
+    "d": 880,
+    "links": 0,
+    "edges": 1084,
+    "ordinary": 942,
+    "local": 132,
+    "relation": 10,
+    "longestEdge": 49.8,
+    "longestKey": 80.6,
+    "maxLen": 52,
+    "records": 35,
+    "chips": 6,
+    "same": true,
+    "clock": 127.2,
+    "flowTotal": 175.63590982604893,
+    "nucleusApparent": 0.046,
+    "frames": 17280,
+    "t": 127808.5
+  },
+  "brainAgain": {
+    "d": 330,
+    "links": 1,
+    "edges": 1093,
+    "ordinary": 952,
+    "local": 131,
+    "relation": 10,
+    "longestEdge": 49.1,
+    "longestKey": 87.8,
+    "maxLen": 52,
+    "records": 35,
+    "chips": 6,
+    "same": true,
+    "clock": 136.3,
+    "flowTotal": 190.57294682183934,
+    "nucleusApparent": 0.0598,
+    "frames": 18549,
+    "t": 136886.7000000002
+  },
+  "monitor": {
+    "frames": 18558,
+    "medianFrameMs": 6.9,
+    "p95FrameMs": 7,
+    "maxSpeedUnitsPerSec": 184.1,
+    "worst": {
+      "t": 114703,
+      "dt": 0.007,
+      "s": 184.06841630726464
+    },
+    "clockRegress": 0
+  },
+  "consoleErrors": []
+}

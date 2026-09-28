@@ -1,0 +1,1151 @@
+{
+  "steps": [
+    {
+      "name": "01_core_start",
+      "surface": "CORE",
+      "d": 880,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 3.6
+    },
+    {
+      "name": "02_brain_arrived",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 19.2
+    },
+    {
+      "name": "03_brain_hover",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 2,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-25 Context"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 1,
+          "hot": true
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.31,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 20
+    },
+    {
+      "name": "04_brain_selected",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 2,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-25 Context"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 1,
+          "hot": true
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.25,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": true,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 21.4
+    },
+    {
+      "name": "05_systems_over_brain",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 23.2
+    },
+    {
+      "name": "06_systems_closed_back_in_brain",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 25.1
+    },
+    {
+      "name": "06b_brain_labels_restored",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 2,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-25 Context"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 0.99,
+          "hot": true
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.35,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 25.8
+    },
+    {
+      "name": "07_brain_selected_again",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 2,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-25 Context"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 1,
+          "hot": true
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.36,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": true,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 27.8
+    },
+    {
+      "name": "08_reverse_mid_0",
+      "surface": "Brain",
+      "d": 339,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 28.4
+    },
+    {
+      "name": "08_reverse_mid_1",
+      "surface": "CORE",
+      "d": 403,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 29.4
+    },
+    {
+      "name": "08_reverse_mid_2",
+      "surface": "CORE",
+      "d": 519,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 31.1
+    },
+    {
+      "name": "08_reverse_mid_3",
+      "surface": "CORE",
+      "d": 679,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 34.3
+    },
+    {
+      "name": "08_reverse_mid_4",
+      "surface": "CORE",
+      "d": 814,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 35.9
+    },
+    {
+      "name": "09_core_arrived",
+      "surface": "CORE",
+      "d": 880,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 41.9
+    },
+    {
+      "name": "10_brain_again",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 3,
+      "labels": [
+        "Welcome",
+        "Web Development Department",
+        "Local Ollama"
+      ],
+      "labelDetail": [
+        {
+          "t": "Welcome",
+          "o": 0.06,
+          "hot": false
+        },
+        {
+          "t": "Web Development Department",
+          "o": 0.03,
+          "hot": false
+        },
+        {
+          "t": "Local Ollama",
+          "o": 0.16,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 57.5
+    },
+    {
+      "name": "11_brain_hover_only",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 3,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-25 Context",
+        "Sales BD Department"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 1,
+          "hot": true
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.24,
+          "hot": false
+        },
+        {
+          "t": "Sales BD Department",
+          "o": 0.07,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 58.3
+    },
+    {
+      "name": "12_missions",
+      "surface": "Missions",
+      "d": 89,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 63.2
+    },
+    {
+      "name": "13_core_via_missions",
+      "surface": "CORE",
+      "d": 880,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 76.6
+    },
+    {
+      "name": "14_brain_third",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 92.3
+    },
+    {
+      "name": "15_brain_search_focused",
+      "surface": "Brain",
+      "d": 329,
+      "target": [
+        27,
+        -19,
+        -73
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": true,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 94.8
+    },
+    {
+      "name": "16_core_after_manual_scroll_out",
+      "surface": "CORE",
+      "d": 770,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 102
+    },
+    {
+      "name": "17_click_old_record_position",
+      "surface": "CORE",
+      "d": 770,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": false,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 102.8
+    },
+    {
+      "name": "18_brain_fourth",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 118.8
+    },
+    {
+      "name": "19_brain_rest_no_labels",
+      "surface": "Brain",
+      "d": 330,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 120.1
+    },
+    {
+      "name": "20_brain_deep_zoom_all_names",
+      "surface": "Brain",
+      "d": 279,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 35,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-24 Context",
+        "2026-09-25 Context",
+        "2026-09-26 Context",
+        "2026-09-27 Context",
+        "GrowForge Connection Test",
+        "Welcome",
+        "AI Systems Automation Departm…",
+        "Client Success PM Department",
+        "Finance Operations Department",
+        "GrowForge HQ Department",
+        "Growth Demand Department",
+        "Marketing Department",
+        "Meta Ads Department",
+        "Quality Assurance Department",
+        "Sales BD Department",
+        "Strategy Intelligence Departm…",
+        "Web Design UX Department",
+        "Web Development Department",
+        "Product Constitution",
+        "Design System Tokens",
+        "Phased Execution Roadmap",
+        "Company Constitution",
+        "HubSpot",
+        "Notion",
+        "Apollo.io",
+        "GitHub",
+        "Vercel",
+        "Higgsfield AI",
+        "Omniroute",
+        "Google Gemini",
+        "Groq",
+        "OpenRouter",
+        "Local Ollama",
+        "Higgsfield AI"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-24 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-26 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-27 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GrowForge Connection Test",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Welcome",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "AI Systems Automation Departm…",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Client Success PM Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Finance Operations Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GrowForge HQ Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Growth Demand Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Marketing Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Meta Ads Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Quality Assurance Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Sales BD Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Strategy Intelligence Departm…",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Web Design UX Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Web Development Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Product Constitution",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Design System Tokens",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Phased Execution Roadmap",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Company Constitution",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "HubSpot",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Notion",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Apollo.io",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GitHub",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Vercel",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Higgsfield AI",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Omniroute",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Google Gemini",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Groq",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "OpenRouter",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Local Ollama",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Higgsfield AI",
+          "o": 0.39,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 123.3
+    },
+    {
+      "name": "21_brain_deep_hover_glow",
+      "surface": "Brain",
+      "d": 279,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 35,
+      "labels": [
+        "2026-09-23 Context",
+        "2026-09-24 Context",
+        "2026-09-25 Context",
+        "2026-09-26 Context",
+        "2026-09-27 Context",
+        "GrowForge Connection Test",
+        "Welcome",
+        "AI Systems Automation Departm…",
+        "Client Success PM Department",
+        "Finance Operations Department",
+        "GrowForge HQ Department",
+        "Growth Demand Department",
+        "Marketing Department",
+        "Meta Ads Department",
+        "Quality Assurance Department",
+        "Sales BD Department",
+        "Strategy Intelligence Departm…",
+        "Web Design UX Department",
+        "Web Development Department",
+        "Product Constitution",
+        "Design System Tokens",
+        "Phased Execution Roadmap",
+        "Company Constitution",
+        "HubSpot",
+        "Notion",
+        "Apollo.io",
+        "GitHub",
+        "Vercel",
+        "Higgsfield AI",
+        "Omniroute",
+        "Google Gemini",
+        "Groq",
+        "OpenRouter",
+        "Local Ollama",
+        "Higgsfield AI"
+      ],
+      "labelDetail": [
+        {
+          "t": "2026-09-23 Context",
+          "o": 1,
+          "hot": true
+        },
+        {
+          "t": "2026-09-24 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-25 Context",
+          "o": 0.56,
+          "hot": false
+        },
+        {
+          "t": "2026-09-26 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "2026-09-27 Context",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GrowForge Connection Test",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Welcome",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "AI Systems Automation Departm…",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Client Success PM Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Finance Operations Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GrowForge HQ Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Growth Demand Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Marketing Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Meta Ads Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Quality Assurance Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Sales BD Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Strategy Intelligence Departm…",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Web Design UX Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Web Development Department",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Product Constitution",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Design System Tokens",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Phased Execution Roadmap",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Company Constitution",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "HubSpot",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Notion",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Apollo.io",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "GitHub",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Vercel",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Higgsfield AI",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Omniroute",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Google Gemini",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Groq",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "OpenRouter",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Local Ollama",
+          "o": 0.39,
+          "hot": false
+        },
+        {
+          "t": "Higgsfield AI",
+          "o": 0.39,
+          "hot": false
+        }
+      ],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "pointer",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": "vault:2026-09-23-context",
+      "canvasSame": true,
+      "flowTotal": 124
+    },
+    {
+      "name": "22_brain_zoomed_back_names_fade",
+      "surface": "Brain",
+      "d": 349,
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "labelsVisible": 0,
+      "labels": [],
+      "labelDetail": [],
+      "layerDisplay": "block",
+      "layerChildren": 35,
+      "cursor": "default",
+      "noteOpen": false,
+      "searchOpen": false,
+      "interactive": true,
+      "hoveredInField": null,
+      "canvasSame": true,
+      "flowTotal": 127.4
+    }
+  ],
+  "failure": null,
+  "consoleErrors": [],
+  "pivotGlide": {
+    "startLen": 80.1,
+    "frames": 648,
+    "intermediateFrames": 121,
+    "maxStepPerFrame": 4.63,
+    "nonIncreasing": true,
+    "endLen": 0
+  },
+  "flowMonotonic": true,
+  "mappings": [
+    {
+      "label": "cycle1",
+      "runs": 1,
+      "records": 35
+    },
+    {
+      "label": "cycle2",
+      "runs": 1,
+      "records": 35
+    },
+    {
+      "label": "cycle3",
+      "runs": 1,
+      "records": 35
+    },
+    {
+      "label": "cycle4",
+      "runs": 1,
+      "records": 35
+    }
+  ]
+}

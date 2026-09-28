@@ -39,6 +39,8 @@ interface SpatialHudProps {
   onEnterCore?: () => void;
   useGpuCore?: boolean;
   onListeningChange?: (listening: boolean) => void;
+  onHoverNode?: (id: string | null) => void;
+  onOpenNode?: (node: GraphNode) => void;
 }
 
 const NAV = [
@@ -51,7 +53,7 @@ const NAV = [
 export function SpatialHud({
   currentTier, visualMode, coreZoomProgress = 0, onSelectTier, categories, activeCategories, onToggleCategory, onSoloCategory,
   allNodes, onSelectNode, isCinema, onToggleCinema, onResetReplay, telemetryData,
-  isNoteOpen = false, useGpuCore = true, onListeningChange,
+  isNoteOpen = false, useGpuCore = true, onListeningChange, onHoverNode, onOpenNode,
 }: SpatialHudProps) {
   const { openSettings, openUserProfile, openVaultLibrary, openAgentRoster } = useAppState();
   const [conversationView, setConversationView] = useState<"closed" | "compact" | "expanded">("closed");
@@ -94,6 +96,16 @@ export function SpatialHud({
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const surface = visualMode ?? (currentTier === "core" ? "missions" : currentTier === "brain" || currentTier === "dashboard" ? "brain" : "core");
+
+  // Knowledge search belongs to BRAIN: leaving BRAIN closes it and drops the query.
+  const [prevSurface, setPrevSurface] = useState(surface);
+  if (surface !== prevSurface) {
+    setPrevSurface(surface);
+    if (surface !== "brain") {
+      setSearchOpen(false);
+      setQuery("");
+    }
+  }
 
   const selectSurface = (id: (typeof NAV)[number]["id"]) => {
     if (id === "systems") return openSettings("connectors");
@@ -301,11 +313,11 @@ export function SpatialHud({
       {/* CORE Command Center — preserved state, smooth opacity fade during zoom/dive */}
       <div
         className={`transition-all duration-500 ease-out ${
-          surface === "core" && coreZoomProgress < 0.35
+          surface === "core" && coreZoomProgress < 0.20
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
-        aria-hidden={surface !== "core" || coreZoomProgress >= 0.35}
+        aria-hidden={surface !== "core" || coreZoomProgress >= 0.20}
       >
         <CoreCommandCenter
           telemetryData={telemetryData}
@@ -323,11 +335,11 @@ export function SpatialHud({
       {/* Brain Knowledge Architecture Sidebar — animated entrance upon arriving at Brain */}
       <aside
         className={`pointer-events-auto absolute bottom-24 left-3 top-24 flex w-[min(340px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-white/12 ring-1 ring-cyan-500/15 bg-[#040813]/92 shadow-[0_16px_40px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:left-5 transition-all duration-500 ease-out ${
-          surface === "brain" && coreZoomProgress > 0.65
+          surface === "brain" && coreZoomProgress >= 0.93
             ? "opacity-100 translate-x-0 pointer-events-auto"
             : "opacity-0 -translate-x-4 pointer-events-none"
         }`}
-        aria-hidden={surface !== "brain" || coreZoomProgress <= 0.65}
+        aria-hidden={surface !== "brain" || coreZoomProgress < 0.93}
       >
         <div className="border-b border-white/10 p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-300">Knowledge architecture</p>
@@ -351,6 +363,30 @@ export function SpatialHud({
           <div className="flex flex-wrap gap-1.5">{categories.map((category) => (
             <button key={category.id} onClick={() => onToggleCategory(category.id)} onDoubleClick={() => onSoloCategory(category.id)} className={`rounded-full border px-2.5 py-1 text-[10px] font-medium transition ${activeCategories.has(category.id) ? "border-cyan-400/50 bg-cyan-400/15 text-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.2)]" : "border-white/10 text-slate-500 hover:text-slate-300"}`}>{category.label}</button>
           ))}</div>
+          <p className="mb-2 mt-4 text-[10px] uppercase tracking-wider text-slate-500">Nodes in field <span className="text-slate-600">· hover to locate</span></p>
+          <ul className="space-y-0.5" onMouseLeave={() => onHoverNode?.(null)}>
+            {[...allNodes]
+              .filter((node) => activeCategories.has(node.source))
+              .sort((a, b) => b.degree - a.degree || a.categoryLabel.localeCompare(b.categoryLabel) || a.title.localeCompare(b.title))
+              .map((node) => {
+                const cat = categories.find((c) => c.id === node.source);
+                return (
+                  <li key={node.id}>
+                    <button
+                      onMouseEnter={() => onHoverNode?.(node.id)}
+                      onFocus={() => onHoverNode?.(node.id)}
+                      onBlur={() => onHoverNode?.(null)}
+                      onClick={() => (onOpenNode ?? onSelectNode)(node)}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[11px] text-slate-300 transition hover:bg-cyan-400/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400/50"
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cat?.color ?? "#38bdf8", boxShadow: `0 0 4px ${cat?.color ?? "#38bdf8"}` }} />
+                      <span className="min-w-0 flex-1 truncate">{node.title}</span>
+                      {node.degree > 0 && <span className="shrink-0 font-mono text-[9px] text-cyan-300/70">{node.degree}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+          </ul>
         </div>
         <div className="flex items-center gap-2 border-t border-white/10 p-3">
           <button onClick={onToggleCinema} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition ${isCinema ? "bg-cyan-400 text-slate-950 font-semibold shadow-[0_0_10px_rgba(34,211,238,0.4)]" : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"}`}><Film className="h-3.5 w-3.5" />Explore</button>

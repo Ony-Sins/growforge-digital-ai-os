@@ -2,7 +2,6 @@ import * as THREE from "three";
 import {
   type CoreQualityTier,
   type NeutronCoreState,
-  QUALITY_CONFIGS,
   STATE_PROFILES,
   type StateVisualProfile,
 } from "./neutronCoreTypes";
@@ -12,14 +11,28 @@ import {
   NeutronNucleusBodyFragmentShader,
   NeutronNucleusBodyVertexShader,
 } from "./NeutronCoreShader";
+import {
+  type CoreMotionState,
+  type CoreParticleBuffers,
+  NUCLEUS_MESH_RADIUS,
+  generateCoreParticles,
+} from "./coreParticleField";
+import {
+  BRAIN_DRIVE_IDLE,
+  type BrainDrive,
+  type BrainSharedUniforms,
+  createBrainSharedUniforms,
+} from "../brain/brainUniforms";
 
-function pseudoRandom(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
+/** Modest growth of the nucleus (apparent size) as the camera arrives at BRAIN. */
+const NUCLEUS_BRAIN_BOOST = 0.3;
+/** How much faster the outer atmosphere swirls at full zoom depth. */
+const DIVE_SPEED_GAIN = 2.6;
+
+const smoothstep = (e0: number, e1: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+};
 
 export class NeutronCoreEngine {
   public group: THREE.Group;
@@ -34,6 +47,9 @@ export class NeutronCoreEngine {
   public shaderMaterial: THREE.ShaderMaterial | null = null;
   public bufferGeometry: THREE.BufferGeometry | null = null;
 
+  /** Uniforms shared by reference with every BRAIN renderer (one update, all shaders in sync). */
+  public readonly shared: BrainSharedUniforms = createBrainSharedUniforms();
+
   // Active state & visual parameters
   private currentState: NeutronCoreState = "idle";
   private currentProfile: StateVisualProfile = { ...STATE_PROFILES.idle };
@@ -41,10 +57,25 @@ export class NeutronCoreEngine {
 
   // Proximity & depth smoothing
   private smoothedProximity = 0;
+  private depthFx = 1;
 
-  // Integrated stable circulation phases (eliminates variable-speed time multiplication runaway)
-  private accumulatedFlowTime = 0;
+  // Monotonic integrals (never reset, never wrap): see CoreMotionState.
+  private flowTotal = 0;
+  private flowBlend = 0;
   private accumulatedTurbTime = 0;
+  private arborClock = 0;
+
+  // The single shared particle source (identity = buffer index).
+  private field: CoreParticleBuffers | null = null;
+  private motion: CoreMotionState = {
+    flowTotal: 0,
+    flowBlend: 0,
+    turbTime: 0,
+    turbulence: 0.25,
+    pulse: 1,
+    reducedMotion: false,
+  };
+  private nucleusRadiusWorld = NUCLEUS_MESH_RADIUS * 0.9;
 
   // Performance tracking for graceful frame-time fallback
   private slowFrameCounter = 0;
@@ -76,6 +107,27 @@ export class NeutronCoreEngine {
     return this.quality;
   }
 
+  /** Shared particle source (members occupy indices [0, MEMBER_COUNT) at every quality tier). */
+  public getParticleField(): CoreParticleBuffers {
+    return this.field!;
+  }
+
+  /** Live motion state for the CPU replica of the shader motion. */
+  public getMotionState(): CoreMotionState {
+    return this.motion;
+  }
+
+  /** Verification hook: 1 = volumetric depth treatment on, 0 = off (A/B in the browser). */
+  public setDepthFx(v: number) {
+    this.depthFx = v;
+    if (this.shaderMaterial) this.shaderMaterial.uniforms.uDepthFx.value = v;
+  }
+
+  /** World radius of the visible nucleus surface right now. */
+  public getNucleusRadius(): number {
+    return this.nucleusRadiusWorld;
+  }
+
   private buildParticleSystem() {
     // Clean up any existing points
     if (this.pointsMesh) {
@@ -85,102 +137,33 @@ export class NeutronCoreEngine {
       this.pointsMesh = null;
     }
 
-    const cfg = QUALITY_CONFIGS[this.quality];
-    const totalCount = cfg.nucleusCount + cfg.flowCount + cfg.atmosphereCount;
-
-    const positions = new Float32Array(totalCount * 3);
-    const aRandom = new Float32Array(totalCount * 3);
-    const aRadius = new Float32Array(totalCount);
-    const aScale = new Float32Array(totalCount);
-
-    const rand = pseudoRandom(20260926);
-    let idx = 0;
-
-    // 1. Dense Central Nucleus (concentrated white-hot energy sphere): r in [0, 36]
-    for (let i = 0; i < cfg.nucleusCount; i++) {
-      const u = rand();
-      const v = rand();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-      // Continuous cubic power distribution: dense, coalesced luminous body at r in [0, 16] smoothly expanding to 36
-      const r = Math.pow(rand(), 2.2) * 36.0;
-
-      const sinPhi = Math.sin(phi);
-      positions[idx * 3] = r * sinPhi * Math.cos(theta);
-      positions[idx * 3 + 1] = r * sinPhi * Math.sin(theta);
-      positions[idx * 3 + 2] = r * Math.cos(phi);
-
-      aRandom[idx * 3] = rand();
-      aRandom[idx * 3 + 1] = rand();
-      aRandom[idx * 3 + 2] = rand();
-      aRadius[idx] = r;
-      aScale[idx] = 0.85 + rand() * 0.45;
-      idx++;
-    }
-
-    // 2. Volumetric Spherical Mantle (luminous electric-cyan body): r in [25, 120]
-    for (let i = 0; i < cfg.flowCount; i++) {
-      const u = rand();
-      const v = rand();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-      const r = 25.0 + Math.pow(rand(), 1.4) * 95.0;
-
-      const sinPhi = Math.sin(phi);
-      positions[idx * 3] = r * sinPhi * Math.cos(theta);
-      positions[idx * 3 + 1] = r * sinPhi * Math.sin(theta);
-      positions[idx * 3 + 2] = r * Math.cos(phi);
-
-      aRandom[idx * 3] = rand();
-      aRandom[idx * 3 + 1] = rand();
-      aRandom[idx * 3 + 2] = rand();
-      aRadius[idx] = r;
-      aScale[idx] = 0.6 + rand() * 0.7;
-      idx++;
-    }
-
-    // 3. Atmospheric Halo Envelope (soft dissolving energetic particles into void): r in [70, 220]
-    for (let i = 0; i < cfg.atmosphereCount; i++) {
-      const u = rand();
-      const v = rand();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-      const r = 70.0 + Math.pow(rand(), 1.3) * 150.0;
-
-      const sinPhi = Math.sin(phi);
-      positions[idx * 3] = r * sinPhi * Math.cos(theta);
-      positions[idx * 3 + 1] = r * sinPhi * Math.sin(theta);
-      positions[idx * 3 + 2] = r * Math.cos(phi);
-
-      aRandom[idx * 3] = rand();
-      aRandom[idx * 3 + 1] = rand();
-      aRandom[idx * 3 + 2] = rand();
-      aRadius[idx] = r;
-      aScale[idx] = 0.4 + rand() * 0.55;
-      idx++;
-    }
+    const field = generateCoreParticles(this.quality);
+    this.field = field;
 
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("aRandom", new THREE.BufferAttribute(aRandom, 3));
-    geo.setAttribute("aRadius", new THREE.BufferAttribute(aRadius, 1));
-    geo.setAttribute("aScale", new THREE.BufferAttribute(aScale, 1));
+    geo.setAttribute("position", new THREE.BufferAttribute(field.positions, 3));
+    geo.setAttribute("aRandom", new THREE.BufferAttribute(field.aRandom, 3));
+    geo.setAttribute("aRadius", new THREE.BufferAttribute(field.aRadius, 1));
+    geo.setAttribute("aScale", new THREE.BufferAttribute(field.aScale, 1));
+    geo.setAttribute("aMember", new THREE.BufferAttribute(field.aMember, 1));
     this.bufferGeometry = geo;
 
+    const s = this.shared;
     const mat = new THREE.ShaderMaterial({
       vertexShader: NeutronCoreVertexShader,
       fragmentShader: NeutronCoreFragmentShader,
       uniforms: {
-        uTime: { value: 0 },
-        uFlowTime: { value: 0 },
-        uTurbTime: { value: 0 },
         uBrightness: { value: 1.0 },
         uDepthScale: { value: 1.0 },
-        uTurbulence: { value: 0.25 },
-        uFlowSpeed: { value: 0.22 },
-        uPulse: { value: 1.0 },
         uProximity: { value: 0.0 },
-        uReducedMotion: { value: 0.0 },
+        uDepthFx: { value: this.depthFx },
+        uFlowTotal: s.uFlowTotal,
+        uFlowBlend: s.uFlowBlend,
+        uTurbTime: s.uTurbTime,
+        uTurbulence: s.uTurbulence,
+        uPulse: s.uPulse,
+        uReducedMotion: s.uReducedMotion,
+        uLinks: s.uLinks,
       },
       transparent: true,
       depthWrite: false,
@@ -190,6 +173,7 @@ export class NeutronCoreEngine {
 
     this.pointsMesh = new THREE.Points(geo, mat);
     this.pointsMesh.renderOrder = 3;
+    this.pointsMesh.frustumCulled = false;
     this.group.add(this.pointsMesh);
   }
 
@@ -203,16 +187,16 @@ export class NeutronCoreEngine {
     }
 
     // Luminous white-hot neutron star central body (Reference A: substantial core mass, ~30% of total diameter)
-    const sphereGeo = new THREE.SphereGeometry(44, 48, 48);
+    const sphereGeo = new THREE.SphereGeometry(NUCLEUS_MESH_RADIUS, 48, 48);
     const nucleusMat = new THREE.ShaderMaterial({
       vertexShader: NeutronNucleusBodyVertexShader,
       fragmentShader: NeutronNucleusBodyFragmentShader,
       uniforms: {
-        uPulse: { value: 1.0 },
-        uTurbTime: { value: 0.0 },
+        uPulse: this.shared.uPulse,
+        uTurbTime: this.shared.uTurbTime,
         uBrightness: { value: 1.0 },
         uProximity: { value: 0.0 },
-        uReducedMotion: { value: 0.0 },
+        uReducedMotion: this.shared.uReducedMotion,
       },
       transparent: true,
       depthWrite: false,
@@ -308,6 +292,7 @@ export class NeutronCoreEngine {
     proximityTarget: number,
     reducedMotion: boolean,
     deltaMs: number,
+    brain: BrainDrive = BRAIN_DRIVE_IDLE,
   ) {
     // 0. Clamped frame delta: prevents background-tab suspension or hitch jumps
     const safeDeltaSec = Math.min(Math.max(deltaMs, 0), 64.0) / 1000.0;
@@ -341,61 +326,85 @@ export class NeutronCoreEngine {
     this.currentProfile.flowSpeed += (this.targetProfile.flowSpeed - this.currentProfile.flowSpeed) * lerpSpeed;
     this.currentProfile.coreExpansion += (this.targetProfile.coreExpansion - this.currentProfile.coreExpansion) * lerpSpeed;
 
-    // 3. Integrated stable phase accumulation (frame-rate independent, zero time-multiplication runaway)
+    // 3. Monotonic phase integrals (frame-rate independent; never reset, never wrap).
     if (!reducedMotion) {
-      const flowRate = 0.55 + this.currentProfile.flowSpeed * 2.0; // 1.0 at idle baseline (0.22)
-      this.accumulatedFlowTime += safeDeltaSec * flowRate;
+      // 1.0 at idle baseline (0.22); the outer atmosphere swirls faster the deeper the dive
+      const flowRate = (0.55 + this.currentProfile.flowSpeed * 2.0) * (1.0 + DIVE_SPEED_GAIN * brain.speed);
+      this.flowTotal += safeDeltaSec * flowRate;
+      this.flowBlend += safeDeltaSec * flowRate * brain.rigid;
 
       const turbRate = 0.65 + this.currentProfile.turbulence * 1.4; // 1.0 at idle baseline (0.25)
       this.accumulatedTurbTime += safeDeltaSec * turbRate;
+
+      this.arborClock += safeDeltaSec;
     }
 
     // 4. Smooth cursor proximity
     this.smoothedProximity += (proximityTarget - this.smoothedProximity) * 0.08;
 
-    // 5. Calculate depth scale based on camera distance
-    // At Home z=950: 1.0; approaches Brain z=460: smoothly attenuates to 0.55; dive z=-70: expands gracefully
-    const depthScale = THREE.MathUtils.clamp((cameraZ - 50.0) / 900.0, 0.45, 1.15);
+    // 5. Continuous depth scale based on camera distance (particles + CORE appearance unchanged):
+    // At CORE (d=880): 0.92; at BRAIN (d=460): 0.52; approaching Missions scales with (d/460)*0.52.
+    const dist = Math.max(0.1, cameraZ);
+    const depthScale = dist >= 460.0
+      ? THREE.MathUtils.clamp(0.52 + (dist - 460.0) * (0.40 / 420.0), 0.52, 1.15)
+      : THREE.MathUtils.clamp((dist / 460.0) * 0.52, 0.02, 0.52);
+    // Nucleus apparent size: exactly the CORE look at d>=880, then a slow, monotonic growth of
+    // +NUCLEUS_BRAIN_BOOST while diving in to BRAIN (d=330), easing back toward Missions (d<330).
+    const A0 = 0.92 / 880.0;
+    const growth = dist >= 330.0 ? smoothstep(880.0, 330.0, dist) : smoothstep(120.0, 330.0, dist);
+    const nucleusScale = dist >= 880.0 ? depthScale : dist * A0 * (1.0 + NUCLEUS_BRAIN_BOOST * growth);
+    this.nucleusRadiusWorld = NUCLEUS_MESH_RADIUS * nucleusScale;
 
     // 6. Breathing pulse calculation
     const pulsePhase = elapsedSec * this.currentProfile.pulseRate * Math.PI * 2.0;
     const pulse = 1.0 + Math.sin(pulsePhase) * this.currentProfile.pulseAmplitude * this.currentProfile.coreExpansion;
 
-    // 7. Update shader uniforms for particles
+    // 7. Shared uniforms (one write feeds the CORE, membrane, dendrites and junctions)
+    const sh = this.shared;
+    sh.uFlowTotal.value = this.flowTotal;
+    sh.uFlowBlend.value = this.flowBlend;
+    sh.uTurbTime.value = this.accumulatedTurbTime;
+    sh.uTurbulence.value = this.currentProfile.turbulence;
+    sh.uPulse.value = pulse;
+    sh.uReducedMotion.value = reducedMotion ? 1.0 : 0.0;
+    sh.uLinks.value = brain.links;
+    sh.uClock.value = elapsedSec;
+    sh.uTime64.value = this.arborClock % 64.0;
+
+    const m = this.motion;
+    m.flowTotal = this.flowTotal;
+    m.flowBlend = this.flowBlend;
+    m.turbTime = this.accumulatedTurbTime;
+    m.turbulence = this.currentProfile.turbulence;
+    m.pulse = pulse;
+    m.reducedMotion = reducedMotion;
+
+    // 8. Particle material
     if (this.shaderMaterial) {
       const u = this.shaderMaterial.uniforms;
-      u.uTime.value = elapsedSec;
-      u.uFlowTime.value = this.accumulatedFlowTime;
-      u.uTurbTime.value = this.accumulatedTurbTime;
       u.uBrightness.value = this.currentProfile.brightness * (1.0 + this.smoothedProximity * 0.25);
       u.uDepthScale.value = depthScale;
-      u.uTurbulence.value = this.currentProfile.turbulence;
-      u.uFlowSpeed.value = this.currentProfile.flowSpeed;
-      u.uPulse.value = pulse;
       u.uProximity.value = this.smoothedProximity;
-      u.uReducedMotion.value = reducedMotion ? 1.0 : 0.0;
     }
 
-    // 8. Update central white-hot nucleus body shader & scale
+    // 9. Central white-hot nucleus body
     if (this.nucleusMesh && this.nucleusMaterial) {
       const nu = this.nucleusMaterial.uniforms;
-      nu.uPulse.value = pulse;
-      nu.uTurbTime.value = this.accumulatedTurbTime;
-      nu.uBrightness.value = this.currentProfile.brightness * (1.0 + this.smoothedProximity * 0.2);
+      // slightly calmer body as the field connects (less white blowout up close)
+      nu.uBrightness.value = this.currentProfile.brightness * (1.0 + this.smoothedProximity * 0.2) * (1.0 - 0.14 * brain.links);
       nu.uProximity.value = this.smoothedProximity;
-      nu.uReducedMotion.value = reducedMotion ? 1.0 : 0.0;
-      this.nucleusMesh.scale.set(depthScale, depthScale, depthScale);
+      this.nucleusMesh.scale.set(nucleusScale, nucleusScale, nucleusScale);
     }
 
-    // 9. Update multi-tier electric cyan corona sprites
+    // 10. Multi-tier electric cyan corona sprites
     const pulseOffset = (pulse - 1.0);
     if (this.coreSprite) {
-      const innerScale = 190 * (1.0 + pulseOffset * 0.6) * depthScale * (1.0 + this.smoothedProximity * 0.15);
+      const innerScale = 190 * (1.0 + pulseOffset * 0.6) * nucleusScale * (1.0 + this.smoothedProximity * 0.15);
       this.coreSprite.scale.set(innerScale, innerScale, 1);
-      this.coreSprite.material.opacity = (0.68 + pulseOffset * 0.12) * Math.min(1.0, depthScale * 1.1);
+      this.coreSprite.material.opacity = (0.58 + pulseOffset * 0.12) * Math.min(1.0, depthScale * 1.1);
     }
     if (this.outerCoronaSprite) {
-      const outerScale = 320 * (1.0 + pulseOffset * 0.5) * depthScale;
+      const outerScale = 320 * (1.0 + pulseOffset * 0.5) * nucleusScale;
       this.outerCoronaSprite.scale.set(outerScale, outerScale, 1);
       this.outerCoronaSprite.material.opacity = (0.44 + pulseOffset * 0.08) * Math.min(1.0, depthScale * 1.1);
     }

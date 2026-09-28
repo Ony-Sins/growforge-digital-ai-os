@@ -4,24 +4,24 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { GraphNode, GraphLink, SpatialGraphData } from "@/lib/spatial/obsidianReader";
+import type { GraphNode, SpatialGraphData } from "@/lib/spatial/obsidianReader";
 import {
   CORE_DEPTH,
   type ZoomTierName,
   layoutSpatialGlobe,
   createCoreOrbitals,
-  planGrowth,
-  growthPosition,
-  getGlowTexture,
   getStarDotTexture,
-  type GrowthPlan,
 } from "./spatialGeometry";
+import { BrainField } from "./brain/BrainField";
+import { CoreLightning } from "./brain/coreLightning";
+import type { BrainDrive } from "./brain/brainUniforms";
 import { NeutronCoreEngine } from "./neutronCore/NeutronCoreEngine";
 import type { NeutronCoreState } from "./neutronCore/neutronCoreTypes";
 import { SpatialHud } from "./SpatialHud";
 import { CoreZoomTier } from "./CoreZoomTier";
 import { NoteReaderModal } from "./NoteReaderModal";
 import { BusinessHubModal } from "./BusinessHubModal";
+import { useAppState } from "@/lib/appState";
 
 interface SpatialTelemetryData {
   activeJobCount: number;
@@ -45,9 +45,34 @@ const DIVE_MS = 1150;
 const DIVE_END_Z = -70;
 
 const CORE_CAMERA_DIST = 880;
-const BRAIN_CAMERA_DIST = 460;
+const BRAIN_CAMERA_DIST = 330; // inside the atmosphere: the inner field fills the frame
 const MISSIONS_CAMERA_DIST = 90;
-const BRAIN_JOURNEY_MS = 2400; // Calibrated ~2.4s cinematic timeline
+const BRAIN_JOURNEY_MS = 5800; // long enough for the same particles to link up gradually
+
+// BRAIN emergence is a pure function of camera distance, so it plays identically
+// for the guided dolly and for manual wheel/drag zoom, and reverses on the way out.
+const REVEAL_START_DIST = 800;
+const REVEAL_END_DIST = 350;
+
+const smooth01 = (e0: number, e1: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+};
+
+/** Centered dolly easing: brief settle, steady push, long controlled deceleration. */
+function dollyEase(t: number): number {
+  const a = t * t * (3 - 2 * t); // smoothstep
+  return 1 - Math.pow(1 - a, 1.6);
+}
+
+function driveFromReveal(reveal: number): BrainDrive {
+  return {
+    rigid: smooth01(0.05, 0.6, reveal) * 0.85,
+    links: smooth01(0.05, 0.97, reveal),
+    // fastest mid-dive, then settles to a calm (still slightly quickened) swirl on arrival
+    speed: smooth01(0.0, 0.55, reveal) * (1 - 0.85 * smooth01(0.55, 1.0, reveal)),
+  };
+}
 
 interface TravelTransition {
   startTime: number;
@@ -57,6 +82,7 @@ interface TravelTransition {
   fromTier: ZoomTierName;
   toTier: ZoomTierName;
   targetVisualMode: "core" | "brain" | "missions";
+  startTarget: THREE.Vector3;
 }
 
 interface SpatialCanvasProps {
@@ -122,49 +148,19 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   const targetDistanceRef = useRef<number>(initialTier === "core" ? MISSIONS_CAMERA_DIST : initialTier === "brain" ? BRAIN_CAMERA_DIST : CORE_CAMERA_DIST);
   const currentTierRef = useRef<ZoomTierName>(initialTier);
   const isInteractingRef = useRef<boolean>(false);
-  const growthPlanRef = useRef<GrowthPlan | null>(null);
+  const knownCategoryIdsRef = useRef<Set<string>>(new Set());
   const hoveredNodeIdRef = useRef<string | null>(null);
   const isCoreHoveredRef = useRef<boolean>(false);
   // Ambient rotation pauses on click/drag/zoom and auto-resumes after this many
   // ms of no interaction (user asked for "5-10 secs" — picked the midpoint).
   const lastInteractionRef = useRef<number>(0);
 
-  // Mesh & line maps for fast interaction updates
-  const nodeMeshMap = useRef<
-    Map<
-      string,
-      {
-        group: THREE.Group;
-        node: GraphNode;
-        outerMaterial: THREE.MeshStandardMaterial;
-        coreMaterial: THREE.MeshStandardMaterial;
-        haloSprite: THREE.Sprite;
-        // Eased 0..1 cursor-proximity glow — boxed in an object so it can be
-        // mutated in place every frame without replacing the Map entry.
-        proximity: { v: number };
-        // Eased connection-highlight multiplier (1 = neutral, >1 = boosted
-        // because it's connected to the exactly-hovered node, <1 = dimmed
-        // because it isn't). Also boxed so it can ease smoothly every frame
-        // instead of snapping the instant hover state changes — this is what
-        // used to be set directly (with zero easing) inside the pointermove
-        // handler; unifying it here fixed the "instant on/off" report.
-        connectionGlow: { v: number };
-      }
-    >
-  >(new Map());
-  const linkObjectMap = useRef<
-    Map<
-      string,
-      {
-        line: THREE.Line;
-        link: GraphLink;
-        material: THREE.LineBasicMaterial;
-        midpoint: THREE.Vector3;
-        proximity: { v: number };
-        connectionGlow: { v: number };
-      }
-    >
-  >(new Map());
+  // BRAIN arbor: the CORE's own particles organising into membrane + dendrites.
+  const brainFieldRef = useRef<BrainField | null>(null);
+  // Smoothed BRAIN reveal progress (0..1), eased per frame in a frame-rate
+  // independent way so the handoff can never snap, even if camera distance jitters.
+  const brainRevealRef = useRef(0);
+
   // Last known cursor position in container-relative pixels, used every frame
   // (not just on pointermove) since node screen positions keep changing from
   // ambient rotation/zoom even when the cursor itself is still. Starts far
@@ -175,6 +171,20 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   // read every frame in the animate loop. Kept separate from hoveredNodeIdRef
   // so pointermove never has to touch materials directly.
   const connectedTargetsRef = useRef<Set<string>>(new Set());
+  // DOM label layer for identifying records (hover / cursor proximity / sidebar-list hover / hub)
+  const labelLayerRef = useRef<HTMLDivElement>(null);
+  const listHoverIdRef = useRef<string | null>(null);
+  const knowledgeGateRef = useRef(0);
+  const deepLabelsRef = useRef(0);
+  // Set when BRAIN is left with the orbit pivot away from the nucleus (e.g. a focused record);
+  // the pivot then glides home and the flag clears once it arrives (user panning in CORE is untouched).
+  const pivotReturnRef = useRef(false);
+  // The Systems panel covers the scene: the BRAIN knowledge layer must not stay active under it.
+  const { isSettingsOpen } = useAppState();
+  const settingsOpenRef = useRef(isSettingsOpen);
+  useEffect(() => {
+    settingsOpenRef.current = isSettingsOpen;
+  }, [isSettingsOpen]);
 
   // 1. Fetch Real Data (Obsidian Graph & Live Telemetry)
   const refreshData = useCallback(async () => {
@@ -186,12 +196,24 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
 
       if (graphRes.ok) {
         const json = await graphRes.json();
-        if (json.ok && json.data) {
-          const data: SpatialGraphData = json.data;
+        const data: SpatialGraphData = json.data;
+        if (data && data.nodes) {
           layoutSpatialGlobe(data.nodes, data.categories);
-          growthPlanRef.current = planGrowth(data.nodes, data.links);
-          setGraphData(data);
-          setActiveCategories(new Set(data.categories.map((c) => c.id)));
+          setGraphData((prev) => {
+            if (!prev) return data;
+            const sameNodes = prev.nodes.length === data.nodes.length &&
+              prev.nodes.every((n, i) => n.id === data.nodes[i]?.id);
+            const sameLinks = prev.links.length === data.links.length;
+            if (sameNodes && sameLinks) return prev;
+            return data;
+          });
+          // A routine refresh must not undo the user's layer filter: only categories
+          // that have never been seen before are switched on.
+          const fresh = data.categories.map((c) => c.id).filter((id) => !knownCategoryIdsRef.current.has(id));
+          if (fresh.length > 0) {
+            fresh.forEach((id) => knownCategoryIdsRef.current.add(id));
+            setActiveCategories((prev) => new Set([...prev, ...fresh]));
+          }
         }
       }
 
@@ -221,9 +243,42 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     };
   }, [refreshData]);
 
+  // Unified cancellation helper for mutual exclusion and clean interruptions
+  const cancelTransitions = useCallback((restoreCamera = true) => {
+    if (travelTransitionRef.current) {
+      travelTransitionRef.current = null;
+    }
+    if (diveRef.current) {
+      diveRef.current = null;
+      setIsDiving(false);
+    }
+    if (restoreCamera && cameraRef.current) {
+      cameraRef.current.rotation.z = 0;
+      cameraRef.current.fov = 48;
+      cameraRef.current.updateProjectionMatrix();
+      if (rendererRef.current) rendererRef.current.toneMappingExposure = 1.05;
+    }
+    if (controlsRef.current) {
+      controlsRef.current.enabled = true;
+    }
+  }, []);
+
+  // Everything transient that belongs to the BRAIN knowledge layer. Called the moment another surface is
+  // chosen and whenever the visual surface stops being BRAIN (nav, manual zoom out, Missions dive).
+  const clearBrainFocus = useCallback(() => {
+    hoveredNodeIdRef.current = null;
+    connectedTargetsRef.current = new Set();
+    listHoverIdRef.current = null;
+    brainFieldRef.current?.setHoveredNode(null, new Set());
+    if (containerRef.current) containerRef.current.style.cursor = "default";
+    setSelectedNode(null);
+  }, []);
+
   // Dashboard → CORE (Missions): camera accelerates through the core into Tier 5.
   const handleEnterCore = useCallback(() => {
     if (diveRef.current) return;
+    clearBrainFocus();
+    cancelTransitions(true);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !cameraRef.current) {
       setCurrentTier("core");
       currentTierRef.current = "core";
@@ -236,16 +291,18 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     }
     diveRef.current = { start: performance.now(), startZ: cameraRef.current.position.z, navigated: false };
     setIsDiving(true);
-  }, []);
+  }, [cancelTransitions, clearBrainFocus]);
 
   // Fast-travel zoom navigation with calibrated cinematic acceleration / deceleration
   const handleSelectTier = useCallback((tier: ZoomTierName) => {
+    if (tier !== "brain") clearBrainFocus();
     const isReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const targetDist = tier === "home" ? CORE_CAMERA_DIST : tier === "brain" ? BRAIN_CAMERA_DIST : MISSIONS_CAMERA_DIST;
     targetDistanceRef.current = targetDist;
 
     if (tier === "core") {
       // Missions tier requested
+      cancelTransitions(true);
       setCurrentTier("core");
       currentTierRef.current = "core";
       setVisualMode("missions");
@@ -262,13 +319,26 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     }
 
     // Leaving Missions back to CORE or Brain
-    if (visualModeRef.current === "missions") {
+    if (visualModeRef.current === "missions" || currentTierRef.current === "core") {
+      cancelTransitions(true);
       setVisualMode(tier === "brain" ? "brain" : "core");
       setCurrentTier(tier);
       currentTierRef.current = tier;
+      if (cameraRef.current && controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        const ray = new THREE.Vector3().subVectors(cameraRef.current.position, controlsRef.current.target).normalize();
+        if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
+        const currentDist = cameraRef.current.position.distanceTo(controlsRef.current.target);
+        if (isReducedMotion || Math.abs(currentDist - targetDist) < 10) {
+          cameraRef.current.position.copy(controlsRef.current.target).addScaledVector(ray, targetDist);
+          controlsRef.current.update();
+          return;
+        }
+      }
     }
 
     if (!cameraRef.current || !controlsRef.current) {
+      cancelTransitions(true);
       setCurrentTier(tier);
       currentTierRef.current = tier;
       setVisualMode(tier === "brain" ? "brain" : "core");
@@ -278,21 +348,19 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     const currentDist = cameraRef.current.position.distanceTo(controlsRef.current.target);
 
     if (isReducedMotion) {
+      cancelTransitions(true);
       const ray = new THREE.Vector3().subVectors(cameraRef.current.position, controlsRef.current.target).normalize();
       if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
       cameraRef.current.position.copy(controlsRef.current.target).addScaledVector(ray, targetDist);
       controlsRef.current.update();
-      cameraRef.current.fov = 48;
-      cameraRef.current.updateProjectionMatrix();
-      if (rendererRef.current) rendererRef.current.toneMappingExposure = 1.05;
       setCurrentTier(tier);
       currentTierRef.current = tier;
       setVisualMode(tier === "brain" ? "brain" : "core");
-      travelTransitionRef.current = null;
       return;
     }
 
-    // Start or redirect cinematic travel timeline
+    // Start clean transition from current live position (cancel any previous in-flight transition)
+    cancelTransitions(false);
     const distDelta = Math.abs(targetDist - currentDist);
     const duration = Math.max(600, Math.min(BRAIN_JOURNEY_MS, (distDelta / Math.abs(CORE_CAMERA_DIST - BRAIN_CAMERA_DIST)) * BRAIN_JOURNEY_MS));
 
@@ -304,8 +372,9 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       fromTier: currentTierRef.current,
       toTier: tier,
       targetVisualMode: tier === "brain" ? "brain" : "core",
+      startTarget: controlsRef.current.target.clone(),
     };
-  }, [handleEnterCore]);
+  }, [cancelTransitions, handleEnterCore, clearBrainFocus]);
 
   // 2. Initialize Three.js WebGL Scene
   useEffect(() => {
@@ -317,7 +386,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010206);
-    scene.fog = new THREE.FogExp2(0x010206, 0.00085);
+    scene.fog = new THREE.FogExp2(0x010206, 0.00045);
     sceneRef.current = scene;
 
     // Camera
@@ -347,11 +416,9 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     controlsRef.current = controls;
 
     const onInteractionStart = () => {
-      if (travelTransitionRef.current) {
-        travelTransitionRef.current = null;
-        if (cameraRef.current && controlsRef.current) {
-          targetDistanceRef.current = cameraRef.current.position.distanceTo(controlsRef.current.target);
-        }
+      cancelTransitions(true);
+      if (cameraRef.current && controlsRef.current) {
+        targetDistanceRef.current = cameraRef.current.position.distanceTo(controlsRef.current.target);
       }
       isInteractingRef.current = true;
       lastInteractionRef.current = performance.now();
@@ -370,6 +437,17 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     controls.addEventListener("start", onInteractionStart);
     controls.addEventListener("end", onInteractionEnd);
     controls.addEventListener("change", onControlsChange);
+
+    const handleWheel = () => {
+      if (travelTransitionRef.current || diveRef.current) {
+        cancelTransitions(true);
+        if (cameraRef.current && controlsRef.current) {
+          targetDistanceRef.current = cameraRef.current.position.distanceTo(controlsRef.current.target);
+        }
+      }
+      lastInteractionRef.current = performance.now();
+    };
+    container.addEventListener("wheel", handleWheel, { passive: true });
 
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
@@ -397,9 +475,17 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     }
     const orbitals = USE_GPU_CORE ? null : createCoreOrbitals(scene);
 
-    // Distant Ambient Starfield — soft glow-textured points, not hard flat
-    // dots, so the background reads as a light-filled nebula rather than a
-    // sparse scatter of solid squares.
+    // BRAIN arbor (needs the CORE engine: it shares the engine's particle source and uniforms)
+    const arbor = neutronCore ? new BrainField(scene, neutronCore) : null;
+    const lightning = neutronCore ? new CoreLightning(scene) : null;
+    (window as unknown as { __BRAIN_LIGHTNING?: CoreLightning | null }).__BRAIN_LIGHTNING = lightning;
+    brainFieldRef.current = arbor;
+    if (arbor) {
+      arbor.setViewport(width, height, renderer.getPixelRatio());
+      (window as unknown as { __BRAIN_FIELD?: BrainField }).__BRAIN_FIELD = arbor;
+    }
+
+    // Distant Ambient Starfield
     const starGeo = new THREE.BufferGeometry();
     const starCount = 4000;
     const starPos = new Float32Array(starCount * 3);
@@ -422,8 +508,30 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     const starField = new THREE.Points(starGeo, starMat);
     scene.add(starField);
 
-    // A sparser pass of warm gold specks for the same rim-light flavor the
-    // reference has — GrowForge's "Earned Gold" accent, not decorative-only.
+    // Volumetric Foreground Transit Dust Stream (Real 3D perspective parallax during dive)
+    const transitGeo = new THREE.BufferGeometry();
+    const transitCount = 850;
+    const transitPos = new Float32Array(transitCount * 3);
+    for (let i = 0; i < transitCount * 3; i += 3) {
+      transitPos[i] = (Math.random() - 0.5) * 850;
+      transitPos[i + 1] = (Math.random() - 0.5) * 850;
+      transitPos[i + 2] = 120 + Math.random() * 950;
+    }
+    transitGeo.setAttribute("position", new THREE.BufferAttribute(transitPos, 3));
+    const transitMat = new THREE.PointsMaterial({
+      color: 0xa5f3fc,
+      size: 4.5,
+      map: getStarDotTexture(),
+      transparent: true,
+      opacity: 0.45,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const transitField = new THREE.Points(transitGeo, transitMat);
+    scene.add(transitField);
+
+    // Sparser pass of warm gold specks
     const goldGeo = new THREE.BufferGeometry();
     const goldCount = 220;
     const goldPos = new Float32Array(goldCount * 3);
@@ -453,6 +561,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      arbor?.setViewport(w, h, renderer.getPixelRatio());
     };
     window.addEventListener("resize", handleResize);
 
@@ -461,14 +570,10 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     let lastFrameTime = performance.now();
     const animationStartedAt = performance.now();
     const ROTATION_RESUME_DELAY_MS = 7000;
-    // Start already "idle" so ambient rotation begins immediately on load,
-    // rather than waiting out the resume delay on first mount.
     lastInteractionRef.current = performance.now() - ROTATION_RESUME_DELAY_MS - 1000;
 
-    // Cursor-proximity glow: "the closer the cursor gets to a node/line/the
-    // core, the more it glows" — computed fresh every frame (not just on
-    // pointermove) since screen positions keep moving from ambient rotation
-    // and zoom even when the cursor itself is still.
+    const labelElsRef = new Map<string, HTMLDivElement>();
+    let lastKnowledgeTarget = 0;
     const CURSOR_GLOW_RADIUS_PX = 220;
     const scratchVec = new THREE.Vector3();
     const ZERO_VEC = new THREE.Vector3(0, 0, 0);
@@ -513,6 +618,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
           dive.navigated = true;
           targetDistanceRef.current = MISSIONS_CAMERA_DIST;
           camera.position.set(0, 15, CORE_DEPTH);
+          controls.target.set(0, 0, 0);
           camera.rotation.z = 0;
           camera.fov = 48;
           camera.updateProjectionMatrix();
@@ -525,15 +631,16 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
           setVisualMode("missions");
         }
       } else if (travel) {
-        // Cinematic continuous CORE <-> BRAIN journey
+        // Cinematic continuous CORE <-> BRAIN journey (Calibrated 3-stage orchestration)
         controls.enabled = false;
         const elapsed = performance.now() - travel.startTime;
         const tau = Math.min(elapsed / travel.duration, 1.0);
-        // Smooth quintic ease-in-out for graceful acceleration & deceleration
-        const e = tau < 0.5 ? 16 * tau * tau * tau * tau * tau : 1 - Math.pow(-2 * tau + 2, 5) / 2;
+        // Centered dolly: quick settle, steady push, long controlled deceleration
+        const e = dollyEase(tau);
 
         const currentDist = travel.startDist + (travel.targetDist - travel.startDist) * e;
         const ray = new THREE.Vector3().subVectors(camera.position, controls.target);
+        controls.target.copy(travel.startTarget).multiplyScalar(1 - e);
         if (ray.lengthSq() < 0.001) ray.set(0, 0, 1);
         ray.normalize();
         camera.position.copy(controls.target).addScaledVector(ray, currentDist);
@@ -544,20 +651,20 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
         camera.updateProjectionMatrix();
         renderer.toneMappingExposure = 1.05 + 0.10 * lensWave;
 
-        // Evolve visual mode during travel
+        // Evolve visual mode & navigation tier during travel
         if (travel.toTier === "brain") {
-          if (tau > 0.40 && visualModeRef.current !== "brain") {
+          if (tau > 0.45 && visualModeRef.current !== "brain") {
             setVisualMode("brain");
           }
-          if (tau > 0.70 && currentTierRef.current !== "brain") {
+          if (tau >= 0.85 && currentTierRef.current !== "brain") {
             currentTierRef.current = "brain";
             setCurrentTier("brain");
           }
         } else if (travel.toTier === "home") {
-          if (tau > 0.40 && visualModeRef.current !== "core") {
+          if (tau > 0.15 && visualModeRef.current !== "core") {
             setVisualMode("core");
           }
-          if (tau > 0.70 && currentTierRef.current !== "home") {
+          if (tau >= 0.85 && currentTierRef.current !== "home") {
             currentTierRef.current = "home";
             setCurrentTier("home");
           }
@@ -575,6 +682,17 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
           controls.enabled = true;
         }
       } else {
+        // Pivot return after leaving BRAIN without a guided journey (manual scroll-out):
+        // frame-rate independent exponential glide of the orbit target back to the nucleus.
+        if (pivotReturnRef.current) {
+          const k = Math.exp(-Math.min(performance.now() - lastFrameTime, 100) / 1000 / 0.3);
+          controls.target.multiplyScalar(k);
+          if (controls.target.lengthSq() < 0.01) {
+            controls.target.set(0, 0, 0);
+            pivotReturnRef.current = false;
+          }
+        }
+
         // Smooth radial distance interpolation when fast-traveling / damping
         if (!isInteractingRef.current) {
           const currentDist = camera.position.distanceTo(controls.target);
@@ -620,76 +738,46 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
         }
       }
 
-      // Brain graph reveal: 0.0 at CORE arrival (d >= 760), smooth progressive reveal as d -> 460
-      const graphGroup = scene.getObjectByName("SPATIAL_GRAPH_GROUP") as THREE.Group | undefined;
-      const isBrainTierActive = visualModeRef.current === "brain" || d < 780;
-      const depthProgress = isBrainTierActive
-        ? THREE.MathUtils.clamp((760 - d) / 300, 0.0, 1.0)
-        : 0.0;
-
-      if (graphGroup) {
-        graphGroup.visible = depthProgress > 0.005;
-      }
-
-      const somethingHovered = !!hoveredNodeIdRef.current;
-
-      nodeMeshMap.current.forEach((item, id) => {
-        const isCategoryActive = activeCategoriesRef.current.has(item.node.source);
-        if (!isCategoryActive || depthProgress <= 0.005) {
-          item.outerMaterial.opacity = 0;
-          item.outerMaterial.emissiveIntensity = 0;
-          item.coreMaterial.emissiveIntensity = 0;
-          item.haloSprite.material.opacity = 0;
-          return;
-        }
-
-        const distToNode = camera.position.distanceTo(item.group.position);
-        const proximityFactor = THREE.MathUtils.clamp(1.15 - Math.abs(distToNode - 320) / 450, 0.35, 1.0);
-
-        // Cursor-proximity glow — eased toward its target here (single
-        // smoothing layer) so it ramps up gradually as the cursor nears.
-        item.proximity.v += (proximityTargetFor(item.group.position) - item.proximity.v) * 0.05;
-        const cursorBoost = 1 + item.proximity.v * 0.7;
-
-        // Connection-highlight
-        const connectionTarget = somethingHovered ? (connectedTargetsRef.current.has(id) ? 1.4 : 0.12) : 1.0;
-        item.connectionGlow.v += (connectionTarget - item.connectionGlow.v) * 0.09;
-
-        const combinedBoost = cursorBoost * item.connectionGlow.v;
-        item.outerMaterial.opacity = Math.min(1, 0.6 * depthProgress * proximityFactor * combinedBoost);
-        item.outerMaterial.emissiveIntensity = 0.55 * depthProgress * proximityFactor * combinedBoost;
-        item.coreMaterial.emissiveIntensity = 1.8 * depthProgress * (1 + item.proximity.v * 0.9) * item.connectionGlow.v;
-        item.haloSprite.material.opacity = Math.min(1, 0.7 * depthProgress * (1 + item.proximity.v * 0.8) * item.connectionGlow.v);
-      });
-
-      linkObjectMap.current.forEach((item) => {
-        if (depthProgress <= 0.005) {
-          item.material.opacity = 0;
-          return;
-        }
-        const linkDepth = depthProgress;
-        item.proximity.v += (proximityTargetFor(item.midpoint) - item.proximity.v) * 0.05;
-
-        const sId = typeof item.link.source === "object" ? (item.link.source as { id: string }).id : item.link.source;
-        const tId = typeof item.link.target === "object" ? (item.link.target as { id: string }).id : item.link.target;
-        const isDirect = somethingHovered && ((sId === hoveredNodeIdRef.current && connectedTargetsRef.current.has(tId)) || (tId === hoveredNodeIdRef.current && connectedTargetsRef.current.has(sId)));
-        const connectionTarget = somethingHovered ? (isDirect ? 1.6 : 0.1) : 1.0;
-        item.connectionGlow.v += (connectionTarget - item.connectionGlow.v) * 0.09;
-        item.material.color.setHex(isDirect ? 0x00ffff : 0x38bdf8);
-
-        item.material.opacity = Math.min(1, 0.22 * linkDepth * (1 + item.proximity.v * 1.6) * item.connectionGlow.v);
-      });
-
       const now = performance.now();
       const deltaMs = now - lastFrameTime;
       lastFrameTime = now;
+      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const somethingHovered = !!hoveredNodeIdRef.current;
 
-      // Continuous cosmic starfield rotation
+      // BRAIN emergence: a pure function of camera distance (guided dolly or manual
+      // zoom alike), eased per frame in a frame-rate independent way so it can
+      // never snap - even if the camera jitters or the user reverses mid-flight.
+      const inMissions = !!diveRef.current || visualModeRef.current === "missions";
+      const revealTarget = inMissions ? 0 : THREE.MathUtils.clamp((REVEAL_START_DIST - d) / (REVEAL_START_DIST - REVEAL_END_DIST), 0, 1);
+      const revealBlend = 1 - Math.exp(-Math.min(deltaMs, 100) / 1000 / 0.14);
+      brainRevealRef.current += (revealTarget - brainRevealRef.current) * revealBlend;
+      const brainDrive = driveFromReveal(brainRevealRef.current);
+      // Knowledge layer (labels, record points, pick targets) exists only on the BRAIN surface. Camera distance
+      // alone is not enough: Missions sits deeper than BRAIN, and the first part of every journey out of BRAIN
+      // is still within BRAIN distance while another surface is already selected.
+      const travelNow = travelTransitionRef.current;
+      const knowledgeTarget =
+        visualModeRef.current === "brain" && !diveRef.current && !(travelNow && travelNow.toTier !== "brain") && !settingsOpenRef.current ? 1 : 0;
+      const gateTau = knowledgeTarget > knowledgeGateRef.current ? 0.35 : 0.08;
+      knowledgeGateRef.current += (knowledgeTarget - knowledgeGateRef.current) * (1 - Math.exp(-Math.min(deltaMs, 100) / 1000 / gateTau));
+      if (knowledgeTarget === 0 && knowledgeGateRef.current < 0.01) knowledgeGateRef.current = 0;
+      // Any exit from BRAIN (nav, manual zoom out, Missions dive) drops hover / list focus / open note.
+      if (knowledgeTarget === 0 && lastKnowledgeTarget === 1) {
+        clearBrainFocus();
+        // Leaving BRAIN (not merely opening Systems over it): bring the orbit pivot home. A guided journey
+        // already eases it via travel.startTarget; manual exits use the glide above.
+        if (visualModeRef.current !== "brain" && controls.target.lengthSq() > 0.01) pivotReturnRef.current = true;
+      }
+      if (travelNow || diveRef.current) pivotReturnRef.current = false;
+      lastKnowledgeTarget = knowledgeTarget;
+      arbor?.setKnowledgeGate(knowledgeGateRef.current);
+
+      // Continuous cosmic starfield & foreground transit dust rotation
       starField.rotation.y += deltaMs * 0.00008;
+      transitField.rotation.y += deltaMs * 0.00004;
 
       // Update CORE visualization
       const coreProximityTarget = proximityTargetFor(ZERO_VEC);
-      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (neutronCore) {
         // Truthful operational state: listening > executing > idle
@@ -700,13 +788,103 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
             ? "executing"
             : "idle";
         neutronCore.setState(targetState);
-        neutronCore.update(elapsedTime, d, coreProximityTarget, isReducedMotion, deltaMs);
+        neutronCore.update(elapsedTime, d, coreProximityTarget, isReducedMotion, deltaMs, brainDrive);
+        arbor?.update(elapsedTime, brainDrive);
+        // rare discharges at the nucleus once zoomed into BRAIN (never in CORE / Missions)
+        lightning?.update(elapsedTime, smooth01(0.6, 1.0, brainDrive.links), neutronCore.getNucleusRadius(), isReducedMotion);
       } else if (orbitals) {
         orbitals.group.visible = visualModeRef.current !== "brain";
         orbitals.update(elapsedTime, somethingHovered, d, coreProximityTarget);
       }
 
+      // Record labels - the same rule for every node (no always-on labels):
+      //  - at BRAIN arrival only near the cursor / hovered / sidebar-located / connected to the hovered node
+      //  - zooming deeper than the BRAIN arrival distance soft-reveals every name (faint)
+      //  - the hovered (or sidebar-located) name glows brighter
+      const layer = labelLayerRef.current;
+      if (layer && arbor) {
+        const data = arbor.getLabelData();
+        const els = labelElsRef;
+        if (els.size !== data.length || data.some((r) => !els.has(r.id))) {
+          layer.replaceChildren();
+          els.clear();
+          for (const r of data) {
+            const el = document.createElement("div");
+            el.style.cssText =
+              "position:absolute;left:0;top:0;opacity:0;pointer-events:none;white-space:nowrap;padding-left:7px;border-left:1px solid rgba(140,225,255,0.55);" +
+              "font:500 10.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0.06em;color:rgba(215,246,255,0.9);text-shadow:0 0 6px rgba(0,0,0,0.9);" +
+              "transition:color 180ms ease-out,text-shadow 180ms ease-out,border-color 180ms ease-out;will-change:transform,opacity;";
+            const t = document.createElement("div");
+            t.textContent = r.title.length > 30 ? r.title.slice(0, 29) + "\u2026" : r.title;
+            const c = document.createElement("div");
+            c.textContent = r.category;
+            c.style.cssText = "font-size:8.5px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(120,205,235,0.75)";
+            el.append(t, c);
+            layer.appendChild(el);
+            els.set(r.id, el);
+          }
+        }
+        const visible = smooth01(0.72, 0.95, brainRevealRef.current) * knowledgeGateRef.current;
+        // deeper-than-arrival zoom (d 318 -> 272) soft-reveals all names; eased over time so it never pops
+        const deepTarget = smooth01(BRAIN_CAMERA_DIST - 12, BRAIN_CAMERA_DIST - 58, d);
+        deepLabelsRef.current += (deepTarget - deepLabelsRef.current) * (1 - Math.exp(-Math.min(deltaMs, 100) / 1000 / 0.35));
+        const deepAlpha = 0.42 * deepLabelsRef.current;
+        const hideLayer = visible < 0.005;
+        if ((layer.style.visibility === "hidden") !== hideLayer) layer.style.visibility = hideLayer ? "hidden" : "visible";
+        for (const r of data) {
+          const el = els.get(r.id);
+          if (!el) continue;
+          const px = visible > 0.01 ? projectToPixels(r.world) : null;
+          let alpha = 0;
+          if (px && activeCategoriesRef.current.has(r.source)) {
+            const focus = hoveredNodeIdRef.current === r.id || listHoverIdRef.current === r.id ? 1 : connectedTargetsRef.current.has(r.id) ? 0.7 : 0;
+            const dx = px.x - cursorPixelRef.current.x;
+            const dy = px.y - cursorPixelRef.current.y;
+            const prox = Math.pow(THREE.MathUtils.clamp(1 - Math.hypot(dx, dy) / 150, 0, 1), 1.5) * 0.9;
+            alpha = visible * Math.max(focus, prox, deepAlpha);
+            const hot = focus >= 1 ? "1" : "0";
+            if (el.dataset.hot !== hot) {
+              el.dataset.hot = hot;
+              el.style.color = hot === "1" ? "rgba(255,255,255,1)" : "rgba(215,246,255,0.9)";
+              el.style.textShadow = hot === "1" ? "0 0 6px rgba(0,0,0,0.9), 0 0 9px rgba(120,232,255,0.9), 0 0 18px rgba(60,200,255,0.45)" : "0 0 6px rgba(0,0,0,0.9)";
+              el.style.borderLeftColor = hot === "1" ? "rgba(170,240,255,0.95)" : "rgba(140,225,255,0.55)";
+            }
+          }
+          if (alpha < 0.02 || !px) {
+            if (el.style.opacity !== "0") el.style.opacity = "0";
+            continue;
+          }
+          el.style.transform = `translate(${(px.x + 9).toFixed(1)}px, ${(px.y - 14).toFixed(1)}px)`;
+          el.style.opacity = alpha.toFixed(2);
+        }
+      }
+
       renderer.render(scene, camera);
+
+      // Verification probe: max/mean luminance of screen rects, read right after the frame is drawn.
+      const probe = (window as unknown as { __BRAIN_PROBE?: { active: boolean; rects: { x: number; y: number; w: number; h: number }[]; out: number[][] } }).__BRAIN_PROBE;
+      if (probe?.active) {
+        const gl = renderer.getContext();
+        const dpr = renderer.getPixelRatio();
+        const H = renderer.domElement.height;
+        const row: number[] = [];
+        for (const r of probe.rects) {
+          const w = Math.max(1, Math.round(r.w * dpr));
+          const h = Math.max(1, Math.round(r.h * dpr));
+          const buf = new Uint8Array(w * h * 4);
+          gl.readPixels(Math.round(r.x * dpr), H - Math.round((r.y + r.h) * dpr), w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+          let mx = 0;
+          let sum = 0;
+          for (let i = 0; i < buf.length; i += 4) {
+            const l = 0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2];
+            if (l > mx) mx = l;
+            sum += l;
+          }
+          row.push(mx, sum / (w * h));
+        }
+        row.push(performance.now());
+        probe.out.push(row);
+      }
     };
 
     animate();
@@ -714,129 +892,43 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
+      container.removeEventListener("wheel", handleWheel);
       controls.removeEventListener("start", onInteractionStart);
       controls.removeEventListener("end", onInteractionEnd);
       controls.removeEventListener("change", onControlsChange);
+      arbor?.dispose();
+      lightning?.dispose();
+      brainFieldRef.current = null;
       neutronCore?.dispose();
       orbitals?.dispose();
+      starGeo.dispose();
+      starMat.dispose();
+      transitGeo.dispose();
+      transitMat.dispose();
+      goldGeo.dispose();
+      goldMat.dispose();
       renderer.dispose();
     };
-  }, []);
+  }, [cancelTransitions, clearBrainFocus]);
 
-  // 3. Build & Update 3D Graph Nodes and Links when graphData changes
+  // 3. Map real knowledge records onto arbor junctions when graph data changes.
+  // Same topology => the arbor keeps its motion state; nothing is rebuilt or reset.
   useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene || !graphData) return;
-
-    // Create a group for graph objects
-    let graphGroup = scene.getObjectByName("SPATIAL_GRAPH_GROUP") as THREE.Group;
-    if (graphGroup) {
-      scene.remove(graphGroup);
-    }
-    graphGroup = new THREE.Group();
-    graphGroup.name = "SPATIAL_GRAPH_GROUP";
-    scene.add(graphGroup);
-
-    nodeMeshMap.current.clear();
-    linkObjectMap.current.clear();
-
-    const outerGeo = new THREE.SphereGeometry(1, 16, 12);
-    const coreGeo = new THREE.SphereGeometry(1, 12, 10);
-
-    // Build Nodes — two-layer soma (translucent colored shell + hot-white
-    // emissive inner core + additive halo sprite), same technique as the
-    // anatomical Brain's per-node glow. A single flat MeshStandardMaterial
-    // sphere reads as a cartoon dot; this reads as a small glowing light.
-    graphData.nodes.forEach((node) => {
-      const radius = Math.max(3.5, Math.min(8.5, 3.5 + (node.degree || 0) * 0.85));
-      const colorHex = parseInt(node.color.replace("#", "0x"), 16);
-
-      const group = new THREE.Group();
-      group.position.set(node.x ?? 0, node.y ?? 0, node.z ?? 0);
-
-      const outerMat = new THREE.MeshStandardMaterial({
-        color: colorHex,
-        emissive: colorHex,
-        emissiveIntensity: 0.55,
-        roughness: 0.3,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.6,
-      });
-      const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-      outerMesh.scale.setScalar(radius);
-      outerMesh.userData = { nodeId: node.id, node };
-      group.add(outerMesh);
-
-      const coreMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: colorHex,
-        emissiveIntensity: 1.8,
-        roughness: 0.15,
-        metalness: 0.1,
-      });
-      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-      coreMesh.scale.setScalar(radius * 0.46);
-      coreMesh.userData = { nodeId: node.id, node };
-      group.add(coreMesh);
-
-      const haloSprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: getGlowTexture(node.color),
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          opacity: 0.7,
-        })
-      );
-      haloSprite.scale.setScalar(radius * 5.5);
-      haloSprite.raycast = () => {}; // don't let the soft halo steal hover/click priority
-      group.add(haloSprite);
-
-      graphGroup.add(group);
-
-      nodeMeshMap.current.set(node.id, {
-        group,
-        node,
-        outerMaterial: outerMat,
-        coreMaterial: coreMat,
-        haloSprite,
-        proximity: { v: 0 },
-        connectionGlow: { v: 1 },
-      });
-    });
-
-    // Build Links
-    graphData.links.forEach((link) => {
-      const srcNode = graphData.nodes.find((n) => n.id === (typeof link.source === "object" ? (link.source as { id: string }).id : link.source));
-      const tgtNode = graphData.nodes.find((n) => n.id === (typeof link.target === "object" ? (link.target as { id: string }).id : link.target));
-      if (!srcNode || !tgtNode) return;
-
-      const p1 = new THREE.Vector3(srcNode.x ?? 0, srcNode.y ?? 0, srcNode.z ?? 0);
-      const p2 = new THREE.Vector3(tgtNode.x ?? 0, tgtNode.y ?? 0, tgtNode.z ?? 0);
-
-      const lineGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-      const lineMat = new THREE.LineBasicMaterial({
-        color: 0x38bdf8,
-        transparent: true,
-        opacity: 0.22,
-        depthWrite: false,
-      });
-
-      const line = new THREE.Line(lineGeo, lineMat);
-      graphGroup.add(line);
-
-      const key = `${srcNode.id}->${tgtNode.id}`;
-      linkObjectMap.current.set(key, {
-        line,
-        link,
-        material: lineMat,
-        midpoint: new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5),
-        proximity: { v: 0 },
-        connectionGlow: { v: 1 },
-      });
-    });
+    if (!brainFieldRef.current || !graphData) return;
+    brainFieldRef.current.setKnowledge(graphData.nodes, graphData.links, graphData.categories);
+    brainFieldRef.current.setActiveCategories(activeCategories);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphData]);
+
+  // Sync category filters to the arbor
+  useEffect(() => {
+    brainFieldRef.current?.setActiveCategories(activeCategories);
+  }, [activeCategories]);
+
+  // Sync selected node to the arbor
+  useEffect(() => {
+    brainFieldRef.current?.setSelectedNode(selectedNode?.id ?? null);
+  }, [selectedNode]);
 
   // 4. Raycasting for Node Hover, AI Core Hover, and Click Interactions
   useEffect(() => {
@@ -890,10 +982,12 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
             if (tId === nodeId) connectedTargets.add(sId);
           });
           connectedTargetsRef.current = connectedTargets;
+          brainFieldRef.current?.setHoveredNode(nodeId, connectedTargets);
         }
       } else if (hoveredNodeIdRef.current !== null) {
         hoveredNodeIdRef.current = null;
         connectedTargetsRef.current = new Set();
+        brainFieldRef.current?.setHoveredNode(null, new Set());
         if (!coreHit) container.style.cursor = "default";
       } else if (!coreHit) {
         container.style.cursor = "default";
@@ -922,6 +1016,8 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     // moving onto a HUD panel) instead of fading back out.
     const handlePointerLeave = () => {
       cursorPixelRef.current = { x: -99999, y: -99999 };
+      hoveredNodeIdRef.current = null;
+      brainFieldRef.current?.setHoveredNode(null, new Set());
     };
 
     container.addEventListener("pointermove", handlePointerMove);
@@ -935,38 +1031,26 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     };
   }, [graphData, activeCategories]);
 
-  // 5. Growth Replay Animation Loop
-  useEffect(() => {
-    if (!isReplaying || !growthPlanRef.current) return;
-
-    const startTime = performance.now();
-    let animId: number;
-
-    const runReplay = (now: number) => {
-      const elapsedSec = (now - startTime) / 1000;
-      setReplayTime(elapsedSec);
-
-      if (elapsedSec > (growthPlanRef.current?.duration ?? 28)) {
-        setIsReplaying(false);
-        setReplayTime(0);
-        return;
+  // Sidebar list hover: locate a record in the field (size + ring + label) and show its real neighbours.
+  const handleListHover = (id: string | null) => {
+    listHoverIdRef.current = id;
+    if (id === null) {
+      if (!hoveredNodeIdRef.current) {
+        connectedTargetsRef.current = new Set();
+        brainFieldRef.current?.setHoveredNode(null, new Set());
       }
-
-      growthPlanRef.current?.records.forEach((record) => {
-        const item = nodeMeshMap.current.get(record.node.id);
-        if (item) {
-          const pos = growthPosition(record, elapsedSec);
-          item.group.position.set(pos.x, pos.y, pos.z);
-          item.group.visible = elapsedSec >= record.born;
-        }
-      });
-
-      animId = requestAnimationFrame(runReplay);
-    };
-
-    animId = requestAnimationFrame(runReplay);
-    return () => cancelAnimationFrame(animId);
-  }, [isReplaying]);
+      return;
+    }
+    const connected = new Set<string>([id]);
+    graphData?.links.forEach((l) => {
+      const s = typeof l.source === "object" ? (l.source as { id: string }).id : l.source;
+      const t = typeof l.target === "object" ? (l.target as { id: string }).id : l.target;
+      if (s === id) connected.add(t);
+      if (t === id) connected.add(s);
+    });
+    connectedTargetsRef.current = connected;
+    brainFieldRef.current?.setHoveredNode(id, connected);
+  };
 
   // Category Toggles
   const handleToggleCategory = (catId: string) => {
@@ -986,6 +1070,9 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
     <div className={`relative w-full h-full overflow-hidden select-none ${className}`}>
       {/* 3D Canvas Viewport */}
       <div ref={containerRef} className="w-full h-full inset-0 absolute" />
+
+      {/* Record label layer (positioned per frame from the WebGL scene) */}
+      <div ref={labelLayerRef} data-brain-labels aria-hidden className="pointer-events-none absolute inset-0 z-[25] overflow-hidden" />
 
       {/* Spatial HUD Overlay — dissolves while the camera dives into the core */}
       <div className={isDiving ? "pointer-events-none opacity-0 transition-opacity duration-300" : "transition-opacity duration-300"}>
@@ -1020,6 +1107,8 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
         telemetryData={telemetryData}
         onOpenBusinessHub={() => setIsBusinessHubOpen(true)}
         isNoteOpen={!!selectedNode}
+        onHoverNode={handleListHover}
+        onOpenNode={(node) => setSelectedNode(node)}
         useGpuCore={USE_GPU_CORE}
         onListeningChange={setIsListening}
       />

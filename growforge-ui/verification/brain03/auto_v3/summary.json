@@ -1,0 +1,298 @@
+{
+  "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5050 (0x00002D83) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "parityCore": {
+    "coreMaxErr": 0.0000361631011660825,
+    "flowBlend": 0,
+    "members": 22
+  },
+  "mapping": {
+    "nodes": 35,
+    "records": 35,
+    "allMapped": true,
+    "uniqueParticles": 35
+  },
+  "journey": [
+    "d=880 links=0 edges=0 longest=0 nucleus=0.046",
+    "d=876 links=0 edges=0 longest=0 nucleus=0.046",
+    "d=862 links=0 edges=0 longest=0 nucleus=0.04605",
+    "d=839 links=0 edges=0 longest=0 nucleus=0.04622",
+    "d=809 links=0 edges=0 longest=0 nucleus=0.04664",
+    "d=771 links=0 edges=0 longest=0 nucleus=0.04742",
+    "d=731 links=0.012 edges=0 longest=0 nucleus=0.04849",
+    "d=677 links=0.094 edges=870 longest=0 nucleus=0.05024",
+    "d=631 links=0.216 edges=870 longest=0 nucleus=0.05192",
+    "d=588 links=0.356 edges=955 longest=49.5 nucleus=0.05353",
+    "d=547 links=0.504 edges=955 longest=49.5 nucleus=0.05504",
+    "d=503 links=0.665 edges=955 longest=49.5 nucleus=0.05655",
+    "d=466 links=0.793 edges=1021 longest=49.8 nucleus=0.05768",
+    "d=432 links=0.891 edges=1021 longest=49.8 nucleus=0.05856",
+    "d=405 links=0.95 edges=1085 longest=51.5 nucleus=0.0591",
+    "d=382 links=0.984 edges=1085 longest=51.5 nucleus=0.05945",
+    "d=364 links=0.998 edges=1085 longest=51.5 nucleus=0.05965",
+    "d=350 links=1 edges=1119 longest=49.7 nucleus=0.05975",
+    "d=340 links=1 edges=1119 longest=49.7 nucleus=0.05979",
+    "d=334 links=1 edges=1119 longest=49.7 nucleus=0.0598",
+    "d=331 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=330 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=330 links=1 edges=1099 longest=50.9 nucleus=0.0598",
+    "d=330 links=1 edges=1098 longest=47.3 nucleus=0.0598",
+    "d=330 links=1 edges=1098 longest=47.3 nucleus=0.0598",
+    "d=330 links=1 edges=1095 longest=49.7 nucleus=0.0598"
+  ],
+  "swirlRate": {
+    "early": 0.99,
+    "peakDuringDive": 3.3,
+    "settledAtBrain": 1.38
+  },
+  "semantic": {
+    "info": {
+      "hubs": 1,
+      "linked": 12,
+      "records": 35,
+      "alive": 1105,
+      "ordinary": 970,
+      "local": 123,
+      "relation": 12,
+      "longestOrdinary": 50.127651320947514,
+      "longestKey": 32.90708802193132,
+      "maxLen": 52
+    },
+    "radial": {
+      "n": 970,
+      "maxR": 141,
+      "minR": 49,
+      "fractions": [
+        0.14,
+        0.21,
+        0.14,
+        0.1,
+        0.1,
+        0.09,
+        0.1,
+        0.13
+      ]
+    },
+    "discoverability": {
+      "realInView": 35,
+      "ordinarySampled": 70,
+      "realMedianContrast": 27.66,
+      "ordinaryMedianContrast": 13.71,
+      "ratio": 2.02
+    },
+    "pulseEdge": {
+      "screenLengthPx": 70
+    },
+    "pulse": {
+      "framesOn": 1154,
+      "framesOff": 1155,
+      "meanLumOn": 189.9,
+      "meanLumOff": 145,
+      "propagationOn": {
+        "lagSec": -1.2,
+        "peakCorr": 0.71,
+        "seconds": 8
+      },
+      "propagationOff": {
+        "lagSec": 0.06,
+        "peakCorr": 0.59,
+        "seconds": 8
+      },
+      "expectedLagSec": 1.32,
+      "isolatedMeanOn": 97.7,
+      "isolatedMeanOff": 69.5
+    },
+    "labelsIdle": [],
+    "labelsHover": [
+      {
+        "t": "2026-09-23 Context",
+        "o": 1
+      },
+      {
+        "t": "2026-09-25 Context",
+        "o": 0.57
+      },
+      {
+        "t": "2026-09-27 Context",
+        "o": 0.09
+      }
+    ],
+    "hoveredRecord": "2026-09-23 Context",
+    "listLocate": {
+      "hi": 1,
+      "labels": 1
+    },
+    "pointSize": {
+      "maxRestingPx": 5.4,
+      "hoverScale": 1.9
+    }
+  },
+  "carriers": {
+    "records": 35,
+    "distinctParticles": 35,
+    "unassigned": 0
+  },
+  "parityBrain": {
+    "coreMaxErr": 0.00013386157614793187,
+    "flowBlend": 58.345180052141764,
+    "members": 22
+  },
+  "hoverCursor": "pointer",
+  "clicked": "vault:2026-09-23-context",
+  "noteOpened": true,
+  "soak": [
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1083,
+      "ordinary": 945,
+      "local": 126,
+      "relation": 12,
+      "longestEdge": 50.7,
+      "longestKey": 70.5,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 77.1,
+      "flowTotal": 106.33626073071855,
+      "nucleusApparent": 0.0598,
+      "frames": 10209,
+      "t": 77691.19999999972
+    },
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1084,
+      "ordinary": 944,
+      "local": 128,
+      "relation": 12,
+      "longestEdge": 50.3,
+      "longestKey": 86.1,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 97.1,
+      "flowTotal": 133.94385415071423,
+      "nucleusApparent": 0.0598,
+      "frames": 13078,
+      "t": 97754
+    },
+    {
+      "d": 330,
+      "links": 1,
+      "edges": 1096,
+      "ordinary": 953,
+      "local": 133,
+      "relation": 10,
+      "longestEdge": 50.3,
+      "longestKey": 77.6,
+      "maxLen": 52,
+      "records": 35,
+      "chips": 6,
+      "same": true,
+      "clock": 117.1,
+      "flowTotal": 161.49447703069987,
+      "nucleusApparent": 0.0598,
+      "frames": 15952,
+      "t": 117770.79999999981
+    }
+  ],
+  "categoryFilter": {
+    "afterToggle": [
+      1,
+      1,
+      1,
+      0,
+      1,
+      1
+    ],
+    "afterRefreshes": [
+      1,
+      1,
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  "reverse": [
+    "d=330 links=1 edges=1096 nucleus=0.0598",
+    "d=335 links=1 edges=1097 nucleus=0.0598",
+    "d=349 links=1 edges=1097 nucleus=0.05975",
+    "d=371 links=1 edges=1097 nucleus=0.05958",
+    "d=403 links=0.99 edges=1106 nucleus=0.05914",
+    "d=437 links=0.952 edges=1106 nucleus=0.05844",
+    "d=477 links=0.872 edges=1106 nucleus=0.05737",
+    "d=521 links=0.749 edges=1105 nucleus=0.05597",
+    "d=562 links=0.61 edges=1105 nucleus=0.0545",
+    "d=605 links=0.46 edges=1105 nucleus=0.05291",
+    "d=646 links=0.312 edges=1102 nucleus=0.05136",
+    "d=687 links=0.178 edges=1102 nucleus=0.04989",
+    "d=725 links=0.081 edges=1083 nucleus=0.04868",
+    "d=757 links=0.024 edges=1083 nucleus=0.04775",
+    "d=787 links=0.001 edges=1083 nucleus=0.04705",
+    "d=814 links=0 edges=1083 nucleus=0.04655",
+    "d=835 links=0 edges=1083 nucleus=0.04627",
+    "d=851 links=0 edges=1083 nucleus=0.04611",
+    "d=863 links=0 edges=1083 nucleus=0.04604",
+    "d=872 links=0 edges=1083 nucleus=0.04601",
+    "d=877 links=0 edges=1083 nucleus=0.046",
+    "d=879 links=0 edges=1083 nucleus=0.046",
+    "d=880 links=0 edges=1083 nucleus=0.046",
+    "d=880 links=0 edges=1083 nucleus=0.046",
+    "d=880 links=0 edges=1083 nucleus=0.046",
+    "d=880 links=0 edges=1083 nucleus=0.046"
+  ],
+  "backToCore": {
+    "d": 880,
+    "links": 0,
+    "edges": 1083,
+    "ordinary": 941,
+    "local": 132,
+    "relation": 10,
+    "longestEdge": 49.9,
+    "longestKey": 80.7,
+    "maxLen": 52,
+    "records": 35,
+    "chips": 6,
+    "same": true,
+    "clock": 127.4,
+    "flowTotal": 175.86012366499884,
+    "nucleusApparent": 0.046,
+    "frames": 17348,
+    "t": 127986.8999999999
+  },
+  "brainAgain": {
+    "d": 330,
+    "links": 1,
+    "edges": 1084,
+    "ordinary": 942,
+    "local": 132,
+    "relation": 10,
+    "longestEdge": 49,
+    "longestKey": 87.8,
+    "maxLen": 52,
+    "records": 35,
+    "chips": 6,
+    "same": true,
+    "clock": 136.4,
+    "flowTotal": 190.79795092632247,
+    "nucleusApparent": 0.0598,
+    "frames": 18625,
+    "t": 137063.5
+  },
+  "monitor": {
+    "frames": 18634,
+    "medianFrameMs": 6.9,
+    "p95FrameMs": 7,
+    "maxSpeedUnitsPerSec": 157.6,
+    "worst": {
+      "t": 114836,
+      "dt": 0.00710000000000582,
+      "s": 157.60789061985645
+    },
+    "clockRegress": 0
+  },
+  "consoleErrors": []
+}

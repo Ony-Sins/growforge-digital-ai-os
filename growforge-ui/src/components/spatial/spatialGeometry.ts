@@ -25,19 +25,24 @@ export function getGlowTexture(colorHex: string): THREE.Texture {
   if (cached) return cached;
 
   const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 128;
+  canvas.width = canvas.height = 256;
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.Texture();
 
-  const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gradient.addColorStop(0, colorHex);
-  gradient.addColorStop(0.3, colorHex);
-  gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.12)");
-  gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+  const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gradient.addColorStop(0.0, "rgba(255, 255, 255, 0.95)");
+  gradient.addColorStop(0.15, colorHex);
+  gradient.addColorStop(0.35, colorHex);
+  gradient.addColorStop(0.60, "rgba(160, 220, 255, 0.22)");
+  gradient.addColorStop(0.85, "rgba(20, 100, 220, 0.05)");
+  gradient.addColorStop(1.0, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillRect(0, 0, 256, 256);
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
   glowTextureCache.set(colorHex, texture);
   return texture;
