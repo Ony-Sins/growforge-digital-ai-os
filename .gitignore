@@ -25,3 +25,16 @@ npm-debug.log*
 
 # Playwright MCP verification screenshots/logs — scratch, not source.
 .playwright-mcp/
+
+# Private scratch artifacts — deliberately excluded from the GitHub snapshot
+# (see state.md, 2026-09-27 16:05 "SAFE GITHUB SOURCE SNAPSHOT"). Re-added by
+# a `git add -A` on 2026-09-28 and untracked again; keep them ignored so a
+# broad add can't sweep them back in.
+.freebuff/
+g1.png
+growforge-ui/header_calibrated_after.png
+
+# Browser-verification captures (screenshots + summary.json from the
+# verify_brain*.mjs suites). Evidence is reported in state.md; the ~52MB of
+# binaries does not belong in git history.
+growforge-ui/verification/
