@@ -104,7 +104,7 @@ async function ensureComfyUIService(): Promise<{ ready: boolean; error?: string 
     return { ready: true };
   }
 
-  const targetPath = EXECUTABLE_PATH || (fs.existsSync("C:/Ony/ComfyUI") ? "C:/Ony/ComfyUI" : "");
+  const targetPath = EXECUTABLE_PATH || "";
 
   // If already running or no fixed owner path configured, cannot auto-spawn
   if (!targetPath) {
@@ -208,7 +208,7 @@ async function ensureComfyUIService(): Promise<{ ready: boolean; error?: string 
 }
 
 function isConfigured(): boolean {
-  return Boolean(CHECKPOINT || fs.existsSync("C:/Ony/ComfyUI/models/checkpoints/v1-5-pruned-emaonly.safetensors"));
+  return Boolean(CHECKPOINT || (EXECUTABLE_PATH && fs.existsSync(path.join(EXECUTABLE_PATH, "models/checkpoints/v1-5-pruned-emaonly.safetensors"))));
 }
 
 function setupInstructions(): string {

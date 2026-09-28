@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 
 /**
  * Server-only encrypted credential vault. Unlike the old client-side vault
@@ -10,16 +11,8 @@ import path from "node:path";
  * bytes. Decrypted values are read here, server-side, only at the moment
  * something needs to call out to the third-party provider.
  *
- * Encryption: AES-256-GCM with a random IV per secret, keyed by
- * VAULT_MASTER_KEY (a 32-byte key, hex-encoded, from the server
- * environment — never committed, never sent to the client).
- *
- * IMPORTANT — for a real production deployment, VAULT_MASTER_KEY should be
- * pulled from a managed secret store (AWS KMS/Secrets Manager, GCP Secret
- * Manager, Vault, etc.) and rotated, not a static .env value on disk. This
- * env-var-keyed implementation is the correct shape for an internal tool at
- * GrowForge's current scale, but the master key itself is only as safe as
- * the host it lives on.
+ * In PUBLIC_PREVIEW_MODE, the vault is completely isolated and closed:
+ * no stored secrets or providers are returned or modified.
  */
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -54,6 +47,7 @@ function getMasterKey(): Buffer {
 }
 
 function loadFile(): VaultFile {
+  if (isPublicPreviewMode()) return {};
   try {
     if (!fs.existsSync(VAULT_FILE)) return {};
     const raw = fs.readFileSync(VAULT_FILE, "utf8");
@@ -69,6 +63,7 @@ function loadFile(): VaultFile {
 let writeQueue: Promise<void> = Promise.resolve();
 
 function saveFile(data: VaultFile) {
+  if (isPublicPreviewMode()) return;
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const json = JSON.stringify(data, null, 2);
   const tmp = VAULT_FILE + ".tmp";
@@ -81,16 +76,19 @@ function saveFile(data: VaultFile) {
 }
 
 export function listProviders(agentId: string): string[] {
+  if (isPublicPreviewMode()) return [];
   const data = loadFile();
   return Object.keys(data[agentId] ?? {});
 }
 
 export function hasSecret(agentId: string, provider: string): boolean {
+  if (isPublicPreviewMode()) return false;
   const data = loadFile();
   return Boolean(data[agentId]?.[provider]);
 }
 
 export function setSecret(agentId: string, provider: string, value: string): void {
+  if (isPublicPreviewMode()) return;
   const key = getMasterKey();
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGO, key, iv);
@@ -112,6 +110,7 @@ export function setSecret(agentId: string, provider: string, value: string): voi
  *  calls this server makes to the third-party provider on the agent's
  *  behalf. */
 export function getSecretForServerUse(agentId: string, provider: string): string | null {
+  if (isPublicPreviewMode()) return null;
   const data = loadFile();
   const entry = data[agentId]?.[provider];
   if (!entry) return null;
@@ -133,6 +132,7 @@ export function getSecretForServerUse(agentId: string, provider: string): string
 }
 
 export function removeSecret(agentId: string, provider: string): void {
+  if (isPublicPreviewMode()) return;
   const data = loadFile();
   if (!data[agentId]) return;
   delete data[agentId][provider];
@@ -141,8 +141,10 @@ export function removeSecret(agentId: string, provider: string): void {
 }
 
 export function purgeAgent(agentId: string): void {
+  if (isPublicPreviewMode()) return;
   const data = loadFile();
   if (!data[agentId]) return;
   delete data[agentId];
   saveFile(data);
 }
+

@@ -51,22 +51,28 @@ async function runTests() {
     console.log("✓ Public-preview agent run blocked with 403 Forbidden");
 
     // -------------------------------------------------------------
-    // TEST 3 & 4: Forged Role / Forged unlockedAgentIds Rejected
+    // TEST 3 & 4: Forged Role / Forged unlockedAgentIds Rejected & Preview Isolation
     // -------------------------------------------------------------
-    console.log("\n[Test 3 & 4] Asserting forged role and forged unlockedAgentIds cannot unlock locked agent...");
-    // Direct authoritative security check
-    const forgedOwnerAccess = canSessionAccessAgent("whimsy-injector", "employee", undefined, undefined);
+    console.log("\n[Test 3 & 4] Asserting forged role and preview isolation on locked agent...");
+    // When preview mode is active, even owner role cannot access locked agents
+    const previewOwnerBlocked = canSessionAccessAgent("whimsy-injector", "owner");
+    assert.strictEqual(previewOwnerBlocked, false, "Owner session in preview mode must be blocked");
+
+    // Clear preview mode to test normal non-preview security checks
+    delete process.env.PUBLIC_PREVIEW_MODE;
+
+    const forgedOwnerAccess = canSessionAccessAgent("whimsy-injector", "employee", undefined);
     assert.strictEqual(forgedOwnerAccess, false, "Employee session without valid PIN must not access locked agent");
 
-    const forgedUnlockAccess = canSessionAccessAgent("whimsy-injector", undefined, "wrong-pin", undefined);
+    const forgedUnlockAccess = canSessionAccessAgent("whimsy-injector", undefined, "wrong-pin");
     assert.strictEqual(forgedUnlockAccess, false, "Invalid PIN must not unlock locked agent");
 
-    const validAgentPinAccess = canSessionAccessAgent("whimsy-injector", "employee", "1234", undefined);
+    const validAgentPinAccess = canSessionAccessAgent("whimsy-injector", "employee", "1234");
     assert.strictEqual(validAgentPinAccess, true, "Valid department PIN 1234 must grant access");
 
-    const validOwnerPinAccess = canSessionAccessAgent("whimsy-injector", "employee", undefined, "0000");
-    assert.strictEqual(validOwnerPinAccess, true, "Valid owner PIN 0000 must grant access");
-    console.log("✓ Forged client roles/tokens blocked; authoritative PIN verification enforced");
+    const validOwnerAccess = canSessionAccessAgent("whimsy-injector", "owner");
+    assert.strictEqual(validOwnerAccess, true, "Authenticated owner session in non-preview must grant access");
+    console.log("✓ Preview isolation blocks owner escalation; authoritative role/PIN verification enforced in non-preview");
 
     // -------------------------------------------------------------
     // TEST 5: Client skipHandoffCheck Cannot Bypass Authorization

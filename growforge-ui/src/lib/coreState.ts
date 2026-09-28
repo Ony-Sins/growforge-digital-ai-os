@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { isPublicPreviewMode } from "@/lib/session";
 import { DEPARTMENTS } from "@/lib/departments";
 import { getJob, listJobSummaries, type Job, type JobStep } from "@/lib/jobStore";
 import { summarizeUsage, estimateCost, type UsageRecord } from "@/lib/usage";
@@ -244,6 +245,27 @@ function vaultStatus(): CoreState["systems"]["vault"] {
 }
 
 export async function buildCoreState(requestedJobId?: string | null): Promise<CoreState> {
+  if (isPublicPreviewMode()) {
+    return {
+      generatedAt: new Date().toISOString(),
+      jobs: [],
+      job: null,
+      systems: {
+        probes: [
+          { id: "ollama", label: "Local LLM (Ollama)", online: false, detail: "offline in public preview", latencyMs: null },
+          { id: "searxng", label: "Live research (SearXNG)", online: false, detail: "offline in public preview", latencyMs: null },
+          { id: "n8n", label: "Automation (n8n)", online: false, detail: "offline in public preview", latencyMs: null },
+          { id: "comfyui", label: "Image generation (ComfyUI)", online: false, detail: "offline in public preview", latencyMs: null },
+        ],
+        mcp: { count: 0, servers: [] },
+        models: { count: 0, list: [] },
+        routing: "cloud-first",
+        pendingApprovals: 0,
+        pendingConsultations: 0,
+        vault: { reachable: false, noteCount: 0, latestDaily: null },
+      },
+    };
+  }
   const summaries = listJobSummaries();
   const jobs = summaries.map((j) => ({
     id: j.id,

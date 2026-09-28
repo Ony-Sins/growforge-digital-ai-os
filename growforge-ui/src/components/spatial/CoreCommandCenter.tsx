@@ -489,7 +489,7 @@ function ConversationSettingsPopover({
             type="text"
             value={userName}
             onChange={(e) => onUserNameChange(e.target.value)}
-            placeholder="Ony"
+            placeholder="Operator"
             className="w-full rounded-lg bg-black/40 border border-white/10 px-2.5 py-1.5 text-xs text-white placeholder:text-slate-500 focus:border-cyan-400/50 focus:outline-none transition"
           />
           <span className="block text-[10px] text-slate-500 mt-0.5">This is how I&apos;ll address you.</span>
@@ -1371,9 +1371,9 @@ export function CoreCommandCenter({
   });
   const [userCustomName, setUserCustomName] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("growforge.userName") || "Ony";
+      return localStorage.getItem("growforge.userName") || "Operator";
     }
-    return "Ony";
+    return "Operator";
   });
 
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(true);
@@ -1514,7 +1514,7 @@ export function CoreCommandCenter({
   const approvalsEmphasized = useStatusEmphasis(telemetryData?.pendingApprovals);
 
   const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
-  const firstName = userCustomName?.trim() || "Ony";
+  const firstName = userCustomName?.trim() || "Operator";
   const executionState = telemetryData?.telemetry.executionState || "standing by";
   const peripheralOpacity = Math.max(0, 1 - zoomProgress * 1.8);
   const systemLine = telemetryData?.activeJobCount

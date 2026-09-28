@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 import { listMcpServers } from "@/lib/mcp/store";
 import { resolveImageKeys } from "@/lib/imageGen";
 import { isCapabilityActive } from "@/lib/capabilityStore";
@@ -70,7 +71,7 @@ const PROVIDER_COLORS: Record<string, string> = {
   custom: "#ec4899",
 };
 
-export const DEFAULT_VAULT_DIR = "C:\\Users\\USERAS\\Documents\\Obsidian Vault";
+export const DEFAULT_VAULT_DIR = process.env.OBSIDIAN_VAULT_DIR || "";
 
 /**
  * Extracts wikilinks [[Link Target]] or [[Link Target|Alias]] and standard markdown links [text](target.md)
@@ -110,6 +111,14 @@ function cleanExcerpt(markdown: string): string {
 }
 
 export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): Promise<SpatialGraphData> {
+  if (isPublicPreviewMode()) {
+    return {
+      nodes: [],
+      links: [],
+      categories: [],
+      summary: { totalNotes: 0, totalConnections: 0, totalSources: 0 },
+    };
+  }
   const nodes: GraphNode[] = [];
   const rawLinks: { from: string; to: string; type: "wikilink" | "explicit" | "structural" }[] = [];
   const nodeMap = new Map<string, GraphNode>();

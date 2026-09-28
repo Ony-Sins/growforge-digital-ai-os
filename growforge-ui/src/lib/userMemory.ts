@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 
 /**
  * User Learning Memory (Shadow Memory) Engine.
@@ -183,6 +184,9 @@ function createDefaultMemory(email: string): UserMemory {
 /** Retrieves or initializes user memory for the given email address.
  *  Backfills `profile` for records written before that field existed. */
 export function getUserMemory(email: string): UserMemory {
+  if (isPublicPreviewMode()) {
+    return createDefaultMemory("operator@growforge.local");
+  }
   const norm = normalizeEmail(email);
   const store = getStore();
   if (!store[norm]) {
@@ -197,6 +201,9 @@ export function getUserMemory(email: string): UserMemory {
 
 /** Updates user memory fields and persists changes to disk. */
 export function updateUserMemory(email: string, patch: Partial<Omit<UserMemory, "email" | "createdAt">>): UserMemory {
+  if (isPublicPreviewMode()) {
+    return createDefaultMemory("operator@growforge.local");
+  }
   const norm = normalizeEmail(email);
   const store = getStore();
   const existing = store[norm] ?? createDefaultMemory(norm);
@@ -227,6 +234,9 @@ export function updateUserMemory(email: string, patch: Partial<Omit<UserMemory, 
 
 /** Clears and resets a user's memory back to initial clean state. */
 export function clearUserMemory(email: string): UserMemory {
+  if (isPublicPreviewMode()) {
+    return createDefaultMemory("operator@growforge.local");
+  }
   const norm = normalizeEmail(email);
   const store = getStore();
   const reset = createDefaultMemory(norm);
@@ -237,6 +247,7 @@ export function clearUserMemory(email: string): UserMemory {
 
 /** Records a newly learned observation / revision nuance into user memory. */
 export function recordLearnedObservation(email: string, observation: string): void {
+  if (isPublicPreviewMode()) return;
   const norm = normalizeEmail(email);
   const mem = getUserMemory(norm);
   const clean = observation.trim();
@@ -274,6 +285,7 @@ const REJECTION_TRIGGERS = [
  * equivalent entry exists it is silently skipped rather than duplicated.
  */
 export function recordExplicitRejection(email: string, revisionMessage: string): void {
+  if (isPublicPreviewMode()) return;
   const norm = normalizeEmail(email);
   const lower = revisionMessage.toLowerCase();
   const triggered = REJECTION_TRIGGERS.some((kw) => lower.includes(kw));
@@ -314,7 +326,7 @@ export function recordExplicitRejection(email: string, revisionMessage: string):
  * ready for injection into HQ Orchestrator and department system prompts.
  */
 export function formatUserMemoryPrompt(email: string | null | undefined): string {
-  if (!email) return "";
+  if (isPublicPreviewMode() || !email) return "";
   const mem = getUserMemory(email);
 
   const sections: string[] = [];

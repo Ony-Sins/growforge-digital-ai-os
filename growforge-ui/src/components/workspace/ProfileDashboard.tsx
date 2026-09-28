@@ -977,7 +977,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                       type="text"
                       value={identity.fullName}
                       onChange={(e) => setIdentity((prev) => ({ ...prev, fullName: e.target.value }))}
-                      placeholder="e.g. Arif Md. Anjum Ony"
+                      placeholder="e.g. Alex Mercer"
                       className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
                     />
                   </div>

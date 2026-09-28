@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import { logContextEvent } from "@/lib/spatial/dailyContext";
 import type { Source } from "@/lib/research";
@@ -150,6 +151,7 @@ function persist() {
 }
 
 function getStore(): Job[] {
+  if (isPublicPreviewMode()) return [];
   if (!globalForStore.__growforgeJobs) globalForStore.__growforgeJobs = loadFromDisk();
   return globalForStore.__growforgeJobs;
 }
@@ -164,6 +166,7 @@ function computePercent(steps: JobStep[]): number {
 }
 
 export function saveJob(job: Job): Job {
+  if (isPublicPreviewMode()) return job;
   const store = getStore();
   const idx = store.findIndex((j) => j.id === job.id);
   if (idx === -1) store.unshift(job);
@@ -174,12 +177,14 @@ export function saveJob(job: Job): Job {
 }
 
 export function getJob(id: string): Job | undefined {
+  if (isPublicPreviewMode()) return undefined;
   return getStore().find((j) => j.id === id);
 }
 
 /** Removes a job outright — for synthetic/backtest jobs that should never
  *  show up in the real project list, not for anything a real client saw. */
 export function deleteJob(id: string): void {
+  if (isPublicPreviewMode()) return;
   const store = getStore();
   const idx = store.findIndex((j) => j.id === id);
   if (idx === -1) return;
@@ -188,6 +193,7 @@ export function deleteJob(id: string): void {
 }
 
 export function listJobSummaries(): JobSummary[] {
+  if (isPublicPreviewMode()) return [];
   return getStore().map((j) => ({
     id: j.id,
     title: j.title,
@@ -205,6 +211,7 @@ export function listJobSummaries(): JobSummary[] {
 
 /** Applies a patch to one step, recomputes overall progress, and persists. */
 export function updateStep(jobId: string, stepId: string, patch: Partial<JobStep>): void {
+  if (isPublicPreviewMode()) return;
   const job = getJob(jobId);
   if (!job) return;
   job.steps = job.steps.map((s) => (s.id === stepId ? { ...s, ...patch } : s));

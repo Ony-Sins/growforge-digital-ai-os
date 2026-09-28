@@ -14,9 +14,9 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import {
-  handleListByoMcp as getMcpConnect,
-  handleConnectByoMcp as postMcpConnect,
-  handleDisconnectByoMcp as deleteMcpConnect,
+  GET as getMcpConnect,
+  POST as postMcpConnect,
+  DELETE as deleteMcpConnect,
 } from "../src/app/api/mcp/connect/route";
 import { POST as postGemini } from "../src/app/api/gemini/route";
 import { getDefaultTools } from "../src/lib/tools";
@@ -159,6 +159,8 @@ async function startMockMcpSseServer(port: number): Promise<{
 }
 
 async function runTests() {
+  (process.env as Record<string, string | undefined>).NODE_ENV = "development";
+  delete process.env.PUBLIC_PREVIEW_MODE;
   console.log(`\n${BOLD}================================================================${RESET}`);
   console.log(`${BOLD}  GROWFORGE DIGITAL AI-OS :: GEMINI + MCP END-TO-END VERIFICATION${RESET}`);
   console.log(`${BOLD}================================================================${RESET}`);

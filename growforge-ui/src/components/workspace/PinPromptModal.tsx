@@ -4,10 +4,10 @@ import { useState } from "react";
 import { KeyRound, Lock, X } from "lucide-react";
 import { useAppState } from "@/lib/appState";
 import { agents } from "@/lib/agents";
-import { verifyAgentPin, verifyOwnerPin } from "@/lib/security";
+import { verifyAgentPin } from "@/lib/security";
 
 export function PinPromptModal() {
-  const { pinPromptTarget, dismissPinPrompt, unlockAgent, setRole } = useAppState();
+  const { pinPromptTarget, dismissPinPrompt, unlockAgent } = useAppState();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -25,12 +25,7 @@ export function PinPromptModal() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (pinPromptTarget?.kind === "owner") {
-      if (verifyOwnerPin(pin)) {
-        setRole("owner");
-        handleClose();
-      } else {
-        setError("Incorrect owner PIN.");
-      }
+      setError("Owner authorization requires logging in with an authorized owner account.");
       return;
     }
     if (pinPromptTarget?.kind === "agent") {

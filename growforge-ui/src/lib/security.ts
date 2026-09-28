@@ -14,9 +14,9 @@
  * authentication gate.
  */
 
-export type Role = "owner" | "employee";
+import { isPublicPreviewMode } from "@/lib/session";
 
-export const DEFAULT_OWNER_PIN = "0000";
+export type Role = "owner" | "employee";
 
 /** Agent id -> PIN, for agents locked to a specific department. Add an
  *  entry here to lock any additional agent. */
@@ -33,10 +33,6 @@ export function verifyAgentPin(agentId: string, pin: string): boolean {
   return AGENT_LOCKS[agentId] === pin.trim();
 }
 
-export function verifyOwnerPin(pin: string): boolean {
-  return pin.trim() === DEFAULT_OWNER_PIN;
-}
-
 /** Shared by the client (appState) and the run API route (server) so both
  *  sides agree on exactly one definition of "can this session touch this
  *  agent". There is no real server session here — the client self-reports
@@ -49,25 +45,29 @@ export function canAccessAgentWith(agentId: string, role: Role, unlockedAgentIds
 }
 
 /** Authoritative server-side agent access verification.
- *  Never trusts self-reported client roles or unlocked IDs.
- *  Requires verified server session role, owner PIN, or valid agent PIN. */
+ *  Never trusts self-reported client roles, client-side owner PINs, or unlocked IDs.
+ *  Requires verified server session owner role or valid department PIN. */
 export function canSessionAccessAgent(
   agentId: string,
   sessionRole?: Role | string | null,
-  pin?: string,
-  ownerPin?: string
+  pin?: string
 ): boolean {
+  // In public preview mode, no owner bypasses exist
+  if (isPublicPreviewMode()) {
+    if (!isAgentLocked(agentId)) return true;
+    if (typeof pin === "string" && verifyAgentPin(agentId, pin)) return true;
+    return false;
+  }
+
   // 1. Verified owner session from auth provider
   if (sessionRole === "owner") return true;
 
-  // 2. Verified owner PIN
-  if (typeof ownerPin === "string" && verifyOwnerPin(ownerPin)) return true;
-
-  // 3. Unlocked/open agents are accessible by any authenticated team member
+  // 2. Unlocked/open agents are accessible by any authenticated team member
   if (!isAgentLocked(agentId)) return true;
 
-  // 4. Locked agents require verified department PIN
+  // 3. Locked agents require verified department PIN
   if (typeof pin === "string" && verifyAgentPin(agentId, pin)) return true;
 
   return false;
 }
+

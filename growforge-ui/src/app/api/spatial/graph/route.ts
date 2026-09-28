@@ -7,7 +7,12 @@ export async function GET() {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (isPublicPreviewVisitor(session)) {
-      return NextResponse.json({ error: "Not available in public preview." }, { status: 403 });
+      return NextResponse.json({
+        ok: true,
+        data: { nodes: [], links: [], categories: [], summary: { totalNotes: 0, totalConnections: 0, totalSources: 0 } },
+        timestamp: new Date().toISOString(),
+        user: "Operator",
+      });
     }
     const graphData = await loadSpatialGraph();
     return NextResponse.json({

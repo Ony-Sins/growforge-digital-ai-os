@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 import {
   SYSTEM_VAULT_ID,
   CLOUD_PROVIDERS,
@@ -186,6 +187,17 @@ function resolveModelSecretKey(model: StoredAiModel): string {
 }
 
 export function listAiModels(): ClientAiModel[] {
+  if (isPublicPreviewMode()) {
+    const defaults = getDefaultModels();
+    return defaults.map((m) => ({
+      ...m,
+      hasApiKey: false,
+      isConfigured: false,
+      status: "disconnected",
+      source: "local",
+      isPrimary: false,
+    }));
+  }
   const models = loadModelsFile();
   return models.map((m) => {
     const secretKey = resolveModelSecretKey(m);
@@ -199,15 +211,13 @@ export function listAiModels(): ClientAiModel[] {
 
     let source = m.source;
     if (hasVaultSecret) source = "vault";
-    else if (hasEnvKey || hasOmniEnv) source = "env";
-    else if (m.providerType === "ollama" || m.providerType === "omniroute") source = "local";
+    else if (hasEnvKey || (m.providerType === "omniroute" && hasOmniEnv)) source = "env";
 
     return {
       ...m,
-      status: m.status ?? (isConfigured ? "active" : "disconnected"),
-      source,
       hasApiKey: hasVaultSecret || hasEnvKey || hasOmniEnv,
       isConfigured,
+      source,
     };
   });
 }

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 import { agents as seedAgents, type Agent, type AgentStatus } from "@/lib/agents";
 import type { LogEntry } from "@/lib/types";
 import { chatComplete, LlmError } from "@/lib/llm";
@@ -151,6 +152,7 @@ function appendLog(agentId: string | null, level: LogEntry["level"], message: st
 }
 
 export function getLogs(limit = 50, agentId?: string): LogEntry[] {
+  if (isPublicPreviewMode()) return [];
   const store = getStore();
   const filtered = agentId ? store.logs.filter((l) => l.agentId === agentId) : store.logs;
   return filtered.slice(-limit).reverse();
@@ -159,6 +161,7 @@ export function getLogs(limit = 50, agentId?: string): LogEntry[] {
 /** Total log entry count in the store (not limited/sliced), for summary
  *  metrics like the Executive Funnel's "Completed Runs" card. */
 export function getLogsCount(agentId?: string): number {
+  if (isPublicPreviewMode()) return 0;
   const store = getStore();
   return agentId ? store.logs.filter((l) => l.agentId === agentId).length : store.logs.length;
 }

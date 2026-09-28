@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 import { setSecret, getSecretForServerUse, removeSecret, hasSecret } from "@/lib/serverVault";
 import { DEPARTMENTS } from "@/lib/departments";
 import type { BrainLobe } from "@/lib/telemetryStore";
@@ -125,11 +126,13 @@ function persist(defs: McpServerDef[]) {
 }
 
 function getStore(): McpServerDef[] {
+  if (isPublicPreviewMode()) return [];
   if (!globalForStore.__growforgeMcpServers) globalForStore.__growforgeMcpServers = loadFromDisk();
   return globalForStore.__growforgeMcpServers;
 }
 
 export function listMcpServers(): (McpServerDef & { hasCredential: boolean })[] {
+  if (isPublicPreviewMode()) return [];
   return getStore().map((s) => ({ ...s, hasCredential: hasSecret(vaultAgentId(s.id), "auth") }));
 }
 

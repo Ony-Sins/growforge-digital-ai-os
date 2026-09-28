@@ -43,10 +43,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     body = {};
   }
 
-  const { pin, ownerPin, skipHandoffCheck, ...agentParams } = body;
+  const { pin, skipHandoffCheck, ...agentParams } = body;
 
   // 3. Authoritative server-side authorization check (never trusts self-reported role)
-  const isAuthorized = canSessionAccessAgent(id, session.user.role, pin, ownerPin);
+  const isAuthorized = canSessionAccessAgent(id, session.user.role, pin);
   if (!isAuthorized) {
     return NextResponse.json(
       { error: `${id} is locked. Enter the security key to access it.`, locked: true },

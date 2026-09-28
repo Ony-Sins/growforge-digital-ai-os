@@ -125,7 +125,7 @@ async function connectAndDiscoverTools(serverUrl: string, apiKey?: string): Prom
  * duplicating a real HTTP+cookies test harness for.
  */
 
-export function handleListByoMcp() {
+function handleListByoMcp() {
   const servers = listMcpServersByOrigin("byo-mcp");
   // Topology must reflect every connected server, not only ones added
   // through this BYO-MCP route — catalog-connected servers (Notion, HubSpot,
@@ -143,7 +143,7 @@ export function handleListByoMcp() {
   });
 }
 
-export async function handleConnectByoMcp(req: Request) {
+async function handleConnectByoMcp(req: Request) {
   try {
     const body = await req.json();
     const { name, serverUrl, apiKey, targetLobe = "neural_core" } = body;
@@ -236,7 +236,7 @@ export async function handleConnectByoMcp(req: Request) {
   }
 }
 
-export async function handleDisconnectByoMcp(req: Request) {
+async function handleDisconnectByoMcp(req: Request) {
   const url = new URL(req.url);
   let id = url.searchParams.get("id");
   let keepOnFile = url.searchParams.get("keepOnFile") === "true";
@@ -321,5 +321,3 @@ export async function DELETE(req: Request) {
   }
   return handleDisconnectByoMcp(req);
 }
-
-export { callCustomMcpTool };

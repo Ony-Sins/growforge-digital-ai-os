@@ -1,14 +1,50 @@
 # GrowForge Digital AI OS — Handoff State (slim/current)
 
-> **Last updated:** 2026-09-28, 11:03, Claude Code (GitHub/Vercel reconciliation — BRAIN-03 work committed `781c4b6` + scratch cleanup `8e59960`, both pushed; Vercel PRODUCTION still on stale `master @ 670ec5b` by user decision, see §A). Earlier: 2026-09-28, 10:20, Claude Code (BRAIN-03g uniform labels, deep-zoom names, volume opening, core lightning). 2026-09-28, 09:51, Claude Code (BRAIN-03f stability + verification pass and BRAIN depth pass). 2026-09-28, 09:10, Claude Code (BRAIN-03c/d/e semantic structure, label-lifecycle fix, inward journey); 2026-09-28, 07:35, Claude Code (BRAIN-03b atmosphere-links correction; BRAIN-03 arbor rewrite superseded). Earlier: 2026-09-27, 16:30, Antigravity (BRAIN-02A: Cinematic Journey Repair and Rendering Fidelity, see §A). Earlier: 2026-09-27, 16:05, Antigravity (SAFE GITHUB SOURCE SNAPSHOT: review/brain02-source-audit-20260927); 2026-09-27, 15:25, Antigravity (BRAIN-01: Continuous CORE → BRAIN Journey, see §A); 2026-09-27, 14:06, Antigravity (SECURITY CLOSURE: F-S01-1, F-S01-2, F-S01-5, F-S02-1 Security Closure); 2026-09-27, 12:00, Antigravity (CORE RELEASE-BLOCKER REPAIR); 2026-09-27, 10:55, Antigravity (CORE ACCEPTANCE REMEDIATION); 2026-09-27, 10:25, Antigravity (FINAL CORE UX COMPLETION); 2026-09-27, 09:38, Antigravity (FINAL CORE POLISH + NORA MEDIA EXECUTION); 2026-09-27, 09:05, Antigravity (CORE Runtime Routing & Ollama Timeout Diagnosis); 2026-09-27, 08:33, Antigravity (Core Final Functional Integration Check); 2026-09-27, 08:22, Antigravity (C10 & C9.3 Closeout); 2026-09-27, 08:00, Antigravity (C9.3); 2026-09-27, 07:27, Antigravity (C11-P0B); 2026-09-27, 07:13, Antigravity (C11-P0A); 2026-09-27, 05:18, Antigravity (Provider Identity & Dynamic Model Selection); 2026-09-27, 02:46, Antigravity (Task C9); 2026-09-27, 02:32, Antigravity (Task C8); 2026-09-26, 20:28, Antigravity (Task C7); 2026-09-26, 20:04, Antigravity (Task C6); 2026-09-26, 17:28, Antigravity (Task C5); 2026-09-26, 17:00, Antigravity (Task C4); 2026-09-26, 16:25, Antigravity (Task C3); 2026-09-26, 15:44, Antigravity (Task C2); 2026-09-26, 15:27, Antigravity (Task C1). Split this file into a slim current-state doc + `state-archive.md` (full pre-split history, zero data loss) to cut the token cost of a fresh session's mandatory first read. Read **"Read this first in a new chat"** below, then jump straight to **§A: Session Handoff**.
+> **Last updated:** 2026-09-28, 13:05, Antigravity (CENTRALIZED PUBLIC PREVIEW ISOLATION & DATA EXPOSURE FIX — see §A). Earlier: 2026-09-28, 11:03, Claude Code (GitHub/Vercel reconciliation — BRAIN-03 work committed `781c4b6` + scratch cleanup `8e59960`, both pushed; Vercel PRODUCTION still on stale `master @ 670ec5b` by user decision, see §A). Earlier: 2026-09-28, 10:20, Claude Code (BRAIN-03g uniform labels, deep-zoom names, volume opening, core lightning). 2026-09-28, 09:51, Claude Code (BRAIN-03f stability + verification pass and BRAIN depth pass). 2026-09-28, 09:10, Claude Code (BRAIN-03c/d/e semantic structure, label-lifecycle fix, inward journey); 2026-09-28, 07:35, Claude Code (BRAIN-03b atmosphere-links correction; BRAIN-03 arbor rewrite superseded).
 > **Repo:** `growforge-digital-ai-os` — app lives in `growforge-ui/`
 > **Branch:** `review/brain02-source-audit-20260927` (dedicated review branch for source-level audit)
 > **Read this file first in a new chat**, then `docs/ROADMAP.md` for the locked phased plan, then `PRODUCT.md`/`DESIGN.md` before any design/UI work. **Full history before 2026-09-21 22:09 — the entire public-preview security saga, the Phase 0-3 UI/UX buildout, every earlier redesign attempt — lives in `state-archive.md`, not here.** Don't read the archive by default; only reach for it if you need the specific reasoning behind an old, settled decision that isn't summarized below.
 
 ---
 
-## A. Session Handoff (2026-09-27, latest) — READ THIS FIRST
+## A. Session Handoff (2026-09-28, latest) — READ THIS FIRST
 
+> **CENTRALIZED PUBLIC PREVIEW ISOLATION & DATA EXPOSURE FIX (2026-09-28, 13:05, Antigravity). Committed on `review/brain02-source-audit-20260927`.**
+> - **Problem & Objective:** Vercel public preview deployments previously risked exposing personal names, Brain knowledge nodes, configured models, integration status, and credential metadata. Implemented a centralized, server-enforced public preview isolation boundary where both anonymous visitors AND authenticated owners receive an isolated fresh-user experience, while the owner's local AI OS and on-disk files remain 100% intact.
+> - **Root Causes Identified & Remediated:**
+>   1. *Session Escalation on Preview:* `getSession()` previously called `auth()` first; if an authenticated owner visited the preview URL, `getSession()` returned their real owner session, granting access to real vault secrets, AI models, and memory. **Fix (`src/lib/session.ts`):** `isPublicPreviewMode()` (`PUBLIC_PREVIEW_MODE` and `NEXT_PUBLIC_PREVIEW_MODE`) is evaluated first. In preview mode, `getSession()` ALWAYS returns an isolated preview session (`name: "Operator"`, `email: "preview@growforge.local"`, non-owner `role: "employee"`).
+>   2. *Store & Subsystem Isolation:* Individual stores previously read from disk even in preview mode. **Fixes:**
+>      - `serverVault.ts`: `loadFile()`, `listProviders()`, `hasSecret()`, `getSecretForServerUse()` immediately return empty/null in preview mode without reading `data/vault.json`.
+>      - `userMemory.ts`: `getUserMemory()`, `updateUserMemory()`, `clearUserMemory()` return clean unconfigured memory in preview mode and never persist to disk.
+>      - `jobStore.ts`: `getStore()`, `listJobSummaries()`, `getJob()` return `[]` / `undefined` and write operations are no-ops.
+>      - `mcp/store.ts`: `listMcpServers()` returns `[]`.
+>      - `aiModelStore.ts`: `listAiModels()` returns disconnected default catalog options with `hasApiKey: false, isConfigured: false, status: "disconnected"`.
+>      - `capabilityStore.ts`: `isCapabilityActive()` returns `false`.
+>      - `coreState.ts`: `buildCoreState()` returns clean zero-state without probing local loopback ports or reading vault directory.
+>      - `obsidianReader.ts`: `loadSpatialGraph()` returns empty graph `{ nodes: [], links: [], categories: [], summary: { totalNotes: 0, totalConnections: 0, totalSources: 0 } }` and removed hardcoded `DEFAULT_VAULT_DIR` path.
+>      - `agentStore.ts`: `getLogs()` and `getLogsCount()` return `[]` and `0`.
+>   3. *API Route Parity & UI Resilience:*
+>      - `/api/spatial/graph`: Returns HTTP 200 with empty nodes and user `"Operator"`, allowing the Brain 3D canvas and particle atmosphere to render smoothly without 403 crashes.
+>      - `/api/core/state`: Returns HTTP 200 with clean zero-state `CoreState`.
+>      - `/api/logs`: Returns HTTP 200 with `{ logs: [], total: 0 }`.
+>      - `/api/mcp/connect/route.ts`: Removed illegal non-HTTP exports (`handleListByoMcp`, etc.) fixing Next.js build type check.
+>   4. *Authorization Hardening:*
+>      - `src/lib/security.ts` & `src/components/workspace/PinPromptModal.tsx`: Removed client-visible `"0000"` owner PIN bypass. Server authorization relies strictly on verified session roles and per-department PINs.
+>   5. *UI String & Path Sanitization:*
+>      - `CoreCommandCenter.tsx`: Replaced hardcoded "Ony" defaults with generic "Operator".
+>      - `ProfileDashboard.tsx`: Replaced placeholder name with "Alex Mercer".
+>      - `comfyui.ts`: Removed hardcoded `C:/Ony/ComfyUI` paths.
+> - **Verification & QA Gates (All Passed 100%):**
+>   - `scripts/test-preview-isolation.ts`: 100% PASS (session boundary, vault seal, model catalog, empty jobs/logs, unconfigured memory, empty spatial graph, zero core state, API route status).
+>   - `scripts/test-c11-p0a-security.ts`: 11/11 PASS
+>   - `scripts/test-c11-security-closure.ts`: 13/13 PASS
+>   - `scripts/test-mcp-gemini-e2e.ts`: 6/6 PASS
+>   - `npx tsc --noEmit`: 0 errors
+>   - `npm run lint`: 0 errors, 0 warnings
+>   - `npm run build`: 100% compile & prerender success across all 35 routes.
+>
+> ---
+>
 > **GITHUB/VERCEL RECONCILIATION + scratch-artifact cleanup (2026-09-28, 11:03, Claude Code). Committed `781c4b6` + `8e59960`, pushed. Production deliberately NOT touched.**
 > - **User request:** "update on github and vercel", then — after checking Vercel — a bug report: the deployed header showed `CORE → Missions → Brain → Systems`, but the current design is `CORE → Brain → Missions → Systems`. Asked whether GitHub/Vercel actually had the latest local work, and to fix it if not.
 > - **First (wrong) hypothesis:** that the push had silently failed or that Vercel production tracked `master`, which was 12 commits stale — so production was simply showing old code. The staleness is real (see below) but it was NOT what the user was looking at: the Sept-24 `master` build (`670ec5b`) has a completely different `SpatialHud.tsx` ("Home Assistant Core", "AI Brain Knowledge Graph", pink-400 Brain icon, no `NAV_ITEMS` array at all), which does not match the screenshot's modern pill nav. Chasing the master-staleness answer alone would have "fixed" the wrong thing.

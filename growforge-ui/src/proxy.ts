@@ -16,8 +16,8 @@ export default auth((req) => {
   // is the separate, deliberate, production-reachable bypass — see
   // session.ts's publicPreviewSession() comment for what it is and why;
   // remove both together when it's time to turn this off.
-  const isLoggedIn =
-    !!req.auth || process.env.NODE_ENV === "development" || process.env.PUBLIC_PREVIEW_MODE === "true";
+  const isPreview = process.env.PUBLIC_PREVIEW_MODE === "true" || process.env.NEXT_PUBLIC_PREVIEW_MODE === "true";
+  const isLoggedIn = !!req.auth || process.env.NODE_ENV === "development" || isPreview;
   const { pathname } = req.nextUrl;
 
   const isPublic = pathname === "/login" || pathname.startsWith("/api/auth");

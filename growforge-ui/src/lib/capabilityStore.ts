@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isPublicPreviewMode } from "@/lib/session";
 
 export interface CapabilityStatusRecord {
   id: string; // e.g. "higgsfield", "n8n", etc.
@@ -38,6 +39,7 @@ function saveCapabilityStatus(data: Record<string, CapabilityStatusRecord>): voi
 
 /** Returns true if the capability is not archived or disconnected */
 export function isCapabilityActive(id: string): boolean {
+  if (isPublicPreviewMode()) return false;
   const data = loadCapabilityStatus();
   const rec = data[id];
   if (!rec) return true; // Default active if configured and not explicitly archived
