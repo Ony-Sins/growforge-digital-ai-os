@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
+import { DEPARTMENTS, HQ, QA, hashInstructions } from "../src/lib/departments";
+import { canonicalizeDepartmentText } from "../src/lib/departmentTaxonomy";
 
 /**
  * Digital Brain Auto-Documentation Pipeline
@@ -23,48 +24,22 @@ function ensureDirs() {
 function writeDoc(filename: string, content: string) {
   const uiPath = path.join(DOCS_BRAIN_DIR, filename);
   const rootPath = path.join(ROOT_DOCS_BRAIN_DIR, filename);
-  fs.writeFileSync(uiPath, content.trim() + "\n", "utf8");
-  fs.writeFileSync(rootPath, content.trim() + "\n", "utf8");
+  fs.writeFileSync(uiPath, canonicalizeDepartmentText(content.trim()) + "\n", "utf8");
+  fs.writeFileSync(rootPath, canonicalizeDepartmentText(content.trim()) + "\n", "utf8");
   console.log(`✓ Generated: /docs/brain/${filename}`);
 }
 
-function computeHash(filepath: string): string {
-  try {
-    const constitutionPath = path.join(ROOT_DIR, "GrowForge Digital — Company Constitution.md");
-    const constContent = fs.existsSync(constitutionPath) ? fs.readFileSync(constitutionPath, "utf8") : "";
-    const ownContent = fs.existsSync(filepath) ? fs.readFileSync(filepath, "utf8") : "";
-    const combined = [
-      constContent && `# COMPANY CONSTITUTION\n\n${constContent}`,
-      ownContent && `# YOUR DEPARTMENT OPERATING INSTRUCTIONS\n\n${ownContent}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n---\n\n");
-    return crypto.createHash("sha256").update(combined).digest("hex").slice(0, 12);
-  } catch {
-    return "unknown";
-  }
-}
+function computeHash(filepath: string): string { return hashInstructions(path.basename(filepath)); }
 
 // 1. Generate DEPARTMENTS_ROSTER.md
 function generateDepartmentsRoster() {
-  const depts = [
-    { id: "hq", name: "GrowForge HQ", file: "GrowForge_HQ_Agent_System.md", type: "Core Orchestrator", summary: "Engagement planning, cross-department synthesis, strategic red-teaming, final client delivery." },
-    { id: "qa", name: "Quality Assurance", file: "Quality_Assurance_Agent_System.md", type: "Independent Auditor", summary: "Unsupported claims audit, source verification, contradiction detection, mandatory fixes." },
-    { id: "sales-bd", name: "Sales & BD", file: "Sales_BD_Agent_System.md", type: "Assignable Department", summary: "ICP definition, prospecting sequences, qualification frameworks, lead sources, closing tactics." },
-    { id: "marketing", name: "Marketing", file: "Marketing_Agent_System.md", type: "Assignable Department", summary: "Positioning, messaging hierarchies, demand generation, SEO, content strategy, brand voice." },
-    { id: "meta-ads", name: "Meta Ads", file: "Meta_Ads_Agent_System.md", type: "Assignable Department", summary: "Paid social strategy, campaign architectures, creative briefing, bidding & ROAS targets." },
-    { id: "finance-ops", name: "Finance & Ops", file: "Finance_Operations_Agent_System.md", type: "Assignable Department", summary: "Pricing models, unit economics, cash flow forecasting, operating expenditure, budget tables." },
-    { id: "client-success", name: "Client Success / PM", file: "Client_Success_PM_Agent_System.md", type: "Assignable Department", summary: "Delivery sequencing, milestone scheduling, client onboarding, risk mitigation." },
-    { id: "web-design", name: "Web Design / UX", file: "Web_Design_UX_Agent_System.md", type: "Assignable Department", summary: "Page architecture, UX wireframing, high-contrast visual direction, conversion optimization." },
-    { id: "web-dev", name: "Web Development", file: "Web_Development_Agent_System.md", type: "Assignable Department", summary: "Technical builds, integrations, performance, technical SEO, tracking & analytics." },
-    { id: "ai-automation", name: "AI Systems / Automation", file: "AI_Systems_Automation_Agent_System.md", type: "Assignable Department", summary: "n8n automation workflows, CRM integrations, AI agent routing, automated lead routing." },
-  ];
+  const depts = [...DEPARTMENTS.map(dept => ({ ...dept, type: "Department" })), ...[HQ, QA].map(dept => ({ ...dept, type: "Oversight", summary: "Coordination or independent verification; existing approval boundaries apply." }))];
 
   let md = `# GrowForge Digital — Operating Departments & System Roster\n\n`;
   md += `> **Auto-Generated:** ${new Date().toISOString()}  \n`;
   md += `> **Instruction Engine:** \`src/lib/departments.ts\` & Root Operating System Markdown Files  \n\n`;
   md += `## 1. Department Catalog\n\n`;
-  md += `| ID | Department | Role | Instruction File | Rules Hash | Core Focus |\n`;
+  md += `| ID | Department | Role | Instruction File | Source Assembly Hash | Core Focus |\n`;
   md += `|---|---|---|---|---|---|\n`;
 
   for (const d of depts) {
@@ -75,7 +50,7 @@ function generateDepartmentsRoster() {
 
   md += `\n## 2. Operating Principles\n\n`;
   md += `1. **Constitution Inheritance:** Every department automatically inherits the *Company Constitution* as root system instructions.\n`;
-  md += `2. **Instruction Hash Versioning (\`rules v.<hash>\`):** Every model call locks the SHA-256 hash of its prompt files to guarantee reproducibility.\n`;
+  md += `2. **Instruction Hash Versioning (\`rules v.<hash>\`):** Roster hashes compare current source assembly. New model executions persist and hash the exact final system payload before submission. Legacy hashes alone cannot recover original instructions. Backend reruns explicitly select original captured downstream instructions (stored plan retained) or current instructions (new plan); current permissions and routing remain enforced.\n`;
   md += `3. **Strategic Red-Team Directive:** Departments must challenge unrealistic client assumptions, cite real benchmarks, and propose high-ROI alternatives.\n`;
 
   writeDoc("DEPARTMENTS_ROSTER.md", md);
@@ -170,18 +145,12 @@ function generateSystemTopology() {
   md += `## 1. Multi-Agent Pipeline Topology\n\n`;
   md += `\`\`\`mermaid
 graph TD
-    A[Client Brief Input] --> B[HQ Planning & Dept Selection]
-    B --> C[Live Research Grounding]
-    C --> D1[Sales & BD Agent]
-    C --> D2[Marketing Agent]
-    C --> D3[Meta Ads Agent]
-    C --> D4[Finance & Ops Agent]
-    C --> D5[Web Design / UX]
-    C --> D6[Web Development]
-    C --> D7[AI Systems Automation]
-    D1 & D2 & D3 & D4 & D5 & D6 & D7 --> E[HQ Team Review & Conflict Resolution]
-    E --> F[Independent QA Audit]
-    F --> G[Consolidated Final Execution Plan]
+    A[Client Brief Input] --> B[Executive Orchestration: planning and ID routing]
+    B --> C[Live Research when available]
+    C --> D[Assigned canonical departments: ${DEPARTMENTS.map(dept => dept.name).join(" / ")}]
+    D --> E[Executive Orchestration: team review]
+    E --> F[Quality, Risk and Governance: independent audit]
+    F --> G[Consolidated final plan with evidence and approval gates]
 \`\`\`\n\n`;
 
   md += `## 2. Local & Multi-Modal Processing Matrix\n\n`;
@@ -241,7 +210,7 @@ interface UserMemory {
 function generateArchitectureDecisions() {
   let md = `# GrowForge Digital — Architectural Decision Registry (ADR)\n\n`;
   md += `> This file covers the system's own static design decisions (why the codebase is shaped the way it is).\n`;
-  md += `> For a live log of per-job strategic decisions made by HQ/QA during real client work, see [DECISION_REGISTRY.md](DECISION_REGISTRY.md) — that file is append-only and is never regenerated by this script.\n\n`;
+  md += `> For a live log of per-job strategic decisions made by Executive Orchestration / Quality, Risk & Governance during real client work, see [DECISION_REGISTRY.md](DECISION_REGISTRY.md) — that file is append-only and is never regenerated by this script.\n\n`;
   md += `> **Auto-Generated:** ${new Date().toISOString()}  \n\n`;
 
   md += `## ADR Index\n\n`;
@@ -258,7 +227,7 @@ function generateArchitectureDecisions() {
   md += `### ADR 003: Department Instruction Versioning (\`rules v.<hash>\`)\n`;
   md += `- **Status:** Accepted & Implemented (Phase 4)\n`;
   md += `- **Context:** Knowing exactly which constitution and department rules produced an execution plan.\n`;
-  md += `- **Decision:** Compute SHA-256 hashes of the exact prompt text and store with every \`JobStep\`.\n\n`;
+  md += `- **Decision:** Persist immutable final instruction payloads before execution and store their SHA-256 hashes with every \`JobStep\`.\n\n`;
 
   md += `### ADR 004: Asynchronous Consultation & Interrupt Layer\n`;
   md += `- **Status:** Accepted & Implemented (Phase 4)\n`;
@@ -286,7 +255,7 @@ function generateIndex() {
   md += `1. **[System Topology & Multi-Agent Architecture](SYSTEM_TOPOLOGY.md)**  \n`;
   md += `   Visual topology graphs, local model processing matrix, concurrency guarantees, and security policies.\n\n`;
   md += `2. **[Department Roster & Constitution Hashes](DEPARTMENTS_ROSTER.md)**  \n`;
-  md += `   Full catalog of all 10 specialized departments, scope definitions, and live instruction version hashes.\n\n`;
+  md += `   Catalog of eight departments plus two oversight entities, scope definitions, and live instruction version hashes.\n\n`;
   md += `3. **[Agent Tools & Capabilities Catalog](TOOLS_CATALOG.md)**  \n`;
   md += `   Registered agent tools (web search, connectors, n8n automation, consultation, voice, audio, images) and execution specs.\n\n`;
   md += `4. **[User Memory & Learning Engine Specification](MEMORY_SPEC.md)**  \n`;
@@ -294,7 +263,7 @@ function generateIndex() {
   md += `5. **[Architectural Decision Registry (ADR)](ARCHITECTURE_DECISIONS.md)**  \n`;
   md += `   Permanent record of critical design decisions, self-healing loops, atomic queues, and strategic advisory directives.\n\n`;
   md += `6. **[Live Strategic Decision Log](DECISION_REGISTRY.md)**  \n`;
-  md += `   Append-only — real strategic decisions HQ/QA made on real client jobs. Written by \`brainLogger.ts\`, never regenerated by this script.\n\n`;
+  md += `   Append-only — real strategic decisions Executive Orchestration / Quality, Risk & Governance made on real client jobs. Written by \`brainLogger.ts\`, never regenerated by this script.\n\n`;
   md += `---  \n`;
   md += `*To re-generate this documentation suite automatically: run \`npm run docs:brain\` in \`growforge-ui\`.*\n`;
 

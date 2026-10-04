@@ -1,5 +1,6 @@
 "use client";
 
+import { canonicalDepartmentId, resolveRuntimeRoute, departmentScopeLabel, departmentDisplayName } from "@/lib/departmentTaxonomy";
 import { useEffect, useMemo, useState } from "react";
 import {
   Background,
@@ -160,7 +161,7 @@ function buildGraph(
       id: HUB_ID,
       type: "brain",
       position: { x: 0, y: 0 },
-      data: { kind: "hub", label: "GrowForge HQ", isActive: false },
+      data: { kind: "hub", label: departmentDisplayName("hq"), isActive: false },
       draggable: false,
     },
   ];
@@ -171,7 +172,7 @@ function buildGraph(
 
   // Dual-hemisphere positioning: Left Hemisphere (x < 0) vs Right Hemisphere (x > 0)
   departments.forEach((dept, i) => {
-    const lobe = DEPARTMENT_LOBE_MAP[dept.id] || "neural_core";
+    const lobe = DEPARTMENT_LOBE_MAP[resolveRuntimeRoute(dept.id) ?? dept.id] || "neural_core";
     const isRight = lobe === "growth_expansion" || lobe === "performance_media";
     const hSign = isRight ? 1 : -1;
 
@@ -190,7 +191,7 @@ function buildGraph(
       position: { x: baseX, y: baseY },
       data: {
         kind: "department",
-        label: dept.name,
+        label: departmentScopeLabel(dept.id),
         summary: dept.summary,
         departmentId: dept.id,
         isActive,
@@ -218,7 +219,7 @@ function buildGraph(
 
   // Connectors: anchored to allowed departments or orbiting HQ
   servers.forEach((server) => {
-    const activeTargets = server.allowedDepartments.filter((dId) => deptPositions.has(dId));
+    const activeTargets = (server.allowedDepartments.length ? server.allowedDepartments : departments.map((dept) => dept.id)).map(dId => dId === "meta-ads" ? dId : canonicalDepartmentId(dId)).filter((dId) => deptPositions.has(dId));
     const targets = activeTargets.length > 0 ? activeTargets : [HUB_ID];
     const anchor = targets[0] === HUB_ID ? { x: 0, y: 0 } : (deptPositions.get(targets[0]) ?? { x: 0, y: 0 });
     const angleJitter = ((hashString(`${server.id}:${userSeedKey}`) % 360) * Math.PI) / 180;
@@ -356,7 +357,7 @@ function InspectorPanel({
 
   const title =
     selection.kind === "hub"
-      ? "GrowForge HQ"
+      ? departmentDisplayName("hq")
       : selection.kind === "department"
         ? department?.name ?? "Department"
         : selection.kind === "capability"
@@ -367,7 +368,7 @@ function InspectorPanel({
     selection.kind === "hub"
       ? "Orchestrator"
       : selection.kind === "department"
-        ? "Active Department"
+        ? "Executing department scope"
         : selection.kind === "capability"
           ? capability?.type === "ai_model"
             ? "Active AI Model"
@@ -474,7 +475,7 @@ function InspectorPanel({
               {server.transport === "stdio" ? `${server.command} ${(server.args ?? []).join(" ")}` : server.url}
             </p>
             <p className="mb-4 text-xs text-muted">
-              {server.allowedDepartments.length === 0 ? "Available to every department." : `Scoped to: ${server.allowedDepartments.join(", ")}`}
+              {server.allowedDepartments.length === 0 ? "Available to every department." : `Scoped to: ${server.allowedDepartments.map(departmentScopeLabel).join(", ")}`}
             </p>
             <div className="flex gap-2">
               <button
@@ -581,8 +582,10 @@ export function AIBrainCanvas() {
     if (telemetry.executionState !== "processing" || !telemetry.activeLobe) {
       return [];
     }
-    return allDepartments.filter((d) => DEPARTMENT_LOBE_MAP[d.id] === telemetry.activeLobe);
-  }, [allDepartments, telemetry.executionState, telemetry.activeLobe]);
+    const rawActiveId = telemetry.activeNodeId?.replace(/^dept:/, "");
+    const activeId = rawActiveId === "meta-ads" ? rawActiveId : rawActiveId ? canonicalDepartmentId(rawActiveId) : undefined;
+    return allDepartments.filter((department) => department.id === activeId);
+  }, [allDepartments, telemetry.executionState, telemetry.activeLobe, telemetry.activeNodeId]);
 
   const graph = useMemo(
     () =>
@@ -621,9 +624,9 @@ export function AIBrainCanvas() {
           <Brain className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-heading text-base font-semibold text-white">AI Brain</h2>
+          <h2 className="font-heading text-base font-semibold text-white">Explore</h2>
           <p className="text-xs text-secondary">
-            The real shape of your operating system: HQ, active departments, and connected capability tools. Click a node to inspect it.
+            Your configured operating system: Executive Orchestration, department scopes, and configured tools. Configuration does not establish live availability. Click a node to inspect it.
           </p>
         </div>
       </div>

@@ -5,7 +5,7 @@ export const CORE_DEPTH = -70;
 
 export const ZOOM_TIERS = {
   HOME: { z: 950, label: "Home (Core)", name: "home" },
-  BRAIN: { z: 460, label: "AI Brain (Graph)", name: "brain" },
+  BRAIN: { z: 460, label: "Explore (Graph)", name: "brain" },
   DASHBOARD: { z: 160, label: "Dashboard (HUD)", name: "dashboard" },
   CORE: { z: -70, label: "CORE (Pipeline)", name: "core" },
 } as const;

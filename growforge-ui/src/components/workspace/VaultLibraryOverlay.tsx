@@ -38,6 +38,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { blueprintPolicy, departmentDisplayName, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import vaultDataRaw from "@/data/vaultCapabilities.json";
 import { useAppState } from "@/lib/appState";
 
@@ -53,7 +54,7 @@ export interface VaultAgentRecord {
   approvalTier: "read-only" | "needs-approval-to-act";
 }
 
-const vaultData = vaultDataRaw as VaultAgentRecord[];
+const vaultData = (vaultDataRaw as VaultAgentRecord[]).map(record => ({ ...record, ...blueprintPolicy(record.category) }));
 
 // Real category -> icon mapping, replacing the 111 random keyboard emoji that
 // used to render per-agent (no coherent design language, e.g. 🦀🐑⚔️🏹 for
@@ -446,7 +447,7 @@ export function VaultLibraryOverlay() {
 
                       {/* Summary */}
                       <p className="mt-3 text-xs leading-relaxed text-[#CCCCCC] line-clamp-3 font-inter">
-                        {agent.summary}
+                        {canonicalizeDepartmentText(agent.summary)}
                       </p>
                     </div>
 
@@ -569,7 +570,7 @@ export function VaultLibraryOverlay() {
                   <BookOpen className="h-3.5 w-3.5 text-[#0078FF]" /> Role Directive &amp; Capability Brief
                 </h4>
                 <div className="rounded-xl border border-[#333333] bg-[#0E1726]/60 p-4 text-sm text-[#E2E8F0] leading-relaxed font-inter">
-                  {selectedAgent.summary}
+                  {canonicalizeDepartmentText(selectedAgent.summary)}
                 </div>
               </div>
 
@@ -602,7 +603,7 @@ export function VaultLibraryOverlay() {
                 <Info className="h-4 w-4 text-[#0078FF] shrink-0 mt-0.5" />
                 <div>
                   <span className="font-medium text-white">Reference Catalog Entry: </span>
-                  Catalog definition loaded from `.claude/vault/{selectedAgent.filename}`. Autonomous job routing and tool execution are orchestrated by HQ.
+                  Original catalog source: `.claude/vault/{selectedAgent.filename}`. This entry does not establish an installed agent or working tool connection. GrowForge scope: {blueprintPolicy(selectedAgent.category).departmentIds.map(departmentDisplayName).join(", ") || "Unmapped — review required"}.
                 </div>
               </div>
             </div>

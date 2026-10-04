@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CoreSphere3D, type HubStatus } from "@/components/core/CoreSphere3D";
 import type { CoreDeptView, CoreJobView, CoreState, CoreStepView } from "@/lib/coreState";
+import { createMission } from "@/lib/missionClient";
 import { formatDuration, formatTokens, formatUsd } from "@/lib/usage";
 
 /* Every number on this page comes from /api/core/state (jobs.json, real usage
@@ -380,17 +381,11 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
     setLaunching(true);
     setLaunchError(null);
     try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief }),
-      });
-      const body = (await res.json().catch(() => ({}))) as { error?: string; job?: { id: string } };
-      if (!res.ok || !body.job) throw new Error(body.error || `HTTP ${res.status}`);
+      const missionId = await createMission(brief);
       setBrief("");
       setLauncherOpen(false);
       setSelectedDept(null);
-      setSelectedJobId(body.job.id);
+      setSelectedJobId(missionId);
     } catch (err) {
       setLaunchError(err instanceof Error ? err.message : "Could not launch the project.");
     } finally {
@@ -477,7 +472,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
             <FlowLayer w={flow.w} h={flow.h} flows={flow.flows} />
 
             <div className="relative z-10 flex flex-col gap-2">
-              <div className="px-1 font-mono text-[11px] uppercase tracking-wider text-slate-400">{job.departments.length} departments</div>
+              <div className="px-1 font-mono text-[11px] uppercase tracking-wider text-slate-400">{job.departments.filter((dept) => dept.kind !== "branch").length} departments</div>
               {job.departments.map((d) => {
                 const meta = DEPT_META[d.id];
                 const Icon = meta?.icon ?? Bot;
@@ -551,7 +546,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
               <div className="-mt-6 text-center">
                 <div className="text-lg font-bold tracking-wide text-white">CORE</div>
                 <div className="text-xs text-slate-400">
-                  Routing {job.departments.filter((d) => d.assigned).length} of {job.departments.length} departments
+                  Routing {job.departments.filter((d) => d.assigned && d.kind !== "branch").length} of {job.departments.filter((d) => d.kind !== "branch").length} departments
                 </div>
               </div>
             </div>

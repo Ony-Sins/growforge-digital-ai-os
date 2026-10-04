@@ -227,7 +227,21 @@ async function main() {
     assert(sem.radial.minR < 60, "connections reach the core's immediate environment");
     assert(Math.max(...sem.radial.fractions) < 0.4 && sem.radial.fractions.filter((f) => f > 0.03).length >= 5, "filaments fill the inner volume (not a thin band)");
 
-    // (b) discoverability: real record points vs ordinary atmosphere particles (local peak / local mean luminance)
+    // (b) discoverability: real record points vs ordinary atmosphere particles (local peak / local mean luminance).
+    // Measured at the inspection depth (d ~ 280, where every record's NAME is shown), NOT at arrival: by design
+    // distant records are faint locators at arrival (d=330) and only resolve as the camera goes inward, so
+    // measuring at arrival tests a premise the current design no longer has. Threshold unchanged (1.35).
+    const dist = () => cdp.run("window.__THREE_CAMERA.position.distanceTo(window.__THREE_CONTROLS.target)");
+    const goTo = async (target) => {
+      for (let i = 0; i < 60 && Math.abs((await dist()) - target) > 6; i++) {
+        await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: 1540, y: 860, deltaX: 0, deltaY: (await dist()) > target ? -60 : 60 });
+        await sleep(110);
+      }
+      await sleep(1800);
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1540, y: 860 });
+    };
+    const arrivalDist = await dist();
+    await goTo(280);
     const targets = await cdp.run(`(() => { const f = window.__BRAIN_FIELD, cam = window.__THREE_CAMERA, V = cam.position.constructor;
       const scr = (w) => { const v = new V(w[0], w[1], w[2]).project(cam); return { x: (v.x*0.5+0.5)*innerWidth, y: (-v.y*0.5+0.5)*innerHeight }; };
       const inView = (p) => p.x > 390 && p.x < innerWidth - 70 && p.y > 100 && p.y < innerHeight - 70;
@@ -251,75 +265,102 @@ async function main() {
     sem.discoverability.ratio = +(sem.discoverability.realMedianContrast / sem.discoverability.ordinaryMedianContrast).toFixed(2);
     assert(nReal >= 8, "a meaningful number of real records are in view to measure");
     assert(sem.discoverability.ratio >= 1.35, "real records are measurably more distinguishable than ordinary particles");
-
-    // (c) data pulses: luminance along a relation filament over two 4 s burst periods, A/B with pulse gain
-    const edge = await cdp.run(`(() => { const f = window.__BRAIN_FIELD, cam = window.__THREE_CAMERA, V = cam.position.constructor;
-      const scr = (w) => { const v = new V(w[0], w[1], w[2]).project(cam); return { x: (v.x*0.5+0.5)*innerWidth, y: (-v.y*0.5+0.5)*innerHeight }; };
-      const ok = (p) => p.x > 400 && p.x < innerWidth - 80 && p.y > 110 && p.y < innerHeight - 80;
-      const es = f.debugKeyEdges().filter(e => e.tier === 2).map(e => ({ slot: e.slot, a: scr(e.a), b: scr(e.b) })).filter(e => ok(e.a) && ok(e.b));
-      es.sort((u, v) => Math.hypot(v.a.x - v.b.x, v.a.y - v.b.y) - Math.hypot(u.a.x - u.b.x, u.a.y - u.b.y));
-      return es[0] || null; })()`);
-    assert(edge, "a relation filament is in view for the pulse measurement");
-    sem.pulseEdge = { screenLengthPx: Math.round(Math.hypot(edge.a.x - edge.b.x, edge.a.y - edge.b.y)) };
+    // (c) cords. By design cords are hidden at arrival and emerge with depth and proximity (cord shader:
+    // smoothstep(0.45, 0.78, journeyDepth) x distance-to-nearest-endpoint), so they are inspected at the depth
+    // where they are actually meant to be seen (d ~ 110), not at arrival. Two separate things are tested:
+    //   (c1) idle STRUCTURAL PLASMA - a standing, breathing texture inside the cord. Non-directional.
+    //   (c2) directional DATA PACKETS - must exist ONLY for a real recorded event. No production code path
+    //        supplies such an event yet, so the honest test is that idle cords carry none and that nothing
+    //        (including the verification gain hook) can conjure traffic. Traffic is never fabricated here.
+    await goTo(110);
+    const cordInfo = await cdp.run(`(() => { const f = window.__BRAIN_FIELD, cam = window.__THREE_CAMERA, V = cam.position.constructor;
+      const TS = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+      const es = f.debugKeyEdges(TS).map(e => { const near = Math.min(cam.position.distanceTo(new V(...e.a)), cam.position.distanceTo(new V(...e.b)));
+        const on = e.curve.filter(w => { const v = new V(...w).project(cam); return v.z < 1 && v.x > -0.5 && v.x < 0.85 && v.y > -0.7 && v.y < 0.7; }).length;
+        return { slot: e.slot, tier: e.tier, near, on }; }).filter(e => e.on === 7 && e.near < 70);
+      es.sort((u, v) => v.tier - u.tier || u.near - v.near);
+      return { candidates: es.length, edge: es[0] || null, journeyDepth: f.uJourneyDepth.value }; })()`);
+    assert(cordInfo.edge, "a cord is near the camera at inspection depth: " + JSON.stringify(cordInfo));
+    assert(cordInfo.journeyDepth > 0.8, "inspection depth is inside the cord reveal range (journeyDepth " + cordInfo.journeyDepth.toFixed(2) + ")");
+    sem.cords = { depthReached: await dist(), journeyDepth: +cordInfo.journeyDepth.toFixed(2), candidatesNearCamera: cordInfo.candidates, tier: cordInfo.edge.tier, nearestEndpoint: +cordInfo.edge.near.toFixed(0) };
     await cdp.run(`(() => { const f = window.__BRAIN_FIELD, cam = window.__THREE_CAMERA, V = cam.position.constructor;
-      const slot = ${edge.slot}; const P = window.__BRAIN_PROBE = { active: true, rects: [], out: [] };
-      const TS = [0.2, 0.28, 0.36, 0.44, 0.52, 0.6, 0.68, 0.76];
-      // probe boxes sit on the rendered (curved) filament: same curve formula as the vertex shader
+      const slot = ${cordInfo.edge.slot}; const P = window.__BRAIN_PROBE = { active: true, rects: [], out: [] };
+      const TS = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+      // probe boxes ride the rendered (curved) filament: same curve formula as the vertex shader
       const track = () => { if (!P.active) return; const e = f.debugKeyEdges(TS).find(x => x.slot === slot);
         if (e) P.rects = e.curve.map(w => { const v = new V(w[0], w[1], w[2]).project(cam); return { x: (v.x*0.5+0.5)*innerWidth - 4, y: (-v.y*0.5+0.5)*innerHeight - 4, w: 8, h: 8 }; });
         requestAnimationFrame(track); };
       requestAnimationFrame(track); return true; })()`);
-    const shotsOn = [];
-    for (let i = 0; i < 4; i++) {
-      await cdp.shot(`08_pulse_on_${i}`, { x: Math.max(0, Math.min(edge.a.x, edge.b.x) - 60), y: Math.max(0, Math.min(edge.a.y, edge.b.y) - 60), width: Math.abs(edge.a.x - edge.b.x) + 120, height: Math.abs(edge.a.y - edge.b.y) + 120 });
-      shotsOn.push(i);
-      await sleep(350);
-    }
-    await sleep(6500);
-    // per sample point: temporal series of the local peak luminance; pulses = periodic rises well above rest
-    const COLS = "(() => { const p = window.__BRAIN_PROBE; const cols = []; for (let k = 0; k < 8; k++) cols.push(p.out.map(r => r[k * 2])); cols.push(p.out.map(r => r[r.length - 1])); p.out = []; return cols; })()";
-    // (1) full composite: how much light the pulses add on the filament
-    const colsOn = await cdp.run(COLS);
-    await cdp.run("window.__BRAIN_FIELD.setPulseGain(0); true");
-    await sleep(8000);
-    const colsOff = await cdp.run(COLS);
-    // (2) filaments only (everything else hidden for the measurement), to measure propagation of the pulse itself
-    await cdp.run(`(() => { const scene = window.__THREE_NEUTRON_ENGINE.group.parent; window.__vis = scene.children.map(c => c.visible);
-      scene.children.forEach(c => { if (c.name !== 'BRAIN_FIELD_GROUP') c.visible = false; });
-      const rec = scene.getObjectByName('BRAIN_RECORDS'); window.__recVis = rec.visible; rec.visible = false; window.__BRAIN_PROBE.out = []; return true; })()`);
-    await sleep(8000);
-    const isoOff = await cdp.run(COLS);
-    await cdp.run("window.__BRAIN_FIELD.setPulseGain(1); true");
-    await sleep(8000);
-    const isoOn = await cdp.run(COLS);
-    await cdp.run(`(() => { const scene = window.__THREE_NEUTRON_ENGINE.group.parent; scene.children.forEach((c, i) => { c.visible = window.__vis[i]; });
-      scene.getObjectByName('BRAIN_RECORDS').visible = window.__recVis; window.__BRAIN_PROBE.active = false; return true; })()`);
-    const meanOf = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-    // Propagation: resample two points 0.56 filament-lengths apart onto a 20 ms grid and find the lag of peak
-    // cross-correlation. A travelling pulse (0.425 lengths/s) predicts |lag| ~ 1.32 s.
-    const lagOf = (cols) => {
-      const ts = cols[8], t0 = ts[0], t1 = ts[ts.length - 1], dt = 20;
-      const grid = (col) => { const out = []; let j = 0; for (let t = t0; t <= t1; t += dt) { while (j < ts.length - 1 && ts[j + 1] <= t) j++; out.push(col[j]); } return out; };
-      const a = grid(cols[0]), b = grid(cols[7]);
-      const ma = meanOf(a), mb = meanOf(b), sa = Math.sqrt(meanOf(a.map((x) => (x - ma) ** 2))) || 1, sb = Math.sqrt(meanOf(b.map((x) => (x - mb) ** 2))) || 1;
+    const capture = async (seconds) => {
+      await cdp.run("window.__BRAIN_PROBE.out = []; true");
+      await sleep(seconds * 1000);
+      return cdp.run(`(() => { const o = window.__BRAIN_PROBE.out; return { mean: o.map(r => [1,3,5,7,9,11,13].map(k => r[k])), t: o.map(r => r[r.length - 1]) }; })()`);
+    };
+    const avg = (a) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    const lum = (c) => avg(c.mean.map(avg));
+    await cdp.shot("08_cord_idle", { x: 400, y: 100, width: 1120, height: 700 });
+    const idle = await capture(4);
+    const setCords = (on) => cdp.run(`window.__BRAIN_FIELD.links.material.visible = ${on}; true`);
+    await setCords(false);
+    const hidden = await capture(4);
+    await setCords(true);
+    const idle2 = await capture(4);
+    // (c1) plasma: cords add light at depth, and that light breathes over time without travelling
+    const cordLight = lum(idle) - lum(hidden);
+    const cordLight2 = lum(idle2) - lum(hidden);
+    const pointSeries = (c, k) => c.mean.map((r) => r[k]);
+    const stdOf = (a) => { const m = avg(a); return Math.sqrt(avg(a.map((x) => (x - m) ** 2))); };
+    const breathing = avg([0, 1, 2, 3, 4, 5, 6].map((k) => stdOf(pointSeries(idle, k))));
+    const lagOf = (c, p0 = 0, p1 = 6) => {
+      const ts = c.t, t0 = ts[0], t1 = ts[ts.length - 1], dt = 20;
+      const grid = (col) => { const o = []; let j = 0; for (let t = t0; t <= t1; t += dt) { while (j < ts.length - 1 && ts[j + 1] <= t) j++; o.push(col[j]); } return o; };
+      const a = grid(pointSeries(c, p0)), b = grid(pointSeries(c, p1));
+      const ma = avg(a), mb = avg(b), sa = stdOf(a) || 1, sb = stdOf(b) || 1;
       let best = { lag: 0, r: -2 };
-      for (let L = -120; L <= 120; L++) {
-        let acc = 0, n = 0;
-        for (let i = 0; i < a.length; i++) { const k = i + L; if (k < 0 || k >= b.length) continue; acc += (a[i] - ma) * (b[k] - mb); n++; }
-        const r = n > 50 ? acc / n / (sa * sb) : -2;
-        if (r > best.r) best = { lag: L * dt / 1000, r };
-      }
-      return { lagSec: +best.lag.toFixed(2), peakCorr: +best.r.toFixed(2), seconds: +((t1 - t0) / 1000).toFixed(1) };
+      for (let L = -80; L <= 80; L++) { let acc = 0, n = 0; for (let i = 0; i < a.length; i++) { const k = i + L; if (k < 0 || k >= b.length) continue; acc += (a[i] - ma) * (b[k] - mb); n++; } const r = n > 0.7 * a.length ? acc / n / (sa * sb) : -2; if (r > best.r) best = { lag: L * dt / 1000, r }; }
+      let zero = 0; for (let i = 0; i < a.length; i++) zero += (a[i] - ma) * (b[i] - mb); zero = zero / a.length / (sa * sb);
+      return { lagSec: +best.lag.toFixed(2), peakCorr: +best.r.toFixed(2), zeroLagCorr: +zero.toFixed(2) };
     };
-    sem.pulse = {
-      framesOn: colsOn[0].length, framesOff: colsOff[0].length,
-      meanLumOn: +meanOf(colsOn.slice(0, 8).map(meanOf)).toFixed(1), meanLumOff: +meanOf(colsOff.slice(0, 8).map(meanOf)).toFixed(1),
-      propagationOn: lagOf(isoOn), propagationOff: lagOf(isoOff), expectedLagSec: 1.32,
-      isolatedMeanOn: +meanOf(isoOn.slice(0, 8).map(meanOf)).toFixed(1), isolatedMeanOff: +meanOf(isoOff.slice(0, 8).map(meanOf)).toFixed(1),
-    };
-    assert(sem.pulse.meanLumOn > sem.pulse.meanLumOff * 1.3, "data pulses add clearly visible light along the filament");
-    assert(Math.abs(Math.abs(sem.pulse.propagationOn.lagSec) - 1.32) < 0.45 && sem.pulse.propagationOn.peakCorr > 0.25,
-      "pulses travel along the filament (brightness propagates between points at the designed speed)");
+    // Directional travel = EVERY pair of points along the cord peaks strongly at a non-zero lag of the SAME sign
+    // (later points lag earlier ones). Standing texture is in phase (lag ~ 0) and drift noise scatters in sign.
+    const PAIRS = [[0, 3], [1, 4], [2, 5], [3, 6], [0, 6]];
+    const pairLags = (c) => PAIRS.map(([p0, p1]) => ({ p0, p1, ...lagOf(c, p0, p1) }));
+    const looksDirectional = (pl) => pl.every((x) => x.peakCorr > 0.5 && Math.abs(x.lagSec) > 0.3 && Math.sign(x.lagSec) === Math.sign(pl[0].lagSec));
+    // Self-check of the detector on a synthetic SIGNAL (analysis code only - nothing is injected into the app):
+    // a wave that travels down the cord must be flagged, the same wave in phase must not.
+    const synth = (delayPerPoint) => { const t = Array.from({ length: 300 }, (_, i) => i * 16.7); return { t, mean: t.map((tt) => [0, 1, 2, 3, 4, 5, 6].map((k) => 10 + 5 * Math.sin((2 * Math.PI * (tt / 1000 - k * delayPerPoint)) / 2.9))) }; };
+    assert(looksDirectional(pairLags(synth(0.15))), "detector self-check: a travelling wave is flagged directional");
+    assert(!looksDirectional(pairLags(synth(0))), "detector self-check: an in-phase standing wave is not flagged");
+    const idlePairs = pairLags(idle), idle2Pairs = pairLags(idle2);
+    sem.cords.idle = { meanLum: +lum(idle).toFixed(2), meanLumCordsHidden: +lum(hidden).toFixed(2), cordAddsLum: +cordLight.toFixed(2), cordAddsLumRepeat: +cordLight2.toFixed(2), breathingStd: +breathing.toFixed(2), frames: idle.t.length, pairLags: idlePairs, pairLagsRepeat: idle2Pairs };
+    assert(idle.t.length > 60 && hidden.t.length > 60, "enough frames sampled");
+    assert(cordLight > 1.5 && cordLight2 > 1.5, "cords are visible at inspection depth (they add light over the background, repeatable)");
+    assert(breathing > 0.15, "idle plasma breathes (the cord is alive, not a static line)");
+    assert(!looksDirectional(idlePairs) && !looksDirectional(idle2Pairs), "idle plasma is a standing texture, not directional travel: " + JSON.stringify(idlePairs));
+
+    // (c2) packets only for real recorded events
+    const packetState = () => cdp.run(`(() => { const L = window.__BRAIN_FIELD.links; return { gain: L.uPulseGain.value, member: L.pulseMember, focus: L.aFocus.array.reduce((a, b) => a + b, 0) }; })()`);
+    const idlePackets = await packetState();
+    assert(idlePackets.gain === 0 && idlePackets.member === -1 && idlePackets.focus === 0, "idle cords carry no directional packets: " + JSON.stringify(idlePackets));
+    // Even with the verification gain hook forced on, no packet may appear without a recorded event to attribute it to.
+    // Interleave gain-off / gain-on windows so slow drift (camera orbit, breathing) cancels between conditions.
+    const offRuns = [], onRuns = [];
+    let afterGain = null;
+    for (let cycle = 0; cycle < 4; cycle++) {
+      await cdp.run("window.__BRAIN_FIELD.setPulseGain(0); true");
+      offRuns.push(lum(await capture(2)));
+      await cdp.run("window.__BRAIN_FIELD.setPulseGain(1); true");
+      onRuns.push(lum(await capture(2)));
+      afterGain = await packetState();
+      assert(afterGain.focus === 0 && afterGain.member === -1, "gain alone does not attach a packet to any cord (no recorded event => no traffic): " + JSON.stringify(afterGain));
+    }
+    await cdp.run("window.__BRAIN_FIELD.setPulseGain(0); true");
+    // A packet can only ADD light, so the invariant is one-sided: forcing the gain must not make the cord brighter.
+    const lumRatio = avg(onRuns) / Math.max(0.01, avg(offRuns));
+    sem.cords.packets = { idle: idlePackets, gainWithoutEvent: afterGain, lumGainOffRuns: offRuns.map((x) => +x.toFixed(1)), lumGainOnRuns: onRuns.map((x) => +x.toFixed(1)), gainOnOverOff: +lumRatio.toFixed(3) };
+    assert(lumRatio < 1.1, "forcing packet gain without an event adds no light to the cord (gain-on / gain-off = " + lumRatio.toFixed(3) + ")");
+    await cdp.run("window.__BRAIN_PROBE.active = false; true");
+    await goTo(arrivalDist); // later steps measure the arrival composition
 
     // (d) labels: sparse by default, appear on hover / proximity / sidebar-list locate
     await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1540, y: 860 });
@@ -386,6 +427,11 @@ async function main() {
     await cdp.run(`[...document.querySelectorAll('aside button.rounded-full')].find(b => b.textContent.includes('MCP')).click()`);
     await sleep(1500);
     const catA = await cdp.run("window.__BRAIN_FIELD.uCatFade.value.slice(0,6).map(x => +x.toFixed(2))");
+    // The MCP layer's slot in the fade array follows the data's category order, so look it up by category id.
+    const catIds = await cdp.run("window.__BRAIN_FIELD.catIds");
+    const mcpIdx = catIds.findIndex((id) => /mcp/i.test(id));
+    assert(mcpIdx >= 0 && mcpIdx < 6, "MCP category found in the layer list: " + JSON.stringify(catIds));
+    assert(catA[mcpIdx] < 0.05 && catA.every((x, i) => i === mcpIdx || i >= catIds.length || x > 0.95), "toggling the MCP chip turns off exactly the MCP layer: " + JSON.stringify({ catIds, catA }));
 
     // 4. soak (spans several 12 s data refreshes)
     const soakStart = Date.now();
@@ -398,10 +444,10 @@ async function main() {
     summary.soak = stateSeries;
     const catB = await cdp.run("window.__BRAIN_FIELD.uCatFade.value.slice(0,6).map(x => +x.toFixed(2))");
     summary.categoryFilter = { afterToggle: catA, afterRefreshes: catB };
-    assert(catB[3] < 0.05, "category filter survives data refreshes (MCP layer stays off)");
+    assert(catB[mcpIdx] < 0.05 && catB.every((x, i) => i === mcpIdx || i >= catIds.length || x > 0.95), "category filter survives data refreshes (MCP layer stays off, the others stay on)");
     await cdp.run(`[...document.querySelectorAll('aside button.rounded-full')].find(b => b.textContent.includes('MCP')).click()`);
     assert(stateSeries.every((s) => s.same), "canvas/engine/field identity unchanged across data refreshes");
-    assert(stateSeries.every((s) => s.records === map.records && s.chips === 6), "records and layer chips stable across refreshes");
+    assert(stateSeries.every((s) => s.records === map.records && s.chips === catIds.length), "records stable and exactly one layer chip per data category across refreshes (" + catIds.length + " categories)");
     assert(Math.max(...stateSeries.map((s) => s.edges)) < 2400, "edge count stays bounded");
     assert(stateSeries.every((s) => s.longestEdge <= s.maxLen * 1.06 && s.longestKey <= 102), "no long cords during the soak");
 

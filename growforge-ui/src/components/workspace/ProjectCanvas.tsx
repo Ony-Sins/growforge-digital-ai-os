@@ -45,6 +45,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { departmentStepLabel, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import type { Job, JobStep, JobSummary, StepStatus } from "@/lib/jobStore";
 import { Markdown } from "@/components/ui/Markdown";
 import { useAppState } from "@/lib/appState";
@@ -54,6 +55,7 @@ import { estimateCost } from "@/lib/usage";
 
 const DEPT_ICONS: Record<string, LucideIcon> = {
   "sales-bd": Target,
+  sales_bd: Target,
   marketing: Megaphone,
   "meta-ads": MousePointerClick,
   "finance-ops": BadgeDollarSign,
@@ -127,7 +129,7 @@ function StepNode({ data }: NodeProps<StepNodeType>) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{KIND_TAG[step.kind]}</p>
-          <p className="truncate font-heading text-sm font-semibold text-white">{step.label}</p>
+          <p className="truncate font-heading text-sm font-semibold text-white">{departmentStepLabel(step)}</p>
         </div>
         <span className={`shrink-0 font-mono text-xs font-semibold ${style.text}`}>{percent}%</span>
       </div>
@@ -213,7 +215,7 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
       <div className="flex items-start gap-3 border-b border-[#333333] p-4">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{KIND_TAG[step.kind]}</p>
-          <h3 className="font-heading text-base font-semibold text-white">{step.label}</h3>
+          <h3 className="font-heading text-base font-semibold text-white">{departmentStepLabel(step)}</h3>
           <p className={`mt-0.5 text-xs font-medium ${style.text}`}>
             {style.label} · {step.activity}
             {step.startedAt && ` · ${formatDuration(step.startedAt, step.finishedAt)}`}
@@ -221,7 +223,7 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
           </p>
           {step.instructionsHash && (
             <p className="mt-0.5 font-mono text-[10px] text-muted" title="Hash of the exact constitution + department instructions this step's model call was given">
-              rules v.{step.instructionsHash}
+              rules v.{step.instructionsHash} · recorded instruction hash; revisions use current rules
             </p>
           )}
           {step.usage && step.usage.length > 0 && (
@@ -255,9 +257,9 @@ function StepPanel({ step, onClose }: { step: JobStep; onClose: () => void }) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        {step.error && <p className="mb-3 rounded-lg bg-crimson/10 px-3 py-2 text-xs text-crimson">{step.error}</p>}
+        {step.error && <p className="mb-3 rounded-lg bg-crimson/10 px-3 py-2 text-xs text-crimson">{canonicalizeDepartmentText(step.error)}</p>}
         {step.output ? (
-          <Markdown content={step.output} />
+          <Markdown content={canonicalizeDepartmentText(step.output)} />
         ) : (
           <p className="text-sm text-muted">{step.status === "active" ? "This agent is still working…" : "Nothing produced yet."}</p>
         )}
@@ -523,7 +525,7 @@ function FinalPlanModal({
         <div className="overflow-y-auto bg-[#0B1220] px-6 py-6">
           <div className="mx-auto max-w-3xl space-y-6">
             <div className="rounded-2xl bg-[#111827] border border-[#333333] px-6 py-6 shadow-sm">
-              <Markdown content={content} size="base" />
+              <Markdown content={canonicalizeDepartmentText(content)} size="base" />
             </div>
 
             {allMedia.length > 0 && (

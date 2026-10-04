@@ -30,22 +30,14 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { departmentStepLabel, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import type { Job, JobStep } from "@/lib/jobStore";
 import { Markdown } from "@/components/ui/Markdown";
 
-const DEPT_NAMES: Record<string, string> = {
-  "sales-bd": "Strategy & Intelligence",
-  marketing: "Marketing & Brand Strategy",
-  "meta-ads": "Growth & Demand",
-  "finance-ops": "Finance & Operations",
-  "client-success": "Client Success & Program Management",
-  "web-design": "Product Architecture & UX",
-  "web-dev": "Web Development & Engineering",
-  "ai-automation": "AI Systems & Intelligent Automation",
-};
 
 const DEPT_ICONS: Record<string, LucideIcon> = {
   "sales-bd": Target,
+  sales_bd: Target,
   marketing: Megaphone,
   "meta-ads": MousePointerClick,
   "finance-ops": BadgeDollarSign,
@@ -179,6 +171,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
   function compileConsolidatedMarkdown(): string {
     const lines: string[] = [];
     lines.push(`# Master Cross-Agent Findings & Audit Dossier: ${job.title}`);
+    lines.push("Original recorded content / historical metadata. Stored outputs and rule hashes are preserved; revisions use current instructions; backend reruns explicitly select original or current instructions. Current UI headings use the canonical taxonomy.");
     lines.push("");
     lines.push(`- **Status:** ${job.status.toUpperCase()}`);
     lines.push(`- **Created:** ${new Date(job.createdAt).toLocaleString()}`);
@@ -212,9 +205,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
     lines.push("");
 
     for (const step of outputSteps) {
-      const deptName = step.departmentId
-        ? DEPT_NAMES[step.departmentId] || step.label
-        : step.label;
+      const deptName = departmentStepLabel(step);
 
       lines.push(`### ${deptName} (${KIND_LABELS[step.kind] || step.kind})`);
       lines.push(`*Focus: ${step.activity}*`);
@@ -475,7 +466,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
               ) : (
                 filteredSteps.map((step) => {
                   const Icon = (step.departmentId && DEPT_ICONS[step.departmentId]) || KIND_ICONS[step.kind];
-                  const deptName = step.departmentId ? DEPT_NAMES[step.departmentId] || step.label : step.label;
+                  const deptName = departmentStepLabel(step);
                   const isExpanded = isStepExpanded(step.id);
                   const isCopied = copiedStepId === step.id;
 
@@ -527,7 +518,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                               handleCopyStep(step.id, step.output || "");
                             }}
                             className="rounded-lg border border-[#333333] bg-[#0B1220] p-1.5 text-muted hover:text-white hover:border-electric/50"
-                            title="Copy this section"
+                            title="Copy original recorded section (historical metadata)"
                           >
                             {isCopied ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald" /> : <Copy className="h-3.5 w-3.5" />}
                           </button>
@@ -539,7 +530,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                       {isExpanded && (
                         <div className="p-6 bg-[#0B1220] text-white">
                           <div className="prose prose-invert max-w-none text-white">
-                            <Markdown content={step.output || "No output recorded."} size="base" />
+                            <Markdown content={canonicalizeDepartmentText(step.output || "No output recorded.")} size="base" />
                           </div>
 
                           {/* Visual Assets if present */}
@@ -617,7 +608,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
               {filteredSteps.map((step) => {
                 const Icon = (step.departmentId && DEPT_ICONS[step.departmentId]) || KIND_ICONS[step.kind];
-                const deptName = step.departmentId ? DEPT_NAMES[step.departmentId] || step.label : step.label;
+                const deptName = departmentStepLabel(step);
                 const isCopied = copiedStepId === step.id;
 
                 return (
@@ -648,7 +639,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                     </div>
 
                     <div className="flex-1 overflow-y-auto max-h-80 bg-[#0B1220] rounded-xl p-3 border border-[#333333]/50 text-xs text-white">
-                      <Markdown content={step.output || "No output recorded."} size="sm" />
+                      <Markdown content={canonicalizeDepartmentText(step.output || "No output recorded.")} size="sm" />
                     </div>
 
                     {step.sources && step.sources.length > 0 && (
@@ -710,7 +701,7 @@ export function MasterFindingsView({ job, onClose, onOpenFinalPlan }: MasterFind
                 <div className="space-y-2">
                   {outputSteps.map((step) => (
                     <div key={step.id} className="flex items-center justify-between py-1.5 border-b border-[#333333]/50 text-xs">
-                      <span className="text-white font-medium">{step.label}</span>
+                      <span className="text-white font-medium">{departmentStepLabel(step)}</span>
                       <div className="flex items-center gap-3">
                         {step.provider && <span className="font-mono text-electric text-[11px]">{step.provider}</span>}
                         <code className="bg-[#0B1220] px-2 py-0.5 rounded border border-[#333333] font-mono text-gold text-[10px]">

@@ -1,0 +1,336 @@
+.field {
+  position: absolute;
+  top: 29%;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: min(420px, 78%);
+  bottom: calc(var(--dive-rail-bottom, 44px) + 56px);
+  pointer-events: none;
+  color: #a6bdcc;
+}
+
+.departments {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+
+.departments,
+.oversight {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.departments button,
+.oversight button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid rgba(133, 180, 205, 0.05);
+  color: #9cb4c4;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.departments button svg,
+.oversight button svg {
+  color: #577487;
+  flex-shrink: 0;
+  transition: color 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.departments button:hover,
+.oversight button:hover {
+  color: #e2f2fa;
+  background: linear-gradient(90deg, rgba(82, 164, 187, 0.08) 0%, rgba(82, 164, 187, 0.01) 100%);
+}
+
+.departments button:hover svg,
+.oversight button:hover svg {
+  color: #9bbdcc;
+  transform: translateX(2px);
+}
+
+.departments button[aria-pressed="true"],
+.oversight button[aria-pressed="true"] {
+  color: #eaf7fc;
+  background: linear-gradient(90deg, rgba(82, 164, 187, 0.14) 0%, rgba(82, 164, 187, 0.03) 100%);
+  border-left-color: rgba(116, 201, 222, 0.85);
+}
+
+.departments button[aria-pressed="true"] svg,
+.oversight button[aria-pressed="true"] svg {
+  color: #74c9de;
+}
+
+.oversight {
+  margin-top: 16px;
+  border-top: 1px solid rgba(129, 184, 210, 0.1);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.oversight > span {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5c7b90;
+  padding: 0 14px 6px;
+}
+
+.oversight button {
+  font-size: 11px;
+  color: #7e9bb0;
+  padding: 6px 14px;
+}
+
+.inspector {
+  position: fixed;
+  right: 28px;
+  top: 24%;
+  height: auto;
+  min-height: 160px;
+  max-height: min(48vh, 420px);
+  width: min(330px, calc(100vw - 48px));
+  box-sizing: border-box;
+  background: linear-gradient(145deg, rgba(7, 21, 33, 0.90), rgba(4, 14, 23, 0.95));
+  border: 1px solid rgba(129, 184, 210, 0.22);
+  border-radius: 14px;
+  padding: 20px 22px;
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 rgba(194, 234, 250, 0.08), 0 16px 40px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  animation: resolve 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.eyebrow {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6e91a6;
+  margin: 0 0 8px;
+}
+
+.inspector h2 {
+  font-family: var(--font-heading), Sora, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  margin: 0 24px 14px 0;
+  color: #e8f5fc;
+}
+
+.close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  color: #7693a6;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.categories {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 8px;
+}
+
+.categories button {
+  border: 0;
+  background: transparent;
+  color: #7692a6;
+  font: inherit;
+  font-size: 10px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 150ms ease;
+}
+
+.categories button:hover {
+  color: #dbeaf2;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.categories button[aria-pressed="true"],
+.categories button[aria-selected="true"] {
+  color: #d4effa;
+  background: rgba(106, 174, 202, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.content {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #9bb1c2;
+  overflow-wrap: anywhere;
+}
+
+.content p {
+  margin: 0 0 10px;
+}
+
+.content p:last-child {
+  margin-bottom: 0;
+}
+
+.provenance {
+  margin-top: 16px;
+  border-top: 1px solid rgba(129, 184, 210, 0.1);
+  padding-top: 10px;
+}
+
+.provenance summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: #688599;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.provenance summary:hover {
+  color: #9cb4c5;
+}
+
+.provenance summary::-webkit-details-marker {
+  display: none;
+}
+
+.provenance summary svg {
+  transition: transform 180ms ease;
+}
+
+.provenance[open] summary svg {
+  transform: rotate(90deg);
+}
+
+.provenance .content {
+  margin-top: 10px;
+  font-size: 10px;
+  color: #849cae;
+}
+
+.field button:focus-visible,
+.inspector button:focus-visible,
+.provenance summary:focus-visible {
+  outline: 1px solid rgba(126, 187, 216, 0.6);
+  outline-offset: -1px;
+  border-radius: 6px;
+}
+
+.dissolving {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+  animation: none;
+}
+
+@media (min-width: 1100px) {
+  .field:has(.inspector) .departments,
+  .field:has(.inspector) .oversight {
+    transform: translateX(-16%);
+  }
+}
+
+@media (max-width: 900px) {
+  .field {
+    top: 25%;
+    width: min(420px, 88%);
+    bottom: 116px;
+  }
+  .departments button {
+    font-size: 11px;
+    padding: 7px 12px;
+  }
+  .oversight {
+    margin-top: 12px;
+    padding-top: 8px;
+  }
+  .oversight button {
+    padding: 5px 12px;
+  }
+  .inspector {
+    left: 5%;
+    right: 5%;
+    top: 23%;
+    max-height: min(42vh, 340px);
+    min-height: 140px;
+    width: auto;
+  }
+  .field:has(.inspector) .departments,
+  .field:has(.inspector) .oversight {
+    visibility: hidden;
+  }
+}
+
+@keyframes resolve {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector,
+  .dissolving {
+    animation: none;
+    transition: none;
+  }
+  .departments button,
+  .oversight button,
+  .departments button svg,
+  .oversight button svg,
+  .departments,
+  .oversight {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+
+

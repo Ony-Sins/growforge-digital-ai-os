@@ -5,6 +5,8 @@ import { listMcpServers } from "@/lib/mcp/store";
 import { resolveImageKeys } from "@/lib/imageGen";
 import { isCapabilityActive } from "@/lib/capabilityStore";
 import { listAiModels } from "@/lib/aiModelStore";
+import { agents } from "@/lib/agents";
+import { classifyDepartmentSource, departmentGraphId, departmentTaxon, departmentScopeLabel, PERMISSION_DEPARTMENT_IDS, SHARED_TOOL_DEPARTMENTS, type TaxonomyBranch, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 
 export interface GraphNode {
   id: string;
@@ -18,6 +20,12 @@ export interface GraphNode {
   degree: number;
   lastModified?: string;
   isDaily?: boolean;
+  taxonomyKind?: "department" | "oversight" | "branch" | "specialist";
+  departmentId?: string;
+  parentId?: string;
+  taxonomyPath?: string[];
+  branches?: readonly TaxonomyBranch[];
+  sharedUseDepartments?: readonly string[];
   x?: number;
   y?: number;
   z?: number;
@@ -31,6 +39,9 @@ export interface GraphLink {
   target: string;
   type: "wikilink" | "explicit" | "structural";
   weight?: number;
+  relation?: "taxonomy" | "assignment" | "verification" | "permission";
+  /** Exact runtime scopes represented by a shared permission edge. */
+  permissionScopes?: string[];
 }
 
 export interface GraphCategory {
@@ -58,6 +69,7 @@ const CATEGORY_PALETTE: Record<string, { label: string; color: string }> = {
   mcp: { label: "MCP Connectors", color: "#06B6D4" }, // Cyan / Teal
   capabilities: { label: "Capability Keys", color: "#EC4899" }, // Rose / Magenta
   models: { label: "AI Models", color: "#8B5CF6" }, // Violet / Purple
+  specialists: { label: "Specialist Templates", color: "#C4B5FD" },
 };
 
 const PROVIDER_COLORS: Record<string, string> = {
@@ -120,7 +132,7 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
     };
   }
   const nodes: GraphNode[] = [];
-  const rawLinks: { from: string; to: string; type: "wikilink" | "explicit" | "structural" }[] = [];
+  const rawLinks: { from: string; to: string; type: GraphLink["type"]; relation?: GraphLink["relation"]; permissionScopes?: string[] }[] = [];
   const nodeMap = new Map<string, GraphNode>();
   const titleToIdMap = new Map<string, string>();
 
@@ -139,13 +151,13 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
 
           const node: GraphNode = {
             id,
-            title,
+            title: canonicalizeDepartmentText(title),
             source: "vault",
             categoryLabel: CATEGORY_PALETTE.vault.label,
             color: CATEGORY_PALETTE.vault.color,
             path: filePath,
             content,
-            excerpt: cleanExcerpt(content) || "Obsidian vault note",
+            excerpt: canonicalizeDepartmentText(cleanExcerpt(content)) || "Obsidian vault note",
             degree: 0,
             lastModified: fileStat.mtime.toISOString(),
             isDaily: /^\d{4}-\d{2}-\d{2}/.test(title),
@@ -177,10 +189,11 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
         const fileStat = await fs.stat(filePath);
         const title = entry.name.replace(/_Agent_System\.md$/, "").replace(/_/g, " ");
         const id = `agent:${entry.name.replace(/\.md$/, "").toLowerCase()}`;
+        const classification = classifyDepartmentSource(entry.name);
 
         const node: GraphNode = {
           id,
-          title: `${title} Department`,
+          title: classification?.title ?? `${title} Department`,
           source: "agents",
           categoryLabel: CATEGORY_PALETTE.agents.label,
           color: CATEGORY_PALETTE.agents.color,
@@ -189,11 +202,18 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
           excerpt: cleanExcerpt(content) || "Department operating instruction",
           degree: 0,
           lastModified: fileStat.mtime.toISOString(),
+          taxonomyKind: classification?.kind,
+          departmentId: classification?.departmentId,
+          parentId: classification?.parentId,
+          taxonomyPath: classification?.taxonomyPath,
+          branches: classification?.branches,
         };
 
         nodes.push(node);
         nodeMap.set(id, node);
         titleToIdMap.set(title.toLowerCase(), id);
+        titleToIdMap.set(`${title} department`.toLowerCase(), id);
+        if (classification) titleToIdMap.set(classification.title.toLowerCase(), id);
         titleToIdMap.set(entry.name.toLowerCase().replace(/\.md$/, ""), id);
 
         const links = extractLinks(content);
@@ -204,6 +224,33 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
     }
   } catch {
     // ignore
+  }
+
+  // Classification links join existing source records. Unsourced branches are
+  // metadata, not synthetic records, agents, or claims of execution.
+  for (const node of nodes) {
+    if (node.parentId && nodeMap.has(node.parentId)) rawLinks.push({ from: node.parentId, to: node.id, type: "structural", relation: "taxonomy" });
+  }
+  // Only actual registered templates with an existing backing file appear.
+  for (const agent of agents) {
+    const assignment = agent.assignment;
+    const taxon = assignment && departmentTaxon(assignment.departmentId);
+    if (!assignment || !taxon) continue;
+    try {
+      const filePath = path.resolve(workspaceRoot, "..", ".claude", "agents", `${agent.id}.md`);
+      const content = await fs.readFile(filePath, "utf8");
+      const stat = await fs.stat(filePath);
+      const id = `specialist:${agent.id}`;
+      const parentId = departmentGraphId(taxon.file);
+      if (!nodeMap.has(parentId)) continue;
+      const node: GraphNode = { id, title: agent.name, source: "specialists", categoryLabel: CATEGORY_PALETTE.specialists.label, color: CATEGORY_PALETTE.specialists.color, path: filePath, content, excerpt: agent.description, degree: 0, lastModified: stat.mtime.toISOString(), taxonomyKind: "specialist", departmentId: taxon.id, parentId, taxonomyPath: [taxon.name, ...(assignment.branch ? [assignment.branch] : []), agent.name] };
+      nodes.push(node); nodeMap.set(id, node); titleToIdMap.set(agent.name.toLowerCase(), id);
+      rawLinks.push({ from: parentId, to: id, type: "structural", relation: "assignment" });
+      if (assignment.verifiesDepartmentId) {
+        const verification = departmentTaxon(assignment.verifiesDepartmentId);
+        if (verification && nodeMap.has(departmentGraphId(verification.file))) rawLinks.push({ from: id, to: departmentGraphId(verification.file), type: "structural", relation: "verification" });
+      }
+    } catch { /* Missing templates must not become fabricated graph records. */ }
   }
 
   // 3. Scan Key Core Product & Architectural Docs
@@ -224,7 +271,7 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
 
       const node: GraphNode = {
         id,
-        title,
+        title: canonicalizeDepartmentText(title),
         source: "docs",
         categoryLabel: CATEGORY_PALETTE.docs.label,
         color: CATEGORY_PALETTE.docs.color,
@@ -276,13 +323,13 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
       const content = [
         `# MCP Connector: ${server.name}`,
         "",
-        `**Status:** Connected (${server.status || "active"})  `,
+        `**Status:** Configured (${server.status || "connected"}); availability requires a live check  `,
         `**Transport:** ${server.transport.toUpperCase()}  `,
         `**Origin:** ${server.origin || "catalog"}  `,
         server.url ? `**Endpoint:** \`${server.url}\`  ` : "",
         server.command ? `**Command:** \`${server.command} ${(server.args || []).join(" ")}\`  ` : "",
         `**Target Lobe:** \`${server.targetLobe || "neural_core"}\`  `,
-        `**Allowed Departments:** ${server.allowedDepartments?.length ? server.allowedDepartments.join(", ") : "All Departments"}  `,
+        `**Allowed Departments:** ${server.allowedDepartments?.length ? server.allowedDepartments.map(departmentScopeLabel).join(", ") : "All Departments (shared)"}  `,
         "",
         "## Discovered Tools",
         toolCount > 0 ? toolsList : "_No tools detected yet on this server._",
@@ -301,6 +348,7 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
         excerpt: `${toolCount} discovered tool${toolCount === 1 ? "" : "s"} available. Transport: ${server.transport.toUpperCase()}.`,
         degree: 0,
         lastModified: server.createdAt || new Date().toISOString(),
+        sharedUseDepartments: SHARED_TOOL_DEPARTMENTS[server.catalogId ?? ""],
       };
 
       nodes.push(node);
@@ -311,6 +359,16 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
       if (coreNodeId) {
         rawLinks.push({ from: coreNodeId, to: id, type: "structural" });
       }
+      const scopes = server.allowedDepartments.length ? server.allowedDepartments : [...PERMISSION_DEPARTMENT_IDS];
+      const parentScopes = new Map<string, string[]>();
+      for (const scope of scopes) {
+        const taxon = departmentTaxon(scope);
+        if (!taxon) continue;
+        const parent = departmentGraphId(taxon.file);
+        if (!nodeMap.has(parent)) continue;
+        parentScopes.set(parent, [...(parentScopes.get(parent) ?? []), scope]);
+      }
+      for (const [parent, permissionScopes] of parentScopes) rawLinks.push({ from: parent, to: id, type: "structural", relation: "permission", permissionScopes });
     }
   } catch (err) {
     console.error("[obsidianReader] failed to load MCP servers:", err);
@@ -445,6 +503,15 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
     console.error("[obsidianReader] failed to load AI models:", err);
   }
 
+  // Shared role classification is distinct from an access grant or traffic.
+  for (const node of nodes) {
+    const departmentId = node.source === "models" ? (node.id.startsWith("model:higgsfield") ? "web-design" : "ai-automation") : node.source === "capabilities" ? "web-design" : undefined;
+    if (!departmentId) continue;
+    node.sharedUseDepartments = [departmentId];
+    const parent = departmentGraphId(departmentTaxon(departmentId)!.file);
+    if (nodeMap.has(parent)) rawLinks.push({ from: parent, to: node.id, type: "structural", relation: "assignment" });
+  }
+
   // 7. Resolve Links and Compute Degrees
   const resolvedLinks: GraphLink[] = [];
   const linkSet = new Set<string>();
@@ -470,12 +537,19 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
           target: targetId,
           type: raw.type,
           weight: 1,
+          relation: raw.relation,
+          permissionScopes: raw.permissionScopes,
         });
 
         const fromNode = nodeMap.get(raw.from);
         const toNode = nodeMap.get(targetId);
         if (fromNode) fromNode.degree++;
         if (toNode) toNode.degree++;
+      } else if (raw.relation) {
+        // Preserve policy metadata even if a source link already joins this pair.
+        const existing = resolvedLinks.find((link) => link.source === raw.from && link.target === targetId)!;
+        existing.relation = raw.relation;
+        existing.permissionScopes = raw.permissionScopes;
       }
     }
   }
@@ -506,3 +580,5 @@ export async function loadSpatialGraph(workspaceRoot: string = process.cwd()): P
     },
   };
 }
+
+

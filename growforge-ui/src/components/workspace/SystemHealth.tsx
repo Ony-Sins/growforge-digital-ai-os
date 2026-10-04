@@ -73,11 +73,11 @@ export function SystemHealth() {
       try {
         const res = await fetch("/api/vault/system/n8n/health");
         if (res.ok) {
-          const data: { status: "connected" | "offline" } = await res.json();
+          const data: { status: "connected" | "offline" | "unconfigured" | "not_checked" } = await res.json();
           next[2] = {
             label: "n8n Automation",
-            detail: data.status === "connected" ? "Online" : "Offline",
-            status: data.status === "connected" ? "ok" : "warn",
+            detail: data.status === "connected" ? "Online" : data.status === "offline" ? "Offline" : "Not configured",
+            status: data.status === "connected" ? "ok" : data.status === "offline" ? "warn" : "unknown",
           };
         } else {
           next[2] = { label: "n8n Automation", detail: "Unreachable", status: "warn" };

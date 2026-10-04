@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { agents } from '../src/lib/agents';
+import { agentRecords, filteredAgents } from '../src/components/spatial/dive/agentModel';
+import { noraSurfaceContext } from '../src/lib/noraSurfaceContext';
+
+const records=agentRecords(agents,null);
+assert.match(fs.readFileSync(new URL('../src/components/spatial/dive/AgentsLens.tsx',import.meta.url),'utf8'), /onClick=\{onClearFilter\} aria-label="Clear department filter"/, 'Clearing a department filter must preserve selected-agent inspection');
+assert.equal(records.length,7);
+assert.equal(records.filter(record=>record.kind==='specialist').length,6);
+assert.equal(records.filter(record=>record.kind==='orchestration').length,1);
+assert.equal(records.filter(record=>record.running).length,0);
+assert.deepEqual(agentRecords([],null),[]);
+for(const record of records){assert.ok(agents.some(agent=>agent.id===record.id));assert.ok(record.relationships.every(link=>link.sourceId===record.id && link.targetId && link.evidence==='structural'));assert.ok(!record.categories['Current assignment']);assert.ok(!record.categories.Permissions);assert.ok(!record.categories.Skills);}
+const historical=agentRecords(agents.map(agent=>({...agent,status:'success' as const,lastRun:'recorded result'})),null);
+assert.equal(historical.filter(record=>record.running).length,0);
+assert.equal(historical[0].categories['Last recorded result'][0],'Completed');
+const failed=agentRecords([{...agents[1],status:'error'}],null);assert.equal(failed[0].running,false);assert.equal(failed[0].categories['Last recorded result'][0],'Error');
+const running=agentRecords([{...agents[1],status:'active'}],null);assert.equal(running[0].running,true);assert.ok(running[0].categories['Recorded run']);
+assert.deepEqual(filteredAgents(records,'web_platform_engineering').map(record=>record.id),['frontend-developer']);
+assert.equal(filteredAgents(records,'brand_growth_marketing').length,0);
+assert.equal(filteredAgents(records,'quality_risk_governance').length,2);
+assert.equal(filteredAgents(records,null).length,7);
+const renamed=agentRecords([{...agents[1],name:'Changed display name'}],null)[0];assert.equal(renamed.id,'frontend-developer');assert.equal(renamed.departmentId,'web_platform_engineering');
+const context={id:renamed.id,title:renamed.name,kind:'specialist',departmentId:renamed.departmentId??null,context:'x'.repeat(9000)};
+assert.match(noraSurfaceContext('Dive In',null,null,null,context),/"layer":"Agents"/);
+assert.match(noraSurfaceContext('Dive In',null,null,null,context),/"agentId":"frontend-developer"/);
+assert.ok(noraSurfaceContext('Dive In',null,null,null,context).length<2600);
+for(const surface of ['CORE','Explore','Systems'] as const)assert.match(noraSurfaceContext(surface,null,null,null,context),/"selection":null/);
+assert.match(noraSurfaceContext('Dive In',null,null,null,null),/"selection":null/);
+console.log('PASS authoritative agent IDs, six specialist definitions plus control, runtime/history isolation, no inferred assignment/grants/skills, independent department filtering, bounded NORA context and cross-surface cleanup.');

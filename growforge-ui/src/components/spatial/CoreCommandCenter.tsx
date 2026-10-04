@@ -1,19 +1,59 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, FileText, History, Image as ImageIcon, Info, Loader2, Maximize2, Mic, MicOff, Minimize2, Paperclip, Pin, PinOff, RefreshCw, Send, Settings2, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowDown, MoreHorizontal, Minus, Plus, ChevronDown, ChevronRight, FileText, Image as ImageIcon, Loader2, Mic, Paperclip, Send, Settings2, Sparkles, X } from "lucide-react";
 import { CoreOrbField } from "./CoreOrbField";
+import { NORA_VISUAL_EVENT, NORA_VISUAL_REQUEST, NORA_AUDIO_EVENT, type NoraVisualSignal } from '@/lib/noraVisualSignal';
+import { resolveAssistantIdentity } from '@/lib/assistantIdentity';
+import { createAudioSampler, type AudioSampler } from '@/lib/audioSampler';
 import { useAppState } from "@/lib/appState";
 import { Markdown } from "@/components/ui/Markdown";
+import type { GraphNode } from "@/lib/spatial/obsidianReader";
+import { noraSurfaceContext, type NoraSurface, type NoraDepartmentContext, type NoraAgentContext, type NoraWorkflowContext, type NoraContextRecord, type NoraToolRecord } from "@/lib/noraSurfaceContext";
+import { VoiceDiagnosticsPanel, type VoiceDiagnosticsData } from "./VoiceDiagnosticsPanel";
+import { LiveKitVoiceClient } from "@/lib/livekitVoiceClient";
+
+function ComposerVoiceWave({ energy }: { energy: number }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-950/40 border border-cyan-500/30 backdrop-blur-sm animate-fade-in">
+      <div className="flex items-center gap-0.5 h-4">
+        {[0, 1, 2, 3, 4].map((i) => {
+          const offset = Math.sin(i * 1.2) * 0.2;
+          const heightFactor = Math.max(0.2, Math.min(1.0, energy * (1 + offset * 0.8)));
+          const heightPx = Math.max(3, Math.round(heightFactor * 16));
+          return (
+            <span
+              key={i}
+              className="w-1 rounded-full bg-gradient-to-t from-cyan-400 to-emerald-300 transition-all duration-75"
+              style={{ height: `${heightPx}px` }}
+            />
+          );
+        })}
+      </div>
+      <span className="text-[11px] font-mono text-cyan-200 tracking-wide font-medium">
+        {energy > 0.08 ? "Voice active" : "Listening..."}
+      </span>
+    </div>
+  );
+}
 
 interface SpeechRecognitionEventLike {
-  results: ArrayLike<{ 0: { transcript: string } }>;
+  resultIndex?: number;
+  results: ArrayLike<{ 0?: { transcript: string }; isFinal?: boolean }>;
 }
 
 interface SpeechRecognitionInstance {
+  onstart: (() => void) | null;
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
+  onaudiostart?: (() => void) | null;
+  onsoundstart?: (() => void) | null;
+  onspeechstart?: (() => void) | null;
+  onspeechend?: (() => void) | null;
+  onsoundend?: (() => void) | null;
+  onaudioend?: (() => void) | null;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
   onerror: ((event?: { error?: string }) => void) | null;
@@ -22,6 +62,11 @@ interface SpeechRecognitionInstance {
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 interface CoreCommandCenterProps {
+  dockHidden?: boolean;
+  onHideDock?: () => void;
+  conversationOnly?: boolean;
+  contextSurface?: NoraSurface;
+  selectedRecord?: GraphNode | null;
   telemetryData: {
     activeJobCount: number;
     totalJobCount: number;
@@ -365,67 +410,13 @@ function greetingForHour(hour: number): string {
 
 function ReactiveOrb({
   state,
+  onClick, open, disabled,
 }: {
   state: "idle" | "focus" | "typing" | "listening" | "voice-active" | "thinking" | "executing" | "success" | "error";
+  onClick: () => void; open: boolean; disabled: boolean;
 }) {
-  let orbClass = "reactive-orb-idle";
-  if (state === "error") {
-    orbClass = "reactive-orb-error";
-  } else if (state === "success") {
-    orbClass = "reactive-orb-success";
-  } else if (state === "thinking") {
-    orbClass = "reactive-orb-thinking";
-  } else if (state === "voice-active") {
-    orbClass = "reactive-orb-voice-active";
-  } else if (state === "listening") {
-    orbClass = "reactive-orb-listening";
-  } else if (state === "executing") {
-    orbClass = "reactive-orb-executing";
-  } else if (state === "typing") {
-    orbClass = "reactive-orb-typing";
-  } else if (state === "focus") {
-    orbClass = "reactive-orb-focus";
-  }
-
   return (
-    <div className="reactive-orb-container" aria-hidden="true">
-      <div className={`reactive-orb-base ${orbClass}`} />
-    </div>
-  );
-}
-
-function AudioWaveVisualizer({ active }: { active?: boolean }) {
-  return (
-    <div className="flex items-center gap-[3px] sm:gap-1 px-1 sm:px-1.5 h-4" aria-hidden="true">
-      <span
-        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
-          active
-            ? "bg-cyan-300 shadow-[0_0_6px_#22d3ee] audio-wave-bar-1"
-            : "bg-cyan-400/30 h-1"
-        }`}
-      />
-      <span
-        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
-          active
-            ? "bg-cyan-200 shadow-[0_0_6px_#22d3ee] audio-wave-bar-2"
-            : "bg-cyan-400/30 h-1"
-        }`}
-      />
-      <span
-        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
-          active
-            ? "bg-cyan-300 shadow-[0_0_6px_#22d3ee] audio-wave-bar-3"
-            : "bg-cyan-400/30 h-1"
-        }`}
-      />
-      <span
-        className={`w-[2.5px] sm:w-[3px] rounded-full transition-all duration-150 ${
-          active
-            ? "bg-cyan-200 shadow-[0_0_6px_#22d3ee] audio-wave-bar-4"
-            : "bg-cyan-400/30 h-1"
-        }`}
-      />
-    </div>
+    <button type="button" className="nora-plus" aria-label="Attachment options" aria-expanded={open} disabled={disabled} onClick={onClick} data-state={state}><Plus size={23} strokeWidth={2.5}/></button>
   );
 }
 
@@ -463,10 +454,10 @@ function ConversationSettingsPopover({
   return (
     <div
       role="region" aria-label="Conversation Settings"
-      className={`conversation-settings absolute overflow-y-auto w-[min(320px,calc(100vw-2rem))] rounded-2xl bg-[#060e1d]/98 border border-cyan-400/25 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(34,211,238,0.18)] p-3.5 sm:p-4 text-slate-200 select-none ${posClass}`}
+      className={`conversation-settings absolute overflow-y-auto w-[min(320px,calc(100vw-2rem))] rounded-2xl holo-panel p-3.5 sm:p-4 text-slate-200 select-none ${posClass}`}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="sticky -top-3.5 sm:-top-4 z-10 flex items-center justify-between bg-[#060e1d] pb-3 border-b border-white/[0.08]">
+      <div className="sticky -top-3.5 sm:-top-4 z-10 flex items-center justify-between bg-[#081426]/85 backdrop-blur-md pb-3 border-b border-white/[0.08]">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Settings2 className="w-4 h-4 text-cyan-400" />
           <span>Conversation Settings</span>
@@ -821,7 +812,8 @@ function VoiceMediaCenterCard({
   );
 }
 
-interface SpatialResponseLayerProps {
+export interface SpatialResponseLayerProps {
+  contextLabel?: string | null;
   isOpen: boolean;
   viewMode: "compact" | "expanded";
   onToggleViewMode: () => void;
@@ -859,453 +851,66 @@ interface SpatialResponseLayerProps {
   onSelectPrompt?: (prompt: string) => void;
 }
 
-function SpatialResponseLayer({
-  isOpen,
-  viewMode,
-  onToggleViewMode,
-  isResponding,
-  processingStatus,
-  assistantName,
-  userName,
-  userPrompt,
-  userAttachments,
-  response,
-  history,
-  error,
-  onClose,
-  onRetry,
-  onOpenSettings,
-  onClearHistory,
-  isSettingsOpen = false,
-  onCloseSettings,
-  onUserNameChange,
-  onAssistantNameChange,
-  voiceInputEnabled = true,
-  onVoiceInputToggle,
-  voiceOutputEnabled = false,
-  onVoiceOutputToggle,
-  onSelectPrompt,
-}: SpatialResponseLayerProps) {
+export function SpatialResponseLayer({ isOpen, isResponding, processingStatus, assistantName, history, response, error, onClose, onRetry, onOpenSettings, onClearHistory, onSelectPrompt, contextLabel, isSettingsOpen = false, onCloseSettings, onUserNameChange, onAssistantNameChange, userName, voiceInputEnabled = true, onVoiceInputToggle, voiceOutputEnabled = false, onVoiceOutputToggle }: SpatialResponseLayerProps) {
   const historyScrollRef = useRef<HTMLDivElement>(null);
-  const [isPinned, setIsPinned] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isInfoOpen, setIsInfoOpen] = useState(false);
-
+  const atLatest = useRef(true);
+  const [showLatest, setShowLatest] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const jumpToLatest = () => {
+    const el = historyScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    atLatest.current = true; setShowLatest(false);
+  };
+  useEffect(() => { if (isOpen) { const el = historyScrollRef.current; if (el) el.scrollTop = el.scrollHeight; atLatest.current = true; } }, [isOpen]);
+  useEffect(() => { if (atLatest.current) { const el = historyScrollRef.current; if (el) el.scrollTop = el.scrollHeight; } }, [history, isResponding]);
   useEffect(() => {
-    if (viewMode === "expanded" && historyScrollRef.current) {
-      historyScrollRef.current.scrollTop = historyScrollRef.current.scrollHeight;
-    }
-  }, [history, isResponding, viewMode]);
-
-  // Phase 1.4: Auto-dismiss completed transient cards in compact mode after ~5.5s of inactivity
-  useEffect(() => {
-    if (viewMode !== "compact" || isResponding || error || isPinned || isHovered || isSettingsOpen || isInfoOpen || !response) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5500);
-    return () => clearTimeout(timer);
-  }, [viewMode, isResponding, error, isPinned, isHovered, isSettingsOpen, isInfoOpen, response, onClose]);
-
+    if (!menuOpen) return;
+    const outside = (e: PointerEvent) => { if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false); };
+    const escape = (event: KeyboardEvent) => { if(event.key === "Escape"){event.stopImmediatePropagation();setMenuOpen(false);} };
+    window.addEventListener("keydown", escape, true);
+    window.addEventListener('pointerdown', outside);
+    return () => { window.removeEventListener('pointerdown', outside);window.removeEventListener("keydown", escape, true); };
+  }, [menuOpen]);
   if (!isOpen) return null;
-
-  const isExpanded = viewMode === "expanded";
-
-  return (
-    <div
-      role="region"
-      aria-live="polite"
-      aria-label="Assistant Spatial Workspace"
-      id="core-conversation"
-      data-view={viewMode}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`pointer-events-auto absolute z-30 flex flex-col rounded-2xl bg-[#060e1d]/95 border border-cyan-400/25 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_28px_rgba(34,211,238,0.14)] p-3 sm:p-4 text-slate-200 select-none spatial-response-layer transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 motion-reduce:transition-none motion-reduce:transform-none ${
-        isExpanded
-          ? "left-1/2 -translate-x-1/2 bottom-[calc(var(--dock-base)+var(--kb-offset,0px)+var(--composer-height,52px)+16px)] w-[min(650px,calc(100vw-1.5rem))] max-h-[min(52dvh,var(--panel-space))] lg:left-auto lg:right-6 xl:right-8 lg:translate-x-0 lg:top-[76px] lg:bottom-24 lg:w-[390px] xl:w-[410px] lg:max-h-[calc(100%-170px)]"
-          : "left-1/2 -translate-x-1/2 bottom-[calc(var(--dock-base)+var(--kb-offset,0px)+var(--composer-height,52px)+16px)] w-[min(650px,calc(100vw-1.5rem))] max-h-[30vh] sm:max-h-[34vh] md:max-h-[38vh]"
-      }`}
-    >
-      {/* Corner bracket accents */}
-      <span className="pointer-events-none absolute top-1 left-1 h-2 w-2 core-instrument-corner-tl" />
-      <span className="pointer-events-none absolute bottom-1 right-1 h-2 w-2 core-instrument-corner-br" />
-
-      {/* Top highlight line */}
-      <span className="pointer-events-none absolute inset-x-4 top-[1px] h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between pb-2.5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
-          <span className="font-sora text-xs font-semibold text-white tracking-wide">
-            {assistantName || "Nora"}
-          </span>
-
-          {/* Restrained live indicator */}
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400" />
-          </span>
-
-          {isExpanded ? (
-            <span className="rounded bg-cyan-950/60 border border-cyan-400/20 px-1.5 py-0.5 text-[9px] font-mono font-medium text-cyan-300 uppercase tracking-wider">
-              {history.length} {history.length === 1 ? "Turn" : "Turns"}
-            </span>
-          ) : response?.provider ? (
-            <button
-              type="button"
-              onClick={() => setIsInfoOpen(!isInfoOpen)}
-              className="group flex items-center gap-1 rounded bg-white/[0.04] border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-slate-400 hover:text-cyan-300 hover:border-cyan-400/30 transition"
-              title="Inspect model attribution & execution details"
-            >
-              <Info className="h-2.5 w-2.5 text-cyan-400" />
-              <span>Details</span>
-            </button>
-          ) : null}
-        </div>
-
-        <div className="flex items-center gap-1">
-          {/* Keep Viewing / Pin button in compact mode */}
-          {!isExpanded && response && (
-            <button
-              type="button"
-              onClick={() => setIsPinned(!isPinned)}
-              aria-label={isPinned ? "Unpin card auto-dismissal" : "Pin card (keep viewing)"}
-              title={isPinned ? "Pinned (will stay open)" : "Keep Viewing (pause auto-dismiss)"}
-              className={`grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg transition ${
-                isPinned
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-                  : "text-slate-400 hover:text-cyan-300 hover:bg-white/10"
-              }`}
-            >
-              {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
-            </button>
-          )}
-
-          {/* Toggle Mode Button (1-Click access to full history) */}
-          <button
-            type="button"
-            onClick={onToggleViewMode}
-            aria-label={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
-            title={isExpanded ? "Collapse to latest message" : "Expand conversation history"}
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
-          >
-            {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          </button>
-
-          {/* Conversation Settings Button */}
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            aria-label="Conversation Settings"
-            title="Conversation Settings"
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-white/10 transition"
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-          </button>
-
-          {/* Single Close Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close workspace"
-            title="Close workspace"
-            className="grid h-9 w-9 sm:h-6 sm:w-6 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
+  return <div role="region" aria-label="NORA conversation" id="core-conversation" className="nora-conversation" data-view="expanded">
+    <header className="nora-panel-header">
+      <span className="nora-panel-name"><Sparkles size={16} />{assistantName || 'NORA'}</span>
+      <div ref={menuRef} className="nora-panel-actions">
+        <button type="button" aria-label="Conversation actions" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><MoreHorizontal size={16} /></button>
+        <button type="button" aria-label="Minimize conversation" onClick={onClose}><Minus size={16} /></button>
+        <button type="button" aria-label="Close workspace" onClick={onClose}><X size={16} /></button>
+        {menuOpen && <div className="nora-menu nora-actions-menu">
+          <button type="button" onClick={() => {setMenuOpen(false);onOpenSettings();}}>Conversation settings</button>
+          {response?.provider && <button type="button" onClick={() => {setMenuOpen(false);setDetailsOpen(v=>!v);}}>Execution details</button>}
+          <button type="button" disabled={!history.length} onClick={() => {setMenuOpen(false);onClearHistory();}}>Clear history</button>
+        </div>}
       </div>
-
-      {/* Model Attribution Popover (Phase 3 Clean Identity) */}
-      {isInfoOpen && response?.provider && (
-        <div className="absolute top-12 left-3 sm:left-4 z-50 rounded-xl border border-cyan-400/35 bg-[#040915]/98 p-3 shadow-2xl backdrop-blur-2xl text-[11px] text-slate-300 w-64 animate-in fade-in zoom-in-95 duration-150">
-          <div className="font-semibold text-white mb-2 flex items-center justify-between pb-1 border-b border-white/[0.08]">
-            <span className="text-cyan-300">Model Attribution</span>
-            <button type="button" onClick={() => setIsInfoOpen(false)} className="text-slate-400 hover:text-white">
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="space-y-1.5 font-mono text-[10px]">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Provider:</span>
-              <span className="text-cyan-200 capitalize">{response.provider}</span>
-            </div>
-            {response.model && (
-              <div className="flex justify-between">
-                <span className="text-slate-400">Model:</span>
-                <span className="text-slate-200">{response.model}</span>
-              </div>
-            )}
-            {response.fallbackOccurred && (
-              <div className="flex justify-between text-amber-300">
-                <span>Fallback:</span>
-                <span>from {response.fallbackFrom || "primary"}</span>
-              </div>
-            )}
-            <div className="flex justify-between pt-1 border-t border-white/[0.06] text-slate-500">
-              <span>Zero-Spend:</span>
-              <span className="text-emerald-400">Verified Free</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Popover inside Layer */}
-      {isSettingsOpen && onCloseSettings && onUserNameChange && onAssistantNameChange && onVoiceInputToggle && (
-        <ConversationSettingsPopover
-          isOpen={true}
-          onClose={onCloseSettings}
-          position="layer"
-          userName={userName}
-          onUserNameChange={onUserNameChange}
-          assistantName={assistantName}
-          onAssistantNameChange={onAssistantNameChange}
-          voiceInputEnabled={voiceInputEnabled}
-          onVoiceInputToggle={onVoiceInputToggle}
-          voiceOutputEnabled={voiceOutputEnabled}
-          onVoiceOutputToggle={onVoiceOutputToggle}
-        />
-      )}
-
-      {/* COMPACT MODE */}
-      {!isExpanded && (
-        <div className="conversation-compact min-h-0 overflow-y-auto">
-          {!userPrompt && !response && !error && !isResponding && <p className="py-4 text-xs text-slate-400">No previous messages. Start a conversation from the dock below.</p>}
-
-          {/* Phase 1.1: Immediate user message bubble above dock */}
-          {userPrompt && (
-            <div className="mt-2.5 flex flex-col gap-1 rounded-xl bg-cyan-500/10 border border-cyan-400/20 px-3 py-2 text-xs text-cyan-100 shadow-sm animate-in fade-in duration-200">
-              <div className="flex items-start gap-1.5">
-                <span className="font-semibold text-cyan-300 shrink-0">{userName || "You"}:</span>
-                <span className="line-clamp-2 text-slate-200">{userPrompt}</span>
-              </div>
-              {userAttachments && userAttachments.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {userAttachments.map((att, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 rounded bg-black/40 border border-cyan-400/25 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
-                      <Paperclip className="h-2.5 w-2.5" />
-                      {att.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Phase 1.2: Real processing and execution states */}
-          {isResponding && (
-            <div className="mt-3 space-y-2 py-1.5 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
-                </span>
-                <span className="tracking-wide">{processingStatus || `${assistantName || "Nora"} is working on it...`}</span>
-              </div>
-              <div className="space-y-1.5 pt-0.5 animate-pulse">
-                <div className="h-2 w-5/6 rounded-full bg-gradient-to-r from-cyan-500/25 via-sky-500/35 to-cyan-500/15" />
-                <div className="h-2 w-full rounded-full bg-gradient-to-r from-cyan-500/20 via-sky-500/30 to-cyan-500/10" />
-              </div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !isResponding && (
-            <div className="mt-3 rounded-lg bg-rose-950/40 border border-rose-500/30 p-3 text-xs text-rose-200">
-              <div className="font-semibold text-rose-300 mb-1">Request failed</div>
-              <p className="text-slate-300 mb-2.5">{error}</p>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-medium border border-rose-500/40 transition"
-              >
-                <RefreshCw className="h-3 w-3" /> Retry
-              </button>
-            </div>
-          )}
-
-          {/* Response Content (Phase 1.3: Smooth entrance) */}
-          {response && !isResponding && !error && (
-            <div className="mt-3 overflow-y-auto max-h-[18vh] sm:max-h-[22vh] md:max-h-[26vh] pr-1 select-text space-y-2 text-xs sm:text-sm text-slate-100 leading-relaxed font-sans scrollbar-thin animate-in fade-in slide-in-from-bottom-1 duration-200">
-              <Markdown content={response.content} size="sm" />
-
-              {response.media && response.media.length > 0 && (
-                <InlineMediaCard media={response.media} onRetry={onRetry} />
-              )}
-
-              {/* Dispatch Info Card */}
-              {response.dispatch && (
-                <div className="mt-3 flex items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-950/30 px-2.5 py-1.5 text-xs text-cyan-200">
-                  <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                  <span className="font-medium text-white">{response.dispatch.agentName}</span>
-                  <span className="text-[11px] text-slate-400">({response.dispatch.status})</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Compact Footer Actions (Phase 2: single clear action) */}
-          <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
-            <button
-              type="button"
-              onClick={onToggleViewMode}
-              className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 transition"
-            >
-              <History className="h-3 w-3" /> View full history ({history.length})
-            </button>
-            {isPinned && (
-              <span className="text-[10px] text-cyan-400/80 font-mono">Pinned</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* EXPANDED HISTORY MODE */}
-      {isExpanded && (
-        <div className="mt-2.5 flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div
-            ref={historyScrollRef}
-            className="flex-1 min-h-0 overflow-y-auto pr-1.5 space-y-3.5 text-xs select-text scrollbar-thin"
-          >
-            {history.length === 0 && !isResponding && (
-              <div className="py-6 px-2 text-center text-xs">
-                <div className="inline-grid h-10 w-10 place-items-center rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 mb-2.5 shadow-[0_0_16px_rgba(34,211,238,0.2)]">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div className="font-semibold text-white mb-1">How can I assist you today?</div>
-                <p className="text-slate-400 text-[11px] leading-relaxed mb-4 max-w-[280px] mx-auto">
-                  Ask a question, analyze documents, generate media, or route tasks to specialist departments.
-                </p>
-                <div className="space-y-1.5 text-left">
-                  {[
-                    "Generate a cup of coffee using ComfyUI",
-                    "Summarize active department status",
-                    "Audit system connections & models",
-                  ].map((suggestion, sIdx) => (
-                    <button
-                      key={sIdx}
-                      type="button"
-                      onClick={() => onSelectPrompt?.(suggestion)}
-                      className="w-full flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-cyan-500/10 hover:border-cyan-400/30 px-3 py-2 text-[11px] text-slate-300 hover:text-cyan-200 transition group"
-                    >
-                      <span>{suggestion}</span>
-                      <ChevronRight className="h-3 w-3 text-slate-500 group-hover:text-cyan-300 transition" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {history.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                }`}
-              >
-                {msg.role === "user" ? (
-                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-cyan-500/15 border border-cyan-400/25 px-3 py-2 text-cyan-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
-                    <div className="text-[10px] font-semibold text-cyan-400/80 mb-0.5">{userName || "You"}</div>
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
-                    {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {msg.attachments.map((att, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 rounded bg-black/40 border border-cyan-400/25 px-1.5 py-0.5 text-[10px] text-cyan-300 font-mono">
-                            <Paperclip className="h-2.5 w-2.5" />
-                            {att.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.4)] leading-relaxed">
-                    <div className="flex items-center justify-between gap-1.5 text-[10px] font-semibold text-cyan-300 mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <Sparkles className="h-3 w-3 text-cyan-400" />
-                        <span>{assistantName || "Nora"}</span>
-                      </div>
-                      {msg.provider && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] font-mono font-normal text-slate-400">
-                            {msg.provider}{msg.model ? ` · ${msg.model}` : ""}
-                          </span>
-                          {msg.fallbackOccurred && (
-                            <span className="rounded bg-amber-950/60 border border-amber-400/30 px-1 py-0 text-[8px] font-mono font-medium text-amber-300 uppercase" title={`Fallback from ${msg.fallbackFrom || "primary"}`}>
-                              Fallback
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <Markdown content={msg.content} size="sm" />
-                    {msg.media && msg.media.length > 0 && (
-                      <InlineMediaCard media={msg.media} />
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Thinking Indicator in History */}
-            {isResponding && (
-              <div className="flex flex-col items-start max-w-[95%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/[0.08] px-3.5 py-2.5 text-slate-100">
-                <div className="flex items-center gap-2 text-xs text-cyan-300 font-medium mb-1.5">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
-                  </span>
-                  <span>{processingStatus || `${assistantName || "Nora"} is working on it...`}</span>
-                </div>
-                <div className="space-y-1.5 w-48 animate-pulse pt-1">
-                  <div className="h-2 rounded-full bg-cyan-500/20" />
-                  <div className="h-2 w-36 rounded-full bg-cyan-500/15" />
-                </div>
-              </div>
-            )}
-
-            {/* Error Banner in History */}
-            {error && !isResponding && (
-              <div className="rounded-lg bg-rose-950/40 border border-rose-500/30 p-2.5 text-xs text-rose-200 flex items-center justify-between">
-                <span>{error}</span>
-                <button
-                  type="button"
-                  onClick={onRetry}
-                  className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-[11px] text-rose-200 transition"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Expanded Footer Actions */}
-          <div className="shrink-0 mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400">
-            <button
-              type="button"
-              onClick={onClearHistory}
-              disabled={history.length === 0}
-              className="inline-flex items-center gap-1 hover:text-rose-300 disabled:opacity-40 disabled:hover:text-slate-400 transition"
-            >
-              <Trash2 className="h-3 w-3" /> Clear history
-            </button>
-            <button
-              type="button"
-              onClick={onToggleViewMode}
-              className="text-cyan-400 hover:text-cyan-300 transition"
-            >
-              Collapse to latest
-            </button>
-          </div>
-        </div>
-      )}
+    </header>
+    {contextLabel && <div className="nora-context-chip">Context · {contextLabel}</div>}
+    {detailsOpen && response?.provider && <div className="nora-context-chip">{response.provider}{response.model ? ` · ${response.model}` : ''}{response.fallbackOccurred ? ` · Fallback from ${response.fallbackFrom || 'primary'}` : ''}</div>}
+    {isSettingsOpen && onCloseSettings && onUserNameChange && onAssistantNameChange && onVoiceInputToggle && <ConversationSettingsPopover isOpen onClose={onCloseSettings} position="layer" userName={userName} onUserNameChange={onUserNameChange} assistantName={assistantName} onAssistantNameChange={onAssistantNameChange} voiceInputEnabled={voiceInputEnabled} onVoiceInputToggle={onVoiceInputToggle} voiceOutputEnabled={voiceOutputEnabled} onVoiceOutputToggle={onVoiceOutputToggle} />}
+    <div ref={historyScrollRef} className="nora-transcript" aria-label="Conversation messages" onScroll={() => {const el=historyScrollRef.current;if(el){atLatest.current=el.scrollHeight-el.scrollTop-el.clientHeight<32;setShowLatest(!atLatest.current);}}}>
+      {!history.length && !isResponding && !error && <div className="nora-empty"><Sparkles size={24}/><p>How can I assist you today?</p><span>Ask a question or work with the current context.</span>{onSelectPrompt && <div className="nora-suggestions">{['Summarize active department status','Audit system connections & models'].map(prompt=><button key={prompt} type="button" onClick={()=>onSelectPrompt(prompt)}>{prompt}</button>)}</div>}</div>}
+      {history.map((msg,index)=><article key={index} className={`nora-message nora-message-${msg.role}`}>
+        {msg.role==='assistant' && <div className="nora-message-author"><Sparkles size={12}/>{assistantName || 'NORA'}</div>}
+        <Markdown content={msg.content} size="sm" />
+        {!!msg.attachments?.length && <div className="nora-message-files">{msg.attachments.map((file,i)=><span key={i}><Paperclip size={11}/>{file.name}</span>)}</div>}
+        {!!msg.media?.length && <InlineMediaCard media={msg.media}/>}
+      </article>)}
+      {isResponding && <div role="status" className="nora-processing">{processingStatus || `${assistantName || 'NORA'} is working…`}</div>}
+      {error && !isResponding && <div role="alert" className="nora-error">{error}<button type="button" onClick={onRetry}>Retry</button></div>}
     </div>
-  );
+    {showLatest && <button type="button" className="nora-jump" onClick={jumpToLatest}><ArrowDown size={12}/>Jump to latest</button>}
+  </div>;
 }
-
 export function CoreCommandCenter({
+  dockHidden = false,
+  onHideDock,
+  conversationOnly = false,
+  contextSurface = "CORE",
+  selectedRecord = null,
   telemetryData,
   zoomProgress = 0,
   conversationView,
@@ -1317,6 +922,37 @@ export function CoreCommandCenter({
   onListeningChange,
 }: CoreCommandCenterProps) {
   const { role, unlockedAgentIds, profileName, setProfileName } = useAppState();
+  const [missionContext, setMissionContext] = useState<{ id: string; title: string; context: string } | null>(null);
+  const [agentContext,setAgentContext]=useState<NoraAgentContext|null>(null);
+  const [contextRecord,setContextRecord]=useState<NoraContextRecord|null>(null);
+  useEffect(()=>{const select=(event:Event)=>setContextRecord((event as CustomEvent<NoraContextRecord|null>).detail);window.addEventListener('growforge:context-record',select);return()=>window.removeEventListener('growforge:context-record',select);},[]);
+  const [intelligenceRecord,setIntelligenceRecord]=useState<NoraContextRecord|null>(null);
+  useEffect(()=>{const select=(event:Event)=>setIntelligenceRecord((event as CustomEvent<NoraContextRecord|null>).detail);window.addEventListener('growforge:intelligence-record',select);return()=>window.removeEventListener('growforge:intelligence-record',select);},[]);
+  const [toolRecord,setToolRecord]=useState<NoraToolRecord|null>(null);
+  useEffect(()=>{const select=(event:Event)=>setToolRecord((event as CustomEvent<NoraToolRecord|null>).detail);window.addEventListener('growforge:tool-record',select);return()=>window.removeEventListener('growforge:tool-record',select);},[]);
+  const [workflowContext,setWorkflowContext]=useState<NoraWorkflowContext|null>(null);
+  useEffect(()=>{const select=(event:Event)=>setWorkflowContext((event as CustomEvent<NoraWorkflowContext|null>).detail);window.addEventListener('growforge:workflow-context',select);return()=>window.removeEventListener('growforge:workflow-context',select);},[]);
+  useEffect(()=>{const select=(event:Event)=>setAgentContext((event as CustomEvent<NoraAgentContext|null>).detail);window.addEventListener('growforge:agent-context',select);return()=>window.removeEventListener('growforge:agent-context',select);},[]);
+  const [departmentContext,setDepartmentContext]=useState<NoraDepartmentContext|null>(null);
+  useEffect(()=>{
+    const select=(event:Event)=>setDepartmentContext((event as CustomEvent<NoraDepartmentContext|null>).detail);
+    window.addEventListener('growforge:department-context',select);
+    return()=>window.removeEventListener('growforge:department-context',select);
+  },[]);
+  useEffect(() => {
+    const select = (event: Event) => setMissionContext((event as CustomEvent<{ id: string; title: string; context: string } | null>).detail);
+    window.addEventListener("growforge:mission-context", select);
+    return () => window.removeEventListener("growforge:mission-context", select);
+  }, []);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!attachmentMenuOpen) return;
+    const outside = (event: PointerEvent) => { if (!attachmentMenuRef.current?.contains(event.target as Node)) setAttachmentMenuOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault();event.stopImmediatePropagation();setAttachmentMenuOpen(false); } };
+    window.addEventListener("pointerdown", outside);window.addEventListener("keydown", escape, true);
+    return () => {window.removeEventListener("pointerdown", outside);window.removeEventListener("keydown", escape, true);};
+  }, [attachmentMenuOpen]);
   const [prompt, setPrompt] = useState("");
   const [engaged, setEngaged] = useState(false);
   const [listening, setListening] = useState(false);
@@ -1325,6 +961,8 @@ export function CoreCommandCenter({
   const [isFocused, setIsFocused] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
+  const [voiceRuntimeState, setVoiceRuntimeState] = useState("idle");
+  const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [successPulse, setSuccessPulse] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isDockSettingsOpen, setIsDockSettingsOpen] = useState(false);
@@ -1336,6 +974,13 @@ export function CoreCommandCenter({
   const [activeResponse, setActiveResponse] = useState<SpatialChatMessage | null>(null);
   const [isResponding, setIsResponding] = useState(false);
   const [responseError, setResponseError] = useState<string | null>(null);
+  const audioSamplerRef = useRef<AudioSampler | null>(null);
+  useEffect(() => {
+    const signal:NoraVisualSignal={focused:isFocused,listening,processing:isResponding,streaming:false,speaking:agentSpeaking,responseId:activeResponse?.id??null,responseAt:activeResponse?.timestamp??null,response:activeResponse?.content??null,error:!!responseError||voiceRuntimeState==='error',conversationOpen:conversationView!=='closed'};
+    const publish=()=>window.dispatchEvent(new CustomEvent(NORA_VISUAL_EVENT,{detail:signal}));
+    publish(); window.addEventListener(NORA_VISUAL_REQUEST,publish);
+    return ()=>window.removeEventListener(NORA_VISUAL_REQUEST,publish);
+  },[isFocused,listening,isResponding,agentSpeaking,voiceRuntimeState,activeResponse,responseError,conversationView]);
   const [attachments, setAttachments] = useState<AttachmentUI[]>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1397,6 +1042,74 @@ export function CoreCommandCenter({
   const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
   const successTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const isVoiceSessionActiveRef = useRef(false);
+  const accumulatedTranscriptRef = useRef("");
+  const interimTranscriptRef = useRef("");
+  const turnCommitTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSubmittedTranscriptRef = useRef("");
+
+  const [isVoiceDiagOpen, setIsVoiceDiagOpen] = useState(false);
+  const [voiceBackend, setVoiceBackend] = useState<"livekit" | "browser">("livekit");
+  const livekitClientRef = useRef<LiveKitVoiceClient | null>(null);
+  const voiceSurfaceContextRef = useRef("");
+  useEffect(() => {
+    voiceSurfaceContextRef.current = noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord);
+  }, [contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord]);
+  const [liveMicEnergy, setLiveMicEnergy] = useState(0);
+  useEffect(() => () => {
+    isVoiceSessionActiveRef.current = false;
+    if (turnCommitTimerRef.current) {
+      clearTimeout(turnCommitTimerRef.current);
+      turnCommitTimerRef.current = null;
+    }
+    accumulatedTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
+    try { recognitionRef.current?.abort?.(); } catch {}
+    audioSamplerRef.current?.stop();
+    void livekitClientRef.current?.stop();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const isDiagQuery = params.get("voiceDiag") === "1";
+      const isDiagStorage = localStorage.getItem("growforge.voiceDiag") === "1";
+      if (isDiagQuery || isDiagStorage) {
+        const timer = setTimeout(() => setIsVoiceDiagOpen(true), 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  const [voiceDiagData, setVoiceDiagData] = useState<VoiceDiagnosticsData>({
+    voiceBackend: "livekit",
+    micOwner: "none",
+    micDeviceLabel: "None (mic off)",
+    trackEnabled: false,
+    trackMuted: false,
+    trackReadyState: "none",
+    audioRms: 0,
+    peakEnergy: 0,
+    userAudioEnergy: 0,
+    speechEnergy: 0,
+    speechState: "idle",
+    latestEvents: [],
+    rawInterimTranscript: "",
+    rawFinalTranscript: "",
+    lastCommittedUtterance: "None",
+    lastRouterStatus: "Idle",
+    lastRouterResponse: "None",
+    rawError: null,
+  });
+
+  const logDiagEvent = (eventName: string, detail?: string) => {
+    const timeStr = new Date().toLocaleTimeString();
+    setVoiceDiagData((prev) => ({
+      ...prev,
+      latestEvents: [...prev.latestEvents.slice(-20), { time: timeStr, event: eventName, detail }],
+    }));
+  };
+
 
   const activeViewMode = conversationView === "expanded" ? "expanded" : "compact";
   const latestUser = [...conversationHistory].reverse().find((message) => message.role === "user");
@@ -1606,6 +1319,11 @@ export function CoreCommandCenter({
     }));
 
     try {
+      setVoiceDiagData((prev) => ({
+        ...prev,
+        lastRouterStatus: "POST /api/router (sending...)",
+      }));
+
       const res = await fetch("/api/router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1614,7 +1332,7 @@ export function CoreCommandCenter({
           history: historyPayload,
           role,
           unlockedAgentIds,
-          attachmentContext,
+          attachmentContext: [attachmentContext, noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord)].filter(Boolean).join("\n\n"),
         }),
       });
 
@@ -1623,6 +1341,12 @@ export function CoreCommandCenter({
       if (!res.ok) {
         throw new Error(data.error || `Request failed (${res.status})`);
       }
+
+      setVoiceDiagData((prev) => ({
+        ...prev,
+        lastRouterStatus: `200 OK (${data.provider || 'Router'})`,
+        lastRouterResponse: data.reply || "No reply text",
+      }));
 
       const assistantTurn = {
         role: "assistant" as const,
@@ -1666,6 +1390,10 @@ export function CoreCommandCenter({
     } catch (err: unknown) {
       console.error("Assistant request error:", err);
       const errMsg = (err instanceof Error ? err.message : null) || "Failed to communicate with assistant router.";
+      setVoiceDiagData((prev) => ({
+        ...prev,
+        lastRouterStatus: `Error (${errMsg})`,
+      }));
       setResponseError(errMsg);
       setHasError(true);
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -1682,21 +1410,58 @@ export function CoreCommandCenter({
   const handleVoiceInputToggle = () => {
     setVoiceInputEnabled((prev) => {
       const next = !prev;
-      if (!next && listening) {
-        recognitionRef.current?.stop();
+      if (!next && (isVoiceSessionActiveRef.current || listening)) {
+        isVoiceSessionActiveRef.current = false;
+        if (turnCommitTimerRef.current) {
+          clearTimeout(turnCommitTimerRef.current);
+          turnCommitTimerRef.current = null;
+        }
+        accumulatedTranscriptRef.current = "";
+        interimTranscriptRef.current = "";
+        livekitClientRef.current?.stop();
+        livekitClientRef.current = null;
+        try { recognitionRef.current?.abort?.(); } catch {}
+        recognitionRef.current = null;
+        audioSamplerRef.current?.stop();
+        window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
         setListening(false);
+        setVoiceRuntimeState("idle");
+        setAgentSpeaking(false);
+        setIsResponding(false);
+        setLiveMicEnergy(0);
         onListeningChange?.(false);
+        setVoiceDiagData((p) => ({ ...p, micOwner: "none", speechState: "idle", speechEnergy: 0, trackReadyState: "ended", trackEnabled: false, trackMuted: false, runtime: { state: "idle", connectionState: "disconnected", playbackStarted: false }, audioRms: 0, peakEnergy: 0, userAudioEnergy: 0 }));
       }
       return next;
     });
   };
 
-  const toggleVoice = () => {
+  const toggleVoice = async () => {
     setEngaged(true);
-    if (listening) {
-      recognitionRef.current?.stop();
+    // If voice session is already active, user explicitly toggles it OFF
+    if (isVoiceSessionActiveRef.current || listening) {
+      isVoiceSessionActiveRef.current = false;
+      if (turnCommitTimerRef.current) {
+        clearTimeout(turnCommitTimerRef.current);
+        turnCommitTimerRef.current = null;
+      }
+      accumulatedTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      if (livekitClientRef.current) {
+        await livekitClientRef.current.stop();
+        livekitClientRef.current = null;
+      }
+      try { recognitionRef.current?.abort?.(); } catch {}
+      recognitionRef.current = null;
+      audioSamplerRef.current?.stop();
+      window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
       setListening(false);
+      setVoiceRuntimeState("idle");
+      setAgentSpeaking(false);
+      setIsResponding(false);
+      setLiveMicEnergy(0);
       onListeningChange?.(false);
+      setVoiceDiagData((p) => ({ ...p, micOwner: "none", speechState: "idle", speechEnergy: 0, trackReadyState: "ended", trackEnabled: false, trackMuted: false, runtime: { state: "idle", connectionState: "disconnected", playbackStarted: false }, audioRms: 0, peakEnergy: 0, userAudioEnergy: 0 }));
       return;
     }
 
@@ -1711,6 +1476,129 @@ export function CoreCommandCenter({
       return;
     }
 
+    // -------------------------------------------------------------
+    // PRIMARY LOCAL VOICE PATH: LIVEKIT + FASTER-WHISPER + KOKORO
+    // -------------------------------------------------------------
+    if (voiceBackend === "livekit") {
+      isVoiceSessionActiveRef.current = true;
+      setVoiceRuntimeState("starting");
+      setVoiceDiagData(prev => ({ ...prev, runtime: { state: "starting" }, rawFinalTranscript: "", rawInterimTranscript: "", lastCommittedUtterance: "", lastRouterResponse: "", micDeviceLabel: "None (mic off)", trackReadyState: "none", trackEnabled: false, lastRouterStatus: "idle", rawError: null }));
+      setListening(false);
+      onListeningChange?.(false);
+      setVoiceError(null);
+
+      let outboundSpeaking = false;
+      const client = new LiveKitVoiceClient({
+        getSurfaceContext: () => voiceSurfaceContextRef.current,
+        assistantIdentity: resolveAssistantIdentity(assistantName, localStorage.getItem("growforge.assistantSpokenName") || undefined),
+        onAudioEnergy: (energy, rms, peak) => {
+          setLiveMicEnergy(energy);
+          if (!outboundSpeaking) window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy } }));
+          const trackInfo = client.getTrackInfo();
+          setVoiceDiagData((prev) => ({
+            ...prev,
+            voiceBackend: "livekit",
+            micOwner: "browser_livekit",
+            micDeviceLabel: trackInfo?.label || "Microphone (LiveKit)",
+            trackEnabled: trackInfo?.enabled ?? true,
+            trackMuted: trackInfo?.muted ?? false,
+            trackReadyState: trackInfo?.readyState ?? "live",
+            audioRms: rms,
+            peakEnergy: peak,
+            userAudioEnergy: energy,
+          }));
+        },
+        onSpeechState: (speechState) => {
+          outboundSpeaking = speechState === "speaking";
+          if (!outboundSpeaking) window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
+          setVoiceRuntimeState(speechState);
+          const receiving = speechState === "listening" || speechState === "user_speaking";
+          setListening(receiving);
+          onListeningChange?.(receiving);
+          setAgentSpeaking(speechState === "speaking");
+          setIsResponding(speechState === "thinking" || speechState === "transcribing");
+          setVoiceDiagData((prev) => ({ ...prev, speechState }));
+        },
+        onConnectionChange: state => setVoiceDiagData(prev => ({ ...prev, livekitConnectionState: state })),
+        onDiagnostics: data => {
+          if (data.latencyMetrics) setVoiceDiagData(prev=>({...prev,latencyMetrics:data.latencyMetrics as typeof prev.latencyMetrics}));
+          setVoiceDiagData(prev => ({ ...prev,
+            runtime: { ...prev.runtime, ...data },
+            roomName: typeof data.roomName === "string" ? data.roomName : prev.roomName,
+            vadState: typeof data.vadState === "string" ? data.vadState : prev.vadState,
+            turnDetectorState: typeof data.turnDetectorState === "string" ? data.turnDetectorState : prev.turnDetectorState,
+            speechEnergy: typeof data.speechEnergy === "number" ? data.speechEnergy : prev.speechEnergy,
+            lastRouterStatus: typeof data.dispatchType === "string" ? data.dispatchType : prev.lastRouterStatus,
+            rawError: typeof data.rawError === "string" ? data.rawError : prev.rawError,
+          }));
+          if (typeof data.speechEnergy === "number" && data.agentSpeaking) window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: data.speechEnergy, isOutbound: true } }));
+        },
+        onTranscript: (text, final) => {
+          if (!final) return;
+          logDiagEvent("final_transcript", text);
+          setVoiceDiagData(prev => ({ ...prev, rawFinalTranscript: text, lastCommittedUtterance: text }));
+          setConversationHistory(prev => [...prev, { role: "user", content: text }]);
+          // The agent already submitted this transcript to executeNoraTurn.
+          // Display the receipt only; never dispatch it a second time.
+        },
+        onReply: (text, turnId) => {
+          logDiagEvent("nora_reply", `Turn ${turnId}`);
+          setVoiceDiagData(prev => ({ ...prev, lastRouterResponse: text }));
+          setConversationHistory(prev => [...prev, { role: "assistant", content: text }]);
+          setActiveResponse({ id: `voice-${Date.now()}-${turnId}`, role: "assistant", content: text, timestamp: new Date().toISOString() });
+        },
+        onError: (err) => {
+          isVoiceSessionActiveRef.current = false;
+          setListening(false);
+          onListeningChange?.(false);
+          setVoiceRuntimeState("error");
+          setAgentSpeaking(false);
+          setIsResponding(false);
+          logDiagEvent("livekit_error", err.message);
+          setVoiceDiagData((prev) => ({
+            ...prev,
+            rawError: err.message,
+            speechState: "error",
+          }));
+          setVoiceError(`LiveKit Voice Error: ${err.message}`);
+          setHasError(true);
+        },
+      });
+
+      livekitClientRef.current = client;
+
+      try {
+        await client.start();
+        if (!isVoiceSessionActiveRef.current) return;
+        logDiagEvent("livekit_connected", "Room joined and microphone published; backend frame receipts required for Listening");
+        setVoiceDiagData((prev) => ({
+          ...prev,
+          voiceBackend: "livekit",
+          micOwner: "browser_livekit",
+          fallbackOccurred: false,
+        }));
+      } catch (err: unknown) {
+        console.error("Failed to start LiveKit Voice Client:", err);
+        const errMsg = err instanceof Error ? err.message : "LiveKit connection failed";
+        isVoiceSessionActiveRef.current = false;
+        setListening(false);
+        setVoiceRuntimeState("error");
+        onListeningChange?.(false);
+        setVoiceError(`LiveKit connection error: ${errMsg}`);
+        setHasError(true);
+        setVoiceDiagData((prev) => ({
+          ...prev,
+          micOwner: "none",
+          speechState: "error",
+          rawError: errMsg,
+        }));
+      }
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // FALLBACK PATH ONLY: BROWSER SPEECH RECOGNITION
+    // -------------------------------------------------------------
     const speechWindow = window as typeof window & {
       SpeechRecognition?: SpeechRecognitionConstructor;
       webkitSpeechRecognition?: SpeechRecognitionConstructor;
@@ -1727,69 +1615,239 @@ export function CoreCommandCenter({
       return;
     }
 
-    try {
-      const recognition = new Recognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = navigator.language || "en-US";
-      recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript?.trim();
-        if (transcript) {
+    // Mark session explicitly ACTIVE
+    isVoiceSessionActiveRef.current = true;
+    setListening(true);
+    onListeningChange?.(true);
+
+    // Start audio sampler for visual CORE energy
+    audioSamplerRef.current?.stop();
+    const sampler = createAudioSampler();
+    audioSamplerRef.current = sampler;
+    void sampler.start((energy, rms, peak) => {
+      setLiveMicEnergy(energy);
+      window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy } }));
+      const track = sampler.getTrackInfo();
+      setVoiceDiagData((prev) => ({
+        ...prev,
+        voiceBackend: "browser",
+        micOwner: "browser_speechrecognition",
+        micDeviceLabel: track?.label || "Default Microphone",
+        trackEnabled: track?.enabled ?? true,
+        trackMuted: track?.muted ?? false,
+        trackReadyState: track?.readyState ?? "live",
+        audioRms: rms ?? 0,
+        peakEnergy: peak ?? 0,
+        userAudioEnergy: energy,
+        fallbackOccurred: true,
+        fallbackReason: "Manual browser fallback mode selected",
+      }));
+    });
+
+    const commitUtterance = (forceImmediate = false) => {
+      if (turnCommitTimerRef.current) {
+        clearTimeout(turnCommitTimerRef.current);
+        turnCommitTimerRef.current = null;
+      }
+
+      const combined = (accumulatedTranscriptRef.current + " " + interimTranscriptRef.current).trim();
+      if (!combined) return;
+
+      // Avoid repeating exact same submission
+      if (combined === lastSubmittedTranscriptRef.current) return;
+
+      if (!forceImmediate) {
+        turnCommitTimerRef.current = setTimeout(() => {
+          commitUtterance(true);
+        }, 750);
+        return;
+      }
+
+      lastSubmittedTranscriptRef.current = combined;
+      accumulatedTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+
+      setVoiceActive(true);
+      if (voiceActiveTimerRef.current) clearTimeout(voiceActiveTimerRef.current);
+      voiceActiveTimerRef.current = setTimeout(() => setVoiceActive(false), 1200);
+
+      setVoiceDiagData((prev) => ({
+        ...prev,
+        lastCommittedUtterance: combined,
+        speechState: "utterance-committed",
+      }));
+
+      if (typeof window !== "undefined") {
+        (window as unknown as { __GROWFORGE_LAST_VOICE_TRANSCRIPT?: string }).__GROWFORGE_LAST_VOICE_TRANSCRIPT = combined;
+      }
+
+      console.log("[GROWFORGE VOICE] Utterance Committed:", combined);
+      submit(combined, "voice");
+    };
+
+    const startRecognitionSession = () => {
+      if (!isVoiceSessionActiveRef.current) return;
+
+      try {
+        const recognition = new Recognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = localStorage.getItem("growforge.voiceResponseLanguage") === "bn" ? "bn-BD" : navigator.language;
+
+        recognition.onstart = () => {
+          logDiagEvent("onstart");
+          if (isVoiceSessionActiveRef.current) {
+            setListening(true);
+            onListeningChange?.(true);
+            setVoiceDiagData((prev) => ({ ...prev, speechState: "listening" }));
+          }
+        };
+
+        recognition.onaudiostart = () => {
+          logDiagEvent("onaudiostart");
+          setVoiceDiagData((prev) => ({ ...prev, speechState: "audio-started" }));
+        };
+
+        recognition.onsoundstart = () => {
+          logDiagEvent("onsoundstart");
+          setVoiceDiagData((prev) => ({ ...prev, speechState: "sound-detected" }));
+        };
+
+        recognition.onspeechstart = () => {
+          logDiagEvent("onspeechstart");
           setVoiceActive(true);
-          if (voiceActiveTimerRef.current) clearTimeout(voiceActiveTimerRef.current);
-          voiceActiveTimerRef.current = setTimeout(() => setVoiceActive(false), 1200);
-          submit(transcript, "voice");
+          setVoiceDiagData((prev) => ({ ...prev, speechState: "speech-detected" }));
+        };
+
+        recognition.onresult = (event) => {
+          let currentFinalChunk = "";
+          let currentInterimChunk = "";
+
+          for (let i = event.resultIndex || 0; i < event.results.length; i++) {
+            const res = event.results[i];
+            const transcript = res[0]?.transcript || "";
+            if (res.isFinal) {
+              currentFinalChunk += transcript + " ";
+            } else {
+              currentInterimChunk += transcript + " ";
+            }
+          }
+
+          if (currentFinalChunk) {
+            accumulatedTranscriptRef.current = (accumulatedTranscriptRef.current + " " + currentFinalChunk).trim();
+            interimTranscriptRef.current = "";
+          }
+          if (currentInterimChunk) {
+            interimTranscriptRef.current = currentInterimChunk.trim();
+          }
+
+          const currentSpeech = (accumulatedTranscriptRef.current + " " + interimTranscriptRef.current).trim();
+          logDiagEvent("onresult", currentSpeech);
+          setVoiceDiagData((prev) => ({
+            ...prev,
+            rawInterimTranscript: interimTranscriptRef.current,
+            rawFinalTranscript: accumulatedTranscriptRef.current,
+          }));
+
+          if (currentSpeech) {
+            setVoiceActive(true);
+            // Trigger 750ms silence debounce timer to commit turn after user finishes speaking
+            commitUtterance(false);
+          }
+        };
+
+        recognition.onspeechend = () => {
+          logDiagEvent("onspeechend");
+          setVoiceDiagData((prev) => ({ ...prev, speechState: "speech-ended" }));
+          // User paused speech. Shorten commit timer to 350ms for responsive turn submission
+          if (accumulatedTranscriptRef.current || interimTranscriptRef.current) {
+            if (turnCommitTimerRef.current) clearTimeout(turnCommitTimerRef.current);
+            turnCommitTimerRef.current = setTimeout(() => {
+              commitUtterance(true);
+            }, 350);
+          }
+        };
+
+        recognition.onsoundend = () => {
+          logDiagEvent("onsoundend");
+        };
+
+        recognition.onaudioend = () => {
+          logDiagEvent("onaudioend");
+        };
+
+        recognition.onend = () => {
+          logDiagEvent("onend");
+          // If there was any pending speech at recognition end boundary, commit it
+          if (accumulatedTranscriptRef.current || interimTranscriptRef.current) {
+            commitUtterance(true);
+          }
+
+          // If session is still active, automatically reconnect/restart without turning off mic
+          if (isVoiceSessionActiveRef.current) {
+            setTimeout(() => {
+              if (isVoiceSessionActiveRef.current) {
+                try {
+                  recognition.start();
+                } catch {
+                  startRecognitionSession();
+                }
+              }
+            }, 100);
+          } else {
+            audioSamplerRef.current?.stop();
+            window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
+            setListening(false);
+            onListeningChange?.(false);
+            setVoiceDiagData((prev) => ({ ...prev, micOwner: "none", speechState: "idle" }));
+          }
+        };
+
+        recognition.onerror = (event?: { error?: string }) => {
+          const errType = event?.error || "unknown";
+          logDiagEvent("onerror", errType);
+          setVoiceDiagData((prev) => ({
+            ...prev,
+            rawError: errType,
+            speechState: `error: ${errType}`,
+          }));
+
+          // Silence or temporary pause should NOT kill the voice session
+          if (errType === "no-speech" || errType === "aborted") {
+            return;
+          }
+
+          if (errType === "not-allowed" || errType === "service-not-allowed") {
+            isVoiceSessionActiveRef.current = false;
+            audioSamplerRef.current?.stop();
+            window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
+            setListening(false);
+            onListeningChange?.(false);
+            setVoiceError(`Microphone error: ${errType}`);
+            setHasError(true);
+            if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+            errorTimerRef.current = setTimeout(() => {
+              setHasError(false);
+              setVoiceError(null);
+            }, 4000);
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch {
+        if (!isVoiceSessionActiveRef.current) {
+          audioSamplerRef.current?.stop();
+          window.dispatchEvent(new CustomEvent(NORA_AUDIO_EVENT, { detail: { energy: 0 } }));
+          setListening(false);
+          onListeningChange?.(false);
         }
-      };
-      recognition.onend = () => {
-        setListening(false);
-        onListeningChange?.(false);
-      };
-      recognition.onerror = (event?: { error?: string }) => {
-        setListening(false);
-        onListeningChange?.(false);
-        const errType = event?.error || "unknown";
-        let msg = "Voice recognition failed.";
-        let isQuiet = false;
-        if (errType === "not-allowed" || errType === "service-not-allowed") {
-          msg = "Microphone permission denied.";
-        } else if (errType === "no-speech") {
-          msg = "No speech detected.";
-          isQuiet = true;
-        } else if (errType === "audio-capture") {
-          msg = "Microphone capture unavailable.";
-        } else if (errType === "network") {
-          msg = "Speech recognition network error.";
-        } else if (errType === "aborted") {
-          msg = "Voice input cancelled.";
-          isQuiet = true;
-        }
-        setVoiceError(msg);
-        if (!isQuiet) {
-          setHasError(true);
-        }
-        if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-        errorTimerRef.current = setTimeout(() => {
-          setHasError(false);
-          setVoiceError(null);
-        }, 2000);
-      };
-      recognitionRef.current = recognition;
-      setListening(true);
-      onListeningChange?.(true);
-      recognition.start();
-    } catch {
-      setListening(false);
-      onListeningChange?.(false);
-      setVoiceError("Could not start voice recognition.");
-      setHasError(true);
-      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => {
-        setHasError(false);
-        setVoiceError(null);
-      }, 2000);
-    }
+      }
+    };
+
+    startRecognitionSession();
   };
+
 
   // Derive exact reactive orb state
   let orbState: "idle" | "focus" | "typing" | "listening" | "voice-active" | "thinking" | "executing" | "success" | "error" = "idle";
@@ -1817,6 +1875,12 @@ export function CoreCommandCenter({
   const approvalsTone: "amber" | "neutral" = (pendingApprovalsCount !== undefined && pendingApprovalsCount > 0) ? "amber" : "neutral";
 
   const isSpatialLayerVisible = conversationView !== "closed";
+  useEffect(() => {
+    if (!isSpatialLayerVisible || dockHidden) return;
+    const outside = (event: PointerEvent) => { if (event.target instanceof Element && !event.target.closest(".nora-conversation, .studio-command-dock-wrapper, [data-shell-visibility-control]")) onConversationViewChange("closed"); };
+    window.addEventListener("pointerdown", outside);
+    return () => window.removeEventListener("pointerdown", outside);
+  }, [isSpatialLayerVisible, dockHidden, onConversationViewChange]);
 
   return (
     <section onKeyDown={(event) => {
@@ -1828,12 +1892,12 @@ export function CoreCommandCenter({
       } else {
         onConversationViewChange("closed");
       }
-    }} className={`absolute inset-0 z-10 overflow-hidden ${useGpuCore ? "bg-transparent pointer-events-none" : "bg-[#010206]"}`}>
+    }} data-nora-hidden={dockHidden} data-nora-expanded={isSpatialLayerVisible && !dockHidden} data-nora-context={contextSurface === "Explore" && selectedRecord || contextSurface === "Dive In" && (intelligenceRecord || toolRecord || contextRecord || workflowContext || agentContext || departmentContext || missionContext) ? "selected" : undefined} className={`absolute inset-0 z-10 overflow-hidden ${useGpuCore ? "bg-transparent pointer-events-none" : "bg-[#010206]"}`}>
       {!useGpuCore && <CoreOrbField zoom={zoomProgress} />}
 
       <div
-        aria-hidden={greetingStage === "hidden" || greetingStage === "initial" || engaged}
-        className={`absolute inset-x-4 top-[16%] z-20 text-center ${greetingOpacityClass} motion-reduce:transition-none`}
+        aria-hidden={conversationOnly || greetingStage === "hidden" || greetingStage === "initial" || engaged}
+        className={`absolute inset-x-4 top-[16%] z-20 text-center ${conversationOnly ? "hidden" : greetingOpacityClass} motion-reduce:transition-none`}
       >
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-[3.4rem] sm:leading-none">
           {greeting}, <span className="text-cyan-300">{firstName}.</span>
@@ -1843,7 +1907,7 @@ export function CoreCommandCenter({
 
       {/* Ambient Instrument Cluster on the LEFT with Data-Change Signal Traces */}
       <div
-        style={{ opacity: peripheralOpacity }}
+        style={{ opacity: peripheralOpacity, display: conversationOnly ? "none" : undefined }}
         className="absolute left-[4.5%] top-[30%] z-20 hidden flex-col gap-2.5 lg:flex"
       >
         <div className="flex items-center gap-1.5">
@@ -1887,7 +1951,9 @@ export function CoreCommandCenter({
       </div>
 
       {/* ASSISTANT WORKSPACE LAYER (Responsive: Desktop Right-Side Spatial Panel / Mobile Centered Sheet / Compact Dock-Anchored) */}
+      <div className="nora-workspace" aria-hidden={dockHidden} inert={dockHidden ? true : undefined}>
       <SpatialResponseLayer
+        contextLabel={contextSurface === "Explore" && selectedRecord ? selectedRecord.title : contextSurface === "Dive In" && intelligenceRecord ? intelligenceRecord.title : contextSurface === "Dive In" && toolRecord ? toolRecord.title : contextSurface === "Dive In" && contextRecord ? contextRecord.title : contextSurface === "Dive In" && workflowContext ? workflowContext.title : contextSurface === "Dive In" && agentContext ? agentContext.title : contextSurface === "Dive In" && departmentContext ? departmentContext.title : contextSurface === "Dive In" && missionContext ? `Mission: ${missionContext.title}` : null}
         isOpen={isSpatialLayerVisible}
         viewMode={activeViewMode}
         onToggleViewMode={() => onConversationViewChange(activeViewMode === "compact" ? "expanded" : "compact")}
@@ -1926,6 +1992,7 @@ export function CoreCommandCenter({
 
       {/* STUDIO COMMAND DOCK WRAPPER (Centered at bottom) */}
       <div ref={stackRef} className="pointer-events-auto absolute left-1/2 studio-command-dock-wrapper z-30 flex w-[min(650px,calc(100vw-1.5rem))] -translate-x-1/2 flex-col gap-3">
+
 
         {/* OPTION D — STUDIO COMMAND DOCK AND REACTIVE ORB (WITH ATTACHMENTS SUPPORT - MOBILE CALIBRATED) */}
         <div
@@ -1977,31 +2044,41 @@ export function CoreCommandCenter({
               className="pointer-events-none absolute inset-x-6 sm:inset-x-8 top-[1px] h-[1px] rounded-full bg-gradient-to-r from-transparent via-white/25 to-transparent"
             />
 
-            {/* 1. LEFT: Small luminous reactive orb & live audio wave if listening */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <ReactiveOrb state={orbState} />
-              {listening && <AudioWaveVisualizer active={voiceActive} />}
+            <div ref={attachmentMenuRef} className="nora-attachment-anchor">
+              <ReactiveOrb state={orbState} open={attachmentMenuOpen} disabled={isUploadingAttachments} onClick={() => setAttachmentMenuOpen(v=>!v)} />
+              {attachmentMenuOpen && <div role="menu" aria-label="Attachment options" className="nora-menu nora-attachment-menu">
+                <button type="button" role="menuitem" onClick={() => {if(fileInputRef.current){fileInputRef.current.accept='.pdf,.docx,.txt,.md,.csv';fileInputRef.current.click();}setAttachmentMenuOpen(false);}}><FileText size={18}/><span>Upload a file<small>PDF, DOCX, TXT, MD, CSV</small></span></button>
+                <button type="button" role="menuitem" onClick={() => {if(fileInputRef.current){fileInputRef.current.accept='image/*';fileInputRef.current.click();}setAttachmentMenuOpen(false);}}><ImageIcon size={18}/><span>Upload an image<small>Supported images, up to 15 MB</small></span></button>
+              </div>}
             </div>
-
-            {/* 2. CENTER: Editable text input */}
-            <input
-              value={prompt}
-              onFocus={() => {
-                setEngaged(true);
-                setIsFocused(true);
-              }}
-              onBlur={() => setIsFocused(false)}
-              onChange={handleInputChange}
-              placeholder={
-                listening
-                  ? "Listening..."
-                  : isUploadingAttachments
+            <span aria-hidden="true" className="nora-composer-separator" />
+            {/* 2. CENTER: Editable text input OR In-Composer Voice Waveform */}
+            {listening || (voiceBackend === "livekit" && !["idle", "error"].includes(voiceRuntimeState)) ? (
+              <div className="flex flex-1 items-center gap-2 px-1.5 sm:px-2 min-w-0">
+                {listening && <ComposerVoiceWave energy={liveMicEnergy} />}
+                <span className="truncate text-xs sm:text-sm text-cyan-100 font-mono italic">
+                  {voiceBackend === "livekit" ? `${voiceRuntimeState.replaceAll("_", " ")} · ${voiceDiagData.rawFinalTranscript || ""}` : voiceDiagData.rawInterimTranscript || voiceDiagData.rawFinalTranscript || "Listening..."}
+                </span>
+              </div>
+            ) : (
+              <input
+                value={prompt}
+                onFocus={() => {
+                  setEngaged(true);
+                  setIsFocused(true);
+                  onConversationViewChange("expanded");
+                }}
+                onBlur={() => setIsFocused(false)}
+                onChange={handleInputChange}
+                placeholder={
+                  isUploadingAttachments
                     ? "Processing..."
                     : voiceError || (attachments.length > 0 ? "Ask about attached..." : "Start a conversation...")
-              }
-              aria-label="Start a conversation"
-              className="relative min-w-0 flex-1 bg-transparent px-1.5 sm:px-2 text-xs sm:text-sm md:text-[1.05rem] text-white outline-none placeholder:text-slate-400/65"
-            />
+                }
+                aria-label="Start a conversation"
+                className="relative min-w-0 flex-1 bg-transparent px-1.5 sm:px-2 text-xs sm:text-sm md:text-[1.05rem] text-white outline-none placeholder:text-slate-400/65"
+              />
+            )}
 
             {/* Hidden File Input */}
             <input
@@ -2017,53 +2094,26 @@ export function CoreCommandCenter({
               aria-label="Upload files"
             />
 
-            {/* 3. Attachment Button (Paperclip) */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploadingAttachments}
-              aria-label="Attach files"
-              title="Attach files (PDF, DOCX, TXT, CSV, images up to 15MB)"
-              className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
-                attachments.length > 0 ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30" : "bg-transparent"
-              }`}
-            >
-              {isUploadingAttachments ? (
-                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-cyan-400" />
-              ) : (
-                <Paperclip className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              )}
-            </button>
-
-            {/* 4. Conversation Settings Button */}
-            <button
-              type="button"
-              onClick={() => setIsDockSettingsOpen(!isDockSettingsOpen)}
-              aria-label="Conversation Settings"
-              title="Conversation Settings"
-              className={`grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full text-slate-400 transition hover:text-white hover:bg-white/10 ${
-                isDockSettingsOpen ? "bg-white/15 text-cyan-300" : "bg-transparent"
-              }`}
-            >
-              <Settings2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-
-            {/* Subtle vertical separator */}
-            <span className="relative h-4 sm:h-5 md:h-6 w-px bg-white/12 mx-0.5 sm:mx-1 flex-shrink-0" aria-hidden="true" />
-
             {/* 5. Microphone Button */}
+            {onHideDock && <button type="button" onClick={onHideDock} aria-label="Hide NORA Dock" title="Hide NORA Dock" className="shell-dock-collapse"><ChevronDown size={14} aria-hidden="true" /></button>}
             <button
               type="button"
               onClick={toggleVoice}
-              aria-label={listening ? "Stop listening" : "Start voice input"}
-              title={listening ? "Stop listening" : "Start voice input"}
+              aria-pressed={listening || !["idle", "error"].includes(voiceRuntimeState)}
+              data-voice-state={voiceRuntimeState}
+              aria-label={listening || !["idle", "error"].includes(voiceRuntimeState) ? "Stop listening" : "Start voice input"}
+              title={listening || !["idle", "error"].includes(voiceRuntimeState) ? "Stop listening" : "Start voice input"}
               className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 active:scale-95 ${
-                listening
-                  ? "bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_16px_rgba(244,63,94,0.5)]"
+                voiceRuntimeState === "error"
+                  ? "bg-rose-500/15 text-rose-300 border border-rose-500/50"
+                  : voiceRuntimeState === "starting"
+                  ? "bg-cyan-500/10 text-cyan-200 border border-cyan-500/30 animate-pulse motion-reduce:animate-none"
+                  : listening || !["idle", "error"].includes(voiceRuntimeState)
+                  ? "bg-cyan-400/20 text-cyan-100 border border-cyan-300/70 shadow-[0_0_12px_rgba(34,211,238,0.25)]"
                   : "bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/[0.12] border border-white/10"
               }`}
             >
-              {listening ? <MicOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> : <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />}
+              <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
 
             {/* 6. Send / Submit Button */}
@@ -2095,7 +2145,19 @@ export function CoreCommandCenter({
             voiceOutputEnabled={voiceOutputEnabled}
             onVoiceOutputToggle={() => setVoiceOutputEnabled(!voiceOutputEnabled)}
           />
+          {/* Live Voice Diagnostics Panel */}
+          <VoiceDiagnosticsPanel
+            data={voiceDiagData}
+            isOpen={isVoiceDiagOpen}
+            onToggle={() => setIsVoiceDiagOpen((v) => !v)}
+            onBackendChange={(b) => {
+              setVoiceBackend(b);
+              setVoiceDiagData((prev) => ({ ...prev, voiceBackend: b }));
+            }}
+          />
+
         </div>
+      </div>
       </div>
     </section>
   );

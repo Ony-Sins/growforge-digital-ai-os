@@ -1,0 +1,42 @@
+[
+  {
+    "asset": "ollama.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/master/packages/static-svg/icons/ollama.svg",
+    "treatment": "#F4F7FA"
+  },
+  {
+    "asset": "gemini.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/master/packages/static-svg/icons/gemini-color.svg",
+    "treatment": "original multicolor"
+  },
+  {
+    "asset": "groq.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/master/packages/static-svg/icons/groq.svg",
+    "treatment": "#F55036"
+  },
+  {
+    "asset": "openrouter.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/master/packages/static-svg/icons/openrouter.svg",
+    "treatment": "#F4F7FA"
+  },
+  {
+    "asset": "github.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/github.svg",
+    "treatment": "#F4F7FA"
+  },
+  {
+    "asset": "notion.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/notion.svg",
+    "treatment": "#F4F7FA"
+  },
+  {
+    "asset": "vercel.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/vercel.svg",
+    "treatment": "#F4F7FA"
+  },
+  {
+    "asset": "hubspot.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/hubspot.svg",
+    "treatment": "#FF7A59"
+  }
+]

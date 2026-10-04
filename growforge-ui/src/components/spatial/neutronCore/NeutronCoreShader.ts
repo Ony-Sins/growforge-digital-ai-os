@@ -108,9 +108,9 @@ export const NeutronCoreFragmentShader = /* glsl */ `
 
     // Approved GrowForge neutron star palette (matching Reference A):
     vec3 cWhite = vec3(1.0, 1.0, 1.0);
-    vec3 cWhiteHotCyan = vec3(0.72, 0.96, 1.0);
-    vec3 cElectricCyan = vec3(0.05, 0.92, 1.0);
-    vec3 cRadiantBlue = vec3(0.12, 0.60, 1.0);
+    vec3 cWhiteHotCyan = vec3(0.78, 0.92, 1.0);
+    vec3 cElectricCyan = vec3(0.20, 0.66, 1.0); // matched to the stellar core's blue
+    vec3 cRadiantBlue = vec3(0.10, 0.42, 0.92);
     vec3 cDeepSpaceBlue = vec3(0.02, 0.18, 0.50);
 
     float nucleusFactor = smoothstep(26.0, 0.0, vDistToCenter);

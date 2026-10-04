@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { BetaBadge } from "@/components/BetaBadge";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full h-full flex flex-col bg-app text-navy font-body" suppressHydrationWarning>
         {children}
+        <BetaBadge />
       </body>
     </html>
   );

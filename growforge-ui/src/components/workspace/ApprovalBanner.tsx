@@ -12,7 +12,7 @@ import type { PendingApproval } from "@/lib/approvalStore";
  * member to see and an owner to decide. Polls rather than pushes, same as
  * every other live surface in this app (ProjectCanvas, JobNotifier).
  */
-export function ApprovalBanner({ isOpen = false, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export function ApprovalBanner({ isOpen = false, onClose, missionId, onSelectMission }: { isOpen?: boolean; onClose?: () => void; missionId?: string | null; onSelectMission?: (id: string) => void }) {
   const { openJob } = useAppState();
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
@@ -29,7 +29,7 @@ export function ApprovalBanner({ isOpen = false, onClose }: { isOpen?: boolean; 
         const data = await res.json();
         if (!Array.isArray(data.approvals)) throw new Error("Invalid approvals response");
         if (!cancelled) {
-          setApprovals(data.approvals);
+          setApprovals(missionId ? data.approvals.filter((approval: PendingApproval) => approval.jobId === missionId) : data.approvals);
           setLoadState("ready");
         }
       } catch {
@@ -43,7 +43,7 @@ export function ApprovalBanner({ isOpen = false, onClose }: { isOpen?: boolean; 
       cancelled = true;
       clearInterval(t);
     };
-  }, [isOpen]);
+  }, [isOpen, missionId]);
 
   async function decide(id: string, decision: "approved" | "denied") {
     setBusyId(id);
@@ -95,7 +95,7 @@ export function ApprovalBanner({ isOpen = false, onClose }: { isOpen?: boolean; 
               <p className="text-sm font-semibold text-navy">Approval needed — a real action, on hold</p>
               <button
                 type="button"
-                onClick={() => openJob(a.jobId)}
+                onClick={() => onSelectMission ? onSelectMission(a.jobId) : openJob(a.jobId)}
                 className="mt-0.5 block truncate text-left text-xs text-electric underline underline-offset-2"
               >
                 {a.jobTitle} → {a.stepLabel}

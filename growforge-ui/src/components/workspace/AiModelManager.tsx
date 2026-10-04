@@ -425,10 +425,10 @@ export function AiModelManager() {
         <div className="flex items-center justify-between pb-3 border-b border-[#333333]">
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-electric" />
-            <h2 className="font-heading text-sm font-semibold text-white">Active AI Models & Endpoints</h2>
+            <h2 className="font-heading text-sm font-semibold text-white">Configured AI Models & Endpoints</h2>
           </div>
           <span className="rounded-full bg-electric/15 text-electric px-2 py-0.5 text-xs font-semibold">
-            {models.length} active
+            {models.length} configured
           </span>
         </div>
 
@@ -505,7 +505,7 @@ export function AiModelManager() {
                           type="button"
                           onClick={() => handleReactivateModel(m)}
                           disabled={isTesting || isDeleting}
-                          title="Reactivate this model connector in the Brain"
+                          title="Reactivate this model connector in Explore"
                           className="flex items-center gap-1 rounded-md border border-electric/40 bg-electric/15 px-2.5 py-1 text-xs font-semibold text-electric hover:bg-electric/25 transition-colors disabled:opacity-50"
                         >
                           {isTesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
@@ -722,7 +722,7 @@ export function AiModelManager() {
 // MINIMAL SINGLE-FIELD TOKEN PROMPT MODAL (PinPromptModal Pattern)
 // -------------------------------------------------------------
 
-function AiModelTokenPromptModal({
+export function AiModelTokenPromptModal({
   preset,
   onClose,
   onConnected,
@@ -861,7 +861,7 @@ function AiModelTokenPromptModal({
 // CUSTOM AI MODEL BUILDER MODAL (Small Form)
 // -------------------------------------------------------------
 
-function CustomAiModelModal({
+export function CustomAiModelModal({
   onClose,
   onCreated,
 }: {
@@ -1050,7 +1050,7 @@ function CustomAiModelModal({
 // INSPECT / EDIT MODAL FOR ALREADY-CONNECTED MODEL (Deeper Config)
 // -------------------------------------------------------------
 
-function AiModelInspectorModal({
+export function AiModelInspectorModal({
   model,
   onClose,
   onSaved,

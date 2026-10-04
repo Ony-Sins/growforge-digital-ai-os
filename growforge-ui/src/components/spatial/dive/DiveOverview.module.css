@@ -1,0 +1,187 @@
+.shell{position:absolute;inset:0;z-index:26;pointer-events:none;color:#dbe8f1;animation:resolve 1.4s ease both;animation-delay:.45s;font-family:Inter, sans-serif}
+.atmosphere{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(11,29,46,.36),rgba(3,7,15,.88) 78%);pointer-events:none}
+.title{position:absolute;top:17%;left:8%;right:8%;text-align:center}
+.eyebrow{font-size:9px;letter-spacing:.24em;color:#7193a7;margin:0 0 15px}
+.title h1{font-family:Sora,sans-serif;font-size:clamp(25px,3vw,42px);font-weight:500;letter-spacing:.17em;margin:0;color:#e8f5fc}
+.title>p:last-of-type{font-size:12px;color:#8396a6;margin-top:12px;letter-spacing:.08em}
+.status{display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-top:28px;font-size:11px;color:#849baa}
+.status strong{color:#e0eff7;font-weight:500;margin-right:5px}.health{color:#9db6c6}
+.map{position:absolute;top:40%;bottom:20%;left:10%;right:10%;text-align:center}
+.systemField{position:relative;height:85%;min-height:150px;max-width:900px;margin:auto}
+.rings{position:absolute;left:50%;top:45%;width:300px;height:120px;border:1px solid #6fb8d815;border-radius:50%;transform:translate(-50%,-50%)}
+.rings:before,.rings:after{content:"";position:absolute;border:1px solid #6fb8d810;border-radius:50%;inset:18px -50px}.rings:after{inset:-20px 60px}
+.anchor{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%)}.workObject{position:absolute;transform:translate(-50%,-50%)}
+.node{pointer-events:auto;display:flex;align-items:center;flex-direction:column;gap:10px;border:0;background:transparent;color:#c6dbe8;font-size:12px;white-space:nowrap;padding:16px;cursor:pointer;transition:color .3s}
+.nodeMark{width:14px;height:14px;border:1px solid #7ebbd8;border-radius:50%;background:#203648;box-shadow:0 0 25px #72b4d51a}.node[aria-pressed=true] .nodeMark{background:#a6d9ee;box-shadow:0 0 22px #83d1ef33}.node small{font-size:9px;letter-spacing:.1em;color:#6b8699}.node:hover{color:white}.node:focus-visible{outline:1px solid #7ebbd8;outline-offset:3px;border-radius:8px}
+.mapNote{font-size:11px;color:#6d8597;max-width:480px;margin:18px auto 0;line-height:1.8}
+.lenses{pointer-events:auto;position:absolute;bottom:12%;left:50%;transform:translateX(-50%);display:flex;gap:8px;max-width:92%;overflow-x:auto;border-bottom:1px solid #81b8d21c;padding-bottom:12px}
+.lenses button,.tabs button{background:transparent;border:0;font:inherit;font-size:11px;color:#7891a3;padding:8px 12px;cursor:pointer;transition:color .3s}
+.lenses button[aria-pressed=true],.tabs button[aria-selected=true]{color:#d4effa;background:#6aaeca0d;border-radius:5px}.lenses button:hover,.tabs button:hover{color:white}
+.footer{position:absolute;bottom:5%;width:100%;text-align:center;font-size:8px;letter-spacing:.17em;color:#4e6c7f}.footer span{margin:0 12px}
+.inspector{pointer-events:auto;position:absolute;left:calc(100% + 20px);top:-25px;width:300px;background:linear-gradient(135deg,#0b1a27f0,#07111eef);border:1px solid #79b8d52c;border-radius:12px;padding:22px;text-align:left;backdrop-filter:blur(20px);box-shadow:0 20px 55px #0006;animation:resolve .35s ease both;z-index:4;white-space:normal}
+.inspector h2{font-family:Sora,sans-serif;font-size:15px;line-height:1.5;font-weight:500;margin:0 12px 16px 0}.inspector .eyebrow{font-size:8px;margin-bottom:8px}.tabs{display:flex;gap:2px;border-bottom:1px solid #ffffff0c;padding-bottom:8px}.tabs button{font-size:10px;padding:6px 8px}.detail{font-size:11px;line-height:1.9;color:#9ab2c3;min-height:70px;padding-top:14px}.identity{font-size:8px;color:#50748a;overflow-wrap:anywhere;margin-top:14px}.close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:#9ab2c3;font-size:20px;cursor:pointer}
+@keyframes resolve{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.inspector{left:50%;top:100%;transform:translateX(-50%);width:min(300px,80vw);animation:mobileResolve .35s ease both}.title{top:16%}.status{gap:14px;font-size:10px}.lenses{gap:0}.lenses button{font-size:10px;padding:8px}.map{top:39%}.inspector .detail{min-height:45px}.footer{bottom:4%}}
+@keyframes mobileResolve{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.shell,.inspector{animation:none}.node,.lenses button,.tabs button{transition:none}}
+.dissolving{opacity:0;transition:opacity .18s ease;animation:none;pointer-events:none}
+.map{z-index:2}.lenses{z-index:1}.inspector{max-height:40vh;overflow-y:auto}
+@media(prefers-reduced-motion:reduce){.dissolving{transition:none}}
+.missionAnchor{position:absolute;top:45%;transform:translate(-50%,-50%);animation:mobileResolve .3s ease both}
+.missionNode{white-space:normal;max-width:210px;min-width:140px;line-height:1.6;text-align:center}
+.missionInspector{position:fixed;left:50%;top:100%;transform:translateX(-50%);width:300px;max-height:min(44vh,380px);animation:mobileResolve .35s ease both}
+.deepInspection{width:min(420px,84vw)}
+.inspectionAction{pointer-events:auto;font:inherit;font-size:10px;border:1px solid #79b8d52c;border-radius:5px;background:#6aaeca0d;color:#d4effa;padding:6px 10px;cursor:pointer;display:inline-block;margin:8px 0}
+.inspectionControls{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ffffff0c;padding-bottom:8px}
+.inspectionControls select{font:inherit;font-size:11px;border:1px solid #79b8d52c;border-radius:5px;background:#0b1a27;color:#d4effa;padding:6px;max-width:65%}
+.missionContent{overflow-wrap:anywhere;white-space:pre-wrap;animation:mobileResolve .2s ease both}.missionContent p{margin:0 0 14px}.missionContent a{color:#b5d7e9;text-decoration:underline;text-underline-offset:3px}
+.missionPaging{pointer-events:auto;position:absolute;left:50%;bottom:0;transform:translateX(-50%);display:flex;align-items:center;gap:15px;font-size:10px;color:#7891a3}.missionPaging button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.missionPaging button:disabled{opacity:.35;cursor:default}
+.lensResolve{animation:mobileResolve .25s ease both}
+@media(min-width:901px){.missionInspector{left:50%;top:100%;transform:translateX(-50%)}}
+@media(max-width:600px){.missionAnchor .missionNode{max-width:130px;min-width:90px;font-size:10px}.missionInspector{width:min(300px,80vw)}}
+@media(prefers-reduced-motion:reduce){.missionAnchor,.missionInspector,.missionContent,.lensResolve{animation:none}}
+.missionControls{pointer-events:auto;position:absolute;left:50%;bottom:7.4%;transform:translateX(-50%);z-index:5}.missionControls>.inspectionAction{border:0;background:transparent;margin:0;color:#7891a3;font-size:9px}
+.controlSurface{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:min(360px,88vw);max-height:48vh;overflow-y:auto;background:#0b1a27f5;border:1px solid #79b8d52c;border-radius:12px;padding:22px;backdrop-filter:blur(20px)}
+.missionHistory{display:flex;flex-direction:column;gap:10px;max-height:25vh;overflow:auto}.missionHistory button{font:inherit;font-size:11px;text-align:left;color:#d4effa;border:0;background:transparent;padding:7px;cursor:pointer}.missionHistory small{display:block;color:#7891a3;margin-top:4px;font-size:9px}.controlSurface textarea{width:100%;border:1px solid #79b8d52c;border-radius:6px;background:#07111e;color:#d4effa;font:inherit;font-size:11px;padding:10px;resize:vertical}.missionContent summary{cursor:pointer;color:#b5d7e9;margin-bottom:10px}.inspectionAction:disabled{opacity:.4;cursor:default}
+.actionInput{width:100%;border:1px solid #79b8d52c;background:#07111e;color:#d4effa;font:inherit;font-size:11px;padding:8px;border-radius:6px}.missionInspector .detail{min-height:0}.missionInspector{max-height:min(44vh,380px)}
+@media(min-width:901px){.missionInspector{position:absolute;left:calc(100% + 20px);top:-25px;transform:none}} @media(max-width:900px){.missionInspector{max-height:min(27vh,260px)}.missionAnchor:has(.missionInspector){top:30%}}
+.historyTimeline{border-left:1px solid #79b8d52c;padding-left:12px}.tabs button[aria-pressed=true]{color:#d4effa;background:#6aaeca0d;border-radius:5px}
+/* Stable Dive lens instrument; inspection stays above its reserved space. */
+.shell{--dive-rail-bottom:clamp(24px,4.5vh,44px)}
+.lenses{bottom:var(--dive-rail-bottom);gap:3px;padding:5px;max-width:calc(100% - 32px);border:1px solid #81b8d214;border-radius:12px;background:linear-gradient(135deg,#0b1928b8,#07111bc7);backdrop-filter:blur(16px);box-shadow:0 8px 24px #0002;z-index:6;scrollbar-width:none}
+.lenses::-webkit-scrollbar{display:none}.lenses button{flex-shrink:0;padding:8px 11px;white-space:nowrap}.lenses button[aria-pressed=true]{color:#bfe8f6;background:#65b9d515;border-radius:7px}.lenses button:focus-visible{outline:1px solid #7ebbd860;outline-offset:-1px;border-radius:7px}
+.inspector,.missionInspector{max-height:min(38vh,300px)}
+.missionControls{bottom:calc(var(--dive-rail-bottom) + 54px)}
+.lensResponse{pointer-events:auto;position:absolute;left:50%;bottom:calc(var(--dive-rail-bottom) + 68px);transform:translateX(-50%);width:min(330px,calc(100% - 48px));padding:15px 28px 15px 18px;background:#0b192888;border:1px solid #81b8d214;border-radius:10px;backdrop-filter:blur(12px);text-align:left;animation:mobileResolve .25s ease both;z-index:3}.lensResponse h2{font-family:Sora,sans-serif;font-size:12px;font-weight:500;color:#bdd5e4;margin:0 0 7px}.lensResponse p{font-size:11px;line-height:1.7;color:#7893a6;margin:0}.lensResponse .close{font-size:16px;right:8px;top:6px}
+@media(max-width:900px){.shell{--dive-rail-bottom:104px}.lenses{gap:0}.lenses button{font-size:10px;padding:8px}.inspector,.missionInspector{max-height:min(24vh,200px)}.anchor:has(.inspector),.missionAnchor:has(.missionInspector){top:20%}}
+@media(prefers-reduced-motion:reduce){.lensResponse{animation:none}}
+@media(max-width:900px){.missionControls{bottom:86px}}
+/* Inside the CORE: native surfaces at the periphery, quiet central space. */
+.shell{animation:none}
+.interior{position:absolute;inset:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 50% 60%,#061522 0%,#030b13 48%,#02070e 90%);animation:interiorReveal 1.8s ease both}
+.interiorLight{position:absolute;inset:0;background:radial-gradient(ellipse 17% 36% at 50% 76%,#12608018,transparent 75%),radial-gradient(ellipse 4% 36% at 7% 74%,#52879e16,transparent 75%),radial-gradient(ellipse 4% 36% at 93% 74%,#52879e16,transparent 75%),radial-gradient(ellipse 3% 27% at 23% 75%,#b29b7610,transparent 78%),radial-gradient(ellipse 3% 27% at 77% 75%,#b29b7610,transparent 78%)}
+.interiorGeometry{position:absolute;inset:0;width:100%;height:100%}
+.interiorReflection{position:absolute;left:0;right:0;top:75%;bottom:0;background:radial-gradient(ellipse 35% 7% at 50% 12%,#4399b618,transparent 80%),radial-gradient(ellipse 5% 50% at 7% 18%,#80a7b80c,transparent 80%),radial-gradient(ellipse 5% 50% at 93% 18%,#80a7b80c,transparent 80%),linear-gradient(#02091000,#02070ed9 95%)}
+.title{top:18%;animation:mobileResolve .9s ease both;animation-delay:.65s}
+.title h1{font-weight:400;font-size:clamp(28px,2.8vw,48px);letter-spacing:.22em}
+.title>p:last-of-type{font-size:10px;text-transform:uppercase;letter-spacing:.24em;margin-top:18px}
+.status{gap:0;margin-top:30px}.status>span{padding:0 24px}.status>span+span{border-left:1px solid #76a5b52e}
+.lenses{gap:6px;border-color:#4ca4bc38;border-radius:24px;background:linear-gradient(135deg,#071521bd,#04101bd4);padding:6px;animation:mobileResolve .8s ease both;animation-delay:1.25s}.lenses button{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px}.lenses button[aria-pressed=true]{background:#1395b21e;border-radius:16px}
+@keyframes interiorReveal{from{opacity:0}to{opacity:1}}
+@media(max-width:900px){.title{top:17%}.status>span{padding:0 9px}.status>.health{border:0;width:100%;margin-top:12px}.lenses{gap:0}.lenses button{gap:6px;padding:8px 10px}.interiorLight{opacity:.65}.interiorGeometry{opacity:.65}}
+@media(prefers-reduced-motion:reduce){.interior,.title,.lenses{animation:none}}
+/* Final visual polish: peripheral membranes, no physical lower boundary. */
+.interiorLight{background:radial-gradient(ellipse 34% 52% at 0% 58%,#24536b1b,transparent 82%),radial-gradient(ellipse 34% 52% at 100% 58%,#24536b1b,transparent 82%),radial-gradient(ellipse 8% 31% at 16% 69%,#b29b760a,transparent 80%),radial-gradient(ellipse 8% 31% at 84% 69%,#b29b760a,transparent 80%);animation:membraneBreath 37s ease-in-out infinite alternate}
+.interiorGeometry{mask-image:linear-gradient(90deg,#000 0%,#000c 18%,#0001 28%,transparent 36%,transparent 64%,#0001 72%,#000c 82%,#000 100%);animation:volumeDrift 71s ease-in-out infinite alternate;transform-origin:center}
+.interiorReflection{top:57%;background:radial-gradient(ellipse 47% 62% at 50% 55%,#29627c0b,transparent 83%),radial-gradient(ellipse 16% 61% at 2% 64%,#80a7b80b,transparent 84%),radial-gradient(ellipse 16% 61% at 98% 64%,#80a7b80b,transparent 84%),linear-gradient(transparent,#02070e88 95%)}
+.interiorTraces{animation:traceDrift 59s ease-in-out infinite alternate}.interiorTraces ellipse:nth-child(even){opacity:.45}
+.lenses{gap:5px;background:linear-gradient(165deg,#102331a6,#06101bd9 62%,#07121ac9);border-color:#4ca4bc2c;box-shadow:inset 0 1px 0 #a4d1e608,0 8px 24px #0002;backdrop-filter:blur(19px)}
+.lenses button{gap:7px;letter-spacing:.01em;color:#8aa2b2}.lenses button svg{opacity:.8;flex-shrink:0}.lenses button[aria-pressed=true]{color:#c7e8f3;background:linear-gradient(150deg,#2796b329,#14829d17);box-shadow:inset 0 1px 0 #b8eaff0a}.lenses button[aria-pressed=true] svg{opacity:1}
+@keyframes membraneBreath{from{opacity:.78}to{opacity:.94}}
+@keyframes volumeDrift{from{transform:translate3d(-1px,0,0) scale(1.002)}to{transform:translate3d(1px,-2px,0) scale(1.006)}}
+@keyframes traceDrift{from{translate:0 0;opacity:.16}to{translate:1px -9px;opacity:.22}}
+@media(max-width:900px){.lenses{gap:0}.interiorLight{animation:none;opacity:.65}}
+@media(prefers-reduced-motion:reduce){.interiorLight,.interiorGeometry,.interiorTraces{animation:none;transform:none;translate:none}}
+/* One reversible journey owns arrival; no independent delayed scene fade. */
+:global([data-dive-journey]) .interior,:global([data-dive-journey]) .title,:global([data-dive-journey]) .lenses{animation:none}
+:global([data-dive-journey]) .shell>:not(.interior){opacity:var(--dive-content-opacity,1)}
+.interior::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 34% 70% at 0% 55%,#1685e6,transparent 86%),radial-gradient(ellipse 34% 70% at 100% 55%,#1685e6,transparent 86%);opacity:var(--dive-membrane-light,.025)}
+
+.shell{--dive-lens-heading-size:clamp(22px,2.1vw,30px);--dive-lens-heading-tracking:.15em;--dive-lens-heading-weight:400}.title h1{font-size:var(--dive-lens-heading-size);letter-spacing:var(--dive-lens-heading-tracking);font-weight:var(--dive-lens-heading-weight)}
+
+
+/* Destination-only material: the CORE seen from within, never a physical room. */
+.interior{background:radial-gradient(ellipse 42% 80% at 0% 47%,#06152a 0%,transparent 80%),radial-gradient(ellipse 42% 80% at 100% 53%,#06162b 0%,transparent 80%),#01060b}
+.interiorLight{background:radial-gradient(ellipse 15% 58% at 7% 43%,#15549212,transparent 84%),radial-gradient(ellipse 16% 59% at 93% 53%,#12649612,transparent 84%);animation:membraneBreath 53s ease-in-out infinite alternate}
+.interiorGeometry{mask-image:none;animation:volumeDrift 89s ease-in-out infinite alternate}
+.membraneSkin{opacity:.56}.membraneEdges{opacity:.54}.membraneCaustics{opacity:.065}
+.interiorReflection{inset:0;background:radial-gradient(ellipse 19% 49% at 0% 68%,#164b6c0a,transparent 85%),radial-gradient(ellipse 19% 49% at 100% 33%,#143d700a,transparent 85%)}
+.interior::after{background:radial-gradient(ellipse 25% 68% at 0% 50%,#238cc8,transparent 86%),radial-gradient(ellipse 25% 68% at 100% 50%,#187dbb,transparent 86%)}
+.stateSpine{gap:0;margin-top:34px;flex-wrap:nowrap;align-items:center}
+.stateSpine>span{display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:130px;padding:0 24px;line-height:1.3}
+.stateSpine small{font-size:8px;letter-spacing:.17em;color:#8ba7b9;font-weight:400}
+.stateSpine strong{font-family:Sora,sans-serif;font-size:19px;font-weight:400;margin:0;color:#bed1dc}
+.stateSpine .health strong{font-size:15px;letter-spacing:.02em}
+.stateSpine [data-state-present=true] strong{color:#def5ff}
+.stateSpine>span+span{border-color:#4b839426}
+.lenses{background:linear-gradient(150deg,#071622dd,#020b13e6);border-color:#47788d36;box-shadow:inset 0 1px 0 #b3e4f00b,0 8px 28px #0005}
+.lenses button[aria-pressed=true]{background:linear-gradient(145deg,#14445a55,#0d2b3b40);box-shadow:inset 0 1px 0 #b8eaff0c}
+:global(body:has([data-dive-overview]):not(:has([data-systems-surface]))) :global(.studio-command-dock){box-shadow:inset 0 1px 0 #c2eafa0a,0 8px 28px #0004!important;border-color:#426c7d66!important}
+@media(max-width:900px){.stateSpine{margin-top:26px}.stateSpine>span{min-width:0;width:auto;padding:0 20px}.stateSpine>.health{border-left:1px solid #4b839426;width:auto;margin-top:0}.interiorGeometry{opacity:.8}.stateSpine strong{font-size:17px}}
+@media(max-width:480px){.stateSpine>span{padding:0 12px;gap:8px}.stateSpine small{font-size:7px;letter-spacing:.09em}.stateSpine strong{font-size:15px}.stateSpine .health strong{font-size:11px}.title{left:4%;right:4%}}
+@media(prefers-reduced-motion:reduce){.interiorLight,.interiorGeometry{animation:none;transform:none}}
+/* Peripheral material contrast: selective light, deep separation, no room geometry. */
+.interior{background:radial-gradient(ellipse 29% 78% at 0% 47%,#071a2d 0%,transparent 82%),radial-gradient(ellipse 29% 78% at 100% 53%,#07192d 0%,transparent 82%),#010509}
+.membraneSkin{opacity:.8}.membraneEdges{opacity:.85}.membraneCaustics{opacity:.12}
+.interiorLight{background:radial-gradient(ellipse 5% 37% at 10% 44%,#237bb52a,transparent 80%),radial-gradient(ellipse 5% 39% at 90% 57%,#237bb526,transparent 80%),radial-gradient(ellipse 19% 64% at 0% 50%,#123d5914,transparent 85%),radial-gradient(ellipse 19% 64% at 100% 50%,#123d5914,transparent 85%)}
+.lenses{background:linear-gradient(165deg,#0a1c29e0,#020a11f0 65%);border-color:#548ca651;box-shadow:inset 0 1px 0 #b3e4f018,0 8px 28px #0006}
+.lenses button[aria-pressed=true]{background:linear-gradient(145deg,#16506966,#0d2b3b40);box-shadow:inset 0 1px 0 #b8eaff16}
+:global(body:has([data-dive-overview]):not(:has([data-systems-surface]))) :global(.studio-command-dock){background:linear-gradient(170deg,#081722d9,#02090fe8)!important;box-shadow:inset 0 1px 0 #c2eafa1a,0 8px 28px #0005!important;border-color:#57899e75!important}
+@media(max-width:900px){.membraneEdges{opacity:.7}.membraneSkin{opacity:.65}}
+
+/* Reference-led Overview only. Other approved lens environments remain intact. */
+.shell .interior { background: #02090e; }
+.shell:not([data-lens="Overview"]) .interiorGeometry { opacity: .08; }
+.shell[data-lens="Overview"] .interiorGeometry { display: none; }
+.shell .interiorLight { background: radial-gradient(ellipse at 50% 49%,rgba(3,37,60,.3),transparent 49%),radial-gradient(ellipse at 0% 50%,rgba(3,25,40,.32),transparent 33%),radial-gradient(ellipse at 100% 50%,rgba(3,25,40,.32),transparent 33%); }
+.shell[data-lens="Overview"] .title { top: 10.5%; }
+.shell[data-lens="Overview"] .stateSpine { margin-top: 25px; }
+.shell[data-lens="Overview"] .stateSpine button { min-width:130px; padding:0 22px; display:flex; flex-direction:column; align-items:center; gap:8px; background:none; border:0; border-right:1px solid rgba(59,118,140,.3); color:#b8ced8; pointer-events:auto; cursor:pointer; }
+.shell[data-lens="Overview"] .stateSpine button:last-child { border-right:0; }
+.shell[data-lens="Overview"] .stateSpine button small { font-size:9px; letter-spacing:.14em; color:#8cabbc; }
+.shell[data-lens="Overview"] .stateSpine button strong { font-size:22px; font-weight:500; font-variant-numeric:tabular-nums; }
+.shell[data-lens="Overview"] .stateSpine button:hover,.shell[data-lens="Overview"] .stateSpine button:focus-visible { color:#e5f8ff; outline:0; }
+.shell[data-lens="Overview"] .stateSpine button:focus-visible small { text-decoration:underline; text-underline-offset:4px; }
+@media(max-width:900px) { .shell[data-lens="Overview"] .title { top:13%; }.shell[data-lens="Overview"] .stateSpine button { min-width:0; padding:0 17px; }.shell[data-lens="Overview"] .stateSpine button small { font-size:8px; } }
+@media(max-width:600px) { .shell[data-lens="Overview"] .stateSpine { gap:0; flex-wrap:nowrap; }.shell[data-lens="Overview"] .stateSpine button{padding:0 10px;flex:1;}.shell[data-lens="Overview"] .stateSpine button small{font-size:7px;letter-spacing:.08em;}.shell[data-lens="Overview"] .stateSpine button strong{font-size:18px;} }
+@media(max-height:700px) and (min-width:901px) { .shell[data-lens="Overview"] .title{top:12%;}.shell[data-lens="Overview"] .stateSpine{margin-top:16px;} }
+
+/* Overview reference hierarchy only; approved neighboring lens titles stay untouched. */
+.shell[data-lens="Overview"] .title{top:10.8%;}
+.shell[data-lens="Overview"] .eyebrow{font-size:11px;letter-spacing:.28em;margin-bottom:16px;}
+.shell[data-lens="Overview"] .title h1{font-size:38px;font-weight:500;letter-spacing:.16em;}
+.shell[data-lens="Overview"] .stateSpine{margin-top:30px;}
+.shell[data-lens="Overview"] .stateSpine button{min-width:154px;padding:0 28px;gap:12px;}
+.shell[data-lens="Overview"] .stateSpine button small{font-size:10px;letter-spacing:.12em;}
+.shell[data-lens="Overview"] .stateSpine button strong{font-size:26px;}
+.shell[data-lens="Overview"] .lenses{bottom:40px;border-radius:28px;background:#031019c9;border-color:#3e6c7d44;box-shadow:inset 0 1px 0 #b3e4f00b;}
+@media(max-width:900px){
+ .shell[data-lens="Overview"]{min-height:1870px;}
+ .shell[data-lens="Overview"] .title{top:106px;left:18px;right:18px;}
+ .shell[data-lens="Overview"] .title h1{font-size:32px;}
+ .shell[data-lens="Overview"] .eyebrow{font-size:10px;margin-bottom:14px;}
+ .shell[data-lens="Overview"] .stateSpine{margin-top:28px;gap:0;}
+ .shell[data-lens="Overview"] .stateSpine button{min-width:0;padding:0 9px;flex:1;gap:10px;}
+ .shell[data-lens="Overview"] .stateSpine button small{font-size:8px;letter-spacing:.07em;}
+ .shell[data-lens="Overview"] .stateSpine button strong{font-size:22px;}
+ .shell[data-lens="Overview"] .lenses{top:716px;bottom:auto;width:calc(100% - 36px);max-width:700px;min-height:46px;gap:4px;padding:5px;}
+ .shell[data-lens="Overview"] .lenses button{flex-shrink:0;white-space:nowrap;}
+}
+
+@media(min-width:901px) and (max-height:950px){.shell[data-lens="Overview"] .title{top:80px}.shell[data-lens="Overview"] .title h1{line-height:1.2}.shell[data-lens="Overview"] .eyebrow{margin-bottom:10px}.shell[data-lens="Overview"] .stateSpine{margin-top:20px}}
+@media(min-width:901px) and (max-height:800px){.shell[data-lens="Overview"] .title{top:58px}.shell[data-lens="Overview"] .title h1{font-size:32px;line-height:1.2}.shell[data-lens="Overview"] .eyebrow{font-size:10px;margin-bottom:8px}.shell[data-lens="Overview"] .stateSpine{margin-top:12px}.shell[data-lens="Overview"] .stateSpine button{gap:8px}.shell[data-lens="Overview"] .stateSpine button strong{font-size:24px}}
+
+.shell[data-lens="Overview"] .interior{background:#02080d}
+.shell[data-lens="Overview"] .interiorLight{background:radial-gradient(ellipse 24% 27% at 50% 52%,#07507116,transparent 85%);animation:none}
+.shell[data-lens="Overview"] .interiorReflection,.shell[data-lens="Overview"] .interior::after{display:none}
+
+.shell[data-lens="Overview"] .interiorLight{background:radial-gradient(ellipse 28% 35% at 50% 53%,#07334855,transparent 80%),radial-gradient(ellipse 58% 73% at 50% 55%,#04202e33,transparent 90%)}
+
+/* Reference-calibrated dark cyan atmosphere, scoped strictly to Overview. */
+.shell[data-lens="Overview"] .interior{background:radial-gradient(ellipse 50% 65% at 50% 52%,#001523 0%,#001019 45%,#01090f 100%)}
+
+/* One continuous dark environment across every Dive lens. */
+.shell[data-lens] .interior{background:radial-gradient(ellipse at 50% 50%,#001523 0%,#001019 45%,#01090f 100%)}
+.shell .interiorGeometry,.shell .interiorLight,.shell .interiorReflection,.shell .interior::after{display:none}
+@media(min-width:901px){.shell .lenses{bottom:40px}}
+@media(max-width:900px){.shell .lenses{position:fixed;top:auto;bottom:100px;width:calc(100% - 36px);max-width:700px;min-height:46px;gap:4px;padding:5px}.shell[data-lens="Overview"] .lenses{top:auto;bottom:100px}.shell .lenses button{flex-shrink:0;white-space:nowrap}}
+@media(max-width:900px){.shell[data-lens] .interior{position:fixed;height:100dvh}}
+
+/* Keep Overview content in flow: browser chrome and wrapped counters must not
+   move the CORE into the title or the fixed command/navigation controls. */
+@media(max-width:900px){
+ .shell[data-lens="Overview"]{display:flex;flex-direction:column;gap:24px;min-height:0;top:80px;height:calc(100dvh - 308px);bottom:auto;padding:26px 18px 24px;overflow-y:auto;overflow-x:hidden;pointer-events:auto;overscroll-behavior-y:contain;}
+ .shell[data-lens="Overview"] .title{position:relative;inset:auto;order:1;width:100%;}
+ .shell[data-lens="Overview"] .stateSpine{align-items:stretch;}
+ .shell[data-lens="Overview"] .stateSpine button{justify-content:space-between;}
+}

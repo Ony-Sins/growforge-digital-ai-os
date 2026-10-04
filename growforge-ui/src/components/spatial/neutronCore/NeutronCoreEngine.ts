@@ -91,6 +91,7 @@ export class NeutronCoreEngine {
     this.buildNucleusBody();
     this.buildParticleSystem();
     this.buildCoreGlowSprite();
+    this.buildStellarSprite();
   }
 
   public setState(state: NeutronCoreState) {
@@ -207,6 +208,199 @@ export class NeutronCoreEngine {
     this.nucleusMesh.name = "NEUTRON_NUCLEUS_BODY";
     this.nucleusMesh.renderOrder = 2;
     this.group.add(this.nucleusMesh);
+  }
+
+  /**
+   * The approved stellar core (public/textures/stellar-core-reference-v1.png) as a REAL 3D sphere that
+   * can be spun freely. The image's central detail is projected onto the sphere from three axes and
+   * blended by the normal (triplanar), so there is no seam or tear at any orientation; its own baked rim
+   * is never sampled - the limb glow is computed from the view angle instead, so it always sits on the
+   * silhouette. A separate camera-facing halo plane carries the flames, glow and click shockwaves.
+   */
+  public stellarSprite: THREE.Object3D | null = null;
+  private plungeFreeze = false;
+  private frozenNucleusScale: number | null = null;
+  public setPlungeFreeze(on: boolean) {
+    if(on && !this.plungeFreeze) this.frozenNucleusScale=this.nucleusRadiusWorld/NUCLEUS_MESH_RADIUS;
+    this.plungeFreeze = on;
+    // This shader describes the exterior. Rear faces would paint its white limb over the front.
+    // Depth-test the approach; the destination membrane takes over before crossing the surface.
+    if(this.stellarSphere){const material=this.stellarSphere.material as THREE.Material;material.side=THREE.FrontSide;material.depthTest=on;material.depthWrite=on;}
+    if(!on)this.stellarUniforms.uDive.value=0;
+  }
+  public setDiveLight(progress:number){this.stellarUniforms.uDive.value=THREE.MathUtils.smoothstep(progress,.55,.84);}
+  private stellarSphere: THREE.Mesh | null = null;
+  private stellarHalo: THREE.Mesh | null = null;
+  private spinVel = { x: 0, y: 0 };
+  private coreDragging = false;
+  private lastCamera: THREE.Camera | null = null;
+  private stellarUniforms = {
+    uMap: { value: null as THREE.Texture | null },
+    uTime: { value: 0 },
+    uEnergy: { value: 0 },
+    uSpinCharge: { value: 0 },
+    uHover: { value: 0 },
+    uShock: { value: 0 }, // strongest active wave (0 = none): drives the surface brightening
+    uShocks: { value: [0, 0, 0, 0, 0, 0] }, // each click's own wave, 0..1 progress (0 = free slot)
+    uClose: { value: 0 }, // 0 far .. 1 at the closest Explore point: more light, motion and atmosphere
+    uDive: { value: 0 }, // exterior radiance dissolves into the interior during the boundary crossing
+  };
+  private shockStarts: number[] = [];
+
+  /** User grabbed the core: turn ONLY the core, about the camera's own axes (a trackball). */
+  public dragCore(dxPx: number, dyPx: number, dtMs: number) {
+    const k = 0.008;
+    this.turnCore(dxPx * k, dyPx * k);
+    const inv = 1000 / Math.max(8, dtMs);
+    this.spinVel.x = dxPx * k * inv;
+    this.spinVel.y = dyPx * k * inv;
+  }
+  public setCoreDragging(on: boolean) {
+    this.coreDragging = on;
+  }
+  /** A click on the core (no drag): shockwave out of the limb, ripples across the surface, a small jump. */
+  public pulseCore() {
+    // every click adds its own wave; earlier ones keep travelling (oldest dropped past 6)
+    this.shockStarts.push(performance.now());
+    if (this.shockStarts.length > 6) this.shockStarts.shift();
+  }
+  private tmpAxis = new THREE.Vector3();
+  private turnCore(yaw: number, pitch: number) {
+    const s = this.stellarSphere;
+    if (!s) return;
+    const cam = this.lastCamera;
+    const up = cam ? this.tmpAxis.set(0, 1, 0).applyQuaternion(cam.quaternion) : this.tmpAxis.set(0, 1, 0);
+    s.rotateOnWorldAxis(up, yaw);
+    const right = cam ? this.tmpAxis.set(1, 0, 0).applyQuaternion(cam.quaternion) : this.tmpAxis.set(1, 0, 0);
+    s.rotateOnWorldAxis(right, pitch);
+  }
+
+  private buildStellarSprite() {
+    const tex = new THREE.TextureLoader().load("/textures/stellar-core-reference-v1.png");
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.stellarUniforms.uMap.value = tex;
+    const U = this.stellarUniforms;
+    const NOISE = `
+      float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
+      float fbm(vec2 p){ float v=0.0, a=0.5; for(int k=0;k<4;k++){ v+=a*n(p); p*=2.03; a*=0.5; } return v; }`;
+
+    // ---- sphere: the star's body
+    const sphereMat = new THREE.ShaderMaterial({
+      uniforms: U,
+      transparent: true /* draw in the same pass as the particles, after them (renderOrder) */, depthWrite: false, depthTest: false,
+      vertexShader: `
+        varying vec3 vObj; varying vec3 vViewN;
+        void main(){
+          vObj = normalize(position);
+          vViewN = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform sampler2D uMap; uniform float uTime; uniform float uEnergy; uniform float uSpinCharge; uniform float uHover; uniform float uShock; uniform float uShocks[6]; uniform float uClose; uniform float uDive;
+        varying vec3 vObj; varying vec3 vViewN;
+        ${NOISE}
+        // centre crop of the image only (the disc spans r<0.405; the rim is never sampled)
+        vec3 tap(vec2 p){ return texture2D(uMap, p * 0.27 + 0.5).rgb; }
+        void main(){
+          float t = uTime * (1.0 + 1.6 * uEnergy);
+          vec3 p = vObj;
+          // plasma flow on the surface: warp the lookup with slow noise so it churns in place
+          vec2 w1 = vec2(fbm(p.xy * 3.0 + t * 0.12), fbm(p.yz * 3.0 - t * 0.1)) - 0.5;
+          p += vec3(w1, -w1.x) * (0.12 + 0.1 * uClose);
+          // a second, faster and finer flow layer that only resolves up close
+          vec2 w2 = vec2(fbm(p.xz * 9.0 - t * 0.35), fbm(p.xy * 9.0 + t * 0.3)) - 0.5;
+          p += vec3(w2.x, w2.y, w2.x - w2.y) * 0.05 * uClose;
+          vec3 bw = pow(abs(normalize(p)), vec3(10.0)); bw /= (bw.x + bw.y + bw.z);
+          vec3 col = tap(p.yz) * bw.x + tap(p.xz) * bw.y + tap(p.xy) * bw.z;
+          // restore the photo's deep-blue contrast (blending three taps flattens it toward white)
+          // up close, lift the deep blues so the body glows rather than reading as a dark painted ball
+          col = pow(col, vec3(mix(1.55, 1.2, uClose))) * (1.3 + 0.45 * uClose);
+          // fine live filaments that only resolve at close range
+          float fil = smoothstep(0.72, 0.95, fbm(vObj.xy * 22.0 + vObj.z * 11.0 - t * 0.5));
+          col += vec3(0.55, 0.9, 1.0) * fil * 0.35 * uClose;
+          float ndv = clamp(vViewN.z, 0.0, 1.0);
+          // click ripples: rings travelling out from the centre of the face while the shock plays
+          float d = 1.0 - ndv;
+          float ripple = 0.0;
+          for (int i = 0; i < 6; i++) { float k = uShocks[i]; if (k > 0.0) ripple += max(sin(d * 40.0 - k * 30.0), 0.0) * (1.0 - k) * smoothstep(0.0, 0.1, k); }
+          col *= 1.0 + 0.35 * min(ripple, 2.0);
+          // living light: breathing, drifting hot cells, hover brightening
+          float breathe = 0.95 + 0.06 * sin(uTime * 0.9) + 0.3 * uEnergy + 0.45 * uHover + 0.5 * (1.0 - uShock) * step(0.001, uShock);
+          float cells = smoothstep(0.62, 0.88, fbm(vObj.xy * 4.0 + vObj.z * 2.0 - t * 0.15));
+          col = col * breathe + vec3(0.6, 0.92, 1.0) * cells * (0.08 + 0.2 * uEnergy);
+          // limb: bright white-cyan rim at the silhouette, like the reference photo's edge
+          float limb = pow(1.0 - ndv, 3.0);
+          col = mix(col, vec3(0.88, 0.97, 1.0), clamp(limb * 1.2, 0.0, 1.0));
+          col *= mix(1.0, 0.32, uDive);
+          gl_FragColor = vec4(col, 1.0 - uDive);
+        }`,
+    });
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), sphereMat);
+    sphere.renderOrder = 21;
+    sphere.raycast = () => {};
+    sphere.rotation.set(0.35, 0, 0.12);
+
+    // ---- halo: flames, glow and shockwave around the silhouette (camera facing, additive)
+    const haloMat = new THREE.ShaderMaterial({
+      uniforms: U,
+      transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+      vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `
+        uniform float uTime; uniform float uEnergy; uniform float uSpinCharge; uniform float uHover; uniform float uShock; uniform float uShocks[6]; uniform float uClose; uniform float uDive; varying vec2 vUv;
+        ${NOISE}
+        void main(){
+          float t = uTime * (1.0 + 1.6 * uEnergy);
+          vec2 c = (vUv - 0.5) * 3.24;
+          float r = length(c);
+          float ang = atan(c.y, c.x);
+          const float R = 0.405;
+          float over = r - R;
+          float tongues = fbm(vec2(ang * 6.0 + t * 0.18, over * 8.0 - t * 0.9));
+          float tongues2 = fbm(vec2(ang * 12.0 - t * 0.12, over * 14.0 - t * 1.2));
+          float reach = (0.07 + 0.11 * tongues + 0.05 * uEnergy) * (0.8 + 0.4 * sin(uTime * 1.3 + ang * 3.0));
+          float flame = smoothstep(reach, -0.01, over) * smoothstep(-0.02, 0.005, over) * (0.35 + 0.8 * tongues2);
+          vec3 flameCol = mix(vec3(0.25, 0.7, 1.0), vec3(0.85, 0.97, 1.0), smoothstep(0.03, 0.0, over));
+          float glow = exp(-max(over, 0.0) * (12.0 - 5.0 * uClose - 4.0 * uHover)) * (0.35 + 0.45 * uClose + 0.12 * sin(uTime * 1.7) + 0.35 * uEnergy + 0.9 * uHover) * smoothstep(R - 0.03, R + 0.005, r);
+          // click shockwave: a bright ring leaving the limb and fading as it expands
+          float shock = 0.0;
+          for (int i = 0; i < 6; i++) { float k = uShocks[i]; if (k > 0.0) shock += exp(-pow((over - k * 0.77) / (0.012 + 0.03 * k), 2.0)) * (1.0 - k); }
+          // atmosphere: a broad, faint scatter glow that grows as you approach, blending the star into the dust
+          float atmo = exp(-max(over, 0.0) * 4.5) * smoothstep(R - 0.03, R + 0.005, r) * (0.18 + 0.06 * sin(uTime * 0.7)) * uClose;
+          vec3 col = flameCol * flame * 0.8 + vec3(0.15, 0.5, 1.0) * glow * 0.55 + vec3(0.12, 0.42, 0.95) * atmo;
+          // Short irregular electrical tracks remain trapped immediately outside the limb.
+          float charge=uSpinCharge;
+          float jag=sin(ang*27.+uTime*2.1)*.003+sin(ang*61.-uTime*3.3)*.002;
+          float arc=0.;
+          for(int j=0;j<3;j++){
+            float lane=R+.013+float(j)*.017+jag;
+            float track=exp(-pow((r-lane)/.0022,2.));
+            float broken=smoothstep(.18,.65,sin(ang*(5.+float(j)*3.)+uTime*(.8+float(j)*.2)));
+            arc+=track*broken;
+          }
+          col+=vec3(.25,.64,.95)*min(arc,.9)*charge*.65;
+          // fade to zero well inside the plane (half-extent 0.9) so no square edge ever shows
+          col *= 1.0 - smoothstep(0.62, 0.86, r);
+          // The wave has its own wider support; the atmosphere fade must not clip its travel.
+          col += vec3(0.7,0.94,1.0)*shock*1.4*(1.0-smoothstep(1.25,1.55,r));
+          gl_FragColor = vec4(col * (1.0 - uDive), 1.0);
+        }`,
+    });
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), haloMat);
+    halo.renderOrder = 22;
+    halo.raycast = () => {};
+    halo.onBeforeRender = (_r, _s, camera) => {
+      halo.quaternion.copy(camera.quaternion);
+      this.lastCamera = camera;
+    };
+
+    const root = new THREE.Group();
+    root.add(sphere, halo);
+    this.stellarSphere = sphere;
+    this.stellarHalo = halo;
+    this.stellarSprite = root;
+    this.group.add(root);
   }
 
   private buildCoreGlowSprite() {
@@ -352,7 +546,16 @@ export class NeutronCoreEngine {
     // +NUCLEUS_BRAIN_BOOST while diving in to BRAIN (d=330), easing back toward Missions (d<330).
     const A0 = 0.92 / 880.0;
     const growth = dist >= 330.0 ? smoothstep(880.0, 330.0, dist) : smoothstep(120.0, 330.0, dist);
-    const nucleusScale = dist >= 880.0 ? depthScale : dist * A0 * (1.0 + NUCLEUS_BRAIN_BOOST * growth);
+    // One smooth distance law (from the later journey work): no thresholds, the core grows continuously
+    // as you scroll in and shrinks as you scroll out. Calibrated to match the CORE look at d=880.
+    void growth; void A0; void NUCLEUS_BRAIN_BOOST;
+    let nucleusScale = 0.92 * Math.pow(dist / 880.0, 0.45);
+    // DIVE IN: hold the core's real size from the moment the plunge starts, so the approach is physical and
+    // the core rushes up to fill the view instead of following the gentle scroll curve.
+    if (this.plungeFreeze) {
+      if (this.frozenNucleusScale === null) this.frozenNucleusScale = nucleusScale;
+      nucleusScale = this.frozenNucleusScale;
+    } else this.frozenNucleusScale = null;
     this.nucleusRadiusWorld = NUCLEUS_MESH_RADIUS * nucleusScale;
 
     // 6. Breathing pulse calculation
@@ -394,19 +597,69 @@ export class NeutronCoreEngine {
       nu.uBrightness.value = this.currentProfile.brightness * (1.0 + this.smoothedProximity * 0.2) * (1.0 - 0.14 * brain.links);
       nu.uProximity.value = this.smoothedProximity;
       this.nucleusMesh.scale.set(nucleusScale, nucleusScale, nucleusScale);
+      this.nucleusMesh.visible = !this.stellarSprite;
+    }
+    if (this.stellarSprite && this.stellarSphere && this.stellarHalo) {
+      const radius = NUCLEUS_MESH_RADIUS * nucleusScale;
+      // ONE journey value for the whole scroll, furthest point (1200) -> Explore end point (85), eased on a
+      // log scale so every scroll notch changes it by a similar amount. Size, glow reach, glow strength,
+      // surface light and atmosphere all follow it, so nothing steps or pops anywhere along the way.
+      const jl = (Math.log(1200) - Math.log(THREE.MathUtils.clamp(dist, 136, 1200))) / (Math.log(1200) - Math.log(136));
+      this.stellarUniforms.uClose.value = jl * jl * (3 - 2 * jl);
+      const energy = this.currentState === "idle" ? 0 : 1;
+      this.stellarUniforms.uEnergy.value += (energy - this.stellarUniforms.uEnergy.value) * 0.05;
+      const speed=Math.hypot(this.spinVel.x,this.spinVel.y);
+      const spinTarget=reducedMotion ? 0 : THREE.MathUtils.smoothstep(speed,.8,9);
+      const spinEase=1-Math.exp(-Math.min(deltaMs,100)/140);
+      this.stellarUniforms.uSpinCharge.value+=(spinTarget-this.stellarUniforms.uSpinCharge.value)*spinEase;
+      this.stellarUniforms.uTime.value = reducedMotion ? 0 : elapsedSec;
+      this.stellarUniforms.uHover.value += (this.smoothedProximity - this.stellarUniforms.uHover.value) * 0.15;
+      // click shockwave progress (1.6 s)
+      const nowMs = performance.now();
+      this.shockStarts = this.shockStarts.filter((t0) => nowMs - t0 < 1600);
+      const slots = this.stellarUniforms.uShocks.value;
+      for (let i = 0; i < 6; i++) slots[i] = i < this.shockStarts.length ? Math.max(0.0001, (nowMs - this.shockStarts[i]) / 1600) : 0;
+      // newest wave drives the surface lift; jumps from overlapping clicks add up (capped)
+      const shock = this.shockStarts.length ? slots[this.shockStarts.length - 1] : 0;
+      this.stellarUniforms.uShock.value = shock;
+      if (!reducedMotion && !this.coreDragging) {
+        // release inertia decays smoothly back to the default turn
+        const decay = Math.exp(-deltaMs / 700);
+        this.spinVel.x *= decay;
+        this.spinVel.y *= decay;
+        const dt = deltaMs * 0.001;
+        this.turnCore(this.spinVel.x * dt, this.spinVel.y * dt);
+        // default sideways turn, OPPOSITE to the particle swirl (particles turn by -angle about Y)
+        this.stellarSphere.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), dt * (0.12 + 0.15 * this.stellarUniforms.uEnergy.value));
+      }
+      // breathing + a springy jump on click
+      let jump = 0;
+      for (let i = 0; i < this.shockStarts.length; i++) jump += Math.sin(slots[i] * Math.PI) * Math.exp(-slots[i] * 3) * 0.12;
+      jump = Math.min(jump, 0.22);
+      const living = reducedMotion ? 1 : 1 + 0.018 * Math.sin(elapsedSec * 1.3) + 0.03 * this.stellarUniforms.uEnergy.value + jump;
+      this.stellarSphere.scale.setScalar(radius * living);
+      // Larger wave support; R=0.405 in 3.24x UV space preserves the existing corona world size.
+      const size = (radius / 0.125) * living;
+      this.stellarHalo.scale.set(size, size, 1);
     }
 
     // 10. Multi-tier electric cyan corona sprites
+    // With the stellar core, its own halo is the ONLY glow: the old corona sprites follow a different,
+    // kinked distance curve and produced a visible glow break when scrolling into Explore.
+    if (this.stellarSprite) {
+      if (this.coreSprite) this.coreSprite.visible = false;
+      if (this.outerCoronaSprite) this.outerCoronaSprite.visible = false;
+    }
     const pulseOffset = (pulse - 1.0);
     if (this.coreSprite) {
       const innerScale = 190 * (1.0 + pulseOffset * 0.6) * nucleusScale * (1.0 + this.smoothedProximity * 0.15);
       this.coreSprite.scale.set(innerScale, innerScale, 1);
-      this.coreSprite.material.opacity = (0.58 + pulseOffset * 0.12) * Math.min(1.0, depthScale * 1.1);
+      this.coreSprite.material.opacity = (0.58 + pulseOffset * 0.12) * Math.min(1.0, depthScale * 1.1) * (this.stellarSprite ? 0.35 : 1);
     }
     if (this.outerCoronaSprite) {
       const outerScale = 320 * (1.0 + pulseOffset * 0.5) * nucleusScale;
       this.outerCoronaSprite.scale.set(outerScale, outerScale, 1);
-      this.outerCoronaSprite.material.opacity = (0.44 + pulseOffset * 0.08) * Math.min(1.0, depthScale * 1.1);
+      this.outerCoronaSprite.material.opacity = (0.44 + pulseOffset * 0.08) * Math.min(1.0, depthScale * 1.1) * (this.stellarSprite ? 0.35 : 1);
     }
   }
 

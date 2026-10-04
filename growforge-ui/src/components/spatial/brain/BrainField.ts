@@ -1,10 +1,13 @@
 import * as THREE from "three";
 import type { GraphCategory, GraphLink, GraphNode } from "@/lib/spatial/obsidianReader";
+import { entityType } from "@/lib/spatial/entityPresentation";
 import type { NeutronCoreEngine } from "../neutronCore/NeutronCoreEngine";
 import { CORE_MOTION_GLSL } from "../neutronCore/coreMotionGlsl";
 import { MEMBER_COUNT, computeCoreParticle, hash01 } from "../neutronCore/coreParticleField";
 import { AtmosphereLinks } from "./atmosphereLinks";
 import type { BrainDrive } from "./brainUniforms";
+import { createRecordKnot } from "./recordKnot";
+import { SemanticBundles, type SemanticEdge } from "./semanticBundles";
 
 const MAX_CATEGORIES = 16;
 
@@ -23,11 +26,14 @@ interface KnowledgeSlot {
   hi: number;
   pick: THREE.Mesh;
   world: THREE.Vector3;
+  offset: THREE.Vector3; // displacement from orbit while frozen / gliding back
+  offsetVel: THREE.Vector3;
   row: number;
   role: string; // role the carrier was chosen for ("hub|" / "|<hubId>" / "|")
 }
 
 export interface BrainLabelData {
+  labelPriority: number;
   id: string;
   title: string;
   category: string;
@@ -41,6 +47,7 @@ const RECORD_VERT = /* glsl */ `
   attribute vec3 aRand;
   attribute vec4 aInfo; // size px, seed, hover, category
   attribute float aImp; // importance 0.5 .. 1.0
+  attribute vec4 aPin; // xyz displaced position, w = 1 when displaced
   uniform float uLinks;
   uniform float uPxScale;
   uniform float uClock;
@@ -52,7 +59,7 @@ const RECORD_VERT = /* glsl */ `
   varying float vImp;
 
   void main() {
-    vec3 w = coreParticleWorld(position, aRand);
+    vec3 w = mix(coreParticleWorld(position, aRand), aPin.xyz, step(0.5, aPin.w));
     vec4 mv = modelViewMatrix * vec4(w, 1.0);
     gl_Position = projectionMatrix * mv;
     float depth = max(-mv.z, 1.0);
@@ -112,6 +119,8 @@ export class BrainField {
   private engine: NeutronCoreEngine;
 
   private links: AtmosphereLinks;
+  private semantic = new SemanticBundles();
+  private adjacency = new Map<string, Set<string>>();
   private recordGeo: THREE.BufferGeometry | null = null;
   private recordPoints: THREE.Points;
   private recordMat: THREE.ShaderMaterial;
@@ -122,12 +131,16 @@ export class BrainField {
   private interactive = false;
 
   private slots = new Map<string, KnowledgeSlot>();
+  private trialKnots = new Map<string, ReturnType<typeof createRecordKnot>>();
   private signature = "";
   private catIds: string[] = [];
   private catTarget: number[] = new Array(MAX_CATEGORIES).fill(1);
   private hoveredId: string | null = null;
   private connectedIds = new Set<string>();
   private selectedId: string | null = null;
+  private hoverFrozen: THREE.Vector3 | null = null;
+  private selectFrozen: THREE.Vector3 | null = null;
+  private lastSec = 0;
 
   private assigned = false;
   private assignmentRuns = 0;
@@ -147,6 +160,7 @@ export class BrainField {
     const sh = engine.shared;
     this.links = new AtmosphereLinks(sh);
     this.group.add(this.links.mesh);
+    this.group.add(this.semantic.group);
 
     this.recordMat = new THREE.ShaderMaterial({
       vertexShader: RECORD_VERT,
@@ -171,6 +185,7 @@ export class BrainField {
     });
     this.recordPoints = new THREE.Points(new THREE.BufferGeometry(), this.recordMat);
     this.recordPoints.name = "BRAIN_RECORDS";
+    this.recordPoints.visible = false; // physical record bodies now own the visible glyph
     this.recordPoints.renderOrder = 6;
     this.recordPoints.frustumCulled = false;
     this.recordPoints.raycast = () => {};
@@ -218,13 +233,26 @@ export class BrainField {
       neighbours.get(t)!.add(s);
     }
     const degree = (id: string) => neighbours.get(id)?.size ?? 0;
-    const hubIds = nodes.filter((n) => degree(n.id) >= 3).sort((a, b) => degree(b.id) - degree(a.id) || a.id.localeCompare(b.id)).map((n) => n.id);
+    this.adjacency = neighbours;
+    const unique = new Set<string>();
+    const edges: SemanticEdge[] = [];
+    for (const link of links) {
+      const s = idOf(link.source), t = idOf(link.target);
+      if (!ids.has(s) || !ids.has(t) || s === t) continue;
+      const key = JSON.stringify([s,t].sort());
+      if (unique.has(key)) continue;
+      unique.add(key);
+      edges.push(degree(s) > degree(t) || degree(s) === degree(t) && s < t ? [s,t] : [t,s]);
+    }
+    this.semantic.setEdges(edges);
+    const hubIds = nodes.filter((n) => n.taxonomyKind === "department" || n.taxonomyKind === "oversight" || (!n.parentId && degree(n.id) >= 3)).sort((a, b) => degree(b.id) - degree(a.id) || a.id.localeCompare(b.id)).map((n) => n.id);
     const hubSet = new Set(hubIds);
 
     const defs = new Map<string, RecordDef>();
     for (const n of nodes) {
       const isHub = hubSet.has(n.id);
-      const parentHub = isHub ? null : (hubIds.find((h) => neighbours.get(h)?.has(n.id)) ?? null);
+      const declaredParent = n.parentId && ids.has(n.parentId) && neighbours.get(n.parentId)?.has(n.id) ? n.parentId : null;
+      const parentHub = isHub ? null : declaredParent ?? (hubIds.find((h) => neighbours.get(h)?.has(n.id)) ?? null);
       defs.set(n.id, {
         node: n,
         cat: Math.min(Math.max(0, this.catIds.indexOf(n.source)), MAX_CATEGORIES - 1),
@@ -251,38 +279,38 @@ export class BrainField {
           if (this.pickEnabled) enabledRaycast.call(pick, rc, hits);
         };
         this.group.add(pick);
-        slot = { def, member: -1, hi: 0, pick, world: new THREE.Vector3(), row: 0, role: "" };
+        slot = { def, member: -1, hi: 0, pick, world: new THREE.Vector3(), offset: new THREE.Vector3(), offsetVel: new THREE.Vector3(), row: 0, role: "" };
         this.slots.set(id, slot);
       }
       slot.def = def;
+      // Match the visible body, not an invisible 11-unit neighbourhood around it.
+      // Proximity may reveal a label, but only a direct body hit may freeze a record.
+      slot.pick.scale.setScalar(this.getRecordRadius(id) / 11);
       slot.pick.userData = { nodeId: id, node: def.node };
     });
     // Carriers are chosen once per topology (deterministic, independent of navigation timing).
+    for (const knot of this.trialKnots.values()) { this.group.remove(knot.group); knot.dispose(); }
+    this.trialKnots.clear();
+    const ranked = [...defs.values()].sort((a, b) => b.degree - a.degree || a.node.id.localeCompare(b.node.id));
+    const trial = ranked;
+    for (const def of trial) {
+      if (!def || this.trialKnots.has(def.node.id)) continue;
+      const radius = def.isHub ? 5.2 : def.node.source === "mcp" ? 2.6 : 3.8;
+      const knot = createRecordKnot(fnv(def.node.id) % 10000, def.degree, radius, def.node.title);
+      knot.group.name = `RECORD_KNOT_${def.node.id}`;
+      this.trialKnots.set(def.node.id, knot);
+      this.group.add(knot.group);
+    }
     this.assignCarriers();
   }
 
   /**
-   * Choose the real atmosphere particle that carries each record. Hubs use a stable hash of the
-   * canonical id; a hub's really-linked records take the hub's nearest neighbours (at similar
-   * orbital radius, so they stay together), which turns real relationships into a local cluster.
-   *
-   * Deterministic: neighbours are measured in each particle's rest frame (its base position
-   * rotated by its own fixed phase rx*2PI - the time-independent part of `coreParticleWorld`),
-   * never from live positions, so the result does not depend on when BRAIN is entered. Runs once
-   * per graph topology; on a genuine topology change a record keeps its particle as long as its
-   * role (hub / which hub it belongs to) is unchanged.
+   * Assign unique deterministic carrier IDs uniformly, regardless of graph degree.
+   * Named bodies use independent bounded presentation paths; carriers are excluded from ambient edges.
+   * Existing assignments remain stable on data refresh.
    */
   private assignCarriers() {
     const field = this.engine.getParticleField();
-    const pos = new Float32Array(MEMBER_COUNT * 3);
-    for (let m = 0; m < MEMBER_COUNT; m++) {
-      const a = field.aRandom[m * 3] * 6.28318;
-      const c = Math.cos(a), s = Math.sin(a);
-      const x = field.positions[m * 3], y = field.positions[m * 3 + 1], z = field.positions[m * 3 + 2];
-      pos[m * 3] = x * c - z * s;
-      pos[m * 3 + 1] = y;
-      pos[m * 3 + 2] = x * s + z * c;
-    }
     const used = new Set<number>();
     const radius = (m: number) => field.aRadius[m];
     const roleOf = (s: KnowledgeSlot) => `${s.def.isHub ? "hub" : ""}|${s.def.parentHub ?? ""}`;
@@ -329,18 +357,7 @@ export class BrainField {
           relations.push([hm, kid.member]);
           continue;
         }
-        let best = -1;
-        let bestD = Infinity;
-        for (const tol of [16, 40]) {
-          for (let m = 0; m < MEMBER_COUNT; m++) {
-            if (used.has(m) || Math.abs(radius(m) - radius(hm)) > tol || radius(m) < 60 || radius(m) > 135) continue;
-            const dx = pos[m * 3] - pos[hm * 3], dy = pos[m * 3 + 1] - pos[hm * 3 + 1], dz = pos[m * 3 + 2] - pos[hm * 3 + 2];
-            const d = dx * dx + dy * dy + dz * dz;
-            if (d < bestD) { bestD = d; best = m; }
-          }
-          if (best >= 0) break;
-        }
-        kid.member = best >= 0 ? best : hashPick(kid.def.node.id);
+        kid.member = hashPick(kid.def.node.id);
         used.add(kid.member);
         relations.push([hm, kid.member]);
       }
@@ -382,6 +399,7 @@ export class BrainField {
     geo.setAttribute("aRand", new THREE.BufferAttribute(rnd, 3));
     geo.setAttribute("aInfo", new THREE.BufferAttribute(info, 4).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute("aImp", new THREE.BufferAttribute(imp, 1));
+    geo.setAttribute("aPin", new THREE.BufferAttribute(new Float32Array(n * 4), 4).setUsage(THREE.DynamicDrawUsage));
     this.recordGeo?.dispose();
     this.recordGeo = geo;
     this.recordPoints.geometry = geo;
@@ -395,11 +413,14 @@ export class BrainField {
   }
 
   public setHoveredNode(id: string | null, connected: Set<string>) {
+    if (id !== this.hoveredId) this.hoverFrozen = id ? this.slots.get(id)?.world.clone() ?? null : null;
     this.hoveredId = id;
     this.connectedIds = connected;
   }
 
   public setSelectedNode(id: string | null) {
+    // a clicked record stays frozen where it was for the whole selection; clearing it lets it glide back
+    if (id !== this.selectedId) this.selectFrozen = id ? this.slots.get(id)?.world.clone() ?? null : null;
     this.selectedId = id;
   }
 
@@ -424,17 +445,27 @@ export class BrainField {
   // Per frame
   // -------------------------------------------------------------------------
 
-  public update(elapsedSec: number, drive: BrainDrive) {
+  private motionPaused = false;
+  private nodeFlow = 0;
+  private previousFlow: number | null = null;
+  public setMotionPaused(paused: boolean) { this.motionPaused = paused; }
+
+  public update(elapsedSec: number, drive: BrainDrive, distance = 272, camera?: THREE.Camera) {
     this.lastDrive = drive;
     const active = drive.links > 0.005;
     this.group.visible = active;
     this.pickEnabled = drive.links > 0.6 && this.interactive;
     const field = this.engine.getParticleField();
     const motion = this.engine.getMotionState();
+    if(this.previousFlow === null)this.nodeFlow=motion.flowTotal;
+    else if(!this.motionPaused)this.nodeFlow+=Math.max(0,motion.flowTotal-this.previousFlow);
+    this.previousFlow=motion.flowTotal;
 
 
     this.links.update(elapsedSec, drive.links, field, motion);
-    if (!active || !this.assigned) return;
+    // Retain the atmospheric renderer for deeper layers; normal Explore has no decorative web.
+    this.links.mesh.visible = false;
+    if (!this.assigned) return;
 
     const cf = this.uCatFade.value;
     for (let i = 0; i < MAX_CATEGORIES; i++) cf[i] += (this.catTarget[i] - cf[i]) * 0.1;
@@ -442,20 +473,73 @@ export class BrainField {
     const info = this.recordGeo?.getAttribute("aInfo") as THREE.BufferAttribute | undefined;
     let dirty = false;
     const t = this.tmp;
+    const dt = this.motionPaused ? 0 : Math.min(0.05, Math.max(0, elapsedSec - this.lastSec));
+    this.lastSec = elapsedSec;
+    const W = 2.6; // glide-back natural frequency (critically damped, ~2 s, no overshoot)
+    const pinAttr = this.recordGeo?.getAttribute("aPin") as THREE.BufferAttribute | undefined;
+    const pins: { member: number; world: THREE.Vector3; d: number }[] = [];
+    // Presentation paths are independent of graph degree and of the atmosphere's rigid frame.
+    const targets = new Map<string, THREE.Vector3>();
+    for (const [id] of this.slots) {
+      const seed = fnv(id);
+      const h = (salt: number) => hash01(fnv(`${seed}:${salt}`));
+      const time = motion.reducedMotion ? 0 : this.nodeFlow;
+      const phase = h(1) * Math.PI * 2 + time * (.018 + h(2) * .018);
+      const radius = 70 + h(3) * 55;
+      const drift = Math.sin(time * .027 + h(4) * 6.28) * 3;
+      const point = new THREE.Vector3(Math.cos(phase) * (radius + drift),
+        Math.sin(phase * .73 + h(5) * 6.28) * 5, Math.sin(phase) * (radius + drift));
+      point.applyAxisAngle(new THREE.Vector3(1, 0, 0), (h(6) - .5) * 2.3);
+      point.applyAxisAngle(new THREE.Vector3(0, 0, 1), (h(7) - .5) * 2.3);
+      targets.set(id, point);
+    }
+    // A smooth compact spacing bias, computed from unmodified paths (no accumulated physics).
+    const spaced = new Map<string, THREE.Vector3>();
+    for (const [id, point] of targets) {
+      const bias = new THREE.Vector3();
+      for (const [otherId, other] of targets) {
+        if (id === otherId) continue;
+        const delta = point.clone().sub(other), separation = delta.length();
+        if (separation > .001 && separation < 18) {
+          bias.addScaledVector(delta, 4 * Math.pow(1 - separation / 18, 2) / separation);
+        }
+      }
+      if (bias.length() > 6) bias.setLength(6);
+      spaced.set(id, point.clone().add(bias));
+    }
+    const depth = THREE.MathUtils.smoothstep(distance, 136, 600);
+    const overviewGain = .12 + .48 * (1 - depth);
     this.slots.forEach((slot, id) => {
       const m = slot.member;
       if (m < 0) return;
-      computeCoreParticle(
-        t,
-        field.positions[m * 3], field.positions[m * 3 + 1], field.positions[m * 3 + 2],
-        field.aRandom[m * 3], field.aRandom[m * 3 + 1], field.aRandom[m * 3 + 2],
-        motion,
-      );
-      slot.world.set(t.x, t.y, t.z);
+      const path = spaced.get(id)!;
+      t.x = path.x; t.y = path.y; t.z = path.z;
+      const frozen = id === this.selectedId && this.selectFrozen ? this.selectFrozen : id === this.hoveredId && this.hoverFrozen ? this.hoverFrozen : null;
+      if (frozen) {
+        slot.world.copy(frozen);
+        slot.offset.set(frozen.x - t.x, frozen.y - t.y, frozen.z - t.z);
+        slot.offsetVel.set(0, 0, 0);
+      } else {
+        if (slot.offset.lengthSq() > 0) {
+          slot.offsetVel.addScaledVector(slot.offset, -W * W * dt).addScaledVector(slot.offsetVel, -2 * W * dt);
+          slot.offset.addScaledVector(slot.offsetVel, dt);
+          if (slot.offset.lengthSq() < 0.0025 && slot.offsetVel.lengthSq() < 0.0025) { slot.offset.set(0, 0, 0); slot.offsetVel.set(0, 0, 0); }
+        }
+        slot.world.set(t.x + slot.offset.x, t.y + slot.offset.y, t.z + slot.offset.z);
+      }
+      const displaced = slot.offset.lengthSq() > 0;
+      const focus = this.selectedId ?? this.hoveredId;
+      const weight = !focus ? overviewGain : id === focus ? 1 : this.adjacency.get(focus)?.has(id) ? .65 : .14;
+      this.trialKnots.get(id)?.update(slot.world, elapsedSec,
+        this.uKnowledge.value * drive.links * cf[slot.def.cat] * weight, slot.hi, motion.reducedMotion);
+      if (pinAttr) {
+        pinAttr.array.set([slot.world.x, slot.world.y, slot.world.z, displaced ? 1 : 0], slot.row * 4);
+      }
+      if (displaced) pins.push({ member: m, world: slot.world, d: slot.offset.lengthSq() });
       slot.pick.position.copy(slot.world);
-      slot.def.node.x = t.x;
-      slot.def.node.y = t.y;
-      slot.def.node.z = t.z;
+      slot.def.node.x = slot.world.x;
+      slot.def.node.y = slot.world.y;
+      slot.def.node.z = slot.world.z;
 
       const target = this.hoveredId === id ? 1 : this.connectedIds.has(id) ? 0.55 : this.selectedId === id ? 0.7 : 0;
       const next = slot.hi + (target - slot.hi) * 0.14;
@@ -465,7 +549,25 @@ export class BrainField {
       }
       slot.hi = next;
     });
+    // Resolve both endpoints after every slot has moved, including held and releasing records.
+    const focus = this.selectedId ?? this.hoveredId;
+    for(const [id,slot] of this.slots){
+      const neighbors=this.adjacency.get(id);
+      const directions:THREE.Vector3[]=[];
+      if(focus && neighbors)for(const neighbor of neighbors){
+        if(id!==focus && neighbor!==focus)continue;
+        const other=this.slots.get(neighbor);if(other)directions.push(other.world.clone().sub(slot.world));
+      }
+      this.trialKnots.get(id)?.setContacts(directions);
+    }
+    this.links.setAmbientFocus(!!focus);
+    this.semantic.update(id => {
+      const slot = this.slots.get(id);
+      return slot ? {world:slot.world,gain:this.uKnowledge.value * drive.links * cf[slot.def.cat]} : undefined;
+    }, focus, 1 - depth, this.engine.getNucleusRadius(), camera);
     if (dirty && info) info.needsUpdate = true;
+    if (pinAttr) pinAttr.needsUpdate = true;
+    this.links.setPinnedMembers(pins.sort((a, b) => b.d - a.d).slice(0, 4));
   }
 
   // -------------------------------------------------------------------------
@@ -477,7 +579,9 @@ export class BrainField {
     if (!this.assigned) return [];
     const out: BrainLabelData[] = [];
     this.slots.forEach((slot, id) => {
-      out.push({ id, title: slot.def.node.title, category: slot.def.node.categoryLabel, source: slot.def.node.source, importance: slot.def.importance, hi: slot.hi, world: slot.world });
+      const focus = this.selectedId ?? this.hoveredId;
+      const priority = id === focus ? 3 : focus && this.adjacency.get(focus)?.has(id) ? 2 : 0;
+      out.push({ id, title: slot.def.node.title, category: entityType(slot.def.node), source: slot.def.node.source, importance: slot.def.importance, hi: slot.hi, world: slot.world, labelPriority: priority });
     });
     return out;
   }
@@ -485,9 +589,12 @@ export class BrainField {
   public debugInfo() {
     return {
       realRecords: this.slots.size,
+      trialRecords: [...this.trialKnots.keys()],
       hubs: [...this.slots.values()].filter((s) => s.def.isHub).length,
       linked: [...this.slots.values()].filter((s) => s.def.parentHub).length,
       links: this.links.stats,
+      semantic: this.semantic.debug(),
+      selected: this.selectedId,
       drive: this.lastDrive,
       groupVisible: this.group.visible,
       assigned: this.assigned,
@@ -535,6 +642,9 @@ export class BrainField {
     };
   }
 
+  public getRecordRadius(id:string) {const def=this.slots.get(id)?.def;return (def?.isHub?5.2:def?.node.source==="mcp"?2.6:3.8)*.55;}
+  public getRecordWorld(id: string) { return this.slots.get(id)?.world.clone() ?? null; }
+
   public debugRecords() {
     const out: { id: string; title: string; world: [number, number, number]; member: number; importance: number; isHub: boolean; parentHub: string | null }[] = [];
     this.slots.forEach((slot, id) =>
@@ -544,6 +654,9 @@ export class BrainField {
   }
 
   public dispose() {
+    for (const knot of this.trialKnots.values()) knot.dispose();
+    this.trialKnots.clear();
+    this.semantic.dispose();
     this.links.dispose();
     this.recordGeo?.dispose();
     this.recordMat.dispose();

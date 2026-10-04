@@ -4,7 +4,7 @@ import { listJobSummaries } from "@/lib/jobStore";
 import { listAiModels } from "@/lib/aiModelStore";
 import { telemetryStore } from "@/lib/telemetryStore";
 import { listPendingApprovals } from "@/lib/approvalStore";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -14,9 +14,9 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
   }
 
-  // A public preview visitor gets a clean, non-sensitive demo telemetry shape —
+  // Public preview visitors and non-owners get a clean, non-sensitive demo telemetry shape —
   // real private jobs, configured MCP servers, and models are protected.
-  if (isPublicPreviewVisitor(session)) {
+  if (isPublicPreviewVisitor(session) || !isOwnerSession(session)) {
     return NextResponse.json({
       ok: true,
       data: {

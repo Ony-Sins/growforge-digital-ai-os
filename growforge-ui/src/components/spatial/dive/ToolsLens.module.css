@@ -1,0 +1,374 @@
+.title {
+  position: absolute;
+  top: 18%;
+  left: 8%;
+  right: 8%;
+  text-align: center;
+}
+
+.title h1 {
+  font-family: Sora, sans-serif;
+  font-size: var(--dive-lens-heading-size, 20px);
+  font-weight: var(--dive-lens-heading-weight, 500);
+  letter-spacing: var(--dive-lens-heading-tracking, 0.12em);
+  margin: 0 0 8px 0;
+  color: #e8f5fc;
+}
+
+.title p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8396a6;
+  margin: 0;
+}
+
+.field {
+  position: absolute;
+  top: 31%;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: min(660px, 78%);
+  bottom: 27%;
+  pointer-events: none;
+}
+
+.rows,
+.filter {
+  pointer-events: auto;
+}
+
+.rows h2 {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: #839eaf;
+  margin: 0 14px 14px;
+  text-transform: uppercase;
+}
+
+.rows button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid #85b4cd18;
+  background: transparent;
+  color: #aec3d0;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.rows button small {
+  margin-left: auto;
+  font-size: 10px;
+  color: #829bac;
+}
+
+.rows button:hover {
+  color: #e2f2fa;
+  background: #52a4bb0a;
+}
+
+.rows button svg {
+  color: #7e9daf;
+  flex-shrink: 0;
+}
+
+.rows button > svg {
+  margin-left: auto;
+}
+
+.rows button small + svg {
+  margin-left: 0;
+}
+
+.rows .back {
+  border-bottom: 0;
+  margin-bottom: 16px;
+  font-size: 10px;
+  justify-content: flex-start;
+  color: #7fa4b7;
+}
+
+.rows .back svg {
+  margin-left: 0;
+}
+
+.filter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 14px 20px;
+  font-size: 10px;
+  color: #90b3c5;
+}
+
+.filter button {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border: 0;
+  background: none;
+  color: #9ac3d2;
+  font: inherit;
+  cursor: pointer;
+}
+
+.empty {
+  font-size: 11px;
+  color: #90a9ba;
+  text-align: center;
+  line-height: 1.8;
+  padding: 24px 0;
+}
+
+.rows {
+  max-height: 38vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.inspector {
+  position: fixed;
+  right: 28px;
+  top: 28%;
+  width: 340px;
+  min-height: 160px;
+  max-height: 44vh;
+  box-sizing: border-box;
+  border: 1px solid #81b8d238;
+  border-radius: 14px;
+  padding: 20px 22px;
+  pointer-events: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  animation: resolve 220ms ease both;
+  background: rgba(10, 20, 30, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 40;
+}
+
+.inspector h2 {
+  font-family: Sora, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0 24px 6px 0;
+  color: #e8f5fc;
+}
+
+.kind {
+  font-size: 10px;
+  color: #91aabb;
+  margin: 0 0 14px;
+}
+
+.statusBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.badge {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid #81b8d228;
+  color: #93b2c2;
+  background: rgba(40, 80, 105, 0.15);
+}
+
+.badgeActive {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.28);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.badgeWarn {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.close {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: #9bb7c9;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #ffffff;
+}
+
+.categories {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.categories button {
+  border: 0;
+  background: none;
+  color: #90abbc;
+  font: inherit;
+  font-size: 10px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.categories button:hover {
+  color: #e2f2fa;
+  background: rgba(106, 174, 202, 0.1);
+}
+
+.categories button[aria-pressed="true"] {
+  color: #d4effa;
+  background: rgba(106, 174, 202, 0.22);
+}
+
+.content {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #aec3d0;
+  overflow-wrap: anywhere;
+}
+
+.content p {
+  margin: 0 0 10px;
+}
+
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.configItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.configLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7997a9;
+}
+
+.configValue {
+  font-size: 11px;
+  color: #d6e8f3;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.provenance {
+  margin-top: 16px;
+  border-top: 1px solid #81b8d21a;
+  padding-top: 10px;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #96adbe;
+  overflow-wrap: anywhere;
+}
+
+.provenance summary {
+  list-style: none;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #91aabb;
+  cursor: pointer;
+}
+
+.provenance summary::-webkit-details-marker {
+  display: none;
+}
+
+.provenance[open] summary svg {
+  transform: rotate(90deg);
+}
+
+.field button:focus-visible,
+.provenance summary:focus-visible {
+  outline: 1px solid #7ebbd899;
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+
+@keyframes resolve {
+  from {
+    opacity: 0.2;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector {
+    animation: none;
+  }
+  .rows button {
+    transition: none;
+  }
+}
+
+@media (max-width: 1099px) {
+  .title {
+    top: 17%;
+  }
+  .field {
+    top: 30%;
+    width: 88%;
+    bottom: 30%;
+  }
+  .inspector {
+    top: 27%;
+    left: 5%;
+    right: 5%;
+    width: auto;
+    max-height: 40vh;
+  }
+  .field:has(.inspector) .filter {
+    position: absolute;
+    top: -32px;
+    left: 0;
+    right: 0;
+    margin: 0;
+    visibility: visible;
+  }
+  .field:has(.filter) .inspector {
+    top: 32%;
+    max-height: 35vh;
+  }
+  .rows {
+    max-height: 36vh;
+  }
+  .rows button small {
+    font-size: 9px;
+  }
+}

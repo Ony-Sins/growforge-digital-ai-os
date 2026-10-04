@@ -1,9 +1,11 @@
 import React from "react";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
+import { isBetaMode } from "@/lib/beta/access";
 import { SpatialCanvasWrapper } from "@/components/spatial/SpatialCanvasWrapper";
 import { JobNotifier } from "@/components/workspace/JobNotifier";
 import { SettingsOverlay } from "@/components/workspace/SettingsOverlay";
+import { BetaByokOverlay } from "@/app/beta/BetaByokOverlay";
 import { UserProfileOverlay } from "@/components/workspace/UserProfileOverlay";
 import { VaultLibraryOverlay } from "@/components/workspace/VaultLibraryOverlay";
 import { AgentRosterOverlay } from "@/components/workspace/AgentRosterOverlay";
@@ -28,12 +30,19 @@ export default async function DashboardPage({
         <SpatialCanvasWrapper initialTier={initialTier} />
       </main>
       <JobNotifier />
-      <SettingsOverlay />
-      <UserProfileOverlay user={session?.user ?? null} />
-      <VaultLibraryOverlay />
-      <AgentRosterOverlay />
-      <AgentDetailPanel />
-      <PinPromptModal />
+      {/* Settings / Connections Hub: In beta mode, mount ONLY the isolated BYOK overlay */}
+      {!isBetaMode() ? (
+        <>
+          <SettingsOverlay />
+          <UserProfileOverlay user={session?.user ? { ...session.user, role: session.user.role === "owner" ? "owner" : "employee" } : null} />
+          <VaultLibraryOverlay />
+          <AgentRosterOverlay />
+          <AgentDetailPanel />
+          <PinPromptModal />
+        </>
+      ) : (
+        <BetaByokOverlay testerEmail={session?.user?.email ?? "tester@growforge.ai"} />
+      )}
     </AppStateProvider>
   );
 }

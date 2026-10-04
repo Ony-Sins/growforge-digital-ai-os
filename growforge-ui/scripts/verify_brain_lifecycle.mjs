@@ -113,7 +113,11 @@ async function main() {
     const MAPPING = "(() => { const m = {}; window.__BRAIN_FIELD.debugRecords().forEach(r => { m[r.id] = r.member; }); return { m, runs: window.__BRAIN_FIELD.debugInfo().assignmentRuns }; })()";
     const pickRecord = `(() => { const f = window.__BRAIN_FIELD, cam = window.__THREE_CAMERA, V = cam.position.constructor;
       return f.debugRecords().filter(r => !r.isHub).map(r => { const v = new V(...r.world).project(cam); return { id: r.id, title: r.title, x: (v.x*0.5+0.5)*innerWidth, y: (-v.y*0.5+0.5)*innerHeight }; })
-        .filter(p => p.x > 420 && p.x < innerWidth - 380 && p.y > 120 && p.y < innerHeight - 100)[0]; })()`;
+        .filter(p => p.x > 390 && p.x < innerWidth - 45 && p.y > 80 && p.y < innerHeight - 45)
+        // Name plates are hit-tested before dots, so a record whose dot sits under ANOTHER record's plate
+        // cannot be hovered by pointing at it. Pick one whose hover point is on its own dot or plate only.
+        .filter(p => ![...document.querySelector('[data-brain-labels]').children].some(el => { const b = el.getBoundingClientRect(); const own = el.firstElementChild.textContent.replace('…', '');
+          return b.width > 0 && !p.title.startsWith(own) && p.x + 2 >= b.left - 6 && p.x + 2 <= b.right + 6 && p.y + 1 >= b.top - 6 && p.y + 1 <= b.bottom + 6; }))[0]; })()`;
     const hover = async (p) => {
       await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: p.x + 30, y: p.y + 20 });
       await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: p.x + 2, y: p.y + 1 });
@@ -143,7 +147,7 @@ async function main() {
     await log("01_core_start", (s) => { noBrain(s); centered(s); });
 
     // ---- cycle 1: CORE -> BRAIN
-    await cdp.run(nav("Brain")); await sleep(9500);
+    await cdp.run(nav("Explore")); await sleep(9500);
     await log("02_brain_arrived", (s) => { inBrain(s); assert.strictEqual(s.labelsVisible, 0, "no always-on label for any node (incl. the hub): " + JSON.stringify(s.labels)); });
     await checkMapping("cycle1");
 
@@ -188,7 +192,7 @@ async function main() {
     await log("09_core_arrived", (s) => { noBrain(s); centered(s); assert.ok(s.d > 850, "camera back at CORE distance"); assert.strictEqual(s.canvasSame, true); });
 
     // ---- cycle 2: BRAIN again, hover only, leave via MISSIONS, then CORE
-    await cdp.run(nav("Brain")); await sleep(9500);
+    await cdp.run(nav("Explore")); await sleep(9500);
     await log("10_brain_again", (s) => { inBrain(s); assert.strictEqual(s.canvasSame, true, "canvas/engine/field never rebuilt"); });
     await checkMapping("cycle2");
     const r3 = await cdp.run(pickRecord);
@@ -200,7 +204,7 @@ async function main() {
     await log("13_core_via_missions", (s) => { noBrain(s); centered(s); assert.ok(s.d > 850); });
 
     // ---- cycle 3: BRAIN, focus a record via search (moves the orbit pivot onto it), then MANUAL scroll-out
-    await cdp.run(nav("Brain")); await sleep(9500);
+    await cdp.run(nav("Explore")); await sleep(9500);
     await log("14_brain_third", (s) => { inBrain(s); });
     await checkMapping("cycle3");
     const focusTitle = r1.title;
@@ -248,7 +252,7 @@ async function main() {
     await log("17_click_old_record_position", (s) => { noBrain(s); });
 
     // ---- cycle 4: BRAIN again; mapping still identical after four entries (and several data refreshes)
-    await cdp.run(nav("Brain")); await sleep(9500);
+    await cdp.run(nav("Explore")); await sleep(9500);
     await log("18_brain_fourth", (s) => { inBrain(s); centered(s); assert.strictEqual(s.canvasSame, true); });
     await checkMapping("cycle4");
     await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 1560, y: 880 });

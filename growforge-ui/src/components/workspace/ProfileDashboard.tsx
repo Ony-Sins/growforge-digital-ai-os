@@ -639,7 +639,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
               <p className="mt-2 text-xs font-medium text-[#CCCCCC] font-inter leading-relaxed">
                 {identity.designation && identity.companyName
                   ? `${identity.designation} @ ${identity.companyName}`
-                  : identity.designation || identity.companyName || "Systems Architect & B2B Automation"}
+                  : identity.designation || identity.companyName || "Add your role"}
               </p>
 
               {/* Active Terminal Status Line */}
@@ -977,7 +977,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                       type="text"
                       value={identity.fullName}
                       onChange={(e) => setIdentity((prev) => ({ ...prev, fullName: e.target.value }))}
-                      placeholder="e.g. Alex Mercer"
+                      placeholder="Enter your name"
                       className="w-full rounded-xl border border-[#333333] bg-[#111c34] px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
                     />
                   </div>
@@ -1439,7 +1439,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                   type="text"
                   value={newPrefVal}
                   onChange={(e) => setNewPrefVal(e.target.value)}
-                  placeholder="Value (e.g. Under $120 blended across Google and Meta)"
+                  placeholder="Enter a verified value"
                   className="rounded-xl border border-[#333333] bg-[#111c34] px-3.5 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-electric font-inter"
                 />
                 <button
@@ -1685,7 +1685,7 @@ export function ProfileDashboard({ user }: ProfileDashboardProps) {
                 onClick={() => setActiveView("brain")}
                 className="flex items-center gap-1.5 rounded-full border border-electric/40 bg-electric/10 px-4 py-2 text-xs font-semibold text-electric transition-all hover:bg-electric hover:text-white active:scale-95 font-inter shrink-0"
               >
-                <span>Launch Brain Canvas</span>
+                <span>Launch Explore Canvas</span>
                 <ExternalLink className="h-3.5 w-3.5" />
               </button>
             </div>

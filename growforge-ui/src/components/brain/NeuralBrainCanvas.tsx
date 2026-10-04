@@ -1,5 +1,8 @@
 "use client";
 
+import { departmentDisplayName } from "@/lib/departmentTaxonomy";
+
+
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -63,7 +66,7 @@ const INITIAL_NODES: BrainNode[] = [
   // 1. Central Core — the single true structural minimum anchored in the midbrain
   {
     id: "hq",
-    name: "GrowForge HQ Core",
+    name: departmentDisplayName("hq"),
     role: "Central Executive Orchestrator",
     kind: "core",
     lobe: "neural_core",
@@ -74,7 +77,7 @@ const INITIAL_NODES: BrainNode[] = [
     emissive: "#60a5fa",
     description: "Multi-agent coordinator, plan synthesizer, and cross-department reconciler.",
     tools: ["orchestrator", "router", "memory_vault"],
-    metrics: { throughput: "100%", latency: "24ms", reliability: "99.9%" },
+    metrics: { throughput: "100%", latency: "Not measured", reliability: "99.9%" },
   },
 ];
 
@@ -85,8 +88,8 @@ const INITIAL_AXONS: BrainAxon[] = [];
 export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
   "dept:sales-bd": {
     id: "dept:sales-bd",
-    name: "Strategy & Intelligence",
-    role: "Pipeline & Deal Acquisition",
+    name: departmentDisplayName("sales-bd"),
+    role: "Strategic research and planning scope",
     kind: "department",
     lobe: "growth_expansion",
     hemisphere: "right",
@@ -96,11 +99,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#34d399",
     description: "Cold outreach, lead qualification, CRM synchronization, and pipeline closing sequences.",
     tools: ["Outreach Engine"],
-    metrics: { throughput: "Active", latency: "210ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:marketing": {
     id: "dept:marketing",
-    name: "Marketing & Brand Strategy",
+    name: departmentDisplayName("marketing"),
     role: "Brand Positioning & Messaging",
     kind: "department",
     lobe: "creative_strategy",
@@ -111,11 +114,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#a78bfa",
     description: "Brand narrative, market differentiation, customer avatars, and go-to-market architecture.",
     tools: ["Voice DNA", "Audience Profiler"],
-    metrics: { throughput: "Active", latency: "310ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:meta-ads": {
     id: "dept:meta-ads",
-    name: "Growth & Demand",
+    name: `${departmentDisplayName("marketing")} / Demand Generation (legacy route)`,
     role: "Performance Campaign Execution",
     kind: "department",
     lobe: "performance_media",
@@ -126,11 +129,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#f472b6",
     description: "Campaign scaling, ad creative testing, algorithmic bidding, and ROAS optimization.",
     tools: ["Ads Architect"],
-    metrics: { throughput: "Active", latency: "180ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:finance": {
     id: "dept:finance",
-    name: "Financial Modeling & Ops",
+    name: departmentDisplayName("finance-ops"),
     role: "Unit Economics & Cashflow",
     kind: "department",
     lobe: "analytics_governance",
@@ -141,11 +144,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#fbbf24",
     description: "Budget forecasting, profit margins, burn rate monitoring, and financial scenario models.",
     tools: ["Finance Core"],
-    metrics: { throughput: "Active", latency: "140ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:content": {
     id: "dept:content",
-    name: "Content Engine & Creative",
+    name: `${departmentDisplayName("marketing")} / Content & Organic Growth`,
     role: "Asset & Copy Generation",
     kind: "department",
     lobe: "creative_strategy",
@@ -156,11 +159,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#c084fc",
     description: "Long-form editorial, social media collateral, video scripting, and visual prompt decks.",
     tools: ["Copy Studio"],
-    metrics: { throughput: "Active", latency: "260ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:web-build": {
     id: "dept:web-build",
-    name: "Full-Stack Development",
+    name: departmentDisplayName("web-dev"),
     role: "Digital Infrastructure & Code",
     kind: "department",
     lobe: "neural_core",
@@ -171,11 +174,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#22d3ee",
     description: "Next.js applications, responsive design systems, database schemas, and API connectors.",
     tools: ["Code Sandbox"],
-    metrics: { throughput: "Active", latency: "190ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:seo": {
     id: "dept:seo",
-    name: "Search Engine & Visibility",
+    name: `${departmentDisplayName("marketing")} / Content & Organic Growth / SEO`,
     role: "Organic Discovery & Ranking",
     kind: "department",
     lobe: "performance_media",
@@ -186,11 +189,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#38bdf8",
     description: "Keyword clustering, technical audits, backlink strategy, and search intent optimization.",
     tools: ["SEO Crawler"],
-    metrics: { throughput: "Active", latency: "220ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   "dept:operations": {
     id: "dept:operations",
-    name: "Autonomous Workflows",
+    name: departmentDisplayName("ai-automation"),
     role: "Execution Automation",
     kind: "department",
     lobe: "neural_core",
@@ -201,11 +204,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#60a5fa",
     description: "Automations, CRM workflows, n8n integrations, and AI tool orchestration.",
     tools: ["n8n Manager"],
-    metrics: { throughput: "Active", latency: "120ms" },
+    metrics: { throughput: "Template scope", latency: "Not measured" },
   },
   research: {
     id: "research",
-    name: "Live Research Engine",
+    name: `${departmentDisplayName("sales-bd")} / Research & Evidence`,
     role: "Market & Sourced Intelligence",
     kind: "department",
     lobe: "analytics_governance",
@@ -216,11 +219,11 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#7dd3fc",
     description: "Live web research, competitor pricing, and market demand intelligence.",
     tools: ["Search Engine"],
-    metrics: { throughput: "Real-time", latency: "420ms" },
+    metrics: { throughput: "Real-time", latency: "Not measured" },
   },
   qa: {
     id: "qa",
-    name: "QA & Evidence Gate",
+    name: departmentDisplayName("qa"),
     role: "Strategic Integrity Auditor",
     kind: "department",
     lobe: "analytics_governance",
@@ -231,7 +234,7 @@ export const DEPARTMENT_NODE_DEFINITIONS: Record<string, BrainNode> = {
     emissive: "#fde047",
     description: "Evidence gating, hallucination defense, sanity validation, and QA verification.",
     tools: ["Claim Validator"],
-    metrics: { throughput: "Enforced", latency: "95ms" },
+    metrics: { throughput: "Enforced", latency: "Not measured" },
   },
 };
 

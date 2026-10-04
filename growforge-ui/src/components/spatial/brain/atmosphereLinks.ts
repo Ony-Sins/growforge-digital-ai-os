@@ -11,6 +11,9 @@ import type { BrainSharedUniforms } from "./brainUniforms";
 
 /**
  * Faint living filaments between the CORE's own atmosphere particles.
+ * Current Explore ownership: this renderer is decorative only. Named-record
+ * endpoints are excluded; SemanticBundles alone renders canonical relationships.
+ * Legacy tier/debug interfaces remain for compatibility, not a second edge owner.
  *
  * Three tiers, all between particles that already orbit the core:
  *   ordinary  - sparse, dim, slightly sinuous background connectivity (sparse on purpose: no fog)
@@ -25,7 +28,8 @@ import type { BrainSharedUniforms } from "./brainUniforms";
  * Rendering is GPU-instanced (one instance per filament).
  */
 
-const SEG = 8;
+const SEG = 24;
+const STRANDS = 5;
 const MAX_EDGES = 2600;
 export const LINK_MAX_LEN = 52;
 const RELATION_MAX_LEN = 88;
@@ -37,10 +41,12 @@ const NEVER = 1e9;
 
 const VERT = /* glsl */ `
   attribute float aT;   // per-vertex: parametric t along the edge
+  attribute float aStrand;
   attribute vec3 aBaseA; // per-instance (one instance = one filament)
   attribute vec3 aRandA;
   attribute vec3 aBaseB;
   attribute vec3 aRandB;
+  attribute vec2 aMembers; // particle indices of the two ends
   attribute vec4 aLife; // x = tier*direction (0 ordinary, +-1 local, +-2 relation; sign = pulse emitted from A(+)/B(-)), y = birth, z = death, w = seed
 
   uniform float uMaxLen;
@@ -49,6 +55,9 @@ const VERT = /* glsl */ `
   uniform float uLinks;
   uniform float uTime64;
   uniform float uPulseGain;
+  uniform float uAmbient;
+  uniform float uPinMember[4];
+  uniform vec3 uPinWorld[4];
 
   varying float vAlpha;
   varying float vPulse;
@@ -60,6 +69,13 @@ const VERT = /* glsl */ `
     float dirSign = aLife.x >= 0.0 ? 1.0 : -1.0;
     vec3 pa = coreParticleWorld(aBaseA, aRandA);
     vec3 pb = coreParticleWorld(aBaseB, aRandB);
+    // a held / gliding record: its cords follow the displaced end (elastic, never detached)
+    for (int i = 0; i < 4; i++) {
+      if (uPinMember[i] >= 0.0) {
+        if (abs(aMembers.x - uPinMember[i]) < 0.5) pa = uPinWorld[i];
+        if (abs(aMembers.y - uPinMember[i]) < 0.5) pb = uPinWorld[i];
+      }
+    }
     vec3 d = pb - pa;
     float len = length(d);
     vec3 dir = d / max(len, 1e-3);
@@ -74,7 +90,9 @@ const VERT = /* glsl */ `
     float f2 = 1.0 + floor(fract(seed * 7.0) * 2.0) * 0.5;
     float bend = tier > 0.5 ? 0.075 : 0.11;
     vec3 off = (b1 * sin(t * 3.14159 * f1 + seed * 31.0 + ph) + b2 * cos(t * 3.14159 * f2 + seed * 17.0 - ph * 0.8)) * len * bend * env;
-    vec3 p = mix(pa, pb, t) + off;
+    float angle = aStrand * 6.28318 / 5.0;
+    vec3 bundle = (b1 * cos(angle) + b2 * sin(angle)) * len * 0.018 * env;
+    vec3 p = mix(pa, pb, t) + off + bundle;
     float rMid = length(0.5 * (pa + pb));
 
     // Connectivity accumulates with zoom. Ordinary filaments spread outward from the dense inner atmosphere;
@@ -104,8 +122,8 @@ const VERT = /* glsl */ `
     float pulse = burst * amp * uPulseGain;
     vPulse = pulse * life;
 
-    float base = tier > 1.5 ? 0.36 : (tier > 0.5 ? 0.26 : 0.1 * (0.3 + 0.7 * fract(seed * 7.31)));
-    vAlpha = (base * tw * ends + pulse * 0.9) * life;
+    float base = tier > 1.5 ? 0.24 : (tier > 0.5 ? 0.18 : 0.035 * (0.3 + 0.7 * fract(seed * 7.31)));
+    vAlpha = (base * tw * ends + pulse * 0.9) * life * uAmbient;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }
 `;
@@ -133,6 +151,10 @@ export class AtmosphereLinks {
   public readonly mesh: THREE.LineSegments;
   private geometry: THREE.InstancedBufferGeometry;
   private material: THREE.ShaderMaterial;
+  private glints: THREE.Points;
+  private glintGeo = new THREE.BufferGeometry();
+  private glintMat: THREE.ShaderMaterial;
+  private glintReady = false;
 
   private slotA = new Int32Array(MAX_EDGES).fill(-1);
   private slotB = new Int32Array(MAX_EDGES).fill(-1);
@@ -156,7 +178,13 @@ export class AtmosphereLinks {
   private aBaseB: THREE.InstancedBufferAttribute;
   private aRandB: THREE.InstancedBufferAttribute;
   private aLife: THREE.InstancedBufferAttribute;
-  private uPulseGain = { value: 1 };
+  private aMembers!: THREE.InstancedBufferAttribute;
+  private uPinMember = { value: [-1, -1, -1, -1] };
+  private uPinWorld = { value: [0, 1, 2, 3].map(() => new THREE.Vector3()) };
+  private pinned = new Map<number, THREE.Vector3>();
+  private uPulseGain = { value: 0 }; // no decorative pulses implying live execution
+  private uAmbient = { value: 0.35 };
+  private ambientTarget = 0.35;
 
   private tmp = { x: 0, y: 0, z: 0 };
   private nn = new Float32Array(MEMBER_COUNT * 5);
@@ -165,19 +193,24 @@ export class AtmosphereLinks {
   constructor(shared: BrainSharedUniforms) {
     const geometry = new THREE.InstancedBufferGeometry();
     geometry.instanceCount = MAX_EDGES;
-    const vt = new Float32Array(SEG * 2);
-    for (let k = 0; k < SEG; k++) {
-      vt[k * 2] = k / SEG;
-      vt[k * 2 + 1] = (k + 1) / SEG;
+    const vt = new Float32Array(SEG * 2 * STRANDS);
+    const vs = new Float32Array(vt.length);
+    for (let s = 0; s < STRANDS; s++) for (let k = 0; k < SEG; k++) {
+      const row = (s * SEG + k) * 2;
+      vt[row] = k / SEG;
+      vt[row + 1] = (k + 1) / SEG;
+      vs[row] = vs[row + 1] = s;
     }
-    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(SEG * 2 * 3), 3));
+    geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(vt.length * 3), 3));
     geometry.setAttribute("aT", new THREE.BufferAttribute(vt, 1));
+    geometry.setAttribute("aStrand", new THREE.BufferAttribute(vs, 1));
     const inst = (n: number) => new THREE.InstancedBufferAttribute(new Float32Array(MAX_EDGES * n), n).setUsage(THREE.DynamicDrawUsage);
     this.aBaseA = inst(3);
     this.aRandA = inst(3);
     this.aBaseB = inst(3);
     this.aRandB = inst(3);
     this.aLife = inst(4);
+    this.aMembers = inst(2);
     for (let e = 0; e < MAX_EDGES; e++) {
       this.aLife.array[e * 4 + 1] = NEVER;
       this.aLife.array[e * 4 + 2] = NEVER;
@@ -187,6 +220,7 @@ export class AtmosphereLinks {
     geometry.setAttribute("aBaseB", this.aBaseB);
     geometry.setAttribute("aRandB", this.aRandB);
     geometry.setAttribute("aLife", this.aLife);
+    geometry.setAttribute("aMembers", this.aMembers);
     this.geometry = geometry;
 
     this.material = new THREE.ShaderMaterial({
@@ -204,10 +238,13 @@ export class AtmosphereLinks {
         uTime64: shared.uTime64,
         uMaxLen: { value: LINK_MAX_LEN },
         uPulseGain: this.uPulseGain,
+        uAmbient: this.uAmbient,
+        uPinMember: this.uPinMember,
+        uPinWorld: this.uPinWorld,
       },
       transparent: true,
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
       blending: THREE.AdditiveBlending,
     });
     this.mesh = new THREE.LineSegments(this.geometry, this.material);
@@ -216,12 +253,44 @@ export class AtmosphereLinks {
     this.mesh.frustumCulled = false;
     this.mesh.raycast = () => {};
     this.mesh.visible = false;
+    // Optical detail at existing member endpoints, never new semantic nodes.
+    this.glintMat = new THREE.ShaderMaterial({
+      uniforms: { ...this.material.uniforms }, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: `${CORE_MOTION_GLSL}
+        attribute vec3 aRandom; attribute float aLight;
+        uniform float uLinks; uniform float uAmbient; varying float vLight;
+        void main(){vec3 p=coreParticleWorld(position,aRandom);
+          vec4 view=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*view;
+          float depth=max(1.,-view.z);
+          gl_PointSize=clamp(1800./depth,2.,34.);
+          vLight=aLight*smoothstep(.35,.85,uLinks)*uAmbient;}`,
+      fragmentShader: `varying float vLight;void main(){float r=length(gl_PointCoord-.5)*2.;
+        float glow=exp(-r*r*5.)*(1.-smoothstep(.7,1.,r));
+        float heart=exp(-r*r*42.);
+        gl_FragColor=vec4(mix(vec3(.04,.42,.85),vec3(.65,.94,1.),heart),vLight*(glow*.45+heart*.7));}`,
+    });
+    this.glints = new THREE.Points(this.glintGeo, this.glintMat);
+    this.glints.frustumCulled = false;
+    this.glints.raycast = () => {};
+    this.mesh.add(this.glints);
   }
 
   /** Verification hook: scale the data pulses (1 = normal, 0 = off). */
+  /** Records displaced from their orbit (held / gliding back). Their cords follow and are never cut. */
+  public setPinnedMembers(pins: { member: number; world: THREE.Vector3 }[]) {
+    this.pinned.clear();
+    for (let i = 0; i < 4; i++) {
+      const p = pins[i];
+      this.uPinMember.value[i] = p ? p.member : -1;
+      if (p) { this.uPinWorld.value[i].copy(p.world); this.pinned.set(p.member, this.uPinWorld.value[i]); }
+    }
+  }
+
   public setPulseGain(g: number) {
     this.uPulseGain.value = g;
   }
+  public setAmbientFocus(focused: boolean) { this.ambientTarget = focused ? 0.10 : 0.35; }
 
   /** Real records (member indices) and real links between them (hub member, linked member). */
   public setKeyStructure(records: number[], relations: [number, number][]) {
@@ -315,6 +384,13 @@ export class AtmosphereLinks {
   }
 
   public update(now: number, links: number, field: CoreParticleBuffers, motion: CoreMotionState) {
+    this.uAmbient.value += (this.ambientTarget - this.uAmbient.value) * 0.12;
+    if (!this.glintReady) {
+      this.glintGeo.setAttribute("position", new THREE.BufferAttribute(field.positions.slice(0, MEMBER_COUNT * 3), 3));
+      this.glintGeo.setAttribute("aRandom", new THREE.BufferAttribute(field.aRandom.slice(0, MEMBER_COUNT * 3), 3));
+      this.glintGeo.setAttribute("aLight", new THREE.BufferAttribute(new Float32Array(MEMBER_COUNT), 1));
+      this.glintReady = true;
+    }
     const active = links > 0.012;
     this.mesh.visible = active;
     if (!active) {
@@ -326,6 +402,15 @@ export class AtmosphereLinks {
       this.lastRelink = now;
       this.wasActive = true;
       this.dirty = false;
+      const light = this.glintGeo.getAttribute("aLight") as THREE.BufferAttribute;
+      (light.array as Float32Array).fill(0);
+      const keys = new Set(this.keyMembers);
+      for (let e = 0; e < MAX_EDGES; e++) if (this.slotState[e] === 1) {
+        for (const member of [this.slotA[e], this.slotB[e]]) {
+          if (member >= 0 && !keys.has(member) && hash01(member * 17) > 0.80) light.setX(member, 0.85);
+        }
+      }
+      light.needsUpdate = true;
     }
   }
 
@@ -366,15 +451,18 @@ export class AtmosphereLinks {
     }
 
     const keyOf = (a: number, b: number) => (a < b ? a * MEMBER_COUNT + b : b * MEMBER_COUNT + a);
-    const signedFor = (emitter: number, other: number, tier: number) => (emitter < other ? tier : -tier);
+
     const desired = new Map<number, number>(); // pair key -> signed tier
+    const records = new Set(this.keyMembers);
 
     // ordinary: sparse and irregular (1 nearest, sometimes a 2nd, rarely more) - avoids a foggy lattice
     for (let i = 0; i < MEMBER_COUNT; i++) {
+      if (records.has(i)) continue;
       let accepted = 0;
       for (let k = 0; k < K; k++) {
         const j = nnIdx[i * K + k];
         if (j < 0) break;
+        if (records.has(j)) continue;
         if (nn[i * K + k] < MIN_ORDINARY_LEN * MIN_ORDINARY_LEN) continue;
         // inner field only: filaments whose midpoint lies beyond the visible band are never created
         const mx = (pos[i * 3] + pos[j * 3]) * 0.5, my = (pos[i * 3 + 1] + pos[j * 3 + 1]) * 0.5, mz = (pos[i * 3 + 2] + pos[j * 3 + 2]) * 0.5;
@@ -384,22 +472,6 @@ export class AtmosphereLinks {
         accepted++;
       }
     }
-    // local: each real record keeps a few brighter filaments to its nearest neighbours
-    for (const r of this.keyMembers) {
-      let n = 0;
-      for (let k = 0; k < K && n < 4; k++) {
-        const j = nnIdx[r * K + k];
-        if (j < 0) break;
-        desired.set(keyOf(r, j), signedFor(r, j, 1));
-        n++;
-      }
-    }
-    // relation: real hub -> linked record, when the two carriers sit close together
-    for (const [h, c] of this.relations) {
-      const dx = pos[h * 3] - pos[c * 3], dy = pos[h * 3 + 1] - pos[c * 3 + 1], dz = pos[h * 3 + 2] - pos[c * 3 + 2];
-      if (Math.sqrt(dx * dx + dy * dy + dz * dz) < RELATION_MAX_LEN) desired.set(keyOf(h, c), signedFor(h, c, 2));
-    }
-
     let longestOrd = 0;
     let longestKey = 0;
     for (const [key, slot] of this.pairSlot) {
@@ -423,7 +495,8 @@ export class AtmosphereLinks {
       } else this.slotMissSince[slot] = 0;
       // a filament no longer wanted fades out after a grace period (prevents stale links piling up into a fog)
       const stale = want === undefined && (isKey || len > LINK_MAX_LEN * 0.5 || now - this.slotMissSince[slot] > 2.5);
-      if (stale || len > cap) this.kill(slot, now, key);
+      const elastic = this.pinned.has(this.slotA[slot]) || this.pinned.has(this.slotB[slot]);
+      if (!elastic && (stale || len > cap)) this.kill(slot, now, key);
       else if (isKey) longestKey = Math.max(longestKey, len);
       else longestOrd = Math.max(longestOrd, len);
     }
@@ -460,6 +533,9 @@ export class AtmosphereLinks {
     this.aLife.array[slot * 4 + 1] = birth;
     this.aLife.array[slot * 4 + 2] = NEVER;
     this.aLife.array[slot * 4 + 3] = seed;
+    this.aMembers.array[slot * 2] = a;
+    this.aMembers.array[slot * 2 + 1] = b;
+    this.aMembers.needsUpdate = true;
     this.slotA[slot] = a;
     this.slotB[slot] = b;
     this.slotKind[slot] = signed;
@@ -492,5 +568,8 @@ export class AtmosphereLinks {
   public dispose() {
     this.geometry.dispose();
     this.material.dispose();
+    this.glintGeo.dispose();
+    this.glintMat.dispose();
   }
 }
+
