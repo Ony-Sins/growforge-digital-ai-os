@@ -1,0 +1,28 @@
+# Core LiveKit WebRTC Realtime Agent Runtime (TurnDetector v1-mini is built-in)
+livekit==1.1.20
+livekit-agents==1.8.4
+livekit-api==1.2.1
+livekit-plugins-silero==1.8.4
+
+# STT Runtime (faster-whisper via CTranslate2)
+faster-whisper==1.2.1
+ctranslate2==4.8.2
+nvidia-cublas-cu12==12.9.2.10; sys_platform == 'win32'
+nvidia-cudnn-cu12==9.9.0.52; sys_platform == 'win32'
+nvidia-cuda-nvrtc-cu12==12.9.86; sys_platform == 'win32'
+av==13.1.0
+
+# TTS Runtime (Kokoro-82M)
+kokoro==0.9.4
+torch==2.14.1
+transformers==5.18.0
+espeakng-loader==0.2.4
+misaki==0.9.4
+
+# Audio Processing & Utilities
+soundfile==0.14.0
+numpy==2.5.3
+scipy==1.18.1
+psutil==7.2.2
+httpx==0.28.1
+pydantic==2.13.5
