@@ -2,7 +2,7 @@
  * Standalone Deterministic Vault Agent Matcher
  * 
  * Given a freeform text query (e.g. a job brief, task description, or user intent),
- * evaluates all 279 agents in `src/data/vaultCapabilities.json` and ranks them by
+ * evaluates all cataloged agents in `src/data/vaultCapabilities.json` and ranks them by
  * semantic and keyword relevance.
  *
  * Features:
@@ -29,6 +29,7 @@
  * ```
  */
 
+import { blueprintPolicy } from "@/lib/departmentTaxonomy";
 import vaultDataRaw from "@/data/vaultCapabilities.json";
 
 export interface VaultCapabilityRecord {
@@ -40,6 +41,9 @@ export interface VaultCapabilityRecord {
   category: string;
   summary: string;
   tools: string[];
+  departmentIds?: readonly string[];
+  capabilityState?: "catalog-only";
+  mappingState?: "mapped" | "unmapped";
   approvalTier: "read-only" | "needs-approval-to-act";
 }
 
@@ -48,7 +52,7 @@ export interface VaultMatchResult extends VaultCapabilityRecord {
   matchedTerms: string[];
 }
 
-const VAULT_CAPABILITIES: VaultCapabilityRecord[] = vaultDataRaw as VaultCapabilityRecord[];
+const VAULT_CAPABILITIES: VaultCapabilityRecord[] = (vaultDataRaw as VaultCapabilityRecord[]).map(record => ({ ...record, ...blueprintPolicy(record.category) }));
 
 export function getVaultCapability(id: string): VaultCapabilityRecord | undefined {
   return VAULT_CAPABILITIES.find((rec) => rec.id === id);
@@ -321,7 +325,7 @@ export function matchVaultAgentsWithScore(
 
 /**
  * Standalone vault agent matcher: given a text query (a job brief),
- * scores all 279 entries in `src/data/vaultCapabilities.json` by keyword/semantic
+ * scores all cataloged entries in `src/data/vaultCapabilities.json` by keyword/semantic
  * relevance, and returns the top N (default 15) most relevant records, ranked.
  *
  * Pure function, zero side effects, zero external API calls.

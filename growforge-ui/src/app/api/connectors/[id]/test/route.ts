@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { testConnector } from "@/lib/connectorStore";
 
 export const runtime = "nodejs";
@@ -9,6 +9,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (isPublicPreviewVisitor(session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to test a connector." }, { status: 403 });
   }
 
   const { id } = await params;

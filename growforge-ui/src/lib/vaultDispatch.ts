@@ -10,6 +10,7 @@
  */
 
 import { Laya } from "@receptron/laya";
+import { canonicalDepartmentId, departmentDisplayName, BLUEPRINT_CATEGORY_DEPARTMENTS, DEPARTMENT_TAXONOMY } from "@/lib/departmentTaxonomy";
 import {
   matchVaultAgents,
   matchVaultAgentsWithScore,
@@ -47,48 +48,8 @@ export interface VaultDispatchRecommendation {
 export const DEPARTMENT_VAULT_CATEGORIES: Record<
   string,
   { name: string; categories: string[] }
-> = {
-  "sales-bd": {
-    name: "Strategy & Intelligence",
-    categories: ["business", "research", "product"],
-  },
-  marketing: {
-    name: "Marketing & Brand Strategy",
-    categories: ["marketing"],
-  },
-  "meta-ads": {
-    name: "Growth & Demand",
-    categories: ["paid", "sales"],
-  },
-  "finance-ops": {
-    name: "Finance & Operations",
-    categories: ["finance", "accounts", "chief", "operations", "supply"],
-  },
-  "client-success": {
-    name: "Client Success & Program Management",
-    categories: ["project", "customer", "hr", "report", "support"],
-  },
-  "web-design": {
-    name: "Product Architecture & UX",
-    categories: ["design", "technical"],
-  },
-  "web-dev": {
-    name: "Web Development & Engineering",
-    categories: ["engineering", "security", "testing"],
-  },
-  "ai-automation": {
-    name: "AI Systems & Intelligent Automation",
-    categories: [
-      "automation",
-      "agentic",
-      "agents",
-      "data",
-      "identity",
-      "zk",
-      "specialized",
-    ],
-  },
-};
+> = Object.fromEntries([...DEPARTMENT_TAXONOMY.map(taxon => [taxon.id, { name: departmentDisplayName(taxon.id), categories: Object.entries(BLUEPRINT_CATEGORY_DEPARTMENTS).filter(([, ids]) => ids.includes(taxon.id)).map(([category]) => category) }]), ["meta-ads", { name: departmentDisplayName("marketing"), categories: ["paid", "sales"] }]]);
+// Legacy Growth route category eligibility remains exact for saved jobs. It is not a peer department.
 
 let layaInstance: Laya | null = null;
 let layaLoadingPromise: Promise<Laya | null> | null = null;
@@ -129,6 +90,7 @@ export function getDepartmentScopedCandidates(
   departmentId?: string,
   limit: number = 16
 ): VaultCapabilityRecord[] {
+  departmentId = departmentId === "meta-ads" ? departmentId : departmentId ? canonicalDepartmentId(departmentId) : undefined;
   const cleanLimit = Math.max(1, Math.min(16, limit));
 
   if (!departmentId || !DEPARTMENT_VAULT_CATEGORIES[departmentId]) {

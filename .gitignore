@@ -38,3 +38,18 @@ growforge-ui/header_calibrated_after.png
 # verify_brain*.mjs suites). Evidence is reported in state.md; the ~52MB of
 # binaries does not belong in git history.
 growforge-ui/verification/
+
+# Voice agent local test artifacts, virtual environments, binaries, and local configs
+voice-agent/bin/
+voice-agent/.venv/
+voice-agent/.chrome-test-profile/
+voice-agent/node_modules/
+voice-agent/*.wav
+voice-agent/*.json
+voice-agent/config/livekit-local.yaml
+voice-agent/logs/
+voice-agent/.bridge_key
+voice-agent/__pycache__/
+growforge-ui/data/.internal_voice_key
+
+growforge-ui/.next-voice-audit/

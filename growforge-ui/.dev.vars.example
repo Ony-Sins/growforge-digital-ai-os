@@ -1,0 +1,22 @@
+# GrowForge private beta on Cloudflare Workers - variable NAMES only. Never put real values in this file.
+#
+# Production: set each secret with `npx wrangler secret put <NAME>` (BETA_MODE is already a plain var in
+# wrangler.jsonc). Local Workers preview: copy to a file OUTSIDE the repo (or .dev.vars, which is gitignored)
+# and pass it with `--env-file`.
+#
+# Deliberately absent: every AI provider key, VAULT_MASTER_KEY, N8N_*, HF_CREDENTIALS, COMFYUI_*, OLLAMA_*,
+# OMNIROUTE_*, SEARXNG_*, OBSIDIAN_VAULT_DIR, AUTHORIZED_EMAILS. The beta runs demo NORA only and never
+# needs them - do not add them to the Worker.
+
+# Auth.js (Google). AUTH_SECRET must be a NEW random value for the beta (`npx auth secret`), not the
+# local/Vercel one.
+AUTH_SECRET=
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+
+# Owner address(es) - the only accounts that can administer testers.
+OWNER_EMAILS=
+
+# Durable beta store: a DEDICATED Upstash Redis database for the Cloudflare beta (not shared with Vercel).
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=

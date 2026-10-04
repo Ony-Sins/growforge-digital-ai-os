@@ -35,7 +35,7 @@ async function runSwarmTests() {
   assert(SWARM_ROSTER.length >= 7, "Complete agent roster contains all 7 specialized agents");
   
   const leadGen = resolveSwarmAgent("lead-gen");
-  assert(leadGen.id === "lead-gen" && leadGen.division === "Sales", "Resolves 'lead-gen' to Offer & Lead Gen Strategist");
+  assert(leadGen.id === "lead-gen" && leadGen.division === "Revenue & Partnerships", "Resolves 'lead-gen' to Offer & Lead Gen Strategist");
 
   const webmaster = resolveSwarmAgent("web-dev");
   assert(webmaster.id === "webmaster", "Resolves alias 'web-dev' to Webmaster & Frontend Architect");

@@ -28,17 +28,17 @@ export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
-  // A public-preview visitor must see an unconfigured, empty state, never
-  // the owner's real provider/vault/model configuration — see
-  // isPublicPreviewVisitor's doc comment for why.
-  if (isPublicPreviewVisitor(gate.session)) {
+  // Public-preview visitors and authenticated non-owners must receive an unconfigured,
+  // safe state — never the owner's real provider flags, key presence, custom models,
+  // or active routing strategy.
+  if (isPublicPreviewVisitor(gate.session) || !isOwnerSession(gate.session)) {
     const providers = (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((id) => ({
       id,
       label: CLOUD_PROVIDERS[id].label,
       source: "none" as const,
       configured: false,
     }));
-    return NextResponse.json({ providers, models: [], strategy: getStrategy(), routingChains: ROUTE_CHAINS });
+    return NextResponse.json({ providers, models: [], strategy: "auto", routingChains: ROUTE_CHAINS });
   }
 
   // Standard legacy providers for compatibility

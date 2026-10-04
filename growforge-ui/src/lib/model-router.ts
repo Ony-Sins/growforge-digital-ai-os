@@ -1,5 +1,5 @@
 import type { ChatMessage, GenerationOptions } from "@/lib/llm";
-import { LlmError, getOllamaTimeoutMs } from "@/lib/llm";
+import { LlmError, getOllamaTimeoutMs, readSpeechChatStream } from "@/lib/llm";
 
 /**
  * Dynamic Model Router (src/lib/model-router.ts)
@@ -203,10 +203,11 @@ export async function callOpenRouterWithFallback(
 
   const curated = ROUTE_CHAINS[category] || ROUTE_CHAINS.utility;
   const discovered = (await getLiveFreeModels(apiKey)).filter((id) => !curated.includes(id)).slice(0, 5);
-  const modelChain = [...curated, ...discovered];
+  const modelChain = opts.onTextDelta ? [...curated,...discovered].filter(model=>model==="openrouter/free" || model.endsWith(":free")) : [...curated, ...discovered];
   const errors: string[] = [];
 
   for (const model of modelChain) {
+    let emitted = false;
     if (isRateLimited(model)) {
       errors.push(`[${model}] Skipped — rate-limited within the last hour`);
       console.warn(`[ModelRouter] ${model} skipped — cooling down after a recent rate limit`);
@@ -226,6 +227,7 @@ export async function callOpenRouterWithFallback(
         },
         body: JSON.stringify({
           model,
+          ...(opts.onTextDelta ? { stream:true, provider:{max_price:{prompt:0,completion:0}} } : {}),
           temperature: 0.4,
           ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
           messages: [
@@ -237,6 +239,14 @@ export async function callOpenRouterWithFallback(
       });
 
       clearTimeout(timeoutId);
+
+      if (res.ok && opts.onTextDelta && res.body) {
+        const streamTimeout = setTimeout(()=>controller.abort(),90000);
+        try {
+          const result = await readSpeechChatStream(res,model,(delta)=>{emitted=true;opts.onTextDelta!(delta);});
+          return {text:result.text,modelUsed:result.model,usage:result.usage};
+        } finally {clearTimeout(streamTimeout);}
+      }
 
       const data = (await res.json()) as OpenRouterCompletionResponse;
 
@@ -263,6 +273,7 @@ export async function callOpenRouterWithFallback(
         },
       };
     } catch (err: unknown) {
+      if (emitted) throw new LlmError("Voice stream interrupted after output started; retry without mixing providers.","openrouter");
       const errMsg = err instanceof Error ? err.message : String(err);
       errors.push(`[${model}] Exception: ${errMsg}`);
       console.warn(`[ModelRouter] ${model} error (${errMsg}), trying next fallback...`);

@@ -33,6 +33,7 @@
  * ourselves; let the user self-serve with their own credentials instead.
  */
 
+import { SHARED_TOOL_DEPARTMENTS } from "@/lib/departmentTaxonomy";
 export type CatalogAuthKind = "token" | "manual";
 
 export interface CatalogEntry {
@@ -58,9 +59,11 @@ export interface CatalogEntry {
    * entries (no verified single recipe, see file header).
    */
   manualHelpUrl?: string;
+  /** Shared use cases from the approved taxonomy, never an exclusive owner or access grant. */
+  sharedDepartments?: readonly string[];
 }
 
-export const MCP_CATALOG: CatalogEntry[] = [
+const CATALOG_RECIPES: CatalogEntry[] = [
   {
     id: "linear",
     name: "Linear",
@@ -197,3 +200,5 @@ export const MCP_CATALOG: CatalogEntry[] = [
     recipe: { transport: "stdio", command: "npx", args: ["-y", "figma-mcp-server"], envVar: "FIGMA_ACCESS_TOKEN" },
   },
 ];
+
+export const MCP_CATALOG: CatalogEntry[] = CATALOG_RECIPES.map((entry) => ({ ...entry, sharedDepartments: SHARED_TOOL_DEPARTMENTS[entry.id] }));

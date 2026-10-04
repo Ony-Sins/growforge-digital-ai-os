@@ -1,0 +1,21 @@
+// GrowForge private beta on Cloudflare Workers (vinext build path).
+// Secrets are NEVER stored here - set them with `wrangler secret put` (see .dev.vars.example for the list).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "growforge-beta",
+  "compatibility_date": "2026-09-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "vinext/server/fetch-handler",
+  "assets": {
+    "directory": "dist/client",
+    "not_found_handling": "none",
+    "binding": "ASSETS"
+  },
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // Non-secret configuration. The beta deployment is ALWAYS the isolated private beta.
+  "vars": {
+    "BETA_MODE": "true"
+  }
+}

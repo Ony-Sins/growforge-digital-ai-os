@@ -1,3 +1,4 @@
+import { prepareInstructionCall, recordInstructionResult } from "@/lib/instructionSnapshots";
 /**
  * Lightweight, dependency-free multi-provider LLM transport for the AI
  * intent router. Five interchangeable providers (Gemini, Groq, OpenAI,
@@ -56,6 +57,8 @@ export interface ChatMessage {
 }
 
 export interface GenerationOptions {
+  /** Actual provider deltas only. Unsupported transports remain batch and never simulate tokens. */
+  onTextDelta?: (text: string) => void;
   maxTokens?: number;
   /** In "auto" strategy, try cloud providers before local Ollama — for
    *  long-form work a small local model can't do well. "local"/"cloud"
@@ -275,15 +278,18 @@ async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: Gen
       },
       body: JSON.stringify({
         model,
+        stream: !!opts.onTextDelta,
         temperature: 0.4,
         ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
         messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
       }),
+      signal: AbortSignal.timeout(90000),
     });
   } catch (err) {
     throw new LlmError(`Could not reach Groq API (${err instanceof Error ? err.message : String(err)}).`, "groq");
   }
 
+  if (res.ok && opts.onTextDelta && res.body) return readSpeechChatStream(res,model,opts.onTextDelta);
   const data = (await res.json()) as GroqResponse;
   if (!res.ok) {
     throw new LlmError(data.error?.message ?? `Groq request failed (${res.status})`, "groq");
@@ -298,6 +304,35 @@ async function callGroq(systemPrompt: string, messages: ChatMessage[], opts: Gen
       outputTokens: data.usage?.completion_tokens ?? null,
     },
   };
+}
+
+export async function readSpeechChatStream(response: Response, model: string, onDelta: (delta:string)=>void): Promise<ProviderResult> {
+  const reader = response.body!.getReader(), decoder = new TextDecoder();
+  let text = "", pending = "", complete = false;
+  let usage: RawUsage = { inputTokens:null, outputTokens:null };
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      pending += decoder.decode(chunk.value,{stream:!chunk.done});
+      const lines = pending.split("\n");pending=lines.pop() || "";
+      if(chunk.done && pending) {lines.push(pending);pending="";}
+      for(const line of lines) {
+        if(!line.startsWith("data:")) continue;
+        const value=line.slice(5).trim();
+        if(value==="[DONE]") {complete=true;continue;}
+        if(!value) continue;
+        const item=JSON.parse(value);
+        if(item.error) throw new Error("Provider stream failed");
+        const delta=item.choices?.[0]?.delta?.content;
+        if(typeof delta==="string" && delta) {text+=delta;onDelta(delta);}
+        const counts=item.usage || item.x_groq?.usage;
+        if(counts) usage={inputTokens:counts.prompt_tokens ?? null,outputTokens:counts.completion_tokens ?? null};
+      }
+      if(chunk.done) break;
+    }
+    if(!complete || !text.trim()) throw new Error("Incomplete provider stream");
+    return {text,model,usage};
+  } finally {reader.releaseLock();}
 }
 
 interface OpenAIResponse {
@@ -456,6 +491,20 @@ export function resolveOllamaConfig(): { baseUrl: string; model: string } {
   };
 }
 
+/** Empty local request loads the existing configured model; never changes routing or calls cloud. */
+export async function prewarmVoiceReasoner(): Promise<boolean> {
+  if (getEffectiveRoutingChain().chain[0] !== "ollama") return false;
+  const { baseUrl, model } = resolveOllamaConfig();
+  const url = new URL(baseUrl);
+  if (!["localhost","127.0.0.1","[::1]"].includes(url.hostname)) return false;
+  try {
+    const response = await fetch(`${url.origin}/api/generate`, { method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model,stream:false,keep_alive:"5m"}),signal:AbortSignal.timeout(45000) });
+    if (!response.ok) return false;
+    await response.json();return true;
+  } catch { return false; }
+}
+
 interface OllamaResponse {
   message?: { content?: string };
   error?: string;
@@ -500,7 +549,7 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
-        stream: false,
+        stream: !!opts.onTextDelta,
         ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {}),
         messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
       }),
@@ -509,17 +558,46 @@ async function callOllama(systemPrompt: string, messages: ChatMessage[], opts: G
     clearTimeout(t1);
 
     if (res.ok) {
+      if (opts.onTextDelta && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let pending = "";
+        let complete = false;
+        const streamTimer = setTimeout(() => ctrl1.abort(), getRemainingTimeout());
+        try {
+          while (true) {
+            const chunk = await reader.read();
+            pending += decoder.decode(chunk.value, { stream: !chunk.done });
+            const lines = pending.split("\n"); pending = lines.pop() || "";
+            if (chunk.done && pending) { lines.push(pending); pending = ""; }
+            for (const line of lines) if (line.trim()) {
+              const item = JSON.parse(line);
+              if (item.error) throw new Error("Ollama stream failed");
+              const delta = item.message?.content || "";
+              if (delta) { text += delta; opts.onTextDelta(delta); }
+              if (item.done) {
+                complete = true;
+                rawUsage = { inputTokens: item.prompt_eval_count ?? null, outputTokens: item.eval_count ?? null };
+              }
+            }
+            if (chunk.done) break;
+          }
+          if (!complete) throw new Error("Incomplete Ollama stream");
+        } finally { clearTimeout(streamTimer); reader.releaseLock(); }
+      } else {
       const data = (await res.json()) as OllamaResponse & { prompt_eval_count?: number; eval_count?: number };
       text = data.message?.content ?? "";
       rawUsage = {
         inputTokens: data.prompt_eval_count ?? null,
         outputTokens: data.eval_count ?? null,
       };
+      }
     } else {
       attempt1Error = `native /api/chat returned ${res.status}`;
     }
   } catch (err) {
     clearTimeout(t1);
+    if (text && opts.onTextDelta) throw err;
     attempt1Error = err instanceof Error ? err.message : String(err);
     if (Date.now() - startTime >= totalTimeoutMs) {
       throw new LlmError(
@@ -650,6 +728,7 @@ async function callOmniRoute(
       headers,
       body: JSON.stringify({
         model,
+        stream: !!opts.onTextDelta,
         temperature: 0.4,
         ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
         messages: [{ role: "system", content: systemPrompt }, ...messages.filter((m) => m.role !== "system")],
@@ -672,6 +751,36 @@ async function callOmniRoute(
       "omniroute",
       "BYOK_REQUIRED",
     );
+  }
+
+  if (res.ok && opts.onTextDelta && res.body && res.headers.get("content-type")?.includes("text/event-stream")) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let text = "", pending = "", actualModel = model;
+    let complete = false;
+    const bodyTimer = setTimeout(() => controller.abort(), 90000);
+    try {
+      while (true) {
+        const chunk = await reader.read();
+        pending += decoder.decode(chunk.value, { stream: !chunk.done });
+        const lines = pending.split("\n"); pending = lines.pop() || "";
+        if (chunk.done && pending) { lines.push(pending); pending = ""; }
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const raw = line.slice(5).trim();
+          if (raw === "[DONE]") { complete = true; continue; }
+          if (!raw) continue;
+          const item = JSON.parse(raw);
+          if (item.error) throw new Error("OmniRoute stream failed");
+          actualModel = item.model || actualModel;
+          const delta = item.choices?.[0]?.delta?.content;
+          if (typeof delta === "string" && delta) { text += delta; opts.onTextDelta(delta); }
+        }
+        if (chunk.done) break;
+      }
+      if (!complete || !text.trim()) throw new Error("Incomplete OmniRoute stream");
+      return { text, model: actualModel, usage: { inputTokens: null, outputTokens: null } };
+    } finally { clearTimeout(bodyTimer); reader.releaseLock(); }
   }
 
   const data = (await res.json().catch(() => ({}))) as OmniRouteResponse;
@@ -1083,6 +1192,14 @@ export function getEffectiveRoutingChain(): EffectiveRouting {
         ? "ollama"
         : (primary?.providerType as LlmProvider) || null;
 
+  // Helper to build eligible zero-spend fallback chain
+  const getFreeFallbacks = (exclude?: LlmProvider): LlmProvider[] => {
+    const list: LlmProvider[] = [];
+    if (exclude !== "ollama") list.push("ollama");
+    if (exclude !== "openrouter" && hasKey("openrouter")) list.push("openrouter");
+    return list;
+  };
+
   // Case 1: Groq selected as Primary
   if (primaryProvider === "groq") {
     const key = resolveApiKey("groq");
@@ -1091,7 +1208,7 @@ export function getEffectiveRoutingChain(): EffectiveRouting {
     if (!key) {
       return {
         primary,
-        chain: ["ollama"],
+        chain: getFreeFallbacks("groq"),
         primaryApproved: false,
         exclusionReason: `Groq has no active credential configured in vault or environment. Falling back to local Ollama.`,
       };
@@ -1100,7 +1217,7 @@ export function getEffectiveRoutingChain(): EffectiveRouting {
     if (currentModel !== "openai/gpt-oss-120b") {
       return {
         primary,
-        chain: ["ollama"],
+        chain: getFreeFallbacks("groq"),
         primaryApproved: false,
         exclusionReason: `Groq model "${currentModel}" is not an approved zero-spend Free Plan route. Only "openai/gpt-oss-120b" is authorized. Falling back to local Ollama.`,
       };
@@ -1109,7 +1226,7 @@ export function getEffectiveRoutingChain(): EffectiveRouting {
     if (!isGroqApprovedFreeRoute()) {
       return {
         primary,
-        chain: ["ollama"],
+        chain: getFreeFallbacks("groq"),
         primaryApproved: false,
         exclusionReason: `Groq credential has been replaced or is not the CEO-approved Free Plan credential. Re-approval required. Falling back to local Ollama.`,
       };
@@ -1117,25 +1234,44 @@ export function getEffectiveRoutingChain(): EffectiveRouting {
 
     return {
       primary,
-      chain: ["groq", "ollama"],
+      chain: ["groq", ...getFreeFallbacks("groq")],
       primaryApproved: true,
     };
   }
 
-  // Case 2: Local Ollama selected as Primary
+  // Case 2: OpenRouter selected as Primary
+  if (primaryProvider === "openrouter") {
+    const key = resolveApiKey("openrouter");
+    if (!key) {
+      return {
+        primary,
+        chain: getFreeFallbacks("openrouter"),
+        primaryApproved: false,
+        exclusionReason: `OpenRouter has no active credential configured in vault or environment. Falling back to local Ollama.`,
+      };
+    }
+
+    return {
+      primary,
+      chain: ["openrouter", ...getFreeFallbacks("openrouter")],
+      primaryApproved: true,
+    };
+  }
+
+  // Case 3: Local Ollama selected as Primary
   if (primaryProvider === "ollama") {
     return {
       primary,
-      chain: ["ollama"],
+      chain: ["ollama", ...getFreeFallbacks("ollama")],
       primaryApproved: true,
     };
   }
 
-  // Case 3: Any other selected primary (OmniRoute unverified upstream, OpenAI, Anthropic, Gemini, OpenRouter)
-  // Excluded from automatic verified-free dispatch; falls back to local Ollama.
+  // Case 4: OmniRoute or unapproved cloud provider (Gemini, OpenAI, Anthropic, custom)
+  // Excluded from automatic verified-free dispatch; falls back to verified zero-spend routes.
   return {
     primary,
-    chain: ["ollama"],
+    chain: getFreeFallbacks(primaryProvider ?? undefined),
     primaryApproved: false,
     exclusionReason: `Selected primary "${primary?.name || primaryProvider || "unknown"}" is not an authorized zero-spend route. Routing to local Ollama.`,
   };
@@ -1167,33 +1303,49 @@ export async function chatComplete(
 
   for (const provider of order) {
     if (!firstAttempted) firstAttempted = provider;
-    try {
-      const callStart = Date.now();
-      const result = await callProvider(provider, systemPrompt, messages, opts);
-      const durationMs = Date.now() - callStart;
-      const usage: UsageRecord = {
-        provider,
-        model: result.model,
-        inputTokens: result.usage.inputTokens,
-        outputTokens: result.usage.outputTokens,
-        durationMs,
-        timestamp: new Date().toISOString(),
-      };
-      const fallbackOccurred = firstAttempted !== null && provider !== firstAttempted;
-      return {
-        text: result.text,
-        provider,
-        model: result.model,
-        fallbackOccurred,
-        fallbackFrom: fallbackOccurred ? (firstAttempted ?? undefined) : undefined,
-        usage,
-      };
-    } catch (err) {
-      failures.push({
-        provider,
-        error: err instanceof Error ? err.message : String(err),
-      });
+    // Credential stores remain outside the snapshot contract. Known provider keys
+    // are checked by value without placing them in snapshot metadata or errors.
+    for (const cloud of Object.keys(CLOUD_PROVIDERS) as CloudProvider[]) {
+      const credential = resolveApiKey(cloud);
+      if (credential && credential.length >= 4 && systemPrompt.includes(credential)) throw new Error("Instruction persistence blocked: provider credential detected.");
     }
+    const captured = prepareInstructionCall(systemPrompt, { provider, requestedModel: provider === "ollama" ? resolveOllamaConfig().model : provider === "omniroute" ? resolveOmniRouteConfig().model : resolveModel(provider as CloudProvider), maxTokens: opts.maxTokens, allowPaid: opts.allowPaid });
+    const callStart = Date.now();
+    let result: ProviderResult;
+    try {
+      let emitted = false;
+      try {
+        result = await callProvider(provider, captured.systemPrompt, messages, { ...opts,
+          onTextDelta: opts.onTextDelta ? (delta) => { emitted = true; opts.onTextDelta!(delta); } : undefined });
+      } catch (error) {
+        if (emitted) throw new LlmError("Voice stream interrupted after output started; retry without mixing providers.", provider);
+        throw error;
+      }
+    } catch (err) {
+      if (err instanceof LlmError && err.message.startsWith("Voice stream interrupted")) throw err;
+      failures.push({ provider, error: err instanceof Error ? err.message : String(err) });
+      continue;
+    }
+    recordInstructionResult(captured.execution, { provider, model: result.model });
+    const durationMs = Date.now() - callStart;
+    const usage: UsageRecord = {
+      provider,
+      model: result.model,
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
+      durationMs,
+      timestamp: new Date().toISOString(),
+    };
+    const fallbackOccurred = firstAttempted !== null && provider !== firstAttempted;
+    return {
+      text: result.text,
+      provider,
+      model: result.model,
+      fallbackOccurred,
+      fallbackFrom: fallbackOccurred ? (firstAttempted ?? undefined) : undefined,
+      usage,
+    };
+
   }
 
   const failureSummary = failures.map((f) => `• ${f.provider}: ${f.error}`).join("\n");

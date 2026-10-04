@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { telemetryStore } from "@/lib/telemetryStore";
 import { listMcpServers } from "@/lib/mcp/store";
 import { listApiCatalog } from "@/lib/apiCatalog";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
@@ -11,13 +11,13 @@ export async function GET() {
     // This had no auth check at all -- open to the entire internet,
     // authenticated or not, and it's what drives the AI Brain's "connected
     // ecosystem" view. Require a session, and give a public-preview
-    // visitor an empty/idle snapshot rather than the owner's real
+    // visitor or non-owner an empty/idle snapshot rather than the owner's real
     // connected-server count and live execution state.
     const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-    if (isPublicPreviewVisitor(session)) {
+    if (isPublicPreviewVisitor(session) || !isOwnerSession(session)) {
       return NextResponse.json(telemetryStore.getEmptySnapshot());
     }
 

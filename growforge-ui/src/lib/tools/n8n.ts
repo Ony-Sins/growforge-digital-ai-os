@@ -4,7 +4,7 @@ import { getSecretForServerUse } from "@/lib/serverVault";
 /**
  * n8n Workflow Tool (src/lib/tools/n8n.ts)
  *
- * Lets department agents (especially AI Systems / Automation and Web Dev)
+ * Lets department agents (especially AI Systems & Automation and Web Dev)
  * construct, inspect, patch, activate, and execute real n8n automation
  * workflows over the n8n REST API — genuinely real, not a template proposal.
  * Read-only lookups ("list", "get") run immediately; anything that changes

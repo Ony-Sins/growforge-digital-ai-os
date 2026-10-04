@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { agents as seedAgents, type Agent } from "@/lib/agents";
+import type { Agent } from "@/lib/agents";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -13,17 +13,18 @@ const POLL_INTERVAL_MS = 5000;
  *  Funnel all show the same real activity instead of three separate copies
  *  of "Never run". */
 export function useLiveAgents(): Agent[] {
-  const [liveAgents, setLiveAgents] = useState<Agent[]>(seedAgents);
+  const [liveAgents, setLiveAgents] = useState<Agent[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const res = await fetch("/api/agents");
+        const isDemo = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "true";
+        const res = await fetch(isDemo ? "/api/agents?demo=true" : "/api/agents");
         if (!cancelled && res.ok) {
           const data: { agents: Agent[] } = await res.json();
-          setLiveAgents(data.agents);
+          setLiveAgents(data.agents ?? []);
         }
       } catch {
         // best-effort refresh — keep whatever was last shown

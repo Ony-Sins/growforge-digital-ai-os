@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { createMcpServer, listMcpServers, type McpTransport } from "@/lib/mcp/store";
-import { DEPARTMENTS } from "@/lib/departments";
+import { ALL_RUNTIME_DEPARTMENTS, CANONICAL_DEPARTMENTS, HQ, QA } from "@/lib/departments";
+import { departmentScopeLabel } from "@/lib/departmentTaxonomy";
 
 export const runtime = "nodejs";
 
@@ -14,13 +15,13 @@ async function requireAuth() {
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
-  // A public-preview visitor gets an empty, non-configured view — the
-  // owner's real connected servers must never render for an anonymous
-  // stranger with a free session (see isPublicPreviewVisitor's doc comment).
-  const servers = isPublicPreviewVisitor(gate.session) ? [] : listMcpServers();
+  // Public preview visitors and non-owner beta/employee sessions must NOT
+  // receive owner-global MCP records. Only authoritative owner sessions may
+  // read owner-global server configurations.
+  const servers = isOwnerSession(gate.session) ? listMcpServers() : [];
   return NextResponse.json({
     servers,
-    departments: DEPARTMENTS.map((d) => ({ id: d.id, name: d.name, summary: d.summary })),
+    departments: [...CANONICAL_DEPARTMENTS, ...ALL_RUNTIME_DEPARTMENTS.filter(dept => dept.id === "meta-ads"), { ...HQ, summary: "Executive oversight" }, { ...QA, summary: "Independent verification" }].map((d) => ({ id: d.id, name: departmentScopeLabel(d.id), summary: d.summary })),
   });
 }
 
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only. Sign in to add a server." }, { status: 403 });
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to add an MCP server." }, { status: 403 });
   }
 
   let body: CreateBody;

@@ -1,3 +1,4 @@
+import { prepareInstructionCall, recordInstructionResult } from "@/lib/instructionSnapshots";
 import { getProviderModel } from "@/lib/llm";
 
 /**
@@ -38,6 +39,10 @@ export function isResearchAvailable(): boolean {
 
 export async function researchViaGemini(question: string, context: string, apiKey: string): Promise<ResearchFinding> {
   const model = getProviderModel("gemini");
+  const captured = prepareInstructionCall("You are a research analyst. Use Google Search to answer with current, specific, verifiable facts " +
+              "(figures, price ranges, benchmarks, named platforms, regulations). State the location and year a " +
+              "figure applies to. If sources disagree, give the range and say so. If you cannot find reliable data, " +
+              "say exactly that — never estimate or fill gaps from memory. Be concise: bullet points, no preamble.", { provider: "gemini", requestedModel: model, maxTokens: 1200 });
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
@@ -45,11 +50,7 @@ export async function researchViaGemini(question: string, context: string, apiKe
       systemInstruction: {
         parts: [
           {
-            text:
-              "You are a research analyst. Use Google Search to answer with current, specific, verifiable facts " +
-              "(figures, price ranges, benchmarks, named platforms, regulations). State the location and year a " +
-              "figure applies to. If sources disagree, give the range and say so. If you cannot find reliable data, " +
-              "say exactly that — never estimate or fill gaps from memory. Be concise: bullet points, no preamble.",
+            text: captured.systemPrompt,
           },
         ],
       },
@@ -62,6 +63,7 @@ export async function researchViaGemini(question: string, context: string, apiKe
   const data = (await res.json()) as GroundedResponse;
   if (!res.ok) throw new Error(data.error?.message ?? `Gemini research request failed (${res.status}).`);
 
+  recordInstructionResult(captured.execution, { provider: "gemini", model });
   const candidate = data.candidates?.[0];
   const answer = candidate?.content?.parts?.map((p) => p.text ?? "").join("").trim() ?? "";
 

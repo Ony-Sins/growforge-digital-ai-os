@@ -144,6 +144,9 @@ export async function POST(req: Request) {
   if (Array.isArray(body.learnedObservations)) {
     patch.learnedObservations = body.learnedObservations.filter((obs): obs is string => typeof obs === "string" && obs.trim().length > 0).slice(0, 30);
   }
+  if (Array.isArray(body.approvedVoiceMemory)) {
+    patch.approvedVoiceMemory = body.approvedVoiceMemory.filter((note): note is string => typeof note === "string" && !!note.trim()).slice(0, 20).map(note => note.trim().slice(0, 300));
+  }
 
   const updated = updateUserMemory(session.user.email, patch);
   return NextResponse.json({ memory: updated });

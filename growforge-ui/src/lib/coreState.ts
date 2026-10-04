@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import { isPublicPreviewMode } from "@/lib/session";
-import { DEPARTMENTS } from "@/lib/departments";
+import { isBetaMode } from "@/lib/beta/access";
+import { CANONICAL_DEPARTMENTS, getDepartment } from "@/lib/departments";
+import { canonicalDepartmentId, departmentScopeLabel, canonicalizeDepartmentText, departmentStepLabel } from "@/lib/departmentTaxonomy";
 import { getJob, listJobSummaries, type Job, type JobStep } from "@/lib/jobStore";
 import { summarizeUsage, estimateCost, type UsageRecord } from "@/lib/usage";
 import { jobPrefersCloud, SYSTEM_VAULT_ID } from "@/lib/llm";
@@ -42,6 +44,7 @@ export interface CoreDeptView {
   id: string;
   name: string;
   assigned: boolean;
+  kind?: "department" | "branch";
   task?: string;
   step?: CoreStepView;
   blueprint?: { name: string; category: string; band: "direct" | "confirm" | "escalate"; confidence: number };
@@ -144,34 +147,40 @@ function stepView(step: JobStep): CoreStepView {
   return {
     id: step.id,
     kind: step.kind,
-    label: step.label,
-    departmentId: step.departmentId,
+    label: departmentStepLabel(step),
+    departmentId: step.runtimeRouteId === "meta-ads" ? "meta-ads" : step.departmentId,
     status: step.status,
     percent: step.percent,
     provider: step.provider,
     startedAt: step.startedAt,
     finishedAt: step.finishedAt,
     outputChars: output.length,
-    preview: output.slice(0, 700),
+    preview: canonicalizeDepartmentText(output.slice(0, 700)),
     sourceCount: step.sources?.length ?? 0,
-    error: step.error,
+    error: step.error ? canonicalizeDepartmentText(step.error) : undefined,
     tokens,
     costUsd,
     costKnown,
   };
 }
 
-function jobView(job: Job): CoreJobView {
+export function jobView(job: Job): CoreJobView {
   const steps = job.steps.map(stepView);
   const assignments = job.planSnapshot?.assignments ?? [];
+  const currentId = (id: string | undefined) => id === "meta-ads" ? id : id ? canonicalDepartmentId(id) : undefined;
 
-  const departments: CoreDeptView[] = DEPARTMENTS.map((dept) => {
-    const assignment = assignments.find((a) => a.departmentId === dept.id);
-    const step = steps.find((s) => s.kind === "department" && s.departmentId === dept.id);
+  // Canonical cards plus any historical branch actually used by this job.
+  // Never hide its independent step or collapse two persisted outputs into one.
+  const legacyIds = [...new Set([...assignments.map((a) => a.runtimeRouteId ?? a.departmentId), ...steps.flatMap((s) => s.departmentId ? [s.departmentId] : [])])].filter((id) => id === "meta-ads");
+  const definitions = [...CANONICAL_DEPARTMENTS, ...legacyIds.flatMap((id) => getDepartment(id) ? [getDepartment(id)!] : [])];
+  const departments: CoreDeptView[] = definitions.map((dept) => {
+    const assignment = assignments.find((a) => currentId(a.runtimeRouteId ?? a.departmentId) === dept.id);
+    const step = steps.find((s) => s.kind === "department" && currentId(s.departmentId) === dept.id);
     const rec = assignment?.vaultRecommendation;
     return {
       id: dept.id,
-      name: dept.name,
+      name: departmentScopeLabel(dept.id),
+      kind: dept.id === "meta-ads" ? "branch" : "department",
       assigned: Boolean(assignment || step),
       task: assignment?.task,
       step,
@@ -228,7 +237,7 @@ function jobView(job: Job): CoreJobView {
       provider: researchStep?.provider,
       sources: sources.map((s) => ({ title: s.title, url: s.uri })),
     },
-    finalPreview: final.slice(0, 900),
+    finalPreview: canonicalizeDepartmentText(final.slice(0, 900)),
     finalChars: final.length,
     usage,
   };
@@ -245,7 +254,7 @@ function vaultStatus(): CoreState["systems"]["vault"] {
 }
 
 export async function buildCoreState(requestedJobId?: string | null): Promise<CoreState> {
-  if (isPublicPreviewMode()) {
+  if (isPublicPreviewMode() || isBetaMode()) {
     return {
       generatedAt: new Date().toISOString(),
       jobs: [],
@@ -327,3 +336,4 @@ export async function buildCoreState(requestedJobId?: string | null): Promise<Co
     },
   };
 }
+

@@ -1,7 +1,9 @@
+import { withInstructionContext } from "@/lib/instructionSnapshots";
+import { taxonomyPrompt, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import fs from "node:fs";
 import path from "node:path";
 import { isPublicPreviewMode } from "@/lib/session";
-import { agents as seedAgents, type Agent, type AgentStatus } from "@/lib/agents";
+import { agents as seedAgents, withAgentTaxonomy, type Agent, type AgentStatus } from "@/lib/agents";
 import type { LogEntry } from "@/lib/types";
 import { chatComplete, LlmError } from "@/lib/llm";
 
@@ -128,11 +130,12 @@ function getStore(): Store {
 }
 
 export function listAgents(): Agent[] {
-  return getStore().agents;
+  return getStore().agents.map(withAgentTaxonomy);
 }
 
 export function getAgent(id: string): Agent | undefined {
-  return getStore().agents.find((a) => a.id === id);
+  const agent = getStore().agents.find((a) => a.id === id);
+  return agent ? withAgentTaxonomy(agent) : undefined;
 }
 
 function appendLog(agentId: string | null, level: LogEntry["level"], message: string): LogEntry {
@@ -168,7 +171,7 @@ export function getLogsCount(agentId?: string): number {
 
 function setStatus(id: string, status: AgentStatus, lastRun: string) {
   const store = getStore();
-  const agent = getAgent(id);
+  const agent = store.agents.find((a) => a.id === id);
   if (agent) {
     agent.status = status;
     agent.lastRun = lastRun;
@@ -210,6 +213,8 @@ export async function runAgent(
   const systemPrompt = [
     `You are ${agent.name}, an agent at GrowForge Digital.`,
     `Your role: ${agent.description}`,
+    `Department ID: ${agent.assignment?.departmentId ?? "unmapped"}; division: ${agent.division}`,
+    taxonomyPrompt(),
     "",
     "Complete the task below and report a concise, concrete result (2-6 sentences). " +
       "If you genuinely cannot complete it — missing information, or it requires an action this system doesn't expose " +
@@ -219,10 +224,10 @@ export async function runAgent(
   // Fire-and-forget from the caller's perspective — the dispatch endpoint
   // returns immediately; the log stream / status endpoint reflects the
   // real outcome once the model call actually finishes.
-  void chatComplete(systemPrompt, [{ role: "user", content: task }], { maxTokens: 600 })
+  void withInstructionContext({ jobId: `agent-run:${dispatchLog.id}`, stepId: id, phase: "specialist-task", departmentId: agent.assignment!.departmentId }, () => chatComplete(systemPrompt, [{ role: "user", content: task }], { maxTokens: 600 }))
     .then(({ text }) => {
       setStatus(id, "success", "just now");
-      appendLog(id, "success", `[${id}] ${text.trim().slice(0, 800)}`);
+      appendLog(id, "success", `[${id}] ${canonicalizeDepartmentText(text.trim()).slice(0, 800)}`);
     })
     .catch((err) => {
       const message = err instanceof LlmError ? err.message : err instanceof Error ? err.message : String(err);
@@ -230,5 +235,5 @@ export async function runAgent(
       appendLog(id, "error", `[${id}] ✗ ${message}`);
     });
 
-  return { agent, log: dispatchLog };
+  return { agent: getAgent(id)!, log: dispatchLog };
 }

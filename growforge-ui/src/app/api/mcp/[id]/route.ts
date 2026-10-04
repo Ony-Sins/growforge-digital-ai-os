@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { deleteMcpServer, archiveMcpServer, updateMcpServerDetails, getMcpServer, type McpServerDef } from "@/lib/mcp/store";
 
 export const runtime = "nodejs";
@@ -15,6 +15,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to delete an MCP server." }, { status: 403 });
   }
 
   const { id } = await params;
@@ -43,6 +46,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
   }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to modify an MCP server." }, { status: 403 });
+  }
 
   const { id } = await params;
   if (!getMcpServer(id)) return NextResponse.json({ error: "Server not found." }, { status: 404 });
@@ -63,6 +69,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
   }
 
-  const server = updateMcpServerDetails(id, body);
-  return NextResponse.json({ server });
+  try {
+    const server = updateMcpServerDetails(id, body);
+    return NextResponse.json({ server });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Invalid server update." }, { status: 400 });
+  }
 }

@@ -9,7 +9,8 @@ import { n8nTool } from "@/lib/tools/n8n";
 import { n8nTemplateTool } from "@/lib/tools/n8nTemplateIngestor";
 import { transferTaskTool } from "@/lib/tools/transferTask";
 import { completeDirectiveTool } from "@/lib/tools/completeDirective";
-import { mcpServersForDepartment, listMcpServersByOrigin } from "@/lib/mcp/store";
+import { mcpServersForDepartment, listMcpServersByOrigin, type McpServerDef } from "@/lib/mcp/store";
+import { departmentHasPermission } from "@/lib/departmentTaxonomy";
 import { probeMcpServer, callMcpTool } from "@/lib/mcp/client";
 import { getExecutablePublicApiTools } from "@/lib/apiCatalog";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
@@ -320,7 +321,8 @@ function connectorTool(): Tool {
  *  to a real external server is exactly the kind of action PROPOSE-vs-EXECUTE
  *  exists for. */
 async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
-  const servers = mcpServersForDepartment(departmentId);
+  // BYO servers use their existing transport adapter below, exactly once.
+  const servers = mcpServersForDepartment(departmentId).filter((server) => server.origin !== "byo-mcp" && (server.status ?? "connected") === "connected");
   if (servers.length === 0) return [];
 
   const perServer = await Promise.all(
@@ -344,19 +346,26 @@ async function mcpToolsForDepartment(departmentId: string): Promise<Tool[]> {
   return perServer.flat();
 }
 
-/** Tools from every connected byo-mcp server (see mcp/store.ts's
- *  `origin: "byo-mcp"` entries and pluginRegistry.ts's invocation logic) —
- *  available to every department, unscoped, same as before the store
- *  consolidation. Uses the tool list captured at connect time rather than a
- *  live probe per call, since that's what the BYO-MCP UI's "detected tools"
- *  already reflects. */
-function byoMcpTools(): Tool[] {
-  const servers = listMcpServersByOrigin("byo-mcp").filter((s) => (s.status ?? "connected") === "connected");
+/** One existing BYO adapter per shared connector, honoring saved permissions.
+ * Without a department identity only globally shared servers are eligible. */
+export function buildByoMcpTools(definitions: readonly McpServerDef[], departmentId?: string, reservedNames: readonly string[] = []): Tool[] {
+  const servers = definitions.filter((s) => s.origin === "byo-mcp" && (s.status ?? "connected") === "connected" && departmentHasPermission(s.allowedDepartments, departmentId));
   const tools: Tool[] = [];
+  const seen = new Set<string>();
+  const names = new Set(reservedNames);
   for (const server of servers) {
     for (const t of server.detectedTools ?? []) {
+      const identity = `${server.id}:${t.name}`;
+      if (seen.has(identity)) continue;
+      seen.add(identity);
+      // Preserve established raw names unless two connectors expose the same
+      // tool name; then qualify the collision so dispatch stays unambiguous.
+      let name = t.name;
+      if (names.has(name)) name = `mcp_${server.id}_${t.name}`;
+      while (names.has(name)) name = `mcp_${name}`;
+      names.add(name);
       tools.push({
-        name: t.name,
+        name,
         description: `[BYO-MCP: ${server.name}] ${t.description || t.name}`,
         usage: typeof t.inputSchema === "object" ? JSON.stringify(t.inputSchema) : t.description || "{}",
         requiresApproval: true,
@@ -373,9 +382,8 @@ function byoMcpTools(): Tool[] {
  *  allowed to use (see mcp/store.ts's per-department allow list). */
 export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
   const mcpTools = departmentId ? await mcpToolsForDepartment(departmentId) : [];
-  const customMcpTools = byoMcpTools();
   const publicTools = getExecutablePublicApiTools() as Tool[];
-  return [
+  const baseTools = [
     webSearchTool,
     connectorTool(),
     piperTool,
@@ -386,6 +394,6 @@ export async function getDefaultTools(departmentId?: string): Promise<Tool[]> {
     n8nTemplateTool,
     ...publicTools,
     ...mcpTools,
-    ...customMcpTools,
   ];
+  return [...baseTools, ...buildByoMcpTools(listMcpServersByOrigin("byo-mcp"), departmentId, baseTools.map((tool) => tool.name))];
 }

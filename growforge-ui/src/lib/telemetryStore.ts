@@ -1,3 +1,4 @@
+import { resolveRuntimeRoute } from "@/lib/departmentTaxonomy";
 /**
  * Live Operational Telemetry Store
  *
@@ -53,6 +54,7 @@ const DEPARTMENT_LOBE_MAP: Record<string, BrainLobe> = {
   "dept:marketing": "creative_strategy",
   "dept:strategy": "creative_strategy",
   "dept:sales-bd": "growth_expansion",
+  "dept:sales_bd": "growth_expansion",
   "dept:client-success": "growth_expansion",
   "dept:meta-ads": "performance_media",
   "dept:finance-ops": "analytics_governance",
@@ -63,7 +65,8 @@ const DEPARTMENT_LOBE_MAP: Record<string, BrainLobe> = {
 
 export function resolveLobe(nodeId?: string): BrainLobe {
   if (!nodeId) return "neural_core";
-  return DEPARTMENT_LOBE_MAP[nodeId] ?? "neural_core";
+  const compatible = nodeId.startsWith("dept:") ? `dept:${resolveRuntimeRoute(nodeId.slice(5)) ?? nodeId.slice(5)}` : nodeId;
+  return DEPARTMENT_LOBE_MAP[compatible] ?? "neural_core";
 }
 
 class TelemetryStore {

@@ -19,7 +19,7 @@ async function requireAuth() {
 export async function GET(_req: Request, { params }: { params: Promise<{ agentId: string }> }) {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
-  if (isPublicPreviewVisitor(gate.session)) return NextResponse.json({ providers: [] });
+  if (isPublicPreviewVisitor(gate.session) || !isOwnerSession(gate.session)) return NextResponse.json({ providers: [] });
 
   const { agentId } = await params;
   if (!getAgent(agentId)) return NextResponse.json({ error: `Unknown agent: ${agentId}` }, { status: 404 });

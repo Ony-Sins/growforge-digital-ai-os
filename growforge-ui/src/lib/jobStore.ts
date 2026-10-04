@@ -1,3 +1,4 @@
+import type { InstructionReplayMode, InstructionExecution } from "@/lib/instructionSnapshots";
 import fs from "node:fs";
 import path from "node:path";
 import { isPublicPreviewMode } from "@/lib/session";
@@ -28,6 +29,8 @@ export interface JobStep {
   kind: StepKind;
   label: string;
   departmentId?: string;
+  runtimeRouteId?: string;
+  instructionExecutions?: InstructionExecution[];
   /** Plain-English description of what this agent is doing right now. */
   activity: string;
   status: StepStatus;
@@ -42,10 +45,8 @@ export interface JobStep {
   provider?: string;
   /** Token usage for the LLM call(s) that produced this step's output. */
   usage?: UsageRecord[];
-  /** Short hash of the exact constitution+department instructions text this
-   *  step's model call was given — see hashInstructions() in departments.ts.
-   *  Lets a plan answer "which version of the rules produced this" without
-   *  anyone needing to check git log. */
+  /** Legacy hashes retain their original 12-character meaning. New executions
+   * use the full SHA-256 of their exact persisted system instruction payload. */
   instructionsHash?: string;
   startedAt?: string;
   finishedAt?: string;
@@ -65,6 +66,10 @@ export interface RevisionEntry {
 
 export interface Job {
   id: string;
+  identitySchemaVersion?: 2;
+  rerunOf?: string;
+  instructionReplayMode?: InstructionReplayMode;
+  originalInstructionBundles?: Record<string, string>;
   title: string;
   brief: string;
   status: JobStatus;
@@ -97,7 +102,7 @@ export interface Job {
   planSnapshot?: {
     title: string;
     researchQuestions: string[];
-    assignments: { departmentId: string; task: string; activity: string; vaultRecommendation?: VaultDispatchRecommendation }[];
+    assignments: { departmentId: string; runtimeRouteId?: string; stepId?: string; task: string; activity: string; vaultRecommendation?: VaultDispatchRecommendation }[];
   };
   dossierSnapshot?: { text: string; sources: Source[]; verified: boolean };
 }
@@ -315,7 +320,7 @@ export function resetStepsForRedo(jobId: string, stepIds: string[]): string[] {
   job.steps = job.steps.map((s) => {
     if (!idSet.has(s.id)) return s;
     reset.push(s.id);
-    return { ...s, status: "pending" as const, percent: 0, output: undefined, sources: undefined, error: undefined, startedAt: undefined, finishedAt: undefined };
+    return { ...s, instructionExecutions: undefined, instructionsHash: undefined, provider: undefined, usage: undefined, status: "pending" as const, percent: 0, output: undefined, sources: undefined, error: undefined, startedAt: undefined, finishedAt: undefined };
   });
   job.status = "running";
   job.finalOutput = undefined;

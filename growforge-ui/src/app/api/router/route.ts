@@ -1,3 +1,4 @@
+import { taxonomyPrompt, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import { NextResponse } from "next/server";
 import { agents } from "@/lib/agents";
 import { logContextEvent } from "@/lib/spatial/dailyContext";
@@ -16,10 +17,17 @@ import {
 } from "@/lib/llm";
 import type { Agent } from "@/lib/agents";
 import { createAndStartJob } from "@/lib/orchestrator";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { TOTAL_ATTACHMENT_CONTEXT_BUDGET } from "@/lib/attachments";
 
 export const runtime = "nodejs";
+/** Normalize current assistant output only, never user prompts or saved history. */
+function taxonomyResponse(body: unknown, init?: ResponseInit) {
+ const payload = body && typeof body === "object" && "reply" in body && typeof body.reply === "string"
+   ? { ...body, reply: canonicalizeDepartmentText(body.reply) } : body;
+ return NextResponse.json(payload, init);
+}
+
 
 function availableKeys(): Record<CloudProvider, boolean> {
   return Object.fromEntries((Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((p) => [p, hasKey(p)])) as Record<
@@ -30,15 +38,32 @@ function availableKeys(): Record<CloudProvider, boolean> {
 
 /** Current strategy + which provider(s) it would try, for the chat UI's switcher. */
 export async function GET() {
-  const strategy = getStrategy();
   const session = await getSession();
+  if (!session?.user) {
+    return taxonomyResponse({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  // Non-owner sessions (preview visitors and authenticated beta/employees)
+  // must not receive owner-global routing strategy or real provider-key presence flags.
+  if (!isOwnerSession(session)) {
+    const emptyKeys = Object.fromEntries(
+      (Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((p) => [p, false])
+    ) as Record<CloudProvider, boolean>;
+
+    return taxonomyResponse({
+      strategy: "auto",
+      providerOrder: [],
+      selectedPrimary: null,
+      primaryApproved: false,
+      exclusionReason: null,
+      availableKeys: emptyKeys,
+    });
+  }
+
+  const strategy = getStrategy();
   const routing = getEffectiveRoutingChain();
-  // Hide which specific providers have keys configured — that reveals the
-  // owner's subscription/setup state to an anonymous preview visitor.
-  const keys = isPublicPreviewVisitor(session)
-    ? Object.fromEntries((Object.keys(CLOUD_PROVIDERS) as CloudProvider[]).map((p) => [p, false])) as Record<CloudProvider, boolean>
-    : availableKeys();
-  return NextResponse.json({
+  const keys = availableKeys();
+  return taxonomyResponse({
     strategy,
     providerOrder: routing.chain,
     selectedPrimary: routing.primary,
@@ -52,9 +77,18 @@ export async function GET() {
  *  server process, without a restart. Not persisted across restarts. */
 export async function PATCH(req: Request) {
   const session = await getSession();
+  if (!session?.user) {
+    return taxonomyResponse({ error: "Unauthorized." }, { status: 401 });
+  }
   if (isPublicPreviewVisitor(session)) {
-    return NextResponse.json(
+    return taxonomyResponse(
       { error: "Public preview is read-only. Sign in to change the routing strategy." },
+      { status: 403 },
+    );
+  }
+  if (!isOwnerSession(session)) {
+    return taxonomyResponse(
+      { error: "Forbidden. Authoritative owner authorization required to change the routing strategy." },
       { status: 403 },
     );
   }
@@ -62,17 +96,17 @@ export async function PATCH(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
+    return taxonomyResponse({ error: "Request body must be JSON." }, { status: 400 });
   }
 
   const strategy = body.strategy;
   if (strategy !== "auto" && strategy !== "local" && strategy !== "cloud") {
-    return NextResponse.json({ error: 'strategy must be "auto", "local", or "cloud".' }, { status: 400 });
+    return taxonomyResponse({ error: 'strategy must be "auto", "local", or "cloud".' }, { status: 400 });
   }
 
   setStrategy(strategy as LlmStrategy);
   const routing = getEffectiveRoutingChain();
-  return NextResponse.json({
+  return taxonomyResponse({
     strategy,
     providerOrder: routing.chain,
     selectedPrimary: routing.primary,
@@ -137,7 +171,7 @@ const FALSE_PROGRESS_PATTERNS =
 
 function buildSystemPrompt(pendingBrief: string | null, forceProceed: boolean): string {
   return [
-    "You are the GrowForge Digital AI Assistant: the front door to GrowForge's AI departments (Strategy & Intelligence, Marketing & Brand Strategy, Growth & Demand, Finance & Operations, Client Success & Program Management, Product Architecture & UX, Web Development & Engineering, AI Systems & Intelligent Automation).",
+    `You are the GrowForge Digital AI Assistant. Current organization:\n${taxonomyPrompt()}`,
     "",
     `Universal context rule: ${UNIVERSAL_CONTEXT_POLICY}`,
     "",
@@ -332,7 +366,7 @@ function synthesizeBriefFromConversation(history: ChatMessage[], message: string
 export async function POST(req: Request) {
   const pSession = await getSession();
   if (isPublicPreviewVisitor(pSession)) {
-    return NextResponse.json(
+    return taxonomyResponse(
       { error: "Public preview is read-only. Sign in to use the AI assistant." },
       { status: 403 },
     );
@@ -341,12 +375,12 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Request body must be JSON." }, { status: 400 });
+    return taxonomyResponse({ error: "Request body must be JSON." }, { status: 400 });
   }
 
   const message = body.message?.trim();
   if (!message) {
-    return NextResponse.json({ error: "message is required." }, { status: 400 });
+    return taxonomyResponse({ error: "message is required." }, { status: 400 });
   }
 
   // Daily context node v1 — log-and-forget, never blocks the actual chat response.
@@ -362,7 +396,7 @@ export async function POST(req: Request) {
       /\b(?:generate|create|render)\s+(?:an?\s+)?(?:[a-zA-Z-]+\s+)*(?:video|animation|clip)\b/i.test(message)));
 
   if (isExplicitVideoGen) {
-    return NextResponse.json({
+    return taxonomyResponse({
       reply:
         "Local video generation is currently unsupported in this release. A compatible local video workflow (such as ComfyUI AnimateDiff or Stable Video Diffusion) is not configured. Cloud video APIs are disabled under the strict zero-spend policy.",
       provider: "System",
@@ -394,7 +428,7 @@ export async function POST(req: Request) {
       const imgResult = await comfyuiTool.execute({ prompt: cleanPrompt });
 
       if (imgResult.ok && imgResult.media && imgResult.media.length > 0) {
-        return NextResponse.json({
+        return taxonomyResponse({
           reply: `Generated image for "${cleanPrompt}":`,
           provider: "comfyui",
           mode: "image_gen",
@@ -403,7 +437,7 @@ export async function POST(req: Request) {
         });
       }
 
-      return NextResponse.json({
+      return taxonomyResponse({
         reply: `Local ComfyUI is currently offline (http://127.0.0.1:8188) or unconfigured. Start your local ComfyUI instance with a loaded checkpoint to enable free local image generation. Cloud image APIs are disabled under the strict zero-spend policy.`,
         provider: "comfyui",
         mode: "image_gen",
@@ -411,7 +445,7 @@ export async function POST(req: Request) {
         dispatch: null,
       });
     } catch (err) {
-      return NextResponse.json({
+      return taxonomyResponse({
         reply: `Local image generation failed (${err instanceof Error ? err.message : String(err)}). Cloud image APIs are disabled under zero-spend policy.`,
         provider: "comfyui",
         mode: "image_gen",
@@ -447,14 +481,14 @@ export async function POST(req: Request) {
     fallbackFrom = result.fallbackFrom;
   } catch (err) {
     if (err instanceof LlmError) {
-      return NextResponse.json({
+      return taxonomyResponse({
         error: err.message,
         provider: err.provider,
         code: err.code ?? (err.message.toLowerCase().includes("ollama") ? "OLLAMA_OFFLINE" : "BYOK_REQUIRED"),
         requiresByok: true,
       }, { status: 503 });
     }
-    return NextResponse.json(
+    return taxonomyResponse(
       { error: err instanceof Error ? err.message : "Router failed unexpectedly." },
       { status: 500 },
     );
@@ -477,7 +511,7 @@ export async function POST(req: Request) {
       const imgResult = await comfyuiTool.execute({ prompt: cleanPrompt });
 
       if (imgResult.ok && imgResult.media && imgResult.media.length > 0) {
-        return NextResponse.json({
+        return taxonomyResponse({
           reply: decision.reply || `Generated image for "${cleanPrompt}":`,
           provider,
           model,
@@ -489,7 +523,7 @@ export async function POST(req: Request) {
         });
       }
 
-      return NextResponse.json({
+      return taxonomyResponse({
         reply: `Local ComfyUI is currently offline (http://127.0.0.1:8188) or unconfigured. Start your local ComfyUI instance with a loaded checkpoint to enable free local image generation. Cloud image APIs are disabled under the strict zero-spend policy.`,
         provider,
         model,
@@ -500,7 +534,7 @@ export async function POST(req: Request) {
         dispatch: null,
       });
     } catch (err) {
-      return NextResponse.json({
+      return taxonomyResponse({
         reply: `Local image generation failed (${err instanceof Error ? err.message : String(err)}). Cloud image APIs are disabled under zero-spend policy.`,
         provider,
         model,
@@ -538,7 +572,7 @@ export async function POST(req: Request) {
     const brief = decision.brief || pendingBrief || synthesizeBriefFromConversation(history, messageWithAttachments);
     const session = await getSession();
     const job = createAndStartJob(brief, session?.user?.email ?? undefined);
-    return NextResponse.json({
+    return taxonomyResponse({
       reply: "On it — sending this to the team now with reasonable assumptions filled in wherever you didn't specify. Watch it work live in the Live Projects panel below.",
       provider,
       model,
@@ -551,8 +585,8 @@ export async function POST(req: Request) {
   }
 
   if (decision.mode === "clarify") {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -563,8 +597,8 @@ export async function POST(req: Request) {
   }
 
   if (decision.mode === "confirm" && decision.brief) {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -578,8 +612,8 @@ export async function POST(req: Request) {
   if (decision.mode === "launch") {
     const briefToLaunch = decision.brief || pendingBrief;
     if (!briefToLaunch) {
-      return NextResponse.json({
-        reply: decision.reply,
+      return taxonomyResponse({
+        reply: canonicalizeDepartmentText(decision.reply),
         provider,
         model,
         fallbackOccurred,
@@ -590,8 +624,8 @@ export async function POST(req: Request) {
     }
     const session = await getSession();
     const job = createAndStartJob(briefToLaunch, session?.user?.email ?? undefined);
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -606,8 +640,8 @@ export async function POST(req: Request) {
     decision.mode === "dispatch" && decision.agentId ? agents.find((a) => a.id === decision.agentId) : undefined;
 
   if (!targetAgent) {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -634,8 +668,8 @@ export async function POST(req: Request) {
       }),
     });
   } catch (err) {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -648,8 +682,8 @@ export async function POST(req: Request) {
   const dispatchData = await dispatchRes.json();
 
   if (dispatchRes.status === 403 && dispatchData.locked) {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -660,8 +694,8 @@ export async function POST(req: Request) {
   }
 
   if (dispatchData.status === "hand-off") {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -681,8 +715,8 @@ export async function POST(req: Request) {
   }
 
   if (!dispatchRes.ok) {
-    return NextResponse.json({
-      reply: decision.reply,
+    return taxonomyResponse({
+      reply: canonicalizeDepartmentText(decision.reply),
       provider,
       model,
       fallbackOccurred,
@@ -692,8 +726,8 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({
-    reply: decision.reply,
+  return taxonomyResponse({
+    reply: canonicalizeDepartmentText(decision.reply),
     provider,
     model,
     fallbackOccurred,

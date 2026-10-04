@@ -1,3 +1,4 @@
+import { departmentDisplayName, departmentStepLabel, canonicalizeDepartmentText } from "@/lib/departmentTaxonomy";
 import fs from "node:fs";
 import path from "node:path";
 import type { Job } from "@/lib/jobStore";
@@ -62,7 +63,7 @@ export function logJobStateChange(job: Job): Promise<void> {
   md += `| **Project Title** | ${job.title} |\n`;
   md += `| **Created By** | ${job.createdBy ?? "operator"} |\n`;
   md += `| **Pipeline Progress** | \`${job.percent}%\` |\n`;
-  md += `| **Active Node** | ${activeStep ? `**${activeStep.label}** (${activeStep.activity})` : "*(none - idle)*"} |\n`;
+  md += `| **Active Node** | ${activeStep ? `**${departmentStepLabel(activeStep)}** (${activeStep.activity})` : "*(none - idle)*"} |\n`;
   md += `| **Research Grounding** | ${job.verified ? `✅ Verified (${job.dossierSnapshot?.sources?.length ?? 0} sources)` : "⚠️ Unverified (Estimate Mode)"} |\n\n`;
 
   md += `## 2. Department & Sub-Agent Step Matrix\n\n`;
@@ -71,12 +72,12 @@ export function logJobStateChange(job: Job): Promise<void> {
 
   for (const s of job.steps) {
     const statusIcon = s.status === "done" ? "✅ Done" : s.status === "active" ? "⏳ Active" : s.status === "error" ? "❌ Error" : "⏸️ Pending";
-    md += `| \`${s.id}\` | **${s.label}** | ${statusIcon} | ${s.percent}% | ${s.activity} | \`${s.instructionsHash ? `v.${s.instructionsHash}` : "-"}\` |\n`;
+    md += `| \`${s.id}\` | **${departmentStepLabel(s)}** | ${statusIcon} | ${s.percent}% | ${s.activity} | \`${s.instructionsHash ? `v.${s.instructionsHash}` : "-"}\` |\n`;
   }
 
   if (job.finalOutput) {
     md += `\n## 3. Latest Consolidated Deliverable\n\n`;
-    md += `${job.finalOutput.slice(0, 1500)}${job.finalOutput.length > 1500 ? "\n\n*(...truncated for summary view...)*" : ""}\n`;
+    md += `${canonicalizeDepartmentText(job.finalOutput.slice(0, 1500))}${job.finalOutput.length > 1500 ? "\n\n*(...truncated for summary view...)*" : ""}\n`;
   }
 
   return writeToBoth("CURRENT_STATE.md", md);
@@ -105,7 +106,7 @@ export function logStrategicDecision(input: {
   const timestamp = new Date().toISOString();
   const entry = `\n### Decision: ${input.title}\n` +
     `- **Recorded:** ${timestamp}\n` +
-    `- **Department/Context:** ${input.department ?? "HQ Orchestrator"} · ${input.context}\n` +
+    `- **Department/Context:** ${input.department ?? departmentDisplayName("hq")} · ${input.context}\n` +
     `- **Agreed Resolution & Direction:**\n  ${input.decision.replace(/\n/g, "\n  ")}\n`;
 
   return writeToBoth("DECISION_REGISTRY.md", existing + entry);
@@ -214,3 +215,4 @@ export function logSwarmStateChange(swarm: SwarmTelemetryInput): Promise<void> {
 
   return writeToBoth("CURRENT_STATE.md", md);
 }
+

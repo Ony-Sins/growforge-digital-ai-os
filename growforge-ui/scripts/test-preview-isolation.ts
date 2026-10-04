@@ -97,7 +97,7 @@ async function runPreviewIsolationTests() {
 
     console.log("\n[9] Verifying API Route Endpoints under Public Preview...");
     // 9a. /api/spatial/graph
-    const graphRes = await graphRoute();
+    const graphRes = await graphRoute(new Request("http://localhost/api/spatial/graph"));
     assert.strictEqual(graphRes.status, 200, "/api/spatial/graph must return HTTP 200 for preview UI");
     const graphJson = await graphRes.json();
     assert.strictEqual(graphJson.ok, true);
@@ -170,8 +170,9 @@ async function runPreviewIsolationTests() {
     const n8nHealthRes = await n8nHealthRoute();
     assert.strictEqual(n8nHealthRes.status, 200, "n8n health route returns 200 in preview mode");
     const n8nHealthJson = await n8nHealthRes.json();
-    assert.strictEqual(n8nHealthJson.status, "offline", "n8n health must be offline in preview mode");
-    console.log("✓ Vault and integration mutation/health endpoints strictly blocked / offline");
+    assert.strictEqual(n8nHealthJson.status, "unconfigured", "n8n health must be unconfigured in preview mode");
+    assert.strictEqual(n8nHealthJson.latencyMs, null, "n8n health latency must be null without probe");
+    console.log("✓ Vault and integration mutation/health endpoints strictly blocked / unconfigured");
 
     console.log("\n=======================================================");
     console.log("ALL PREVIEW ISOLATION TESTS PASSED (100% SUCCESS)");

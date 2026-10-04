@@ -15,16 +15,35 @@
 
 import assert from "node:assert";
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import crypto from "node:crypto";
 import type { Session } from "next-auth";
-import { isOwnerSession, isPublicPreviewVisitor } from "../src/lib/session";
-import { DELETE as deleteSystemProvider } from "../src/app/api/vault/system/[provider]/route";
-import { DELETE as deleteAgentProvider } from "../src/app/api/vault/[agentId]/[provider]/route";
-import { POST as testSystemModel } from "../src/app/api/vault/system/test/route";
-import { testCustomModel } from "../src/lib/llm";
-import { getPiperEnv } from "../src/lib/tools/piper";
-import { analyzeImageWithFallback } from "../src/lib/model-router";
+
+
+
+
+
+
+
 
 async function runSuite() {
+  const originalCwd = process.cwd();
+  const productionData = path.join(originalCwd, "data");
+  const digest = (file: string) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+  const protectedFiles = fs.readdirSync(productionData).filter(file => file.endsWith(".json")).map(file => path.join(productionData, file));
+  const before = new Map(protectedFiles.map(file => [file, digest(file)]));
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "growforge-security-closure-"));
+  process.chdir(fixture);
+  const { isOwnerSession, isPublicPreviewVisitor } = await import("../src/lib/session");
+  const { DELETE: deleteSystemProvider } = await import("../src/app/api/vault/system/[provider]/route");
+  const { DELETE: deleteAgentProvider } = await import("../src/app/api/vault/[agentId]/[provider]/route");
+  const { POST: testSystemModel } = await import("../src/app/api/vault/system/test/route");
+  const { testCustomModel } = await import("../src/lib/llm");
+  const { getPiperEnv } = await import("../src/lib/tools/piper");
+  const { analyzeImageWithFallback } = await import("../src/lib/model-router");
+
   console.log("===============================================================");
   console.log(" RUNNING SECURITY CLOSURE VERIFICATION SUITE                  ");
   console.log("===============================================================\n");
@@ -313,6 +332,8 @@ async function runSuite() {
 
   } finally {
     process.env = origEnv;
+    process.chdir(originalCwd);
+    for (const [file, hash] of before) assert.equal(digest(file), hash, `Security suite altered live store: ${path.basename(file)}`);
   }
 
   console.log("\n===============================================================");

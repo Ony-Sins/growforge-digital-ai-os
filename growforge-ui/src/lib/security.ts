@@ -14,7 +14,7 @@
  * authentication gate.
  */
 
-import { isPublicPreviewMode } from "@/lib/session";
+import { isPublicPreviewMode } from "@/lib/previewMode";
 
 export type Role = "owner" | "employee";
 

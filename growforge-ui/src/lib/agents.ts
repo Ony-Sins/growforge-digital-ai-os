@@ -1,3 +1,4 @@
+import { departmentDisplayName, SPECIALIST_ASSIGNMENTS, type SpecialistAssignment } from "@/lib/departmentTaxonomy";
 export type AgentStatus = "active" | "success" | "error" | "idle";
 
 export interface Agent {
@@ -11,13 +12,14 @@ export interface Agent {
   /** One-line role summary, sourced from .claude/agents/*.md frontmatter — used as
    *  routing context for the AI intent router as well as UI copy. */
   description: string;
+  assignment?: SpecialistAssignment;
 }
 
 // Every agent below starts "idle" / "Never run" — none of these has done
 // real work yet. Real status and lastRun only get set once /api/agents/[id]/run
 // actually dispatches it (see agentStore.ts's runAgent), so what's shown is
 // always genuine, not a fabricated activity history seeded at boot.
-export const agents: Agent[] = [
+const seedAgents: Agent[] = [
   {
     id: "agents-orchestrator",
     name: "Agents Orchestrator",
@@ -90,6 +92,14 @@ export const agents: Agent[] = [
       "Final integration testing and evidence-based production-readiness certification — defaults to NEEDS WORK until proven.",
   },
 ];
+
+/** Project current classification onto persisted agents without replacing their
+ * status, lastRun, description or other historical/user data. */
+export function withAgentTaxonomy(agent: Agent): Agent {
+  const assignment = SPECIALIST_ASSIGNMENTS[agent.id];
+  return assignment ? { ...agent, division: departmentDisplayName(assignment.departmentId), assignment } : agent;
+}
+export const agents: Agent[] = seedAgents.map(withAgentTaxonomy);
 
 // Order below intentionally matches the dashboard's actual top-to-bottom
 // scroll order (see Workspace.tsx / sectionIdFor) — nav position N should

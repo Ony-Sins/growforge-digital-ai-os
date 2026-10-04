@@ -13,5 +13,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "livekit-client": "^2.22.3"
   }
 }

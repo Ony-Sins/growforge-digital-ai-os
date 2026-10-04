@@ -140,8 +140,32 @@ function getStore(): ConnectorDef[] {
   return globalForStore.__growforgeConnectors;
 }
 
-export function listConnectors(): (ConnectorDef & { hasSecret: boolean })[] {
-  return getStore().map((c) => ({ ...c, hasSecret: hasSecret(vaultAgentId(c.id), "auth") }));
+export type SanitizedConnector = Omit<ConnectorDef, "headers"> & {
+  headers: Record<string, string>;
+  headerKeys: string[];
+  headerCount: number;
+  hasSecret: boolean;
+};
+
+export function sanitizeConnector(c: ConnectorDef): SanitizedConnector {
+  const headerKeys = Object.keys(c.headers || {});
+  // Never return stored header values in list/read responses because arbitrary
+  // headers may contain bearer tokens, API keys, cookies, or auth material.
+  const sanitizedHeaders: Record<string, string> = {};
+  for (const k of headerKeys) {
+    sanitizedHeaders[k] = "";
+  }
+  return {
+    ...c,
+    headers: sanitizedHeaders,
+    headerKeys,
+    headerCount: headerKeys.length,
+    hasSecret: hasSecret(vaultAgentId(c.id), "auth"),
+  };
+}
+
+export function listConnectors(): SanitizedConnector[] {
+  return getStore().map((c) => sanitizeConnector(c));
 }
 
 export function getConnector(id: string): ConnectorDef | undefined {

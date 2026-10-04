@@ -1,3 +1,4 @@
+import { classifyDepartmentSource, departmentDisplayName } from "@/lib/departmentTaxonomy";
 import fs from "node:fs";
 import path from "node:path";
 import { chatComplete, jobPrefersCloud } from "@/lib/llm";
@@ -30,7 +31,7 @@ import { loadInstructions } from "@/lib/departments";
  * has no citation/evidence enforcement (no EVIDENCE_RULES equivalent, no
  * UNVERIFIED banner, nothing stopping a department from stating an
  * unsourced number as fact) and its SWARM_ROSTER only covers 7 of the 10
- * real departments (missing Finance & Operations, Client Success/PM, Web
+ * real departments (missing Operations & Finance, Client Delivery & Success, Web
  * Design/UX) — both real gaps, not proven bugs, but enough that switching
  * primary orchestration here would be a regression today.
  *
@@ -133,7 +134,7 @@ export interface SwarmAgentDefinition {
 export const SWARM_ROSTER: SwarmAgentDefinition[] = [
   {
     id: "planning",
-    name: "GrowForge HQ Strategist (Supervisor)",
+    name: "Executive Orchestration Strategist (Supervisor)",
     role: "Planning & Architecture",
     division: "Specialized",
     description: "Master project supervisor, resource allocation, and cross-department goal decomposition.",
@@ -187,14 +188,14 @@ export const SWARM_ROSTER: SwarmAgentDefinition[] = [
   },
   {
     id: "qa",
-    name: "Quality Assurance & Reality Checker",
+    name: "Quality, Risk & Governance & Reality Checker",
     role: "Verification & QA",
     division: "Testing",
     description: "Rigorous quality gate certification, proof verification, logic checking, and production readiness checks.",
     systemPromptFile: "Quality_Assurance_Agent_System.md",
     aliases: ["qa", "quality", "reality-checker", "reviewer", "finish-gate"],
   },
-];
+].map((agent) => ({ ...agent, division: departmentDisplayName(classifyDepartmentSource(agent.systemPromptFile)?.departmentId ?? agent.division) }));
 
 /**
  * Resolves an agent identifier or natural language alias to a registered swarm agent.
@@ -571,11 +572,7 @@ async function runSwarmExecutionLoop(
     return null;
   });
 
-  const availableTools: Tool[] = [
-    ...(await getDefaultTools()),
-    transferTaskTool,
-    completeDirectiveTool,
-  ];
+  const scopedTools = new Map<string, Tool[]>();
 
   options.onActivity?.(`Swarm running for directive: "${context.title}" (Depth: ${context.handoffDepth}/${context.maxDepth})`);
   await saveSwarmState(context);
@@ -588,6 +585,13 @@ async function runSwarmExecutionLoop(
       if (isCompleted) break;
 
       const currentAgentDef = resolveSwarmAgent(context.activeAgent);
+      const departmentId = currentAgentDef.systemPromptFile ? classifyDepartmentSource(currentAgentDef.systemPromptFile)?.departmentId : undefined;
+      const scopeKey = departmentId ?? "shared";
+      let availableTools = scopedTools.get(scopeKey);
+      if (!availableTools) {
+        availableTools = [...(await getDefaultTools(departmentId)), transferTaskTool, completeDirectiveTool];
+        scopedTools.set(scopeKey, availableTools);
+      }
       context.agentTrace.push({
         stepNumber: turn + 1,
         agentId: currentAgentDef.id,

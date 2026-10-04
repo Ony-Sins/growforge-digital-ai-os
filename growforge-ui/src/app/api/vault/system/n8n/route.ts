@@ -29,10 +29,11 @@ export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   // The stored host is a real URL (often the owner's private n8n instance
-  // address) -- not a secret, but still not something a stranger should see.
-  if (isPublicPreviewVisitor(gate.session)) {
+  // address). Public preview visitors and non-owner sessions must never receive
+  // owner-global hostnames, localhost URLs, or API key configuration metadata.
+  if (isPublicPreviewVisitor(gate.session) || !isOwnerSession(gate.session)) {
     return NextResponse.json({
-      host: { value: DEFAULT_HOST, source: "default" },
+      host: { value: "", source: "none" },
       apiKey: { configured: false, source: "none" },
     });
   }

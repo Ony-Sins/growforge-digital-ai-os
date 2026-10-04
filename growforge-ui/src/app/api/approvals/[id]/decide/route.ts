@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import { decideApproval, getApproval } from "@/lib/approvalStore";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,6 +11,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       { status: 403 },
     );
   }
+
+  if (!isOwnerSession(session)) return NextResponse.json({ error: "Only an owner can decide approvals." }, { status: 403 });
 
   const { id } = await params;
   if (!getApproval(id)) return NextResponse.json({ error: "Approval not found." }, { status: 404 });

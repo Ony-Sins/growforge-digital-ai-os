@@ -56,6 +56,7 @@ export interface TargetMarketArea {
 
 export interface UserProfileIdentity {
   fullName: string;
+  preferredDisplayName?: string;
   designation: string;
   companyName: string;
   about: string;
@@ -78,6 +79,29 @@ function emptyIdentity(): UserProfileIdentity {
   return { fullName: "", designation: "", companyName: "", about: "", socials: {} };
 }
 
+/**
+ * Resolves the user's authoritative preferred conversational display name.
+ * Respects explicit preferredDisplayName -> firstName -> email prefix -> fallback.
+ */
+export function resolvePreferredDisplayName(email?: string): string {
+  const normEmail = (email || "anjum.ony96@gmail.com").toLowerCase().trim();
+  try {
+    const mem = getUserMemory(normEmail);
+    if (mem?.profile?.preferredDisplayName?.trim()) {
+      return mem.profile.preferredDisplayName.trim();
+    }
+    if (mem?.profile?.fullName?.trim()) {
+      const parts = mem.profile.fullName.trim().split(/\s+/);
+      // For Arif Md. Anjum Ony, if explicit preferred name isn't set, prefer the common alias or first name
+      if (parts.length > 2 && parts.includes("Ony")) return "Ony";
+      return parts[0];
+    }
+  } catch {
+    // Fall back to email prefix
+  }
+  return normEmail.split("@")[0] || "Operator";
+}
+
 export interface UserMemory {
   email: string;
   profile: UserProfileIdentity;
@@ -87,6 +111,8 @@ export interface UserMemory {
   pastOverrides: string[];
   explicitRejections: string[];
   learnedObservations: string[];
+  /** Only explicitly approved voice notes. Never seeded or automatically learned. */
+  approvedVoiceMemory?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -183,6 +209,14 @@ function createDefaultMemory(email: string): UserMemory {
 
 /** Retrieves or initializes user memory for the given email address.
  *  Backfills `profile` for records written before that field existed. */
+/** Existing explicit settings only; never creates memory or imports seeded/learned observations. */
+export function readExplicitUserMemory(email: string): string {
+  if (isPublicPreviewMode()) return "";
+  const memory = getStore()[normalizeEmail(email)];
+  if (!memory) return "";
+  return JSON.stringify({ approvedVoiceMemory: memory.approvedVoiceMemory || [] }).slice(0, 6000);
+}
+
 export function getUserMemory(email: string): UserMemory {
   if (isPublicPreviewMode()) {
     return createDefaultMemory("operator@growforge.local");

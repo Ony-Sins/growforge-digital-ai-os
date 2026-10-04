@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
 import {
   createMcpServer,
   updateMcpServerDetails,
@@ -288,7 +288,7 @@ async function handleDisconnectByoMcp(req: Request) {
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
-  if (isPublicPreviewVisitor(gate.session)) {
+  if (isPublicPreviewVisitor(gate.session) || !isOwnerSession(gate.session)) {
     return NextResponse.json(emptyByoMcpResponse());
   }
   return handleListByoMcp();
@@ -306,6 +306,12 @@ export async function POST(req: Request) {
       { status: 403 }
     );
   }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json(
+      { ok: false, error: "Forbidden. Authoritative owner authorization required to connect an MCP server." },
+      { status: 403 }
+    );
+  }
   return handleConnectByoMcp(req);
 }
 
@@ -316,6 +322,12 @@ export async function DELETE(req: Request) {
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json(
       { ok: false, error: "Public preview is read-only. Sign in to remove a server." },
+      { status: 403 }
+    );
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json(
+      { ok: false, error: "Forbidden. Authoritative owner authorization required to disconnect an MCP server." },
       { status: 403 }
     );
   }

@@ -1,5 +1,8 @@
+import { buildRerunJob } from "@/lib/jobRerun";
+import { withInstructionContext, listInstructionExecutions, instructionKey, type InstructionReplayMode } from "@/lib/instructionSnapshots";
+import { canonicalDepartmentId, resolveRuntimeRoute, departmentDisplayName } from "@/lib/departmentTaxonomy";
 import { chatComplete, jobPrefersCloud } from "@/lib/llm";
-import { DEPARTMENTS, HQ, QA, getDepartment, loadInstructions, hashInstructions } from "@/lib/departments";
+import { CANONICAL_DEPARTMENTS as DEPARTMENTS, HQ, QA, getDepartment, loadInstructions } from "@/lib/departments";
 import { isResearchAvailable, researchQuestion, type ResearchFinding, type Source } from "@/lib/research";
 import { runToolLoop, getDefaultTools, type MediaItem } from "@/lib/tools";
 import { createApproval, getApproval, markTimedOut } from "@/lib/approvalStore";
@@ -62,6 +65,8 @@ function evidenceRules(): string {
 
 export interface Assignment {
   departmentId: string;
+  runtimeRouteId?: string;
+  stepId?: string;
   task: string;
   activity: string;
   vaultRecommendation?: VaultDispatchRecommendation;
@@ -79,7 +84,8 @@ export interface Dossier {
   verified: boolean;
 }
 
-export type Draft = { departmentId: string; name: string; output: string };
+export type Draft = { departmentId: string; stepId?: string; name: string; output: string };
+const assignmentStepId = (assignment: Assignment) => assignment.stepId ?? `dept:${assignment.departmentId}`;
 
 /** Formats job-scoped specialist blueprint context to enrich department instructions. */
 function formatBlueprintContext(rec: VaultDispatchRecommendation): string {
@@ -122,8 +128,25 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, index: nu
   return results;
 }
 
-async function ask(system: string, user: string, maxTokens: number): Promise<{ text: string; provider: string; usage: import("@/lib/usage").UsageRecord }> {
-  return withRetry(() => chatComplete(system, [{ role: "user", content: user }], { maxTokens, preferCloud: jobPrefersCloud() }));
+function executionContext(jobId: string, stepId: string, departmentId: string, phase = "draft") {
+  const job = getJob(jobId)!;
+  const generation = job.revisions.at(-1)?.id ?? job.id;
+  const existing = job.steps.find(step => step.id === stepId)?.instructionExecutions?.filter(record => record.phase === phase && record.generation === generation).at(-1)
+    ?? listInstructionExecutions(jobId).filter(record => record.stepId === stepId && record.phase === phase && record.generation === generation).at(-1);
+  // Crash/stage retries reuse captured instructions. Explicit revisions clear these pointers.
+  const originalBundles = job.originalInstructionBundles ?? (existing ? { [instructionKey(stepId, phase)]: existing.bundleRef } : undefined);
+  return {
+    jobId, stepId, phase, generation, departmentId, runtimeRouteId: job.steps.find(step => step.id === stepId)?.runtimeRouteId ?? resolveRuntimeRoute(departmentId),
+    replayMode: existing ? "original" as const : job.instructionReplayMode ?? "current" as const,
+    originalBundles,
+    onCaptured: (execution: import("@/lib/instructionSnapshots").InstructionExecution) => {
+      const current = getJob(jobId)?.steps.find(step => step.id === stepId);
+      if (current) updateStep(jobId, stepId, { instructionsHash: execution.instructionHash, instructionExecutions: [...(current.instructionExecutions ?? []), execution] });
+    },
+  };
+}
+async function ask(system: string, user: string, maxTokens: number, jobId: string, stepId: string, departmentId: string, phase = "draft"): Promise<{ text: string; provider: string; usage: import("@/lib/usage").UsageRecord }> {
+  return withInstructionContext(executionContext(jobId, stepId, departmentId, phase), () => withRetry(() => chatComplete(system, [{ role: "user", content: user }], { maxTokens, preferCloud: jobPrefersCloud() })));
 }
 
 function extractJson(text: string): unknown {
@@ -166,6 +189,8 @@ export function createAndStartJob(brief: string, createdBy?: string): Job {
   const firstLine = brief.split("\n").find((l) => l.trim())?.trim() ?? "New project";
   const job: Job = {
     id: `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    identitySchemaVersion: 2,
+    instructionReplayMode: "current",
     title: firstLine.length > 60 ? `${firstLine.slice(0, 57)}…` : firstLine,
     brief,
     status: "running",
@@ -178,10 +203,10 @@ export function createAndStartJob(brief: string, createdBy?: string): Job {
     createdBy: createdBy?.toLowerCase(),
     steps: [
       step({ id: "brief", kind: "brief", label: "Client Brief", activity: "Confirmed with you in chat", weight: 0, dependsOn: [], status: "done", percent: 100, output: brief }),
-      step({ id: "plan", kind: "plan", label: "GrowForge HQ", activity: "Queued", weight: WEIGHTS.plan, dependsOn: ["brief"] }),
-      step({ id: "research", kind: "research", label: "Live Research", activity: "Waiting for HQ's research questions", weight: WEIGHTS.research, dependsOn: ["plan"] }),
+      step({ id: "plan", kind: "plan", label: departmentDisplayName("hq"), activity: "Queued", weight: WEIGHTS.plan, dependsOn: ["brief"] }),
+      step({ id: "research", kind: "research", label: "Live Research", activity: `Waiting for ${departmentDisplayName("hq")} research questions`, weight: WEIGHTS.research, dependsOn: ["plan"] }),
       step({ id: "reconcile", kind: "reconcile", label: "Team Review", activity: "Waiting for department drafts", weight: WEIGHTS.reconcile, dependsOn: ["research"] }),
-      step({ id: "qa", kind: "qa", label: "Quality Assurance", activity: "Waiting for team review", weight: WEIGHTS.qa, dependsOn: ["reconcile"] }),
+      step({ id: "qa", kind: "qa", label: departmentDisplayName("qa"), activity: "Waiting for team review", weight: WEIGHTS.qa, dependsOn: ["reconcile"] }),
       step({ id: "final", kind: "final", label: "Final Plan", activity: "Waiting for QA sign-off", weight: WEIGHTS.final, dependsOn: ["qa"] }),
     ],
   };
@@ -200,8 +225,9 @@ export async function runPlanStage(job: Job): Promise<Plan> {
     logJobStateChange(getJob(job.id)!);
 
     const catalog = DEPARTMENTS.map((d) => `- ${d.id}: ${d.name} — ${d.summary}`).join("\n");
-    const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ planning a client engagement. Respond with ONLY a JSON object, no prose.`;
-    const user = `CONFIRMED CLIENT BRIEF:\n${currentBrief(job.id)}\n\nAVAILABLE DEPARTMENTS:\n${catalog}\n\nReturn JSON exactly in this shape — researchQuestions FIRST, it is required and must never be empty:
+    let system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are ${departmentDisplayName("hq")} planning a client engagement. Respond with ONLY a JSON object, no prose.`;
+    const user = `CONFIRMED CLIENT BRIEF:\n${currentBrief(job.id)}`;
+    system += `\n\nAVAILABLE DEPARTMENTS:\n${catalog}\n\nReturn JSON exactly in this shape — researchQuestions FIRST, it is required and must never be empty:
 {
   "researchQuestions": ["specific, Google-searchable question including the client's exact location, industry and current year"],
   "title": "short project title, max 60 characters",
@@ -211,18 +237,18 @@ export async function runPlanStage(job: Job): Promise<Plan> {
 }
 Rules:
 - researchQuestions is REQUIRED: write exactly 5 specific, Google-searchable questions, each naming the client's location and industry, covering: local demand/seasonality, the competitor landscape, typical customer pricing, advertising cost benchmarks (cost per lead/click) for this industry and location, and where customers search or licensing/regulatory requirements. Never return an empty array.
-- Assign only the departments this brief genuinely needs — judge it case by case, it could be as few as 2 or as many as all 8. Do not default to a habitual subset or leave a department out just because it's less commonly needed; if the brief has a real automation, workflow, or systems-integration need, assign AI Systems & Intelligent Automation; if it has real delivery/timeline/coordination complexity, assign Client Success & Program Management. Never pad with a department the brief doesn't need just to hit a number.`;
+- Assign only the departments this brief genuinely needs — judge it case by case, it could be as few as 2 or as many as all 8. Do not default to a habitual subset or leave a department out just because it's less commonly needed; if the brief has a real automation, workflow, or systems-integration need, assign ${departmentDisplayName("ai-automation")}; if it has real delivery/timeline/coordination complexity, assign ${departmentDisplayName("client-success")}. Never pad with a department the brief doesn't need just to hit a number.`;
 
-    const { text, provider, usage } = await ask(system, user, 2200);
+    const { text, provider, usage } = await ask(system, user, 2200, job.id, "plan", HQ.id);
     const parsed = extractJson(text) as Partial<Plan> | null;
 
     const seen = new Set<string>();
     let assignments = (Array.isArray(parsed?.assignments) ? parsed.assignments : [])
-      .filter((a): a is Assignment => !!a && typeof a.departmentId === "string" && !!getDepartment(a.departmentId))
+      .filter((a): a is Assignment => !!a && typeof a.departmentId === "string" && DEPARTMENTS.some((dept) => dept.id === a.departmentId))
       .filter((a) => (seen.has(a.departmentId) ? false : (seen.add(a.departmentId), true)))
       .slice(0, DEPARTMENTS.length);
     if (assignments.length === 0) {
-      assignments = ["marketing", "sales-bd", "meta-ads", "finance-ops"].map((id) => ({
+      assignments = ["brand_growth_marketing", "strategic_intelligence", "revenue_partnerships", "operations_finance"].map((id) => ({
         departmentId: id,
         task: `Contribute the ${getDepartment(id)!.name} section of the plan for this brief.`,
         activity: "Drafting department section",
@@ -267,6 +293,7 @@ Rules:
         kind: "department",
         label: getDepartment(a.departmentId)!.name,
         departmentId: a.departmentId,
+        runtimeRouteId: resolveRuntimeRoute(a.departmentId),
         activity: "Waiting for research",
         weight: WEIGHTS.departments / assignments.length,
         dependsOn: ["research"],
@@ -289,7 +316,6 @@ Rules:
       percent: 100,
       provider,
       usage: [usage],
-      instructionsHash: hashInstructions(HQ.file),
       activity: `Assigned ${assignments.length} departments`,
       finishedAt: now(),
       output: [
@@ -302,10 +328,10 @@ Rules:
     });
 
     logStrategicDecision({
-      title: `HQ Assigned ${assignments.length} Departments for "${plan.title}"`,
+      title: `${departmentDisplayName("hq")} assigned ${assignments.length} Departments for "${plan.title}"`,
       context: `Job ${job.id}`,
       decision: assignments.map((a) => `- **${getDepartment(a.departmentId)?.name}**: ${a.task}`).join("\n"),
-      department: "GrowForge HQ",
+      department: departmentDisplayName("hq"),
     });
     logJobStateChange(getJob(job.id)!);
 
@@ -316,7 +342,7 @@ Rules:
 export async function runResearchStage(job: Job, plan: Plan): Promise<Dossier> {
   return withDurableRetry(`research (${job.id})`, async () => {
     if (!isResearchAvailable() || plan.researchQuestions.length === 0) {
-      const reason = "HQ produced no research questions.";
+      const reason = `${departmentDisplayName("hq")} produced no research questions.`;
       updateStep(job.id, "research", {
         status: "skipped",
         activity: "Skipped — output will be marked UNVERIFIED",
@@ -338,10 +364,10 @@ export async function runResearchStage(job: Job, plan: Plan): Promise<Dossier> {
     const briefText = currentBrief(job.id);
     let completed = 0;
     let quotaError: string | null = null;
-    const findings = await mapLimit(questions, 2, async (q) => {
+    const findings = await mapLimit(questions, 2, async (q, index) => {
       try {
         if (quotaError) throw new Error(quotaError);
-        return await withRetry(() => researchQuestion(q, briefText));
+        return await withInstructionContext(executionContext(job.id, "research", "strategic_intelligence", `research-${index}`), () => withRetry(() => researchQuestion(q, briefText)));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (/exceeded your current quota|billing/i.test(msg)) quotaError = msg;
@@ -427,9 +453,9 @@ async function gatherWithTools(
   dept: { id: string; name: string; file: string },
   task: string
 ): Promise<{ text: string; media: MediaItem[] }> {
-  const result = await runToolLoop({
-    systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.`,
-    task: `${task}\n\nIf this assignment explicitly asks you to actually create, activate, run, or otherwise operate a real system (an n8n/Zapier workflow, a connector) — call that exact tool now, with real arguments. Do not write a proposal or description instead of calling it. If the research dossier above is missing something you need, call a research tool instead. Otherwise finish immediately with action "final" and text "no additional research needed".`,
+  const result = await withInstructionContext(executionContext(jobId, stepId, dept.id, "tool-gather"), async () => runToolLoop({
+    systemPrompt: `${loadInstructions(dept.file)}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, about to write your section of a client plan.\n\nIf this assignment explicitly asks you to actually create, activate, run, or otherwise operate a real system (an n8n/Zapier workflow, a connector) — call that exact tool now, with real arguments. Do not write a proposal or description instead of calling it. If the research dossier above is missing something you need, call a research tool instead. Otherwise finish immediately with action "final" and text "no additional research needed".`,
+    task,
     tools: await getDefaultTools(dept.id),
     maxSteps: 4,
     maxTokens: 900,
@@ -452,14 +478,14 @@ async function gatherWithTools(
         jobTitle: getJob(jobId)?.title ?? jobId,
         stepId,
         stepLabel,
-        departmentId: dept.name,
+        departmentId: canonicalDepartmentId(dept.id),
         question,
         options,
       });
       updateStep(jobId, stepId, { activity: `Waiting for operator input: ${question.slice(0, 45)}…` });
       return waitForConsultation(consultation.id);
     },
-  });
+  }));
 
   const media = result.calls.flatMap((c) => c.media ?? []);
   if (result.calls.length === 0) return { text: "", media: [] };
@@ -469,13 +495,13 @@ async function gatherWithTools(
 
 export async function runDepartmentsStage(jobId: string, assignments: Assignment[]): Promise<Draft[]> {
   return withDurableRetry(`departments (${jobId})`, async () => {
-    const results = await mapLimit(assignments, 3, async (a) => {
-      const dept = getDepartment(a.departmentId)!;
-      const stepId = `dept:${a.departmentId}`;
+    const results = await mapLimit<Assignment, Draft | null>(assignments, 3, async (a) => {
+      const dept = getDepartment(a.runtimeRouteId ?? a.departmentId)!;
+      const stepId = assignmentStepId(a);
       updateStep(jobId, stepId, { status: "active", percent: 10, activity: a.activity || "Drafting department section", startedAt: now() });
 
       const dossierText = getJob(jobId)!.dossierSnapshot?.text ?? "(no research dossier available)";
-      const gatherTask = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nYOUR ASSIGNMENT FROM HQ:\n${a.task}\n\nRESEARCH DOSSIER:\n${dossierText}`;
+      const gatherTask = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nYOUR ASSIGNMENT FROM ${departmentDisplayName("hq")}:\n${a.task}\n\nRESEARCH DOSSIER:\n${dossierText}`;
 
       let extraFindings = "";
       let deptMedia: MediaItem[] = [];
@@ -521,11 +547,12 @@ export async function runDepartmentsStage(jobId: string, assignments: Assignment
       }
 
       updateStep(jobId, stepId, { percent: 40, activity: "Drafting department section" });
-      const system = `${loadInstructions(dept.file)}${blueprintContext}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by GrowForge HQ. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${evidenceRules()}`;
-      const user = `${gatherTask}${extraFindings ? `\n\nADDITIONAL RESEARCH YOU GATHERED:\n${extraFindings}` : ""}\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
+      let system = `${loadInstructions(dept.file)}${blueprintContext}\n\n---\n\nYou are the ${dept.name} department agent of GrowForge Digital, contributing your department's section to a client plan coordinated by ${departmentDisplayName("hq")}. Stay inside your department's scope, and state what you need from other departments as "Needs from <Department>: ...".\n\n${evidenceRules()}`;
+      const user = `${gatherTask}${extraFindings ? `\n\nADDITIONAL RESEARCH YOU GATHERED:\n${extraFindings}` : ""}`;
+    system += `\n\nWrite your section in Markdown: a short summary paragraph, then concrete recommendations with numbers, timeframes and priorities, then "Dependencies" and "Open questions". Maximum ~700 words.`;
 
       try {
-        const { text, provider, usage } = await ask(system, user, 2200);
+        const { text, provider, usage } = await ask(system, user, 2200, jobId, stepId, a.departmentId);
         updateStep(jobId, stepId, {
           status: "done",
           percent: 100,
@@ -534,10 +561,9 @@ export async function runDepartmentsStage(jobId: string, assignments: Assignment
           media: deptMedia.length > 0 ? deptMedia : undefined,
           provider,
           usage: [usage],
-          instructionsHash: hashInstructions(dept.file),
           finishedAt: now(),
         });
-        return { departmentId: a.departmentId, name: dept.name, output: text };
+        return { departmentId: a.departmentId, stepId, name: dept.name, output: text };
       } catch (err) {
         updateStep(jobId, stepId, { status: "error", activity: "Failed", error: err instanceof Error ? err.message : String(err), finishedAt: now() });
         return null;
@@ -556,10 +582,9 @@ export async function runReconcileStage(jobId: string, drafts: Draft[], dossier:
   return withDurableRetry(`reconcile (${jobId})`, async () => {
     updateStep(jobId, "reconcile", { status: "active", percent: 20, activity: "Comparing drafts for conflicts and gaps", startedAt: now() });
 
-    const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ chairing the cross-department review of a client plan.\n\n${evidenceRules()}`;
-    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nRESEARCH SOURCE INDEX:\n${dossier.sources.map((s, i) => `[${i + 1}] ${s.title}`).join("\n") || "(no verified sources)"}
-
-Run the review as a record of the team discussion, in Markdown:
+    let system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are ${departmentDisplayName("hq")} chairing the cross-department review of a client plan.\n\n${evidenceRules()}`;
+    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nRESEARCH SOURCE INDEX:\n${dossier.sources.map((s, i) => `[${i + 1}] ${s.title}`).join("\n") || "(no verified sources)"}`;
+    system += `\n\nRun the review as a record of the team discussion, in Markdown:
 ### Conflicts
 For each place two departments disagree (budgets, pricing, timelines, channel priority, targeting): "**Dept A ↔ Dept B:** what each proposed → **Decision:** the resolution and why."
 ### Dependencies
@@ -569,13 +594,13 @@ What the brief needs that no department covered, and who should own it.
 ### Agreed direction
 5-8 bullet decisions the final plan must follow.`;
 
-    const { text, provider, usage } = await ask(system, user, 1800);
-    updateStep(jobId, "reconcile", { status: "done", percent: 100, activity: "Conflicts resolved", output: text, provider, usage: [usage], instructionsHash: hashInstructions(HQ.file), finishedAt: now() });
+    const { text, provider, usage } = await ask(system, user, 1800, jobId, "reconcile", HQ.id);
+    updateStep(jobId, "reconcile", { status: "done", percent: 100, activity: "Conflicts resolved", output: text, provider, usage: [usage], finishedAt: now() });
     logStrategicDecision({
-      title: `HQ Reconciled Team Direction for Job ${jobId}`,
+      title: `${departmentDisplayName("hq")} reconciled Team Direction for Job ${jobId}`,
       context: "Cross-Department Review",
       decision: text.slice(0, 800),
-      department: "GrowForge HQ",
+      department: departmentDisplayName("hq"),
     });
     logJobStateChange(getJob(jobId)!);
     return text;
@@ -587,10 +612,9 @@ export async function runQaStage(jobId: string, drafts: Draft[], review: string,
     updateStep(jobId, "qa", { status: "active", percent: 20, activity: "Checking every claim against sources", startedAt: now() });
     logJobStateChange(getJob(jobId)!);
 
-    const system = `${loadInstructions(QA.file)}\n\n---\n\nYou are GrowForge's independent QA reviewer. You do not rewrite the plan; you find what is wrong with it.\n\n${evidenceRules()}`;
-    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nHQ TEAM REVIEW:\n${review}
-
-Produce, in Markdown:
+    let system = `${loadInstructions(QA.file)}\n\n---\n\nYou are GrowForge's independent QA reviewer. You do not rewrite the plan; you find what is wrong with it.\n\n${evidenceRules()}`;
+    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\n${departmentDisplayName("hq")} TEAM REVIEW:\n${review}`;
+    system += `\n\nProduce, in Markdown:
 **Verdict:** PASS, PASS WITH FIXES, or NEEDS WORK
 ### Unsupported claims
 Every figure or factual claim that has no [n] citation and is not labeled "(estimate — verify)". Quote it.
@@ -600,14 +624,14 @@ Anything the client brief asked for that the plan does not answer.
 ### Required fixes
 Numbered, specific instructions for the final plan.`;
 
-    const { text, provider, usage } = await ask(system, user, 1500);
+    const { text, provider, usage } = await ask(system, user, 1500, jobId, "qa", QA.id);
     const verdict = /NEEDS WORK/i.test(text) ? "Needs work — fixes required" : /WITH FIXES/i.test(text) ? "Pass with fixes" : "Passed";
-    updateStep(jobId, "qa", { status: "done", percent: 100, activity: verdict, output: text, provider, usage: [usage], instructionsHash: hashInstructions(QA.file), finishedAt: now() });
+    updateStep(jobId, "qa", { status: "done", percent: 100, activity: verdict, output: text, provider, usage: [usage], finishedAt: now() });
     logStrategicDecision({
       title: `QA Audit Verdict: ${verdict} for Job ${jobId}`,
-      context: "Quality Assurance",
+      context: departmentDisplayName("qa"),
       decision: text.slice(0, 800),
-      department: "Quality Assurance",
+      department: departmentDisplayName("qa"),
     });
     logJobStateChange(getJob(jobId)!);
     return text;
@@ -619,13 +643,12 @@ export async function runFinalStage(jobId: string, drafts: Draft[], review: stri
     updateStep(jobId, "final", { status: "active", percent: 15, activity: "Writing the consolidated plan", startedAt: now() });
     logJobStateChange(getJob(jobId)!);
 
-    const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ consolidating departmental work into one client-ready plan.\n\n${evidenceRules()}`;
-    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nTEAM REVIEW DECISIONS:\n${review}\n\nQA REVIEW (apply every required fix):\n${qa}
-
-Write the complete final plan in Markdown. Follow the team review's agreed direction and apply every QA fix. Keep inline [n] citations exactly as numbered in the dossier. Do NOT write a sources list — it is appended automatically.
+    let system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are ${departmentDisplayName("hq")} consolidating departmental work into one client-ready plan.\n\n${evidenceRules()}`;
+    const user = `CLIENT BRIEF:\n${currentBrief(jobId)}\n\nRESEARCH DOSSIER:\n${dossier.text}\n\nDEPARTMENT DRAFTS:\n${draftsBlock(drafts)}\n\nTEAM REVIEW DECISIONS:\n${review}\n\nQA REVIEW (apply every required fix):\n${qa}`;
+    system += `\n\nWrite the complete final plan in Markdown. Follow the team review's agreed direction and apply every QA fix. Keep inline [n] citations exactly as numbered in the dossier. Do NOT write a sources list — it is appended automatically.
 Choose sections that fit this brief. For a business launch or growth brief, cover at minimum: Executive summary · Market snapshot · Ideal customers · Offer & pricing · Lead generation plan · Digital presence · Paid advertising plan with monthly budget · Budget summary table · 90-day action plan · KPIs & targets · Risks · Open questions for the client.`;
 
-    const { text, provider, usage } = await ask(system, user, 6000);
+    const { text, provider, usage } = await ask(system, user, 6000, jobId, "final", HQ.id);
 
     const banner = dossier.verified
       ? `> **Research:** ${dossier.sources.length} live sources`
@@ -647,7 +670,6 @@ Choose sections that fit this brief. For a business launch or growth brief, cove
       media: uniqueMedia.length > 0 ? uniqueMedia : undefined,
       provider,
       usage: [usage],
-      instructionsHash: hashInstructions(HQ.file),
       finishedAt: now(),
     });
     logJobStateChange(getJob(jobId)!);
@@ -673,16 +695,16 @@ export async function resumePipeline(jobId: string): Promise<void> {
   const dossier: Dossier =
     stepStatus("research") === "pending" ? await runResearchStage(getJob(jobId)!, plan) : getJob(jobId)!.dossierSnapshot!;
 
-  const pendingAssignments = plan.assignments.filter((a) => stepStatus(`dept:${a.departmentId}`) === "pending");
+  const pendingAssignments = plan.assignments.filter((a) => stepStatus(assignmentStepId(a)) === "pending");
   updateStep(jobId, "reconcile", { activity: `Waiting for ${plan.assignments.length} department drafts` });
   logJobStateChange(getJob(jobId)!);
   if (pendingAssignments.length > 0) await runDepartmentsStage(jobId, pendingAssignments);
 
   const reusedDrafts: Draft[] = getJob(jobId)!
     .steps.filter((s): s is JobStep & { departmentId: string } => s.kind === "department" && s.status === "done" && !!s.output)
-    .map((s) => ({ departmentId: s.departmentId, name: getDepartment(s.departmentId)!.name, output: s.output! }));
+    .map((s) => ({ departmentId: s.departmentId, stepId: s.id, name: getDepartment(s.departmentId)!.name, output: s.output! }));
   const drafts = reusedDrafts;
-  const missingDrafts = plan.assignments.filter((assignment) => !drafts.some((draft) => draft.departmentId === assignment.departmentId));
+  const missingDrafts = plan.assignments.filter((assignment) => !drafts.some((draft) => draft.stepId === assignmentStepId(assignment)));
   if (missingDrafts.length > 0) {
     throw new Error(`Department execution failed: ${missingDrafts.map((assignment) => getDepartment(assignment.departmentId)?.name ?? assignment.departmentId).join(", ")} did not produce a draft.`);
   }
@@ -734,12 +756,13 @@ export async function reviseJob(jobId: string, message: string): Promise<Job> {
 
   const deptSteps = job.steps.filter((s) => s.kind === "department");
   const catalog = deptSteps.map((s) => `- ${s.id}: ${s.label}${s.output ? ` — current draft:\n${s.output.slice(0, 600)}` : ""}`).join("\n\n");
-  const system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are GrowForge HQ deciding the blast radius of a client-requested change to an already-completed plan. Respond with ONLY a JSON object, no prose.`;
-  const user = `ORIGINAL BRIEF:\n${job.brief}\n\nCLIENT'S REQUESTED CHANGE:\n${message}\n\nEXISTING DEPARTMENT WORK:\n${catalog}\n\nDecide which existing department drafts this change actually invalidates versus which stay valid as-is. Keep the blast radius as SMALL as possible — every redo costs time and money:
+  let system = `${loadInstructions(HQ.file)}\n\n---\n\nYou are ${departmentDisplayName("hq")} deciding the blast radius of a client-requested change to an already-completed plan. Respond with ONLY a JSON object, no prose.`;
+  const user = `ORIGINAL BRIEF:\n${job.brief}\n\nCLIENT'S REQUESTED CHANGE:\n${message}\n\nEXISTING DEPARTMENT WORK:\n${catalog}\n\n`;
+  system += `\n\nDecide which existing department drafts this change actually invalidates versus which stay valid as-is. Keep the blast radius as SMALL as possible — every redo costs time and money:
 - Redo a department only if its concrete recommendations would materially change. Read its current draft to judge.
-- Budget changes usually affect Finance & Operations and the paid-advertising departments only.
-- Ad-channel or targeting changes usually affect Growth & Demand and Marketing & Brand Strategy only.
-- Product Architecture & UX, Web Development & Engineering, and AI Systems & Intelligent Automation rarely change for budget, channel or messaging changes.
+- Budget changes usually affect ${departmentDisplayName("finance-ops")} and the paid-advertising departments only.
+- Ad-channel or targeting changes usually affect ${departmentDisplayName("marketing")} and its Demand Generation / Paid Media & Performance branches only.
+- ${departmentDisplayName("web-design")}, ${departmentDisplayName("web-dev")}, and ${departmentDisplayName("ai-automation")} rarely change for budget, channel or messaging changes.
 - The team review, QA and final plan are always regenerated automatically — do not list them.
 Redo research only if the change shifts location, industry, or target market — never for budget, tone or channel tweaks.
 Return JSON exactly in this shape:
@@ -749,7 +772,7 @@ Return JSON exactly in this shape:
   "briefAddendum": "one paragraph merging the change into the brief for future reference"
 }`;
 
-  const { text } = await ask(system, user, 1200);
+  const { text } = await ask(system, user, 1200, jobId, "reconcile", HQ.id, "revision-routing");
   const parsed = extractJson(text) as { redoResearch?: boolean; redoDepartmentIds?: string[]; briefAddendum?: string } | null;
 
   const redoResearch = Boolean(parsed?.redoResearch);
@@ -766,6 +789,7 @@ Return JSON exactly in this shape:
 
   const addendum = typeof parsed?.briefAddendum === "string" && parsed.briefAddendum.trim() ? parsed.briefAddendum.trim() : message;
   const reset = resetStepsForRedo(jobId, [...idsToReset]);
+  updateJob(jobId, { instructionReplayMode: "current", originalInstructionBundles: undefined });
   addLiveNote(jobId, addendum);
   addRevisionEntry(jobId, { message, effect: "reran", redoneSteps: reset });
 
@@ -773,6 +797,17 @@ Return JSON exactly in this shape:
   dispatchDurableJob(jobId, resumePipeline);
 
   return getJob(jobId)!;
+}
+
+/** Reruns create a new record. Original mode preserves the stored plan checkpoint
+ * and reruns its research/department/review/QA/final stages; current mode replans. */
+export function rerunJob(jobId: string, mode: InstructionReplayMode): Job {
+  const source = getJob(jobId);
+  if (!source) throw new Error("Job not found.");
+  const job = buildRerunJob(source, mode);
+  saveJob(job);
+  dispatchDurableJob(job.id, resumePipeline);
+  return job;
 }
 
 // Automatically recover any interrupted jobs upon module initial load

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
-import { createConnector, listConnectors, type AuthMode } from "@/lib/connectorStore";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
+import { createConnector, listConnectors, sanitizeConnector, type AuthMode } from "@/lib/connectorStore";
 
 async function requireAuth() {
   const session = await getSession();
@@ -11,7 +11,10 @@ async function requireAuth() {
 export async function GET() {
   const gate = await requireAuth();
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
-  const connectors = isPublicPreviewVisitor(gate.session) ? [] : listConnectors();
+  // Public preview visitors and non-owner beta/employee sessions must NOT
+  // receive owner-global connector records. Only authoritative owner sessions
+  // may read owner-global connectors.
+  const connectors = isOwnerSession(gate.session) ? listConnectors() : [];
   return NextResponse.json({ connectors });
 }
 
@@ -33,6 +36,9 @@ export async function POST(req: Request) {
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   if (isPublicPreviewVisitor(gate.session)) {
     return NextResponse.json({ error: "Public preview is read-only. Sign in to add a connector." }, { status: 403 });
+  }
+  if (!isOwnerSession(gate.session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to add a connector." }, { status: 403 });
   }
 
   let body: CreateBody;
@@ -74,7 +80,7 @@ export async function POST(req: Request) {
       authHeaderName: body.authHeaderName?.trim(),
       secretValue: body.secretValue?.trim(),
     });
-    return NextResponse.json({ connector });
+    return NextResponse.json({ connector: sanitizeConnector(connector) });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Couldn't validate this URL." },

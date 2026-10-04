@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import { getSession, isPublicPreviewVisitor } from "@/lib/session";
-import { deleteConnector, getConnector, updateConnector, type CreateConnectorInput } from "@/lib/connectorStore";
+import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
+import { deleteConnector, getConnector, sanitizeConnector, updateConnector, type CreateConnectorInput } from "@/lib/connectorStore";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (isPublicPreviewVisitor(session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to delete a connector." }, { status: 403 });
   }
 
   const { id } = await params;
@@ -19,6 +22,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session?.user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (isPublicPreviewVisitor(session)) {
     return NextResponse.json({ error: "Public preview is read-only." }, { status: 403 });
+  }
+  if (!isOwnerSession(session)) {
+    return NextResponse.json({ error: "Forbidden. Authoritative owner authorization required to modify a connector." }, { status: 403 });
   }
 
   const { id } = await params;
@@ -33,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   try {
     const connector = await updateConnector(id, body);
-    return NextResponse.json({ connector });
+    return NextResponse.json({ connector: connector ? sanitizeConnector(connector) : undefined });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to update connector." },

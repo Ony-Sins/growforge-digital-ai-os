@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isPublicPreviewMode } from "@/lib/session";
 import { setSecret, getSecretForServerUse, removeSecret, hasSecret } from "@/lib/serverVault";
-import { DEPARTMENTS } from "@/lib/departments";
+import { departmentHasPermission, validateDepartmentPermissions } from "@/lib/departmentTaxonomy";
 import type { BrainLobe } from "@/lib/telemetryStore";
 
 export interface DetectedMcpTool {
@@ -155,10 +155,8 @@ export function listMcpServersByOrigin(origin: McpServerDef["origin"]): McpServe
  *  the office.config.json-style pattern this was inspired by (own
  *  implementation, not their code). */
 export function mcpServersForDepartment(departmentId: string): McpServerDef[] {
-  return getStore().filter((s) => s.allowedDepartments.length === 0 || s.allowedDepartments.includes(departmentId));
+  return getStore().filter((s) => departmentHasPermission(s.allowedDepartments, departmentId));
 }
-
-const KNOWN_DEPARTMENT_IDS = new Set(DEPARTMENTS.map((d) => d.id));
 
 export async function createMcpServer(input: CreateMcpServerInput): Promise<McpServerDef> {
   const name = input.name.trim();
@@ -179,7 +177,7 @@ export async function createMcpServer(input: CreateMcpServerInput): Promise<McpS
     }
   }
 
-  const allowedDepartments = (input.allowedDepartments ?? []).filter((d) => KNOWN_DEPARTMENT_IDS.has(d));
+  const allowedDepartments = validateDepartmentPermissions(input.allowedDepartments ?? []);
 
   const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "mcp"}-${Date.now().toString(36)}`;
   const def: McpServerDef = {
@@ -238,7 +236,7 @@ export function updateMcpServerDepartments(id: string, allowedDepartments: strin
   const store = getStore();
   const def = store.find((s) => s.id === id);
   if (!def) return undefined;
-  def.allowedDepartments = allowedDepartments.filter((d) => KNOWN_DEPARTMENT_IDS.has(d));
+  def.allowedDepartments = validateDepartmentPermissions(allowedDepartments);
   persist(store);
   return def;
 }
@@ -251,14 +249,14 @@ export function updateMcpServerDetails(
   const def = store.find((s) => s.id === id);
   if (!def) return undefined;
 
+  // Validate before mutating any field, so a rejected grant update is atomic.
+  const nextAllowed = Array.isArray(patch.allowedDepartments) ? validateDepartmentPermissions(patch.allowedDepartments) : undefined;
   if (patch.name !== undefined && patch.name.trim()) def.name = patch.name.trim();
   if (patch.url !== undefined) def.url = patch.url.trim() || undefined;
   if (patch.command !== undefined) def.command = patch.command.trim() || undefined;
   if (patch.args !== undefined) def.args = patch.args;
   if (patch.authHeader !== undefined) def.authHeader = patch.authHeader.trim() || undefined;
-  if (Array.isArray(patch.allowedDepartments)) {
-    def.allowedDepartments = patch.allowedDepartments.filter((d) => KNOWN_DEPARTMENT_IDS.has(d));
-  }
+  if (nextAllowed) def.allowedDepartments = nextAllowed;
   if (patch.detectedTools !== undefined) def.detectedTools = patch.detectedTools;
   if (patch.targetLobe !== undefined) def.targetLobe = patch.targetLobe;
   if (patch.status !== undefined) {
