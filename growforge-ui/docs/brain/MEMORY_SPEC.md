@@ -1,6 +1,6 @@
 # GrowForge Digital — User Memory & Learning Engine Specification
 
-> **Auto-Generated:** 2026-09-19T23:47:38.885Z  
+> **Auto-Generated:** 2026-10-01T09:50:43.267Z  
 > **Engine File:** `src/lib/userMemory.ts`  
 
 ## 1. Data Schema (`data/user_memories.json`)

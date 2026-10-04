@@ -4,7 +4,7 @@ DOCUMENT STATUS
 AUTHORITATIVE
 
 LAST UPDATED
-2026-08-30
+2026-10-01 (taxonomy amendment; existing operating and approval policy retained)
 
 ==================================================
 1. COMPANY IDENTITY
@@ -65,47 +65,37 @@ operating leverage rather than replace CEO authority.
 4. AI ORGANIZATION
 ==================================================
 
-GrowForge HQ:
-Executive coordination, strategy, orchestration,
-prioritization and quality control.
+Taxonomy amendment approved by the user on 2026-10-01. Eight departments and two oversight entities. Organizational scope does not establish installed capability or execution authority. Canonical registry: growforge-ui/src/lib/departmentTaxonomy.ts.
 
-Marketing:
-Marketing strategy, positioning, content strategy,
-market research, brand and campaign strategy.
+Strategic Intelligence & Planning [canonical ID: strategic_intelligence]
+Market and competitive intelligence, business strategy, research and strategic planning.
 
-Meta Ads:
-Meta advertising strategy, campaign architecture,
-audience strategy, creative strategy, copy, budgeting,
-performance analysis, optimization and policy-aware execution.
+Brand & Growth Marketing [canonical ID: brand_growth_marketing]
+Brand strategy, content and organic growth, demand generation, paid media and performance (Meta Ads and Google Ads), conversion and lifecycle. Demand Generation and Meta Ads are branches/capabilities, not peer departments.
 
-Sales & Business Development:
-ICP, prospecting, lead qualification, outreach,
-proposals, objections and closing.
+Revenue & Partnerships [canonical ID: revenue_partnerships]
+Prospecting, outbound, sales pipeline and partnerships.
 
-Client Success / Project Management:
-Client relationships, requirements, project coordination,
-deadlines, deliverables, communication, risks and client history.
+Client Delivery & Success [canonical ID: client_delivery_success]
+Client success, project delivery and client communication.
 
-Web Design / UX:
-Website strategy, information architecture, UX, UI,
-visual direction, conversion optimization, wireframes
-and design systems.
+Product Design & UX [canonical ID: product_design_ux]
+Product and UX strategy, interface design and experience polish.
 
-Web Development:
-Website implementation, frontend, backend, APIs,
-integrations, deployment, debugging and technical implementation.
+Web & Platform Engineering [canonical ID: web_platform_engineering]
+Frontend, backend and APIs, platform and deployment.
 
-AI Systems / Automation:
-AI systems, AI agents, AI integrations, MCP and
-automation architecture.
+AI Systems & Automation [canonical ID: ai_systems_automation]
+Agent architecture, automation engineering, model/provider systems and knowledge/memory systems.
 
-Finance & Operations:
-Pricing, revenue, expenses, profitability, operational
-processes, SOPs, capacity and business controls.
+Operations & Finance [canonical ID: operations_finance]
+Financial and business operations and commercial administration.
 
-Quality Assurance:
-Independent verification of outputs, websites, campaigns,
-systems, documents and deliverables.
+Executive Orchestration [canonical ID: executive_orchestration]
+Mission decomposition, routing, dependencies, model/tool selection, approvals and result reconciliation.
+
+Quality, Risk & Governance [canonical ID: quality_risk_governance]
+Factual/evidence verification, policy compliance, contradiction and regression checking, risk escalation and approval gates.
 
 ==================================================
 5. ORGANIZATIONAL PRINCIPLES

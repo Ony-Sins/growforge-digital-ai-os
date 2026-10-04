@@ -1,4 +1,66 @@
+## Active acceptance tracker (2026-10-04 15:53 +06:00, Codex)
+
+This checklist tracks current acceptance work alongside the locked phased plan. Check or strike an item only after evidence supports completion; implementation and human visual approval remain separate.
+
+- [x] ~~Repair mobile Overview CORE/counter overlap and prevent scroll content crossing the header/composer.~~ Content flows vertically inside a bounded scroll area; checked at 366x671, 390x844 and 900x900, with desktop 1440x900 comparison. Local only.
+- [x] ~~Run connected Dive/NORA/Systems and preview/read-isolation regressions.~~ 17 focused suites and TypeScript pass; no provider calls or deployment.
+- [ ] Human review of corrected phone layout, including short-screen scrolling and keyboard-open behavior.
+- [ ] Full cross-surface responsive acceptance: CORE, Explore, every Dive lens and inspector, Systems forms, NORA expanded/settings, keyboard and reduced motion. Current eight-lens phone navigation/overflow smoke check is not full acceptance.
+- [ ] Full repository/history/client-bundle/API/log/upload/deployment privacy audit. Passing route fixtures does not establish this gate.
+- [ ] Independent user/workspace persistence for profiles, credentials, settings, jobs, attachments and logs; real two-account negative isolation and admin-denial tests. Existing owner-global stores cannot satisfy independent full-product tester workspaces.
+- [ ] Approved release validation and separately authorized GitHub/hosting/beta sync. No release readiness inferred from a visual fix.
+
+> **Current checkpoint — Systems control plane, 2026-10-03 05:52 +0600, Codex:** All eight Dive lenses remain structurally approved/frozen; Antigravity consolidated polish is user-confirmed finished. Systems now presents four real-data areas with progressive discovery, adaptive inspection, existing configuration/test cards and shared NORA/navigation safe zones. User additionally authorized consistent dark-glass treatment across every detailed card. Architecture implemented locally; STOP for user review before Antigravity Systems finish and separately authorized beta sync/UI lock. No new backend systems or deployments. See docs/SYSTEMS_CONTROL_PLANE.md and root state.md. Older checkpoint restrictions below are historical.
+
+> **Current checkpoint — all eight Dive lenses structurally approved, consolidated audit 2026-10-03:** Overview, Missions, Departments, Agents, Workflows, Context, Tools and Intelligence are frozen structurally. Read-first audit and bounded state/truth/navigation corrections completed; findings and verification in docs/DIVE_CONSOLIDATED_AUDIT.md. Next is Antigravity consolidated visual/responsive polish, separately authorized beta sync, then UI lock. No new Dive features or post-UI systems.
+
+> **Current checkpoint — Dive Layer 8 Intelligence, 2026-10-02:** Layer 7 Tools is user-approved and frozen. Intelligence is the final authorized Dive lens, a bounded evidence interface over existing protected job/usage/probe reads. Recorded values, derived formulas and unknown data remain distinct; static cost estimates, rankings and synthetic health are excluded. Trace/Replay, Scenario Lab, Model Bench and Context Integrity readiness/gaps are documented in docs/DIVE_INTELLIGENCE_AUDIT.md; unsupported features are not implemented. Stop for Intelligence visual review, then consolidated cross-lens audit, Antigravity visual/responsive polish and beta synchronization before UI lock. No new Dive features or post-UI systems in this pass.
+
 # GrowForge Digital AI OS — Roadmap
+
+## 2026-10-02 authoritative local implementation checkpoint — Dive Layer 7 Tools
+
+Repository reconciliation confirms Context and Tools already exist and are integrated into Dive. Current test-dive-context and test-dive-tools pass; TypeScript passes. Tools contains the distinction between configured credentials and verified authentication, unprobed versus unreachable resources, registry lifecycle versus runtime state, and runtime-resolved model selection. Preserve current files. Existing shared-shell visibility controls and NORA payload integration remain. Do not recreate Context or start Intelligence. No new visual acceptance is inferred from test success. The separately authorized visible Tools-to-NORA context gap is now fixed using existing toolRecord state and chip/marker logic. Presentation/Tools/NORA regression checks, TypeScript, focused lint and build pass; three Layer 7 unused imports removed. Stop after the bounded fix; no Intelligence, commit, push or deployment.
+
+## 2026-10-02 superseded session checkpoint — Dive Layer 6 Context
+
+Layer 5 Workflows is approved and frozen. Context only is authorized: protected current-user memory/profile field inspection, permitted source documents and actual structural links; no developer handoff files, invented Knowledge/Decisions/Archive/loaded-context inventory or full Context Router. Existing profile defaults and missing per-field origins/dates remain explicit. Department source filtering and selected-record NORA scope are independent. Preserve all prior lenses, shared-shell Focus/hide behavior and beta/auth/security. Stop for Layer 6 review; Tools and Intelligence remain unauthorized. No commit, push or deployment.
+
+## 2026-10-02 approved and frozen checkpoint — Dive Layer 5 Workflows
+
+Layer 4 Agents and shared-shell visibility are approved and frozen. Layer 5 is implemented locally for visual review only: one code-backed projection of the existing internal pipeline, stable source/step/structural relationship IDs, static procedure inspection, canonical conditional department filter and selected-workflow/step NORA context. Clearing the filter preserves inspection; dismissal or leaving clears object scope. No independently persisted workflow registry is claimed. Application skill/SOP, saved external automation, schedule and agent-to-workflow read records are not exposed; unsupported groups are omitted. Mission executions remain in Missions. Checks and production build pass. Stop for Layer 5 review; Context, Tools and Intelligence are not authorized. No commit, push or deployment.
+## 2026-10-02 approved and frozen checkpoint — Shared shell visibility
+
+Layer 4 Agents is structurally approved. Before Workflows, implement presentation-only independent NORA Dock and Explore System Index collapse/restore, plus Focus view that temporarily hides both and restores the previous visibility preferences on exit. Keep one mounted composer, drafts/history/current object context, selected entity/camera, search/category and department filter intact. Device-local panel preferences only; transient Focus mode is not persisted. Critical operational content, approvals and global navigation stay reachable. No backend/security/data changes. Shared shell is approved and frozen. Layer 5 Workflows only is now authorized.
+
+## 2026-10-02 deferred post-UI — Owner Security & Usage Console
+
+Record an owner-only console for session activity, last seen/duration, device/browser, approximate IP-derived geography, authenticated actions, file/export/download events, access denials/security signals and auditable event history. Per-session watermarking of sensitive beta views is a future leak-deterrence option. Browser code cannot reliably detect every operating-system screenshot. Disclose security/usage telemetry appropriately; do not implement covert surveillance. These are deferred requirements, not claims of current instrumentation, and require their own later architecture/access/privacy review. No security telemetry, watermarking, backend or beta changes in the shell-visibility task.
+## 2026-10-02 historical implementation checkpoint — Dive Layer 4 Agents
+
+Layer 3 and latest Antigravity polish are approved and frozen. User confirmed beta synchronization completed separately. Local Layer 4 Agents implementation and checks are complete; visual review is pending. It uses existing records and read paths, distinguishing definitions, recorded runtime runs, historical results and orchestration. Department filter and selected-object NORA scope are independent. Stop for Layer 4 structural/visual review; Workflows and later layers remain unauthorized. No commit, push or deployment.
+
+## 2026-10-02 historical bounded UI checkpoint — Dive Layer 3 Departments
+
+User explicitly authorized Departments after Explore closeout. Implemented eight canonical operating departments with separate oversight, source-backed progressive inspection and existing single NORA context inside the locked Dive shell. No later-layer behavior or backend changes. Implementation and focused checks are complete; stop for Layer 3 visual review. Earlier Layer 2-only authorization statements below are historical checkpoints. Explore remains frozen; Layer 4 is not authorized. No commit, push or deploy.
+
+## 2026-10-02 requested capability — NORA chat/voice control and personalized wake name
+
+User requires one shared assistant to provide chat/voice equivalents of supported manual AI OS actions. First bounded slice: resolve a requested/relevant Explore record from actual source-backed graph data and canonical department aliases, focus its existing node and open its existing inspector. Ambiguous relevance must present real candidates rather than invent records. Plain-English synthesis is governed by the user-controlled capability "Allow NORA to analyze and summarize selected records". Once enabled, NORA may naturally analyze and summarize opened/located records within existing access permissions without a confirmation dialog for every read-only summary; disabling it stops that automatic analysis. Summaries should explain important evidence and implications rather than read the source verbatim. Consequential or mutating actions retain the existing approval/permission architecture. Both input modes use the same validated action dispatch, real IDs, current session permissions and existing mutation/approval guards. Extend action coverage in explicit increments; do not claim complete voice parity until all supported manual actions are audited and verified. Wake-by-user-chosen-assistant-name requires explicit opt-in microphone access, visible listening state, immediate disable control, local wake detection where feasible, browser/lifecycle compatibility verification and no silent continuous cloud transcription. Current code has user-initiated single-utterance browser speech recognition and existing graph focus/reader hooks; conversational navigation, full voice action parity and wake-name detection are not implemented by this documentation entry. This requirement does not authorize a UI redesign, bypass approvals, or start Dive Layer 3. User explicitly reaffirmed on 2026-10-02 that the current checkpoint is Explore UI cleanup: record this capability only and DO NOT implement the broader voice/action/wake system during this UI phase. Keep the current UI review sequence intact; implementation scheduling remains a distinct capability checkpoint.
+
+## 2026-10-02 deferred priority — NORA attachments after full AI OS UI completion
+
+User explicitly deferred attachment implementation until the entire AI OS UI is finished; revisit immediately after that UI checkpoint. This does not authorize Layer 3 or change provider/spending policy. Planned sequence: (1) durable private originals and conversation attachment IDs, truthful extraction/preview states, restrained in-place file viewer; (2) real image/document model input and attachment context retained across follow-up questions; (3) audio/video playback and capability-aware analysis with timestamp references and disclosed sampling/transcription fallbacks. Preserve single cross-surface NORA and existing glass/progressive-disclosure conventions. Separate preview availability from model-analysis availability. Respect owner/BYOK isolation and the current zero-spend/cloud-vision restriction until explicitly changed.
+
+Read-only audit found filename/type-only chat history, no original-file persistence in the upload path, text-only attachment context passed to NORA, UI marking returned extraction failures done, local Ollama-only image preprocessing, text-only PDF extraction and no audio/video analysis pipeline. Existing filename-only messages cannot recover originals through that path; require truthful unavailable/reattach handling. These are deferred findings, not implemented capabilities.
+
+## 2026-10-01 current bounded UI checkpoint — Dive Layer 2
+
+User approved the exact Layer 1 visual baseline and explicitly authorized Mission / Execution as a lens inside the same Dive environment. Layer 2 now reuses protected Core/job endpoints, incumbent creation/revision/plan-approval contracts and the existing tool-approval reviewer. The old mission scene/model files remain preserved, but their planet/corridor presentation is not mounted. Active non-test execution is the default; history/creation and the new Layer 2 List/Timeline presentation modes require explicit controls; execution depth requires selection. No new agents, capabilities, stored lifecycle schema or invented business metadata. Stop here for visual review; Layer 3 remains unauthorized. No commit, push or deploy.
+
+## 2026-10-01 historical bounded UI checkpoint — Dive Layer 1
+
+The user authorized Command Overview only after the existing Explore → Dive transition. This is a presentation checkpoint, not completion of the broader capability or release gates below. Missions leave global navigation and remain available as a Dive lens; compatibility routes/data/runtime stay. Deliver calm recorded status, an abstract operational map, anchored contextual inspection, lens previews and existing NORA access. Stop for visual review before implementing Mission/Execution Layer 2. Do not commit, push or deploy. Repository lint and the separately delivered Dive backend's access/truthfulness gaps remain open; the overview uses established protected Core/agent snapshots instead of that endpoint.
 
 ## 2026-09-19 Roadmap Amendment — Phase 3.6 Now Next
 
@@ -78,7 +140,7 @@ Every phase, before being marked complete, must pass the **standing verification
 **Goal:** The system does more real work, not just more honest reporting of the work it already does.
 
 **Scope:**
-1. **n8n automation department, real execution.** Today, AI Systems/Automation can *propose* n8n workflow templates (`n8n_template_ingestor`) inside a department draft. This phase turns that into real execution: an approved workflow can actually be created/activated in n8n, gated behind the existing approval mechanism (`approvalStore.ts` / `ApprovalBanner`) — never auto-executed without a human saying yes.
+1. **n8n automation department, real execution.** Today, AI Systems & Automation can *propose* n8n workflow templates (`n8n_template_ingestor`) inside a department draft. This phase turns that into real execution: an approved workflow can actually be created/activated in n8n, gated behind the existing approval mechanism (`approvalStore.ts` / `ApprovalBanner`) — never auto-executed without a human saying yes.
 2. **Decide on OpenRouter credits.** Free-tier limits are hit on nearly every real job right now. This is a cost/quality decision for you, not a code change — but it directly affects how good Phase 1's output looks, so make the call before or during this phase, not after.
 3. **Re-run the backtest suite after n8n execution lands**, using a fixture brief that specifically exercises automation, to catch anything Phase 0's fixtures wouldn't.
 
@@ -106,7 +168,7 @@ Every phase, before being marked complete, must pass the **standing verification
 
 **Decisions:**
 1. **Vault library (c):** keep it as a manually-browsed reference library, no in-app browsing UI. It's a generic, non-GrowForge persona pack (academic/engineering/design roles) with nothing wired into the app — building a real browser for it would be real effort spent on content that doesn't serve GrowForge's actual 8-department business. The "coming soon" promise in the Vault Library placeholder (`Workspace.tsx`) has been corrected to say this plainly instead.
-2. **7-agent roster (stays lightweight, none promoted):** confirmed this phase that `agentStore.ts`'s `runAgent` has zero tool access — it's a single `chatComplete` call, incapable of taking any real action regardless of prompting. The roster stays as-is for quick one-off text/analysis tasks; none of the 7 are promoted into full departments, since their functions (frontend dev, outbound sales, design critique) already overlap with the real departments (Web Development & Engineering, Revenue & Business Development, Digital Design & UX) — promoting would just create redundant pairs. The "Agents Orchestrator" entry's description was corrected (it previously claimed to "orchestrate the entire development workflow, coordinating other agents," which it cannot do) — this also feeds the chat router's own understanding of what it can dispatch to, reinforcing the Phase 1 fix that steers real-action requests to `launch` instead.
+2. **7-agent roster (stays lightweight, none promoted):** confirmed this phase that `agentStore.ts`'s `runAgent` has zero tool access — it's a single `chatComplete` call, incapable of taking any real action regardless of prompting. The roster stays as-is for quick one-off text/analysis tasks; none of the 7 are promoted into full departments, since their functions (frontend dev, outbound sales, design critique) already overlap with the real departments (Web & Platform Engineering, Revenue & Business Development, Digital Design & UX) — promoting would just create redundant pairs. The "Agents Orchestrator" entry's description was corrected (it previously claimed to "orchestrate the entire development workflow, coordinating other agents," which it cannot do) — this also feeds the chat router's own understanding of what it can dispatch to, reinforcing the Phase 1 fix that steers real-action requests to `launch` instead.
 3. **Department instruction files (spot-fixed, not fully rewritten):** found and fixed a concrete factual defect — `GrowForge_HQ_Agent_System.md` told HQ to route work across "the nine specialist departments" twice; there are only 8. Fixed both references. A deeper qualitative pass (does each department's strategic voice/tone still match what you want) is a business judgment call, not a code-audit task — left for you to do at your own pace rather than silently rewritten.
 
 ---
@@ -122,7 +184,7 @@ Every phase, before being marked complete, must pass the **standing verification
 - Terminal/Execution Logs removed from everyday sidebar nav (still reachable via Admin Drawer for debugging) — a business user never needs a terminal.
 - "Agent Network Canvas" removed (redundant duplicate of AI Brain's own idea). Developer-only "Quick Admin Actions" (raw JSON API links) removed from the admin console.
 - "Akinator" terminology removed everywhere. "Activity" renamed "Real-time Activity."
-- Department names given a professional pass (e.g. "Sales & BD" → "Revenue & Business Development").
+- Department names given a professional pass (e.g. "Revenue & Partnerships" → "Revenue & Business Development").
 - A real "working" indicator (a small spinning gear badge, not a full icon swap) added to Live Projects nodes while a step is active.
 - **HITL duplication consolidated.** `ConsultationBanner` deleted — it was a strict functional subset of `HITLDrawer` (no redirect, no payload editing, no timestamps). `HITLDrawer` is now the single surface.
 - **Settings surfaces consolidated.** The standalone `/settings` page was never actually reachable (zero links to it anywhere in the app, no Sidebar/Header chrome of its own). Its one genuinely unique, working piece — the n8n host/API-key config card with a live health check — was ported into `IntegrationsHub.tsx` (the real, nav-reachable Settings section), and `/settings` now redirects home.
@@ -352,3 +414,49 @@ Verified live via Playwright throughout: header renders correctly with a real up
 - 2026-09-18 — **Standing workflow established, no phase change:** per explicit user direction, commit + push to `origin/master` after every completed task from now on, not held until asked. First real commit (`fbfa74e`) landed this session's entire accumulated work; a second (`31128bd`) fixed four real issues an automated security review found in the first (credential exposure via full-`process.env` spread into MCP child processes, spoofable-Content-Type image uploads, unbounded pre-size-check file buffering) — see `growforge-ui/STATE.md` §7-8 for full detail on both the Vercel deployment diagnosis and the security fixes. Also fixed directly via the Vercel API: Vercel Authentication (SSO) was blocking every `*.vercel.app` URL. One real remaining blocker needs a manual dashboard step (Root Directory not set to `growforge-ui`) that no available API tool could reach — documented for the user to apply.
 - 2026-09-18 — **Locked.** Phase 3.5 item 3 (real connector brand logos) done same session — see item 3 above for which of the 13 catalog entries got a real mark and why Apollo.io deliberately didn't. Verified live, `tsc`/`eslint` clean.
 - 2026-09-18 — **Locked.** The Vercel Root Directory fix from the previous entry worked — the deployment now genuinely serves the real `/login` page. That surfaced a real, separate gap: Google OAuth's client ID/secret aren't set in Vercel's environment, so NextAuth's own generic "server configuration" error blocks sign-in. Per explicit user direction to keep the pre-release build openly reachable rather than debug OAuth credentials right now, added `PUBLIC_PREVIEW_MODE` — a deliberate, reversible, production-reachable login-wall bypass (issues an "employee" session only; the in-app owner-PIN unlock still gates owner actions), wired into both real enforcement points (`src/proxy.ts`, `src/lib/session.ts`). Needs one manual step no available API tool could do: set `PUBLIC_PREVIEW_MODE=true` in Vercel's Environment Variables and redeploy. **Must be removed before an actual public launch** — flagged in-code and here so it isn't forgotten.
+
+2026-10-01 Layer 2 reconciliation: independent Antigravity audit confirms the current integration with zero rollback items and zero structural blockers. Replace derived On Hold wording with Awaiting Approval (matching pending tool record only); no persisted JobStatus change or pause/resume actions. Due dates, revenue/business metrics and separate discussions remain unimplemented. List/Timeline are new Layer 2 presentation modes over existing recorded timestamps. Preserve orphaned MissionField.ts, missionStyle.ts and old CoreZoomTier mission portions until explicitly authorized cleanup. Stop for Layer 2 visual review; Layer 3 is not authorized.
+
+Dive native interior visual pass (2026-10-01 18:40 +06:00, Codex): user authorized DIVE IN UI.png as the primary visual reference. This supersedes the earlier empty-state central configured anchor/orbit presentation for Dive. Native CSS gradients and decorative SVG curved membranes/edge light/lower reflection preserve a dark negative-space center; no screenshot background, sphere, solar-system objects or orbital rings. Header remains unchanged; title precedes the bottom-centered icon lens rail with restrained entrance motion and reduced-motion override. Empty Overview hides the visible Execution Map heading and configured structural anchor; real counters remain. Existing mission/agent selection, progressive inspector and requested-only Intelligence response are preserved. Pure presentation pass: no mission runtime/schema/lifecycle/approval/NORA/data-contract changes. Layer 2 visual review remains the stop; Layer 3 and legacy cleanup are not authorized.
+
+> **2026-10-01 19:27 +06:00, Codex — USER VISUAL APPROVAL: Dive base environment and Layer 1/2 foundation LOCKED; continuity review complete, UNCOMMITTED.** User authorized the attached approval/continuity brief. Preserve the current internal CORE membrane/depth, negative space, palette, ambient motion character, title hierarchy, rail position/material and progressive disclosure. Future lenses resolve inside this persistent shell; no separate visual worlds/default dashboards/permanent sidebars. Layer 1 approved; Layer 2 architecture/semantics approved (Active, Planning, Awaiting Approval, Completed, Error over unchanged runtime). Mission controls/List/Timeline/history/creation remain deliberate disclosure. Layer 3 still requires explicit authorization.
+>
+
+
+
+
+
+### 2026-10-04 17:27:00 +06:00 — Local voice repair acceptance checkpoint (Codex)
+- [x] Independently reproduce missing consumer and misleading frontend readiness.
+- [x] Repair existing local pipeline and verify AUTOMATED/SYNTHETIC audio through canonical NORA and non-silent RTC output.
+- [x] Verify actual browser mic publication, matching agent frame receipts and playback element; eliminate stale participant receipts.
+- [ ] User confirms physical microphone transcript and audible NORA reply.
+- [ ] After acceptance: repeated turns, interruption/echo and service restart checks.
+- [ ] Separate beta gate: two-account ownership, credentials/artifacts/history and deployment isolation audit.
+No phase promotion or enterprise readiness claim; no commit/push/deploy.
+
+
+### 2026-10-04 18:02:03 +06:00 — Physical Voice Acceptance Gate FAILED (Codex, user report)
+Earlier automated PASS does not accept Stage2A conversational quality. Stage2B blocked; no Antigravity dispatch.
+- [x] Repair stale PCM/turn queue and disconnected-input lifecycle.
+- [x] Add local cancellation/stop intents, spoken identity and separate spoken presentation.
+- [x] Instrument applied mic constraints, overlap suspicion, per-turn/session IDs and persistent mic-on UX.
+- [x] Verify3-turn synthetic + interruption/recovery and provide explicit in-memory local STT comparison.
+- [ ] Human retest:3turns, Stop interruption, natural Nora pronunciation and persistent mic-on.
+- [ ] If recognition still fails: compare the same explicitly captured human audio before choosing model/segmentation defaults.
+No new phase or unrelated work. Details: docs/VOICE_CONVERSATION_REPAIR.md.
+
+
+
+### 2026-10-04 20:28:21 +0600 — Human-grounded multilingual voice quality (Codex; user-requested bounded extension)
+- [x] Authenticated session context / Turn2-3 delivery and approved-note boundary.
+- [x] Six-category ephemeral calibration and multilingual comparison measurements.
+- [x] Safe virtual-environment CUDA repair; small/medium/turbo compatibility verified.
+- [x] Concise speech presentation, language routing preparation, real streaming/prewarm and timing instrumentation.
+- [x] Human six-clip comparison completed across baseline/small/medium/turbo; raw results and recommendation shown, no default promotion.
+- [ ] Acceptable receiver/acoustic latency and English/Bangla TTS bake-off.
+- [ ] Private middleware packaging plus beta isolation gate.
+- [ ] User physical acceptance.
+Details and measured limitations: docs/VOICE_QUALITY_PHASE.md. No commit/push/deploy.
+
+2026-10-04 20:56:50 +0600, Codex — human comparison complete; Bangla/mixed correctness failed for all tested configurations. Multilingual acceptance, acceptable receiver/acoustic latency and private release packaging remain open.

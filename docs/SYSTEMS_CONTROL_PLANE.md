@@ -1,0 +1,20 @@
+# Systems control plane — bounded architecture review
+
+Mode: Operate. Ordinary extension of the locked GrowForge dark-glass shell, not a replacement visual world. User authorizes Systems only; CORE, Explore and all eight Dive lenses remain frozen. Antigravity finished its prior task; user confirmed stopped. No commit/push/deploy/reset/stash.
+
+Direction contract: quiet engineering control plane, very dark navy/black, restrained cyan, current brand/header/single NORA. Inventory rows and real logos; no cinematic sphere/particles/dashboard cards. Four areas: Connections, Models & Routing, Runtime, Access & Secrets. Discovery is secondary. Selection reveals adaptive inspection; deeper configuration reuses original forms and their useful information/action cards. No synthetic status, credentials shown, owner-authority inferred from client preview, or new backend systems. Configured != authenticated; measured probe != model availability; static route != execution receipt.
+
+Data: protected existing MCP/REST/system-vault/CORE/n8n reads; original stable IDs. Routing chains are incumbent provider model identifiers, preserved verbatim where not resolvable to configured-model IDs. No telemetry inferred. Existing mutation/test forms retained; live verification does not save credentials, test external connections or invoke models.
+
+Implementation: growforge-ui/src/components/workspace/SystemsControlPlane.tsx and module CSS; SettingsOverlay delegates; SpatialHud handles global active state/entry/exit and existing Systems NORA surface context. Existing IntegrationsHub/AiModelManager form components exported. Original endpoint/Edit/Test/Disconnect cards remain.
+
+Required screenshots: C:/Users/USERAS/.codex/visualizations/systems-control-plane/01-connections.png through 16-nora.png. Desktop 1920x1080: 01-10,15-16. Mobile390x844:11-13. Tablet900x900:14. 03 discovery,05 model,06 static routing,08 runtime inspector,10 credentials,15 existing detailed GitHub information card. No comp-led build. Approved incumbent world lives in current CORE/Explore/Dive; no visual redesign requested. Detector once: [] for both changed new source/CSS targets.
+
+Known boundaries: workspace-role preview omitted because client role does not establish owner identity; existing server guards retained. No persisted route reason/event or per-model auth receipts. UI only, not capability verification. NORA surface-level Systems context uses existing shared system; no second selected-object context invented. Scoped safe zones hide NORA while deep forms are open without unmounting it; expanded NORA temporarily hides overlapping inventory (selection persists). Interface preference remains presentation only. No DESIGN global rewrite: legacy document contains pre-existing light-theme frontmatter inconsistent with locked dark runtime.
+
+Review focus: material architecture/usability failures, density, progressive disclosure, desktop/tablet/mobile bounds, header/NORA clearance, retained detailed information cards. This is an architectural review checkpoint before Antigravity visual finish. No new visual styling scope.
+
+## Verified correction and user refinement
+Runtime inspection is resolved by stable probe ID from the newest snapshot; missing probes do not show stale inspection. Routing updates disclose process-only persistence beside the edit action and in success feedback. User explicitly required all information cards to share the reference direction. Systems-scoped form material now covers MCP/REST/model/catalog/runtime/BYO cards; original content and actions are retained. Captures17-21 cover these families;13 and15 were updated. All17 current suites and focused lint/TypeScript pass; build42 pages retains10 established trace warnings. No credentials saved, external connection tests or model calls.
+
+Quality bar: first-class four-area control plane, truthful recorded state, readable progressive disclosure, preserved detailed cards, single NORA continuity, responsive access to every critical action with no composer overlap. Final aesthetic polish belongs to Antigravity after review.

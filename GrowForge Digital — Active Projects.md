@@ -1,6 +1,6 @@
 ---
 DOCUMENT STATUS: LIVING DOCUMENT — Level 3 (Current Project Records, per Constitution §3 source-of-truth hierarchy)
-OWNER: Client Success / Project Management (maintains); HQ consolidates for executive visibility
+OWNER: Client Delivery & Success (maintains); HQ consolidates for executive visibility
 LAST UPDATED: 2026-08-30
 UPDATE RULE: One row/section per active engagement. Move a project to "Completed / Archived" when it closes rather than deleting its record — institutional history matters (Constitution §5, principle 5).
 ---
@@ -9,7 +9,7 @@ UPDATE RULE: One row/section per active engagement. Move a project to "Completed
 
 ## HOW TO USE THIS FILE
 
-Client Success/PM is the primary owner of this file. Every active client engagement or major internal initiative gets an entry with: project name, client (if external), status, owner department(s), key dates, and current blockers. Nothing is marked "Complete" here unless it meets the Definition of Done (verification evidence or documented client confirmation) — see the Client Success/PM and Web Development Agent System files.
+Client Delivery & Success is the primary owner of this file. Every active client engagement or major internal initiative gets an entry with: project name, client (if external), status, owner department(s), key dates, and current blockers. Nothing is marked "Complete" here unless it meets the Definition of Done (verification evidence or documented client confirmation) — see the Client Delivery & Success and Web Development Agent System files.
 
 ## ACTIVE CLIENT PROJECTS
 
@@ -23,7 +23,7 @@ UNKNOWN — no active client projects are on record as of this file's creation (
 
 | Initiative | Status | Owner Dept(s) | Notes |
 |---|---|---|---|
-| GrowForge AI Organization rollout (department Agent System files) | In progress — all 10 files drafted, pending CEO approval as live SOPs | GrowForge HQ / AI Systems & Automation | See [[GrowForge Digital — Current State]] for per-department status. |
+| GrowForge AI Organization rollout (department Agent System files) | In progress — all 10 files drafted, pending CEO approval as live SOPs | Executive Orchestration / AI Systems & Automation | See [[GrowForge Digital — Current State]] for per-department status. |
 
 ## COMPLETED / ARCHIVED PROJECTS
 

@@ -1,24 +1,18 @@
 # GrowForge Digital — System Architecture & Multi-Agent Topology
 
-> **Auto-Generated:** 2026-09-19T23:47:38.885Z  
+> **Auto-Generated:** 2026-10-01T09:50:43.266Z  
 > **Stack:** Next.js 16 (App Router, Turbopack, React 19), TypeScript Strict, AES-256-GCM Vault
 
 ## 1. Multi-Agent Pipeline Topology
 
 ```mermaid
 graph TD
-    A[Client Brief Input] --> B[HQ Planning & Dept Selection]
-    B --> C[Live Research Grounding]
-    C --> D1[Sales & BD Agent]
-    C --> D2[Marketing Agent]
-    C --> D3[Meta Ads Agent]
-    C --> D4[Finance & Ops Agent]
-    C --> D5[Web Design / UX]
-    C --> D6[Web Development]
-    C --> D7[AI Systems Automation]
-    D1 & D2 & D3 & D4 & D5 & D6 & D7 --> E[HQ Team Review & Conflict Resolution]
-    E --> F[Independent QA Audit]
-    F --> G[Consolidated Final Execution Plan]
+    A[Client Brief Input] --> B[Executive Orchestration: planning and ID routing]
+    B --> C[Live Research when available]
+    C --> D[Assigned canonical departments: Strategic Intelligence & Planning / Brand & Growth Marketing / Revenue & Partnerships / Client Delivery & Success / Product Design & UX / Web & Platform Engineering / AI Systems & Automation / Operations & Finance]
+    D --> E[Executive Orchestration: team review]
+    E --> F[Quality, Risk and Governance: independent audit]
+    F --> G[Consolidated final plan with evidence and approval gates]
 ```
 
 ## 2. Local & Multi-Modal Processing Matrix

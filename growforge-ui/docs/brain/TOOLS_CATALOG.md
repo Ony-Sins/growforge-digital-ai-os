@@ -1,6 +1,6 @@
 # GrowForge Digital — Agent Tool Catalog
 
-> **Auto-Generated:** 2026-09-19T23:47:38.884Z  
+> **Auto-Generated:** 2026-10-01T09:50:43.266Z  
 > **Tool Engine:** `src/lib/tools.ts` & `src/lib/tools/*`  
 
 ## 1. Registered Agent Tools
