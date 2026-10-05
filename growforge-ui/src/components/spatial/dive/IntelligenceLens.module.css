@@ -396,3 +396,12 @@
     font-size: 9px;
   }
 }
+
+/* Foundation pass (2026-10-05): shared Dive edge, radius and depth. Fill and layout untouched. */
+.inspector{border-color:var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none)}
+
+/* Foundation pass: evidence group shortcuts inside the Evidence area. */
+.evidenceGroups{display:flex;flex-wrap:wrap;gap:6px}
+.evidenceGroups button{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border:1px solid var(--dive-card-edge,#244e5e);border-radius:var(--dive-pill-radius,999px);background:var(--dive-accent-soft,#061b26);color:var(--dive-accent,#68d1e4);font:inherit;font-size:10px;cursor:pointer}
+.evidenceGroups button small{color:#c6dce8;font-variant-numeric:tabular-nums}
+.evidenceGroups button:hover{border-color:var(--dive-card-edge-hover,#40839b);color:#f0fbff}

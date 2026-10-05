@@ -1,0 +1,46 @@
+/* Overview environment (Phase 1, refinement). ~85-90% dark, selective light. Graphite / blue-black base; cyan only appears as
+   reflected light near NORA. Every layer is a soft gradient with no edge. No floor, horizon, grid, lines or particle field. */
+.atmosphere { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:#020407; }
+.atmosphere > * { position:absolute; inset:0; }
+
+/* base: graphite, almost black, with only a trace of cold blue through the middle band */
+.base { background:linear-gradient(180deg, #010305 0%, #03060a 30%, #04080c 54%, #03060a 78%, #010305 100%); }
+
+/* FAR: a very few soft, out-of-focus lights at irregular spots, plus a few extremely faint, wide, soft shafts that fade into darkness */
+.bokeh { filter:blur(12px); background:
+  radial-gradient(circle 44px at 15% 30%, #7ca4c00d 0%, transparent 100%),
+  radial-gradient(circle 66px at 86% 58%, #7ca4c00b 0%, transparent 100%),
+  radial-gradient(circle 30px at 72% 19%, #9cc0d80a 0%, transparent 100%),
+  radial-gradient(circle 52px at 27% 82%, #7ca4c009 0%, transparent 100%); }
+.shafts { filter:blur(26px); opacity:.9;
+  mask-image:linear-gradient(180deg, #000 0%, #000 22%, transparent 64%); -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 22%, transparent 64%);
+  background:
+    linear-gradient(104deg, transparent 21%, #8fb4cc0b 25%, #8fb4cc06 28%, transparent 33%),
+    linear-gradient(113deg, transparent 57%, #8fb4cc09 61%, #8fb4cc04 66%, transparent 72%),
+    linear-gradient(97deg, transparent 79%, #8fb4cc08 82%, transparent 87%); }
+
+/* MID: restrained haze that follows NORA's two main lobes, not one even cloud. Large dark gaps remain between and around them. */
+.haze { filter:blur(34px); background:
+  radial-gradient(ellipse 15% 20% at 41% 52%, #3f6a8a1c 0%, #2f557410 50%, transparent 100%),
+  radial-gradient(ellipse 17% 22% at 55% 46%, #3f6a8a18 0%, #2f55740e 50%, transparent 100%),
+  radial-gradient(ellipse 36% 38% at 48% 50%, #22405808 0%, transparent 100%); }
+
+/* the light source: tight and bright at NORA, decaying quickly (steep eased stops), so brightness is highest next to NORA */
+.source { filter:blur(18px); background:
+  radial-gradient(ellipse 20% 25% at 48% 50%, #5d92b21f 0%, #4a7b9915 22%, #38627f0c 48%, #274a6204 76%, transparent 100%); }
+
+/* NEAR: abstract reflected response beneath NORA: an elongated soft reflection, a second broader one at another depth, dark gaps between */
+.reflection { filter:blur(11px); background:
+  radial-gradient(ellipse 25% 2.6% at 48% 72.5%, #9acbe65c 0%, #6ea3c436 40%, #4a7b9910 74%, transparent 100%),
+  radial-gradient(ellipse 36% 3.4% at 48% 77.5%, #7fb2d23e 0%, #55879f20 46%, transparent 100%),
+  radial-gradient(ellipse 18% 4.4% at 53% 83%, #6a9cba1c 0%, transparent 100%); }
+/* one or two very broad horizontal specular streaks at different depths; thin, blurred, no ends visible, no horizon line */
+.streaks { filter:blur(7px); background:
+  radial-gradient(ellipse 46% 0.5% at 48% 74.8%, #b4daf046 0%, #86b6d220 52%, transparent 100%),
+  radial-gradient(ellipse 62% 0.55% at 50% 80.2%, #86b6d22c 0%, #6a9cba12 56%, transparent 100%); }
+
+/* fine static grain against banding in the dark gradients */
+.grain { opacity:.05; mix-blend-mode:overlay; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"); }
+
+/* deep vignette */
+.vignette { background:radial-gradient(ellipse 72% 68% at 48% 50%, transparent 30%, #00010340 58%, #000103ae 84%, #000103e6 100%); }

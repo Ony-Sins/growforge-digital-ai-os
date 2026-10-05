@@ -1,23 +1,29 @@
 "use client";
-import { innerCoreVisualConfig as optics } from "./innerCoreVisualConfig";
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, Search, Network, Layers, ShieldCheck, Package, X, ChevronRight } from 'lucide-react';
-import { CapabilitySignal } from './CapabilitySignal';
+import { GrowForgeGlyph } from '../GrowForgeGlyph';
 import type { CoreState } from '@/lib/coreState';
-import { InnerCore } from './InnerCore';
+import type { OverviewSnapshot } from '@/lib/overviewSnapshot';
+import { NoraStageField } from './NoraStageField';
+import { OverviewAtmosphere } from './OverviewAtmosphere';
+import { noraStageLevel } from './noraStageModel';
 import { recordedOverviewStages, overviewExecutionLine } from './overviewRuntimeModel';
-import { innerCorePhase, overviewCommandSummary, newlyCompleted } from './overviewCommandModel';
+import { innerCorePhase, newlyCompleted } from './overviewCommandModel';
 import { IDLE_NORA_SIGNAL, NORA_VISUAL_EVENT, NORA_VISUAL_REQUEST, type NoraVisualSignal } from '@/lib/noraVisualSignal';
 import type { DiveLens } from './overviewModel';
+import { activityGraph, attentionRows, briefState, healthRows, liveStatusText, nowView, operationalStrip, recentRows, snapshotCounts, stageStatusLabel, type AttentionRow, type RecentRow } from './overviewBriefingModel';
+import { AttentionPanel, BriefPanel, HealthDisclosure, OperationalStrip, RecentPanel, SnapshotPanel } from './OverviewBriefing';
 import styles from './OverviewRuntime.module.css';
 
-const ICONS = { brief: FileText, plan: FileText, research: Search, department: Network, reconcile: Layers, qa: ShieldCheck, final: Package };
-const STATUS = { pending: 'Pending', active: 'In progress', done: 'Completed', error: 'Error', skipped: 'Skipped' };
 const CORE_STATUS = { attentive:'Ready',listening:'Listening',thinking:'Thinking',responding:'Responding',speaking:'Speaking',executing:'Executing',awaiting:'Waiting for approval',success:'Completed',degraded:'Response unavailable' };
-const SERVICE_LABELS = { ollama:'Ollama',searxng:'SearXNG',n8n:'n8n',comfyui:'ComfyUI' };
-const activityLabel = (title:string) => title.split('\n')[0].replace(/^\s*#+\s*/, '').replace(/^CLIENT\s*&\s*BUSINESS:\s*/i,'').trim();
-export function OverviewRuntime({ core, agentsWorking, dismissalVersion, onMission, onLens }: { core: CoreState | null; agentsWorking: number; dismissalVersion: number; onMission: (id: string) => void; onLens:(lens:DiveLens)=>void }) {
+
+/**
+ * Overview V2-B. Heading + operational snapshot on top; Now (left), the NORA briefing stage (center) and Needs
+ * attention / Recent (right) below. Every value comes from the Overview Snapshot via overviewBriefingModel; the
+ * only recorded-vs-live wording lives there. The center is reserved for NORA: today the temporary Inner Core, later
+ * the NORA Morph Field plus a projection layer where contextual surfaces can appear and disappear.
+ */
+export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersion, onMission, onLens }: { core: CoreState | null; snapshot: OverviewSnapshot | null; agentsWorking: number; dismissalVersion: number; onMission: (id: string) => void; onLens:(lens:DiveLens)=>void }) {
   const [nora,setNora]=useState<NoraVisualSignal>(IDLE_NORA_SIGNAL);
   const [responseVisible,setResponseVisible]=useState(false);
   const seenResponse=useRef<string|null>(null);
@@ -40,55 +46,63 @@ export function OverviewRuntime({ core, agentsWorking, dismissalVersion, onMissi
     window.addEventListener(NORA_VISUAL_EVENT,update);window.dispatchEvent(new Event(NORA_VISUAL_REQUEST));
     return()=>{clearTimeout(timer);window.removeEventListener(NORA_VISUAL_EVENT,update);};
   },[]);
-  const summary=useMemo(()=>overviewCommandSummary(core),[core]);
-  const phase=innerCorePhase(core,nora,responseVisible,completedNow);
+  const phase=innerCorePhase(core,nora,responseVisible,completedNow,snapshot?snapshot.executingNow.missionIds.length>0:undefined);
   const stages = useMemo(() => recordedOverviewStages(core), [core]);
   const [selection, setSelection] = useState<{ id: string; version: number } | null>(null);
   const selected = selection?.version === dismissalVersion ? stages.find(stage => stage.id === selection.id) : undefined;
   const job = selected ? core?.job : null;
-  const split = Math.ceil(stages.length / 2);
-  const position = (index: number) => { const left = index < split, rank = left ? index : index - split, count = left ? split : stages.length - split; return { left, y: count === 1 ? 50 : 12 + rank * 72 / (count - 1) }; };
+  const now = useMemo(() => nowView(snapshot, core), [snapshot, core]);
+  const strip = useMemo(() => operationalStrip(snapshot), [snapshot]);
+  const [attentionExpanded, setAttentionExpanded] = useState(false);
+  const attention = useMemo(() => attentionRows(snapshot, attentionExpanded), [snapshot, attentionExpanded]);
+  const recent = useMemo(() => recentRows(snapshot), [snapshot]);
+  const counts = useMemo(() => snapshotCounts(snapshot), [snapshot]);
+  const health = useMemo(() => healthRows(snapshot), [snapshot]);
+  const graph = useMemo(() => activityGraph(snapshot), [snapshot]);
+  const stageLevel = noraStageLevel(snapshot);
+  const evidence = now.mission?.evidence ?? 'recorded_unconfirmed';
   useEffect(() => {
     if (!job || !selected) return;
     window.dispatchEvent(new CustomEvent('growforge:mission-context', { detail: { id: job.id, title: job.title, context: JSON.stringify({ source: 'Overview recorded execution', jobId: job.id, stageId: selected.id, stepIds: selected.steps.map(step => step.id), steps: selected.steps }) } }));
     return () => { window.dispatchEvent(new CustomEvent('growforge:mission-context', { detail: null })); };
   }, [job, selected]);
   const wake = () => { document.querySelector<HTMLButtonElement>('[data-nora-restore]')?.click(); requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[aria-label="Start a conversation"]')?.focus()); };
+  const inspectAttention = (row: AttentionRow) => {
+    if (row.entity.type === 'approval') window.dispatchEvent(new CustomEvent('growforge:mission-approvals', { detail: null }));
+    else if (row.missionId) onMission(row.missionId);
+    else onLens(row.lens);
+  };
+  const openRecent = (row: RecentRow) => { if (row.missionId) onMission(row.missionId); else onLens('Missions'); };
   return <>
-    <svg className={styles.referenceField} viewBox="0 0 1920 1080" preserveAspectRatio="none" aria-hidden="true" data-overview-optical-background>
-      <g fill="none" stroke="#136783" strokeWidth=".7" opacity={optics.background.arcOpacity}>
-        <ellipse cx={optics.background.centerX} cy={optics.background.centerY} rx={optics.background.scaleX} ry={optics.background.scaleY} opacity=".18" />
-        <ellipse cx="960" cy="585" rx="315" ry="235" opacity=".28" />
-        <ellipse cx="960" cy="585" rx="285" ry="214" opacity=".13" />
-        <path d="M0 340 Q960 620 1920 340 M0 810 Q960 1080 1920 810" opacity=".18" />
-        <path d="M0 180 C340 290 340 730 0 920 M1920 180 C1580 290 1580 730 1920 920" opacity=".13" />
-      </g>
-    </svg>
-    <div className={styles.volume} data-inner-core-overview>
-      <InnerCore onWake={wake} phase={phase} />
-      {stages.length > 0 && <div className={styles.pipeline} data-execution-halo aria-label="Recorded mission stages">
-        <svg className={styles.paths} viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">{stages.map((stage, index) => { const { left, y: percent } = position(index), y = percent * 5; return <path key={stage.id} d={`M500 250 Q${left ? 250 : 750} ${y} ${left ? 160 : 840} ${y}`} data-active={stage.status === 'active'} />; })}</svg>
-        {stages.map((stage, index) => { const Icon = ICONS[stage.kind]; return <button key={stage.id} className={styles.stage} style={{ left: position(index).left ? '9%' : '77%', top: `${position(index).y}%` }} data-status={stage.status} aria-pressed={selected?.id === stage.id} onClick={() => setSelection({ id: stage.id, version: dismissalVersion })} title={`${stage.label} · ${STATUS[stage.status]}`}><Icon size={20} strokeWidth={1.4} /><span>{stage.label}<small>{STATUS[stage.status]}{stage.steps.length > 1 ? ` · ${stage.steps.length} recorded steps` : ''}</small></span></button>; })}
-      </div>}
-    </div>
-    <div className={styles.commandSurfaces} data-nora-open={nora.conversationOpen} aria-label="Workspace overview">
-      <div className={styles.leftSurfaces}>
-        <section className={styles.commandSurface} aria-label="Mission Status"><header><div><h2>Mission Status</h2><p>Recorded work in your workspace</p></div><button aria-label="Open Missions" onClick={()=>onLens('Missions')}>Open</button></header>
-          <div className={styles.missionSummary}><div><strong>{summary?.running??'—'}</strong><span>Running</span></div><div><strong>{summary?.completed??'—'}</strong><span>Completed</span></div><div><strong>{summary?.errors??'—'}</strong><span>Errors</span></div></div><p className={styles.surfaceNote}>{summary?'Recorded history · test runs excluded':'Operational snapshot unavailable'}</p>
-        </section>
-        <section className={styles.commandSurface} aria-label="Service Reachability"><header><div><h2>System Health</h2><p>Measured service reachability</p></div><button aria-label="Inspect service evidence" onClick={()=>onLens('Tools')}>Open</button></header>
-          {summary?.probes.length?<ul className={styles.serviceList}>{summary.probes.map(probe=><li key={probe.id}><span>{SERVICE_LABELS[probe.id]??probe.label}</span><CapabilitySignal state={probe.online?'verified':'unreachable'} latencyMs={probe.latencyMs} checkedAt={core?.generatedAt} /></li>)}</ul>:<p className={styles.empty}>Reachability has not been measured.</p>}
-        </section>
-      </div>
-      <div className={styles.rightSurfaces}>
-        <section className={styles.commandSurface} aria-label="Recent Activity"><header><div><h2>Recent Activity</h2><p>Latest recorded missions</p></div><button aria-label="Inspect recorded activity" onClick={()=>onLens('Intelligence')}>Open</button></header>
-          {summary?.activity.length?<ul className={styles.activityList}>{summary.activity.map(job=><li key={job.id} data-status={job.status}><time dateTime={job.createdAt} title={`Created ${new Date(job.createdAt).toLocaleString()}`}>{new Date(job.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</time><button onClick={()=>onMission(job.id)} title={job.title}><span>{activityLabel(job.title)}</span><small>{job.status==='done'?'Completed':job.status==='error'?'Error':'Running'} · recorded mission</small></button></li>)}</ul>:<p className={styles.empty}>{summary?'No recorded mission activity.':'Activity snapshot unavailable.'}</p>}
-        </section>
-        <section className={styles.commandSurface} aria-label="Quick Actions"><header><div><h2>Quick Actions</h2><p>Open your operational workspace</p></div></header><div className={styles.quickActions}><button onClick={()=>onLens('Missions')}>Open Missions</button><button onClick={()=>onLens('Agents')}>Inspect Agents</button><button onClick={()=>onLens('Intelligence')}>View Evidence</button><button onClick={()=>onLens('Tools')}>Inspect Services</button></div></section>
+    {/* Environment: light only (falloff, haze, reflected light, sparse particles). No floor, grid or scenery. Decorative only: it encodes no data. */}
+    <OverviewAtmosphere />
+    <div className={styles.layout} data-overview-layout>
+      <header className={styles.head}>
+        <h1 className={styles.heading}>Overview</h1>
+        <OperationalStrip cells={strip} onLens={onLens} />
+      </header>
+      <div className={styles.stageGrid}>
+        <div className={styles.left} data-overview-side="left">
+          <SnapshotPanel counts={counts} graph={graph} now={now} selectedStageId={selected?.id ?? null} onStage={id => setSelection({ id, version: dismissalVersion })} onMission={onMission} onLens={onLens} />
+          <HealthDisclosure rows={health} onOpen={() => onLens('Tools')} />
+        </div>
+        {/* CENTER: the NORA briefing stage. The luminous object is a TEMPORARY placeholder, not the CORE and not coupled
+            to CORE runtime: it sits in one replaceable slot so the NORA Morph Field can take its place without re-layout. */}
+        <div className={styles.center} data-nora-briefing-stage>
+          <div className={styles.noraObject} data-nora-stage-object>
+            <div className={styles.volume} data-nora-stage-field-host><NoraStageField level={stageLevel} phase={phase} onWake={wake} /></div>
+          </div>
+          <div className={styles.projectionLayer} data-briefing-projection-layer aria-hidden="true" />
+          <div className={styles.briefDock}><BriefPanel state={briefState(snapshot)} /></div>
+        </div>
+        <div className={styles.right} data-overview-side="right">
+          <AttentionPanel rows={attention.rows} hidden={attention.hidden} expanded={attentionExpanded} onReveal={() => setAttentionExpanded(value => !value)} onInspect={inspectAttention} />
+          <RecentPanel rows={recent.rows} onOpen={openRecent} />
+        </div>
       </div>
     </div>
+    <div className={styles.srOnly} aria-live="polite">{phase==='idle'?`${overviewExecutionLine(core, agentsWorking, snapshot)}. ${liveStatusText(snapshot)}`:CORE_STATUS[phase]}</div>
     {responseVisible&&!nora.conversationOpen&&nora.response&&nora.response.length<=220&&<button className={styles.subtitle} onClick={wake} aria-label="Open NORA response">{nora.response}</button>}
-    <div className={styles.runtimeLine} aria-live="polite"><span>{phase==='idle'?overviewExecutionLine(core, agentsWorking):CORE_STATUS[phase]}</span>{!!core?.systems.pendingApprovals && <button onClick={() => window.dispatchEvent(new CustomEvent('growforge:mission-approvals', { detail: null }))}>{core.systems.pendingApprovals} approval{core.systems.pendingApprovals === 1 ? '' : 's'} awaiting review <ChevronRight size={12} /></button>}</div>
-    {selected && job && <aside className={styles.inspector} data-dive-inspector aria-label="Recorded stage inspection"><header><div><small>RECORDED EXECUTION</small><h2>{selected.label}</h2></div><button aria-label="Dismiss stage inspector" onClick={() => setSelection(null)}><X size={16} /></button></header><p>{job.title}</p>{selected.steps.map(step => <section key={step.id}><h3>{step.label}</h3><span>{STATUS[step.status]}</span>{step.provider && <p>Provider · {step.provider}</p>}{step.startedAt && <p>Started · {new Date(step.startedAt).toLocaleString()}</p>}{step.finishedAt && <p>Finished · {new Date(step.finishedAt).toLocaleString()}</p>}{step.error && <p>{step.error}</p>}<details><summary>Provenance</summary><p>Job · {job.id}</p><p>Step · {step.id}</p>{step.startedAt && <p>{step.startedAt}</p>}</details></section>)}<button className={styles.openMission} onClick={() => onMission(job.id)}>Inspect mission <ChevronRight size={14} /></button></aside>}
+    {selected && job && <aside className={styles.inspector} data-dive-inspector aria-label="Recorded stage inspection"><header><div><small>RECORDED EXECUTION</small><h2>{selected.label}</h2></div><button aria-label="Dismiss stage inspector" onClick={() => setSelection(null)}><GrowForgeGlyph name="dismiss" size={16} /></button></header><p>{job.title}</p>{selected.steps.map(step => <section key={step.id}><h3>{step.label}</h3><span>{stageStatusLabel(step.status, evidence)}</span>{step.provider && <p>Provider · {step.provider}</p>}{step.startedAt && <p>Started · {new Date(step.startedAt).toLocaleString()}</p>}{step.finishedAt && <p>Finished · {new Date(step.finishedAt).toLocaleString()}</p>}{step.error && <p>{step.error}</p>}<details><summary>Provenance</summary><p>Job · {job.id}</p><p>Step · {step.id}</p>{step.startedAt && <p>{step.startedAt}</p>}</details></section>)}<button className={styles.openMission} onClick={() => onMission(job.id)}>Inspect mission <GrowForgeGlyph name="reach" size={14} /></button></aside>}
   </>;
 }

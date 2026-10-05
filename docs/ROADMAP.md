@@ -4,6 +4,20 @@ This checklist tracks current acceptance work alongside the locked phased plan. 
 
 - [x] ~~Repair mobile Overview CORE/counter overlap and prevent scroll content crossing the header/composer.~~ Content flows vertically inside a bounded scroll area; checked at 366x671, 390x844 and 900x900, with desktop 1440x900 comparison. Local only.
 - [x] ~~Run connected Dive/NORA/Systems and preview/read-isolation regressions.~~ 17 focused suites and TypeScript pass; no provider calls or deployment.
+**Dive Foundation, Phase 0 (2026-10-05 10:45, Claude Code): FOUNDATION READY FOR USER REVIEW.** Each lens is marked FOUNDATION complete only. No lens is finished, and the foundation is not locked until you review it. Canonical order: Overview, Missions, Context, Finance, Departments, Agents, Workflows, Tools, Intelligence.
+- [x] Nine-lens registry with stable ids (`lens.*`) and Finance added to navigation. FOUNDATION only: Finance has no backend and every module reads "Not tracked yet".
+- [x] Shared lens header (identity, purpose, truthful metrics, NORA scope, actions), shared system states, shared structural areas.
+- [x] NORA scope visible on every lens except Overview (kept its approved header), derived from existing selection events, and passed to NORA as a label only.
+- [x] Semantic addressing foundation: lens ids, `SHOW_DIVE_LENS`, `growforge:dive-open` (open / back), pure spoken-intent resolver. Not wired to voice or the router.
+- [x] Per-lens FOUNDATION: Overview (existing), Missions (state filters + list), Context (five areas + "Why is this loaded?" anchor), Finance, Departments, Agents (runtime vs blueprints), Workflows (anatomy + anchors), Tools (TOOLS vs SYSTEMS), Intelligence (six areas, none invented).
+- [x] Evidence: tsc 0, eslint 0 on touched files, 22 suites, browser run of all nine lenses, phone checks on four. `.impeccable/review/foundation-structural/`.
+- [ ] **Blocking FOUNDATION LOCK:** your visual review of the nine desktop and four phone captures.
+- [ ] Populated-data pass: this worktree has no owner `data/` or `.env.local`, so only empty states were seen. Needs a populated run (Missions list, real runs, tools) and a rerun of `test-department-taxonomy`, `test-preview-isolation` where `data/` exists.
+- [ ] Wire resolver and `growforge:dive-open` to NORA/voice (post-foundation); make `page.tsx` consume `/?lens=`; uniform `data-semantic-id` on every entity row.
+- [ ] Not started on purpose: Overview V2, NORA Morph Field, Finance backend and its personal-data privacy scope.
+- [x] ~~Dive In UI foundation pass (2026-10-05, Claude Code): shared `--dive-*` surface tokens, Overview card/dock polish, shared inspector edge on six lenses.~~ Visual only; tsc and 19 suites pass; evidence in `.impeccable/review/foundation-pass/`. Local only, no commit.
+- [ ] Human visual review of the foundation pass (Overview dock `type | speak` divider, `OPEN →` pills, metric tiles) on populated data; live mic/voice-ring and reduced-motion check.
+- [ ] Re-run `test-preview-isolation.ts` and `test-dive-missions.ts` in an environment with the owner `data/` (both depend on it; failure in this fresh worktree is environmental).
 - [ ] Human review of corrected phone layout, including short-screen scrolling and keyboard-open behavior.
 - [ ] Full cross-surface responsive acceptance: CORE, Explore, every Dive lens and inspector, Systems forms, NORA expanded/settings, keyboard and reduced motion. Current eight-lens phone navigation/overflow smoke check is not full acceptance.
 - [ ] Full repository/history/client-bundle/API/log/upload/deployment privacy audit. Passing route fixtures does not establish this gate.
@@ -460,3 +474,24 @@ No new phase or unrelated work. Details: docs/VOICE_CONVERSATION_REPAIR.md.
 Details and measured limitations: docs/VOICE_QUALITY_PHASE.md. No commit/push/deploy.
 
 2026-10-04 20:56:50 +0600, Codex — human comparison complete; Bangla/mixed correctness failed for all tested configurations. Multilingual acceptance, acceptable receiver/acoustic latency and private release packaging remain open.
+
+
+## 2026-10-05 deferred polish — CORE reload visual refinement
+
+CORE reload visual refinement — optional later polish of the initial baseline color/crossfade so the first rendered state more closely matches the settled CORE. Not a blocker.
+
+Decision (user, 2026-10-05, Claude Code): the current reload state is accepted for now — no black/dead CORE on reload, an immediate dark-blue lit baseline, then the normal CORE settles in. Current implementation (procedural `baseline()` in the sphere shader, `uMapReady` 600 ms crossfade, image preload) stays unchanged. Do not continue Overview or Dive design work until the user says so.
+
+## 2026-10-05 deferred requirement — NORA dynamic conversation (cross-product)
+
+NORA's ordinary dialogue (greetings, acknowledgements, explanations, transitions, follow-ups, wording) must be composed in real time from user input, conversation history, current surface, system state, relevant memory, session state and recent expression patterns — never from a small set of preset phrases with variables substituted. Stable personality, variable expression; silence is valid and she must not re-greet someone who is mid-conversation. Facts, permissions, security boundaries, financial values, action confirmations, execution state and destructive-action requirements stay deterministic. Full statement and the Snapshot -> presentation-plan -> text/voice/visual architecture: docs/NORA_CONVERSATIONAL_PRINCIPLE.md. Not implemented; Overview V2-A (2026-10-05) built only the grounded, prose-free fact layer (src/lib/overviewSnapshot.ts). Future: NORA Brief me, NORA Morph Field and the holographic explanation system are separate, unbuilt tracks.
+
+## 2026-10-05 deferred post-UI — NORA spatial gesture interaction
+
+After the full GrowForge AI OS UI is completed and visually locked, evaluate camera-based hand/gesture interaction across the finished product. Reference research only (not approved dependencies): adewaskar/jarvis and the user-provided gesture-control video.
+
+Candidate future capabilities: hand cursor / spatial pointer; pinch selection; pinch-and-drag holographic surfaces; gesture scrolling; two-hand / framing resize; dismiss/minimize gestures; manipulation of NORA-projected contextual surfaces; possible direct spatial interaction with the NORA Morph Field.
+
+Evaluate BEFORE any implementation: where gesture input is genuinely useful; MediaPipe / local-first tracking; explicit camera permission and a visible camera-active state; confidence thresholds; hysteresis / debouncing; accidental-gesture suppression; tracking continuity; latency; CPU/GPU impact; accessibility; privacy; and mouse / touch / keyboard / voice fallbacks for every gesture.
+
+**Explicitly deferred. Do NOT implement gesture control or any camera behavior until the entire UI is completed and locked.**

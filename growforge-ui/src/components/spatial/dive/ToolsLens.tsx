@@ -13,6 +13,8 @@ import {
   type ToolDomain,
   type ToolRecord,
 } from './toolModel';
+import { LensHeader } from './LensHeader';
+import { LensState } from './LensState';
 import styles from './ToolsLens.module.css';
 
 type ReadState<T> = { value: T | null; status: 'loading' | 'ready' | 'unavailable' };
@@ -74,12 +76,10 @@ export function ToolsLens({
 
   return (
     <>
-      <div className={styles.title}>
-        <h1>TOOLS</h1>
-        <p>Operational resource inventory & reachability lens</p>
-      </div>
+      <LensHeader lensId="lens.tools" metrics={isLoaded && !(core.status === 'unavailable' && graph.status === 'unavailable') ? [{ label: 'recorded resources', value: records.length }] : undefined} note={!isLoaded ? 'Loading tool sources' : core.status === 'unavailable' && graph.status === 'unavailable' ? 'Tool sources unavailable' : undefined} />
 
       <div className={styles.field} data-tools-lens data-dive-inspector>
+        <p className={styles.systemsNote} data-tools-systems-note><strong>TOOLS</strong> are capabilities NORA and GrowForge can use. <strong>SYSTEMS</strong> hold providers, configuration, credentials and infrastructure.</p>
         {departmentFilter && (
           <div className={styles.filter}>
             <span>{departmentDisplayName(departmentFilter)} · recorded relationships</span>
@@ -163,8 +163,11 @@ function ToolInspection({ record, onClose }: { record: ToolRecord; onClose: () =
     ...(record.provider ? ['Provider'] : []),
     ...(record.configuration.length ? ['Configuration'] : []),
     'Availability',
+    'Permissions',
+    'Health',
     'Authentication',
     'Usage',
+    'Used by',
     ...(record.relationships.length ? ['Relationships'] : []),
   ];
 
@@ -253,6 +256,31 @@ function ToolInspection({ record, onClose }: { record: ToolRecord; onClose: () =
             <p>{record.authDetail ?? 'Authentication state not checked.'}</p>
             <p><small>A credential existing in env/vault proves credential presence, not successful provider authentication. Raw keys/tokens are strictly protected.</small></p>
           </>
+        )}
+
+        {category === 'Permissions' && (
+          <>
+            <p><strong>Status:</strong> {record.state.permitted === null ? 'Permission not verified' : record.state.permitted ? 'Permitted' : 'Scope restricted'}</p>
+            <p><small>Permission is a recorded scope. It does not show the tool can run or that it has been used.</small></p>
+          </>
+        )}
+
+        {category === 'Health' && (
+          <>
+            <p><strong>Reachability:</strong> {record.state.reachable === 'reachable' ? 'Reachable' : record.state.reachable === 'unreachable' ? 'Not reachable' : 'Not checked'}</p>
+            <p>{record.availabilityDetail ?? 'Health is only known when a real check has run.'}</p>
+          </>
+        )}
+
+        {category === 'Used by' && (
+          record.departmentIds?.length || record.relationships.length ? (
+            <>
+              {(record.departmentIds ?? []).map((id) => <p key={id}>{departmentDisplayName(id)}<small> · recorded department association</small></p>)}
+              {record.relationships.map((link) => <p key={link.id}>{link.title}<small> · {link.type} relationship</small></p>)}
+            </>
+          ) : (
+            <LensState compact kind="empty" message="No recorded consumers of this tool." />
+          )
         )}
 
         {category === 'Usage' && (

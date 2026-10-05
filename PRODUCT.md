@@ -64,6 +64,8 @@ The mechanism a chatbot or generic "AI marketing assistant" cannot truthfully co
 
 **Confirmed constraints:** free-tier LLM reliability is an accepted, explicit tradeoff — department task-assignment and tool-calling compliance are not 100% reliable on the free tier today, and this is treated as a model-capability limit, not something to endlessly re-engineer around. Live research currently has no fully reliable no-key fallback (Gemini quota exhausts quickly; DuckDuckGo's scrape fallback is intermittently anti-bot-blocked) — a genuine open gap, not yet solved.
 
+**NORA conversational principle (2026-10-05):** NORA's ordinary dialogue is composed dynamically each turn from user input, history, current surface, system state, memory and session/expression state — never preset phrases with variables swapped in. Stable personality, variable expression; silence is valid. Facts, permissions, security boundaries, financial values, action confirmations, execution state and destructive-action requirements stay deterministic. See docs/NORA_CONVERSATIONAL_PRINCIPLE.md.
+
 **Explicitly undecided:** exact multi-tenant account/billing model (solopreneur vs company sub-profile pricing) — direction confirmed, mechanics not designed.
 
 ## Brand Commitments

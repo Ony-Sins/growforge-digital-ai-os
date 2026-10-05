@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, X } from "lucide-react";
 import type { SpatialGraphData } from "@/lib/spatial/obsidianReader";
 import { departmentRecords, type DepartmentRecord } from "./departmentModel";
+import { LensHeader } from "./LensHeader";
+import { LensState } from "./LensState";
 import styles from "./DepartmentsLens.module.css";
 
 export function DepartmentsLens({
@@ -44,7 +46,11 @@ export function DepartmentsLens({
     setSelection({ id: item.taxon.id, version: dismissalVersion });
   };
 
+  const operating = records.filter((item) => item.taxon.kind === "department").length;
+  const oversightCount = records.filter((item) => item.taxon.kind === "oversight").length;
   return (
+    <>
+    <LensHeader lensId="lens.departments" metrics={[{ label: "operating departments", value: operating }, { label: "oversight", value: oversightCount }]} />
     <div className={styles.field} data-departments-lens>
       <div className={styles.departments} data-dive-inspector aria-label="Operating departments">
         {records
@@ -87,6 +93,7 @@ export function DepartmentsLens({
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -102,15 +109,16 @@ function DepartmentInspection({
   onClose: () => void;
 }) {
   const [category, setCategory] = useState("Purpose");
+  // Foundation areas are always present so structure never depends on data; each says what is true.
+  const areaContent = (name: string): string[] | undefined => (name === "Handoffs" ? record.categories.Relationships : record.categories[name]);
   const categories = [
     "Purpose",
+    "Current Work",
     "Agents",
-    "Workflows",
-    "Capabilities",
     "Tools",
-    "Knowledge",
-    "Relationships",
-  ].filter((name) => record.categories[name]?.length);
+    "Handoffs",
+    ...["Workflows", "Capabilities", "Knowledge"].filter((name) => record.categories[name]?.length),
+  ];
 
   useEffect(() => {
     window.dispatchEvent(
@@ -177,9 +185,21 @@ function DepartmentInspection({
             className={styles.content}
             aria-label={`${category} details`}
           >
-            {record.categories[category]?.map((text) => (
-              <p key={text}>{text}</p>
-            ))}
+            {areaContent(category)?.length ? (
+              areaContent(category)!.map((text) => <p key={text}>{text}</p>)
+            ) : (
+              <LensState
+                compact
+                kind="unavailable"
+                message={
+                  category === "Current Work"
+                    ? "Work is not tracked per department yet. Missions record their departments individually."
+                    : unavailable
+                    ? "Source information unavailable."
+                    : `No ${category.toLowerCase()} recorded for this department.`
+                }
+              />
+            )}
           </div>
         </>
       ) : (

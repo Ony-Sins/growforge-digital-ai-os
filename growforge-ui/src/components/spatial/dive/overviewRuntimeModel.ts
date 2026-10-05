@@ -1,4 +1,5 @@
 import type { CoreState, CoreStepView } from "@/lib/coreState";
+import type { OverviewSnapshot } from "@/lib/overviewSnapshot";
 
 export interface ExecutionStage { id: string; label: string; kind: CoreStepView['kind']; steps: CoreStepView[]; status: CoreStepView['status'] }
 
@@ -16,9 +17,12 @@ export function recordedOverviewStages(core: CoreState | null): ExecutionStage[]
   return stages;
 }
 
-export function overviewExecutionLine(core: CoreState | null, agentsWorking: number): string {
+export function overviewExecutionLine(core: CoreState | null, agentsWorking: number, snapshot?: OverviewSnapshot | null): string {
   if (!core) return 'Operational state unavailable';
   const active = core.jobs.filter(job => job.status === 'running' && !job.isTest).length;
   if (!active && !agentsWorking) return 'No active execution';
-  return `${active} active mission${active === 1 ? '' : 's'} · ${agentsWorking} agent${agentsWorking === 1 ? '' : 's'} working`;
+  const missions = `${active} active mission${active === 1 ? '' : 's'}`;
+  // Recorded work is shown, but never described as executing unless an executor is confirmed for it.
+  const evidence = !snapshot ? '' : snapshot.executingNow.confirmable ? ` · ${snapshot.executingNow.missionIds.length} executing` : ' · execution not confirmed';
+  return `${missions}${evidence} · ${agentsWorking} agent${agentsWorking === 1 ? '' : 's'} working`;
 }

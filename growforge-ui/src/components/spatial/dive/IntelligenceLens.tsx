@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ChevronRight, X } from 'lucide-react';
 import type { CoreJobView, CoreState } from '@/lib/coreState';
 import { evidenceScope, executionFields, intelligenceRecords, usageFields, type EvidenceField, type EvidenceRecord, type StepUsage } from './intelligenceModel';
+import { FoundationAreas, type FoundationArea } from './FoundationAreas';
+import { LensHeader } from './LensHeader';
 import styles from './IntelligenceLens.module.css';
 
 function formatTimestampDisplay(val: string): { display: string; raw?: string } {
@@ -38,9 +40,10 @@ export function IntelligenceLens({ core, available, dismissalVersion, closing, o
   const records = useMemo(() => intelligenceRecords(available ? core : null), [core, available]);
   const selected = !closing && selection?.version === dismissalVersion ? records.find(record => record.id === selection.id) : undefined;
   return <>
-    <div className={styles.title}><h1>INTELLIGENCE</h1><p>Recorded operational evidence</p></div>
+    <LensHeader lensId="lens.intelligence" metrics={available ? [{ label: 'recorded evidence items', value: records.length }] : undefined} note={available ? undefined : 'Evidence unavailable'} />
     <div className={styles.field} data-intelligence-lens data-dive-inspector>
-      {!selected && <section className={styles.rows} aria-label="Intelligence evidence">
+      {!selected && !domain && <IntelligenceAreas available={available} records={records} onOpen={setDomain} />}
+      {!selected && domain && <section className={styles.rows} aria-label="Intelligence evidence">
         {domain ? <>
           <button className={styles.back} onClick={() => setDomain(null)}><ArrowLeft size={12} /> Evidence groups</button>
           <h2>{domain}</h2>
@@ -55,6 +58,25 @@ export function IntelligenceLens({ core, available, dismissalVersion, closing, o
       {selected && <EvidenceInspection key={selected.id} record={selected} onClose={onClose} />}
     </div>
   </>;
+}
+
+/** Six areas of the lens. Only Evidence is backed by recorded data; the rest say so and are never filled with invented insight. */
+function IntelligenceAreas({ available, records, onOpen }: { available: boolean; records: EvidenceRecord[]; onOpen: (domain: EvidenceRecord['domain']) => void }) {
+  const none = (id: string, label: string, summary: string): FoundationArea => ({ id, label, state: 'not-tracked', summary });
+  const count = (name: EvidenceRecord['domain']) => records.filter(record => record.domain === name).length;
+  const areas: FoundationArea[] = [
+    none('intelligence.insights', 'Insights', 'None generated. Insight is never invented to fill the screen.'),
+    none('intelligence.research', 'Research', 'No research is recorded here yet.'),
+    none('intelligence.signals', 'Signals', 'No signals are derived yet.'),
+    none('intelligence.risks', 'Risks', 'No risks are assessed yet.'),
+    none('intelligence.recommendations', 'Recommendations', 'None generated. Nothing is recommended without evidence.'),
+    {
+      id: 'intelligence.evidence', label: 'Evidence', state: available ? (records.length ? 'available' : 'empty') : 'unavailable', count: available ? records.length : null,
+      summary: available ? (records.length ? 'Recorded execution, usage and service evidence.' : 'No evidence recorded yet.') : 'Evidence is unavailable. Activity is not inferred.',
+      children: available && records.length ? <div className={styles.evidenceGroups}>{(['Execution', 'Usage', 'Services'] as const).map(name => <button key={name} data-evidence-group={name} onClick={() => onOpen(name)}>{name} <small>{count(name)}</small></button>)}</div> : undefined,
+    },
+  ];
+  return <FoundationAreas areas={areas} label="Intelligence areas" />;
 }
 
 function EvidenceInspection({ record, onClose }: { record: EvidenceRecord; onClose: () => void }) {

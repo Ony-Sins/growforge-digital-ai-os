@@ -6,6 +6,9 @@ import type { Agent } from '@/lib/agents';
 import type { SpatialGraphData } from '@/lib/spatial/obsidianReader';
 import { departmentDisplayName } from '@/lib/departmentTaxonomy';
 import { agentRecords, filteredAgents, type AgentRecord } from './agentModel';
+import { FoundationAreas } from './FoundationAreas';
+import { LensHeader } from './LensHeader';
+import { LensState } from './LensState';
 import styles from './AgentsLens.module.css';
 
 export function AgentsLens({departmentFilter,onClearFilter,dismissalVersion,onInspect,onClose,closing}:{departmentFilter:string|null;onClearFilter:()=>void;dismissalVersion:number;onInspect:()=>void;onClose:()=>void;closing:boolean}) {
@@ -25,12 +28,13 @@ export function AgentsLens({departmentFilter,onClearFilter,dismissalVersion,onIn
   const selected=selection?.version===dismissalVersion?visible.find(record=>record.id===selection.id):undefined;
   const select=(record:AgentRecord,runtime=false)=>{onInspect();setSelection({id:record.id,version:dismissalVersion,runtime});};
   return <>
-    <div className={styles.title}><h1>AGENTS</h1><p>{roster?`${records.filter(record=>record.running).length} running · ${records.filter(record=>record.kind==='specialist').length} specialist definitions · ${records.filter(record=>record.kind==='orchestration').length} orchestration definition${records.filter(record=>record.kind==='orchestration').length===1?'':'s'}`:failed?'Agent records unavailable':'Loading recorded agents'}</p></div>
+    <LensHeader lensId="lens.agents" metrics={roster?[{label:'running now',value:records.filter(record=>record.running).length,tone:records.some(record=>record.running)?'live':undefined},{label:'specialist blueprints',value:records.filter(record=>record.kind==='specialist').length},{label:'orchestration',value:records.filter(record=>record.kind==='orchestration').length}]:undefined} note={!roster?(failed?'Agent roster unavailable':'Loading agent roster'):undefined}/>
     <div className={styles.field} data-agents-lens>
       {departmentFilter && <div className={styles.filter} data-dive-inspector><span>{departmentDisplayName(departmentFilter)}</span><button onClick={onClearFilter} aria-label="Clear department filter">Clear <X size={11}/></button></div>}
       <div className={styles.rows} data-dive-inspector>
-        {visible.some(record=>record.running) && <section aria-label="Recorded running agents"><h2>Recorded runs</h2>{visible.filter(record=>record.running).map(record=><button key={record.id} onClick={()=>select(record,true)} data-runtime-agent-id={record.id}><span>{record.name}</span><small>Running</small><ChevronRight size={12}/></button>)}</section>}
-        {visible.some(record=>record.kind==='specialist') && <section aria-label="Specialist definitions"><h2>Specialist definitions</h2>{visible.filter(record=>record.kind==='specialist').map(record=><button key={record.id} onClick={()=>select(record)} aria-pressed={selected?.id===record.id && !selection?.runtime} data-agent-id={record.id}><span>{record.name}</span><ChevronRight size={12} aria-hidden="true"/></button>)}</section>}
+        {roster && !visible.some(record=>record.running) && <section aria-label="Runtime agents" data-runtime-agents><h2>Runtime · running now</h2><LensState compact kind="empty" message="No agent is running." detail="The blueprints below are definitions, not live agents."/></section>}
+        {visible.some(record=>record.running) && <section aria-label="Recorded running agents"><h2>Runtime · running now</h2>{visible.filter(record=>record.running).map(record=><button key={record.id} onClick={()=>select(record,true)} data-runtime-agent-id={record.id}><span>{record.name}</span><small>Running</small><ChevronRight size={12}/></button>)}</section>}
+        {visible.some(record=>record.kind==='specialist') && <section aria-label="Specialist definitions"><h2>Specialist blueprints</h2>{visible.filter(record=>record.kind==='specialist').map(record=><button key={record.id} onClick={()=>select(record)} aria-pressed={selected?.id===record.id && !selection?.runtime} data-agent-id={record.id}><span>{record.name}</span><ChevronRight size={12} aria-hidden="true"/></button>)}</section>}
         {visible.some(record=>record.kind==='orchestration') && <section className={styles.control} aria-label="Orchestration definitions"><h2>Orchestration</h2>{visible.filter(record=>record.kind==='orchestration').map(record=><button key={record.id} onClick={()=>select(record)} aria-pressed={selected?.id===record.id} data-agent-id={record.id}><span>{record.name}</span><ChevronRight size={12} aria-hidden="true"/></button>)}</section>}
         {roster && !visible.length && <p className={styles.empty}>{departmentFilter?'No recorded specialist associations for this department.':'No registered agent definitions or runs recorded.'}</p>}
       </div>
@@ -50,6 +54,13 @@ function AgentInspection({record,runtime,onClose}:{record:AgentRecord;runtime:bo
   return <aside className={`${styles.inspector} surface-glass`} data-dive-inspector data-nora-side-inspector aria-label="Agent inspection">
     <button className={styles.close} aria-label="Dismiss agent inspection" onClick={onClose}><X size={14}/></button>
     <h2>{record.name}</h2><p className={styles.kind}>{runtime?'Recorded run':record.kind==='orchestration'?'Control definition':'Specialist definition'}</p>
+    <FoundationAreas variant="list" label="Agent anatomy" areas={[
+      {id:'agent.state',label:'State',state:record.running||record.categories['Last recorded result']?'available':'empty',summary:record.running?'Running now (recorded agent-store status).':record.categories['Last recorded result']?`Last run: ${record.categories['Last recorded result'][0]}.`:'Idle. No run recorded.'},
+      {id:'agent.assignment',label:'Assignment',state:record.departmentId?'available':'empty',summary:record.departmentId?`${departmentDisplayName(record.departmentId)}${record.categories.Department?.[1]?` · ${record.categories.Department[1]}`:''} (recorded association, not a mission assignment).`:'No recorded department association.'},
+      {id:'agent.model',label:'Model',state:'not-tracked',summary:'Not recorded per agent. Models are routed at run time.'},
+      {id:'agent.tools',label:'Tools',state:record.categories.Tools?.length?'available':'empty',summary:record.categories.Tools?.length?`${record.categories.Tools.length} declared tool relationship${record.categories.Tools.length===1?'':'s'}.`:'No declared tool relationships.'},
+      {id:'agent.activity',label:'Current activity',state:record.running?'available':'empty',summary:record.running?'Running a text-model task. No mission assignment is implied.':'Nothing running.'},
+    ]}/>
     <div className={styles.categories} aria-label="Agent inspection categories">{categories.map(name=><button key={name} aria-pressed={activeCategory===name} onClick={()=>setCategory(name)}>{name}</button>)}</div>
     <div className={styles.content}>{record.categories[activeCategory]?.map(text=><p key={text}>{text}</p>)}</div>
     <details className={styles.provenance}><summary>Provenance <ChevronRight size={11}/></summary>{record.provenance.map(text=><p key={text}>{text}</p>)}</details>

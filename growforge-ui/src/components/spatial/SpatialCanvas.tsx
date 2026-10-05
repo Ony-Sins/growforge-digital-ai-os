@@ -19,6 +19,8 @@ import { NeutronCoreEngine } from "./neutronCore/NeutronCoreEngine";
 import { advanceDive, diveDistance, diveLandingOpacity, diveContentOpacity, diveMembraneLight } from "./dive/diveJourney";
 import { DiveNetworkLayer } from "./dive/DiveNetworkLayer";
 import { DiveOverview } from "./dive/DiveOverview";
+import { DIVE_OPEN_EVENT, DIVE_SCOPE_EVENT, type DiveLensId, type DiveScopeDetail } from "@/lib/diveLenses";
+import { parseSurfaceLocation, sameSurface, withSurface, type SurfaceLocation } from "@/lib/surfaceLocation";
 import type { NeutronCoreState } from "./neutronCore/neutronCoreTypes";
 import { SpatialHud } from "./SpatialHud";
 import { CoreZoomTier } from "./CoreZoomTier";
@@ -102,11 +104,13 @@ interface TravelTransition {
 interface SpatialCanvasProps {
   className?: string;
   initialTier?: ZoomTierName;
+  /** URL addressed a Dive lens (reload / shared link): land directly inside Dive In on it, without the plunge. */
+  initialDiveLensId?: DiveLensId;
 }
 
 const USE_GPU_CORE = true;
 
-export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialCanvasProps) {
+export function SpatialCanvas({ className = "", initialTier = "home", initialDiveLensId }: SpatialCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isListening, setIsListening] = useState(false);
   const isListeningRef = useRef(isListening);
@@ -153,6 +157,13 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   const startDiveOutRef = useRef<() => void>(() => {});
   const diveLayerRef = useRef(false);
   const [diveLayer, setDiveLayer] = useState(false);
+  // Navigation state lives in the URL (see lib/surfaceLocation). The lens shown inside Dive In is reported by the
+  // existing scope event; `diveInitialLens` seeds DiveOverview when it mounts (reload / Back / Forward into Dive).
+  const [activeLensId, setActiveLensId] = useState<DiveLensId | null>(null);
+  const [diveInitialLens, setDiveInitialLens] = useState<DiveLensId | undefined>(initialDiveLensId);
+  const pendingInstantDiveRef = useRef(!!initialDiveLensId);
+  const navTargetRef = useRef<SurfaceLocation | null>(null);
+  const navTargetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, setDivePrompt] = useState(false);
   const divePromptRef = useRef(false);
   const flashRef = useRef<HTMLDivElement>(null);
@@ -472,6 +483,63 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
   }, [cancelTransitions, handleEnterCore, clearBrainFocus]);
 
   useEffect(() => { selectTierRef.current = handleSelectTier; }, [handleSelectTier]);
+
+  // ---- URL-addressable navigation: CORE / Explore / Dive In (+ lens). Systems is owned by appState (panel=settings). ----
+  // While the UI is travelling toward a location the URL already names (reload, Back, Forward), `navTargetRef` holds it and
+  // the writer stays quiet, so an in-between state can never overwrite the destination in the address bar.
+  const armNavTarget = useCallback((target: SurfaceLocation | null) => {
+    navTargetRef.current = target;
+    if (navTargetTimerRef.current) clearTimeout(navTargetTimerRef.current);
+    navTargetTimerRef.current = target ? setTimeout(() => { navTargetRef.current = null; }, 5000) : null;
+  }, []);
+  useEffect(() => {
+    armNavTarget(parseSurfaceLocation(window.location.search)); // what the URL asked for at load
+    return () => { if (navTargetTimerRef.current) clearTimeout(navTargetTimerRef.current); };
+  }, [armNavTarget]);
+  const wasDiveLayerRef = useRef(false);
+  useEffect(() => { // a lens chosen by Back/Forward/reload seeds ONE entry into Dive In; leaving it resets to Overview
+    if (wasDiveLayerRef.current && !diveLayer) setDiveInitialLens(undefined);
+    wasDiveLayerRef.current = diveLayer;
+  }, [diveLayer]);
+  useEffect(() => {
+    const onScope = (event: Event) => setActiveLensId((event as CustomEvent<DiveScopeDetail>).detail?.lensId ?? null);
+    window.addEventListener(DIVE_SCOPE_EVENT, onScope);
+    return () => window.removeEventListener(DIVE_SCOPE_EVENT, onScope);
+  }, []);
+  useEffect(() => {
+    if (visualMode === "missions" && !diveLayer) return; // legacy Missions tier keeps its own ?tier=core URL
+    const desired: SurfaceLocation = diveLayer
+      ? { surface: "dive", lensId: activeLensId ?? diveInitialLens ?? "lens.overview" }
+      : visualMode === "brain" ? { surface: "explore" } : { surface: "core" };
+    const target = navTargetRef.current;
+    if (target) {
+      if (sameSurface(target, desired)) {
+        armNavTarget(null); // arrived
+        // Canonicalize without adding history (e.g. ?lens=bogus or ?lens=Finance → the real slug).
+        const canonical = withSurface(window.location.search, desired);
+        if (canonical !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${canonical}${window.location.hash}`);
+      }
+      return; // still travelling: do not write
+    }
+    const current = parseSurfaceLocation(window.location.search);
+    if (sameSurface(current, desired)) return;
+    const url = `${window.location.pathname}${withSurface(window.location.search, desired)}${window.location.hash}`;
+    window.history.pushState(window.history.state, "", url);
+  }, [diveLayer, visualMode, activeLensId, diveInitialLens, armNavTarget]);
+  useEffect(() => {
+    const onPopState = () => {
+      const loc = parseSurfaceLocation(window.location.search);
+      armNavTarget(loc);
+      if (loc.surface === "dive") {
+        if (diveLayerRef.current) window.dispatchEvent(new CustomEvent(DIVE_OPEN_EVENT, { detail: { lensId: loc.lensId } }));
+        else { setDiveInitialLens(loc.lensId); startDiveInRef.current(); }
+      } else {
+        selectTierRef.current(loc.surface === "explore" ? "brain" : "home");
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [armNavTarget]);
 
   // 2. Initialize Three.js WebGL Scene
   useEffect(() => {
@@ -992,7 +1060,8 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       }
 
       const now = performance.now();
-      const deltaMs = now - lastFrameTime;
+      // A backgrounded tab / long hitch must not become one giant step (rotations, decays and spin integrate deltaMs).
+      const deltaMs = Math.min(now - lastFrameTime, 100);
       lastFrameTime = now;
       const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const somethingHovered = !!hoveredNodeIdRef.current;
@@ -1197,6 +1266,13 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       }
     };
 
+    // Reload on a Dive lens: begin the plunge already completed so the page lands inside Dive In (no CORE flash).
+    // Placed here, once the scene and CORE exist and just before the first frame.
+    if (pendingInstantDiveRef.current) {
+      pendingInstantDiveRef.current = false;
+      startDiveIn();
+      if (diveInRef.current) diveInRef.current.progress = 1;
+    }
     animate();
 
     return () => {
@@ -1422,7 +1498,7 @@ export function SpatialCanvas({ className = "", initialTier = "home" }: SpatialC
       {/* Record label layer (positioned per frame from the WebGL scene) */}
       <div ref={labelLayerRef} data-brain-labels className="pointer-events-none absolute inset-0 z-[25] overflow-hidden" />
 
-      {diveLayer && <div ref={diveLandingRef} data-dive-journey inert className="absolute inset-0" style={{opacity:0}}><DiveOverview /></div>}
+      {diveLayer && <div ref={diveLandingRef} data-dive-journey inert className="absolute inset-0" style={{opacity:0}}><DiveOverview initialLensId={diveInitialLens} /></div>}
 
       {/* white flash through the core's surface */}
       <div ref={flashRef} aria-hidden className="pointer-events-none absolute inset-0 z-[60] bg-[radial-gradient(circle_at_center,#ffffff_0%,#dff7ff_45%,#7fd8ff_100%)] opacity-0" />

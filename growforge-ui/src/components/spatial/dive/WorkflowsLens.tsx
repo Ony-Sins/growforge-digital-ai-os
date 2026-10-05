@@ -5,6 +5,8 @@ import { ChevronRight, X } from 'lucide-react';
 import type { SpatialGraphData } from '@/lib/spatial/obsidianReader';
 import { departmentDisplayName } from '@/lib/departmentTaxonomy';
 import { filteredWorkflows, workflowRecords, workflowScope, type WorkflowRecord, type ProcedureStep } from './workflowModel';
+import { FoundationAreas, StageStrip } from './FoundationAreas';
+import { LensHeader } from './LensHeader';
 import styles from './WorkflowsLens.module.css';
 
 export function WorkflowsLens({departmentFilter,onClearFilter,dismissalVersion,onInspect,onClose,closing}:{departmentFilter:string|null;onClearFilter:()=>void;dismissalVersion:number;onInspect:()=>void;onClose:()=>void;closing:boolean}) {
@@ -17,10 +19,11 @@ export function WorkflowsLens({departmentFilter,onClearFilter,dismissalVersion,o
   const visible=filteredWorkflows(records,departmentFilter);
   const selected=selection?.version===dismissalVersion && !closing?visible.find(record=>record.id===selection.id):undefined;
   return <>
-    <div className={styles.title}><h1>WORKFLOWS</h1><p>{!loaded?'Loading recorded procedures':failed?'Procedure sources unavailable':`${records.length} internal pipeline${records.length===1?'':'s'}`}</p></div>
+    <LensHeader lensId="lens.workflows" metrics={loaded&&!failed?[{label:records.length===1?'internal pipeline':'internal pipelines',value:records.length}]:undefined} note={!loaded?'Loading recorded procedures':failed?'Procedure sources unavailable':undefined}/>
     <div className={styles.field} data-workflows-lens data-dive-inspector>
       {departmentFilter && <div className={styles.filter}><span>{departmentDisplayName(departmentFilter)} · conditional procedure use</span><button aria-label="Clear workflow department filter" onClick={onClearFilter}>Clear <X size={11}/></button></div>}
       {!selected && visible.length>0 && <section className={styles.rows} aria-label="Internal pipeline definitions"><h2>Internal pipelines</h2>{visible.map(record=><button key={record.id} data-workflow-id={record.id} onClick={()=>{onInspect();setSelection({id:record.id,version:dismissalVersion});}}><span>{record.name}</span><small>Code-backed procedure</small><ChevronRight size={12}/></button>)}</section>}
+      {!selected && loaded && !failed && <StageStrip label="Workflow anatomy" stages={[{id:'trigger',label:'Trigger'},{id:'processing',label:'Processing stages'},{id:'approval',label:'Approval'},{id:'action',label:'Action'},{id:'verification',label:'Verification'}]} note="The shape of any workflow. Structure only, not a record of runs."/>}
       {loaded && !failed && !visible.length && <p className={styles.empty}>{departmentFilter?'No recorded procedures associated with this department.':'No procedure definitions exposed by the current records.'}</p>}
       {selected && <WorkflowInspection key={selected.id} record={selected} onClose={onClose}/>}
     </div>
@@ -44,6 +47,12 @@ function WorkflowInspection({record,onClose}:{record:WorkflowRecord;onClose:()=>
       <h2>{record.name}</h2><p className={styles.kind}>Internal pipeline · definition</p>
       <div className={styles.categories} aria-label="Workflow inspection categories">{['Purpose','Steps',...Object.keys(record.categories).filter(name=>name!=='Purpose')].map(name=><button key={name} aria-pressed={category===name} onClick={()=>setCategory(name)}>{name}</button>)}</div>
       {category==='Steps'?<div className={styles.content}><div className={styles.mobileProcedure}><Procedure record={record} selectedStep={selectedStep} onSelect={selectStep}/></div>{selectedStep?<><h3>{selectedStep.name}</h3><p>{selectedStep.purpose}</p><p>{selectedStep.dependsOn.length?`Requires: ${selectedStep.dependsOn.map(id=>record.steps.find(step=>step.id===id)?.name??id).join(', ')}`:'Input boundary · no preceding step'}</p></>:<p>Select a procedure step to inspect its recorded responsibility and dependencies.</p>}</div>:<div className={styles.content}>{record.categories[category]?.map(text=><p key={text}>{text}</p>)}</div>}
+      <FoundationAreas variant="list" label="Workflow inspector anchors" areas={[
+        {id:'workflow.runs',label:'Runs',state:'not-tracked',summary:'No run history is recorded for definitions. Missions hold the runs.'},
+        {id:'workflow.inputs',label:'Inputs',state:record.inputs.length?'available':'empty',summary:record.inputs.length?record.inputs.join(', '):'No inputs declared.',count:record.inputs.length},
+        {id:'workflow.dependencies',label:'Dependencies',state:'available',summary:'Step-to-step dependencies in this procedure.',count:record.relationships.filter(link=>link.type==='dependency').length},
+        {id:'workflow.errors',label:'Errors',state:'not-tracked',summary:'No error history is recorded for definitions.'},
+      ]}/>
       <details className={styles.provenance}><summary>Provenance <ChevronRight size={11}/></summary>{record.provenance.map(text=><p key={text}>{text}</p>)}</details>
     </aside>
   </>;

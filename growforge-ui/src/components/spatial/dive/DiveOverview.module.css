@@ -185,3 +185,60 @@
  .shell[data-lens="Overview"] .stateSpine{align-items:stretch;}
  .shell[data-lens="Overview"] .stateSpine button{justify-content:space-between;}
 }
+
+/* Foundation pass: the Mission controls entry sat under the NORA dock on desktop (dock top edge is 164px from the
+   bottom), so mission creation was unreachable. Lift it just above the dock. Pre-existing layout defect. */
+@media(min-width:901px){.missionControls{bottom:176px}}
+
+/* Lens rail: reference treatment (thin cyan edge, dark glass, bright-but-restrained active tab). Glyphs are GrowForge's own. */
+.lenses{gap:4px;padding:6px;border-radius:20px;border:1px solid #4a8fb238;background:linear-gradient(160deg,#0a2438b8,#030f1ccf);backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 #96d7f012,0 14px 36px #00000052}
+.lenses button{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:14px;font-size:12px;letter-spacing:.01em;color:#9ab8c8}
+.lenses button svg{opacity:.9;flex-shrink:0}
+.lenses button:hover{color:#e6f6fd;background:#6aaeca12}
+.lenses button[aria-pressed=true]{color:#eafaff;background:linear-gradient(150deg,#1d9bc938,#0f78a026);box-shadow:inset 0 0 0 1px #5cc8e050,0 0 18px #2aa8d826}
+@media(max-width:900px){.lenses button{padding:8px 11px}}
+
+/* Final dark direction: obsidian rail, thinner, glossy top edge, active tab as a lit slab rather than a glow. */
+.lenses{padding:4px;gap:2px;border-radius:999px;border:1px solid #a9cde114;background:linear-gradient(180deg,#0a1318c4,#03080cdd);backdrop-filter:blur(18px) saturate(1.1);box-shadow:inset 0 1px 0 #e6f4ff1c,0 14px 30px -14px #000d}
+.lenses button{padding:7px 13px;border-radius:999px;color:#7f96a3}
+.lenses button:hover{color:#d4e5ee;background:#a8d4e80c}
+.lenses button[aria-pressed=true]{color:#e9f6fb;background:linear-gradient(180deg,#a8d4e81c,#a8d4e80a);box-shadow:inset 0 1px 0 #e6f4ff26,inset 0 0 0 1px #a9cde124}
+
+/* Material pass: smoked-glass black, a thin cold titanium edge, a glossy upper response, minimal cyan. Material only. */
+.lenses{border-color:#9cc6dc24;background:linear-gradient(180deg,#ffffff09 0,transparent 55%),linear-gradient(180deg,#0a141acc,#02060af0);box-shadow:inset 0 1px 0 #eaf6ff2a,inset 0 0 0 1px #0000004d,0 22px 36px -18px #000f}
+.lenses button[aria-pressed=true]{background:linear-gradient(180deg,#a8d4e826,#a8d4e80c);box-shadow:inset 0 1px 0 #eaf6ff33,inset 0 0 0 1px #a9cde12e}
+:global(body:has([data-dive-overview]):not(:has([data-systems-surface]))) :global(.studio-command-dock){background:linear-gradient(180deg,#ffffff09 0,transparent 50%),linear-gradient(180deg,#09131acc,#02060af2)!important;border-color:#9cc6dc26!important;box-shadow:inset 0 1px 0 #eaf6ff2a,inset 0 0 0 1px #0000004d,0 26px 40px -20px #000f!important}
+
+/* ---- Phase 8: Overview lens rail only (scoped to the Overview lens; other lenses keep the shared rail). The approved black-glass
+   family, quieter than the composer. Behaviour, order and glyphs untouched. ---- */
+.shell[data-lens="Overview"] .lenses.lenses{padding:3px;gap:1px;border:0;border-radius:999px;backdrop-filter:blur(14px) saturate(1.05);
+  background:linear-gradient(180deg,#ffffff06 0,transparent 14px),radial-gradient(ellipse 80% 140% at 50% 55%,#010305f6 0%,#020407f2 60%,#06101aec 100%);
+  box-shadow:inset 0 0 0 2px #ffffff03,inset 0 0 7px #000000a8,inset 0 6px 9px -7px #d6f2ff30,inset 0 0 10px -5px #8fd4ee18,0 0 0 1px #0000009a,0 -1px 9px -6px #9fe0f830,0 10px 16px -10px #000e,0 26px 38px -22px #000}
+.shell[data-lens="Overview"] .lenses.lenses::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:
+    radial-gradient(22px 24px at 0 50%,#9fdcf02c,transparent 100%),
+    radial-gradient(22px 24px at 100% 50%,#9fdcf02c,transparent 100%),
+    linear-gradient(90deg,transparent 8%,#bfeafa48 32%,#eaf9ffb0 52%,#bfeafa48 72%,transparent 92%) top/100% 1px no-repeat,
+    linear-gradient(90deg,transparent 40%,#8fc4dc18 60%,transparent 90%) bottom/100% 1px no-repeat,
+    linear-gradient(#8fb4c80a,#8fb4c80a);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.shell[data-lens="Overview"] .lenses.lenses button{padding:6px 12px;gap:7px;border-radius:999px;color:#6d8797;font-size:11.5px;letter-spacing:.01em;background:transparent;box-shadow:none;transition:color 160ms ease,background 160ms ease,box-shadow 160ms ease}
+.shell[data-lens="Overview"] .lenses.lenses button svg{opacity:.72}
+.shell[data-lens="Overview"] .lenses.lenses button:hover{color:#cfe2ec;background:#a8d4e80a}
+.shell[data-lens="Overview"] .lenses.lenses button:hover svg{opacity:.95}
+.shell[data-lens="Overview"] .lenses.lenses button:focus-visible{outline:0;color:#e3f1f8;box-shadow:inset 0 0 0 1px #7fdcf255}
+.shell[data-lens="Overview"] .lenses.lenses button[aria-pressed=true]{color:#e6f3f9;background:linear-gradient(180deg,#a8d4e820,#a8d4e808);box-shadow:inset 0 0 0 1px #a9cde124,inset 0 1px 0 #eaf6ff30,0 0 10px -6px #7fdcf24d}
+.shell[data-lens="Overview"] .lenses.lenses button[aria-pressed=true] svg{opacity:1;color:#bdeaf7}
+@media(prefers-reduced-motion:reduce){.shell[data-lens="Overview"] .lenses.lenses button{transition:none}}
+
+/* Phase 10: lift the Overview rail 9px (desktop) so the composer-to-rail gap matches the Brief-to-composer gap. */
+@media(min-width:901px){.shell[data-lens="Overview"] .lenses.lenses{bottom:49px}}
+
+/* Phase 12: dynamic specular on the rail rim (top edge, slow, irregular; reduced motion off). */
+@keyframes gfRailX{0%,50%{--gx:-30}100%{--gx:130}}
+.shell[data-lens="Overview"] .lenses.lenses::before{ background:linear-gradient(90deg,transparent,#f2fcffd0 50%,transparent) calc(var(--gx) * 1%) top / 24% 1.5px no-repeat, radial-gradient(22px 24px at 0 50%,#9fdcf02c,transparent 100%),
+    radial-gradient(22px 24px at 100% 50%,#9fdcf02c,transparent 100%),
+    linear-gradient(90deg,transparent 8%,#bfeafa48 32%,#eaf9ffb0 52%,#bfeafa48 72%,transparent 92%) top/100% 1px no-repeat,
+    linear-gradient(90deg,transparent 40%,#8fc4dc18 60%,transparent 90%) bottom/100% 1px no-repeat,
+    linear-gradient(#8fb4c80a,#8fb4c80a); animation:gfRailX 33s ease-in-out -16s infinite; }
+@media (prefers-reduced-motion: reduce){ .shell[data-lens="Overview"] .lenses.lenses::before{ animation:none; } }

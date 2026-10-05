@@ -2,7 +2,8 @@ import type { Agent } from "@/lib/agents";
 import type { CoreState } from "@/lib/coreState";
 import { departmentDisplayName } from "@/lib/departmentTaxonomy";
 
-export const DIVE_LENSES = ["Overview", "Missions", "Departments", "Agents", "Workflows", "Context", "Tools", "Intelligence"] as const;
+/** Canonical nine-lens order. Mirrors DIVE_LENS_REGISTRY in lib/diveLenses.ts (a test pins the parity). */
+export const DIVE_LENSES = ["Overview", "Missions", "Context", "Finance", "Departments", "Agents", "Workflows", "Tools", "Intelligence"] as const;
 export type DiveLens = typeof DIVE_LENSES[number];
 export interface DiveObject {
   id: string;
@@ -13,12 +14,16 @@ export interface DiveObject {
   evidence: string;
 }
 
-/** Only recorded running work enters the overview. Catalog presence is never activity. */
-export function overviewObjects(core: CoreState | null, agents: Agent[]): DiveObject[] {
+/**
+ * Only recorded running work enters the overview. Catalog presence is never activity.
+ * `executingAgentIds`, when given (from the Overview Snapshot), restricts agent objects to agents an executor is
+ * confirmed to be running: a persisted `active` flag can outlive a crash and is not proof of work.
+ */
+export function overviewObjects(core: CoreState | null, agents: Agent[], executingAgentIds?: ReadonlySet<string>): DiveObject[] {
   return [
     { id: "executive_orchestration", name: departmentDisplayName("executive_orchestration"), kind: "system", status: core ? "Configured" : "Awaiting state", context: "The planning and reconciliation scope of the department pipeline. This structural anchor does not indicate an executing agent.", evidence: core ? `Operational snapshot recorded ${core.generatedAt}.` : "Operational snapshot not available." },
     ...(core?.jobs ?? []).filter(job => job.status === "running" && !job.isTest).map(job => ({ id: job.id, name: job.title, kind: "mission" as const, status: "Running", context: `${job.percent}% recorded progress.`, evidence: "Source: authenticated Core job snapshot." })),
-    ...agents.filter(agent => agent.status === "active").map(agent => ({ id: agent.id, name: agent.name, kind: "agent" as const, status: "Active", context: agent.description, evidence: `Source: agent execution store. Last run: ${agent.lastRun}.` })),
+    ...agents.filter(agent => agent.status === "active" && (!executingAgentIds || executingAgentIds.has(agent.id))).map(agent => ({ id: agent.id, name: agent.name, kind: "agent" as const, status: "Active", context: agent.description, evidence: `Source: agent execution store. Last run: ${agent.lastRun}.` })),
   ];
 }
 

@@ -2,6 +2,7 @@ import type { InstructionReplayMode, InstructionExecution } from "@/lib/instruct
 import fs from "node:fs";
 import path from "node:path";
 import { isPublicPreviewMode } from "@/lib/session";
+import { isOwnerReviewMode } from "@/lib/ownerReview";
 import { telemetryStore, resolveLobe } from "@/lib/telemetryStore";
 import { logContextEvent } from "@/lib/spatial/dailyContext";
 import type { Source } from "@/lib/research";
@@ -125,8 +126,12 @@ function loadFromDisk(): Job[] {
     if (!Array.isArray(parsed)) return [];
     // A job still "running" on load was cut off by a server restart — its
     // in-memory pipeline is gone, so say so rather than show it stuck forever.
+    // Owner-review mode shows a read-only projection of another server's state: that server may
+    // still be running these jobs, so display the persisted status faithfully instead of calling
+    // them interrupted.
+    const reinterpretRunning = !isOwnerReviewMode();
     return (parsed as Job[]).map((raw) => ({ ...raw, liveNotes: raw.liveNotes ?? [], revisions: raw.revisions ?? [] })).map((job) =>
-      job.status === "running"
+      reinterpretRunning && job.status === "running"
         ? {
           ...job,
           status: "error" as const,

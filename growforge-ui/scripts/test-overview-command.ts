@@ -35,5 +35,6 @@ assert.match(overview,/completionTimer\.current=setTimeout\(\(\)=>setCompletedNo
 console.log('PASS real lifecycle priority, future speech/stream hooks, test exclusion, historical success suppression and truthful summary; fixtures only, no provider/store calls.');
 
 assert.doesNotMatch(overview, /OverviewInstrument/, 'Overview surfaces remain text-led');
-assert.match(overview, /probe.online\?'verified':'unreachable'/, 'reachability failure alone does not assert configured failure');
-assert.match(overview, /latencyMs=\{probe.latencyMs\}/, 'latency comes from actual probe');
+// Overview V2-B: per-service latency lives in the Tools lens; Overview shows reachability only through the Snapshot.
+assert.doesNotMatch(overview, /CapabilitySignal/, 'no per-service latency card on Overview');
+assert.match(overview, /operationalStrip\(snapshot\)/, 'service reachability reaches Overview through the measured Snapshot');

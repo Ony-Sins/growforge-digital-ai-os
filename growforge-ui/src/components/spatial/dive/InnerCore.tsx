@@ -375,7 +375,7 @@ export function InnerCore({ onWake, phase='idle' }: { onWake: () => void; phase?
 
   return (
     <>
-      <button ref={host} className={styles.core} data-phase={phase} aria-label="Open NORA from the Inner Core" onClick={onWake}>
+      <button ref={host} className={styles.core} data-phase={phase} aria-label="Open NORA" onClick={onWake}>
         <span className={styles.fallback} aria-hidden="true" />
       </button>
       {telemetry && (

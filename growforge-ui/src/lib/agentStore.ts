@@ -169,7 +169,21 @@ export function getLogsCount(agentId?: string): number {
   return agentId ? store.logs.filter((l) => l.agentId === agentId).length : store.logs.length;
 }
 
+/** Agents this process is running right now. A persisted "active" status can outlive a crash; this cannot. */
+const executingAgents = (globalThis as unknown as { __growforgeExecutingAgents?: Set<string> });
+const executingAgentIds = (executingAgents.__growforgeExecutingAgents ??= new Set<string>());
+
+export function isAgentExecuting(id: string): boolean {
+  return executingAgentIds.has(id);
+}
+
+export function listExecutingAgentIds(): string[] {
+  return [...executingAgentIds];
+}
+
 function setStatus(id: string, status: AgentStatus, lastRun: string) {
+  if (status === "active") executingAgentIds.add(id);
+  else executingAgentIds.delete(id);
   const store = getStore();
   const agent = store.agents.find((a) => a.id === id);
   if (agent) {

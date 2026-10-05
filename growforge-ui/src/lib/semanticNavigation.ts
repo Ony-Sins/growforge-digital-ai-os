@@ -12,11 +12,13 @@ export type SemanticNavActionType =
   | "SHOW_EXPLORE"
   | "SHOW_SYSTEMS"
   | "SHOW_SETTINGS"
-  | "SHOW_PROFILE";
+  | "SHOW_PROFILE"
+  | "SHOW_DIVE_LENS";
 
 export interface SemanticNavAction {
   type: SemanticNavActionType;
   params?: {
+    lensId?: string;
     missionId?: string;
     departmentId?: string;
     tab?: string;
@@ -32,6 +34,8 @@ export interface ResolvedRoute {
   panel?: string;
   tab?: string;
 }
+
+import { lensById } from "./diveLenses";
 
 export const CANONICAL_ROUTES: Record<SemanticNavActionType, (params?: SemanticNavAction["params"]) => ResolvedRoute> = {
   SHOW_DASHBOARD: () => ({
@@ -88,6 +92,13 @@ export const CANONICAL_ROUTES: Record<SemanticNavActionType, (params?: SemanticN
     panel: "settings",
     tab: params?.tab,
   }),
+  /** Semantic address for a Dive lens (see diveLenses.ts). The id is validated, never trusted. */
+  SHOW_DIVE_LENS: (params) => {
+    const lens = params?.lensId ? lensById(params.lensId) : undefined;
+    return lens
+      ? { action: "SHOW_DIVE_LENS", path: `/?tier=home&lens=${lens.slug}`, label: lens.label, tier: "home" }
+      : CANONICAL_ROUTES.SHOW_DASHBOARD();
+  },
   SHOW_PROFILE: () => ({
     action: "SHOW_PROFILE",
     path: "/?panel=profile",

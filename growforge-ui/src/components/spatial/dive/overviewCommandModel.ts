@@ -1,7 +1,8 @@
 import type { CoreState } from '@/lib/coreState';
 import type { NoraVisualSignal } from '@/lib/noraVisualSignal';
 export type InnerCorePhase = 'idle'|'attentive'|'listening'|'thinking'|'responding'|'speaking'|'executing'|'awaiting'|'success'|'degraded';
-export function innerCorePhase(core:CoreState|null,nora:NoraVisualSignal,responseVisible=false,completedNow=false):InnerCorePhase {
+/** `executingNow`, when known (Overview Snapshot), replaces the persisted-status guess: a recorded `running` job is not proof of execution. */
+export function innerCorePhase(core:CoreState|null,nora:NoraVisualSignal,responseVisible=false,completedNow=false,executingNow?:boolean):InnerCorePhase {
   if(nora.error)return 'degraded';
   if(completedNow)return 'success';
   if(nora.listening)return 'listening';
@@ -9,7 +10,7 @@ export function innerCorePhase(core:CoreState|null,nora:NoraVisualSignal,respons
   if(nora.processing)return 'thinking';
   if(nora.streaming||responseVisible)return 'responding';
   if(core && core.systems.pendingApprovals>0)return 'awaiting';
-  if(core?.jobs.some(job=>job.status==='running'&&!job.isTest))return 'executing';
+  if(executingNow ?? core?.jobs.some(job=>job.status==='running'&&!job.isTest))return 'executing';
   if(nora.focused)return 'attentive';
   return 'idle';
 }

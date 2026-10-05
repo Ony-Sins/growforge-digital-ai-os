@@ -3,8 +3,9 @@ import { departmentRecords } from '../src/components/spatial/dive/departmentMode
 import { DIVE_LENSES } from '../src/components/spatial/dive/overviewModel';
 import { noraSurfaceContext } from '../src/lib/noraSurfaceContext';
 import type { SpatialGraphData } from '../src/lib/spatial/obsidianReader';
-assert.deepEqual(DIVE_LENSES.slice(0,4),['Overview','Missions','Departments','Agents']);
-assert.deepEqual(DIVE_LENSES,['Overview','Missions','Departments','Agents','Workflows','Context','Tools','Intelligence']);
+// Canonical nine-lens order (Finance added 2026-10-05). Parity with the registry is pinned in test-dive-foundation.
+assert.deepEqual(DIVE_LENSES.slice(0,4),['Overview','Missions','Context','Finance']);
+assert.deepEqual(DIVE_LENSES,['Overview','Missions','Context','Finance','Departments','Agents','Workflows','Tools','Intelligence']);
 const empty=departmentRecords(null);
 assert.equal(empty.filter(r=>r.taxon.kind==='department').length,8);assert.equal(empty.filter(r=>r.taxon.kind==='oversight').length,2);
 assert.equal(new Set(empty.map(r=>r.taxon.id)).size,10);assert.ok(empty.every(r=>Object.keys(r.categories).length===0));

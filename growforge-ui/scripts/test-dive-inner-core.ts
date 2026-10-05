@@ -28,8 +28,10 @@ assert.match(ui,/id: job.id/);assert.match(ui,/detail: null/);assert.match(ui,/s
 const canvas=readFileSync('src/components/spatial/dive/InnerCore.tsx','utf8');
 assert.match(canvas,/prefers-reduced-motion/);assert.match(canvas,/document.hidden/);assert.match(canvas,/renderer.dispose/);assert.match(canvas,/IntersectionObserver/);
 assert.doesNotMatch(ui,/data-ambient-core-field|styles\.depth/,'legacy CSS field is removed');
-assert.match(ui,/aria-hidden="true" data-overview-optical-background/,'latest reference background stays optical, outside the recorded execution halo');
-assert.match(ui,/stages.length > 0 && <div className=\{styles.pipeline\} data-execution-halo/);
+assert.match(ui,/<OverviewAtmosphere/,'the optical background is the atmosphere component, outside the recorded execution halo');assert.match(readFileSync('src/components/spatial/dive/OverviewAtmosphere.tsx','utf8'),/aria-hidden="true"[^>]*data-overview-optical-background/,'atmosphere stays decorative and optical');
+// Overview V2-B supersedes the permanent ring of six stage chips: stages are a compact stepper inside the Now surface.
+assert.doesNotMatch(ui,/data-execution-halo|styles\.pipeline|styles\.stage\b/,'no permanent ring of static stage chips around the center');
+assert.match(ui,/data-nora-briefing-stage/,'the center is the NORA briefing stage');
 assert.doesNotMatch(canvas,/const arcs =/); // ambient geometry cannot invent execution paths
 console.log('PASS Inner Core recorded-stage projection, canonical identity, history/test isolation, unknown state, derived group status, approval truth, context dismissal and native renderer lifecycle; fixture-only, no stores or providers touched.');
 

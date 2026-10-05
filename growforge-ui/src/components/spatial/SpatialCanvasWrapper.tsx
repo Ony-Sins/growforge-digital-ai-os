@@ -3,6 +3,7 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import type { ZoomTierName } from "./spatialGeometry";
+import type { DiveLensId } from "@/lib/diveLenses";
 
 const SpatialCanvasInternal = dynamic(
   () => import("./SpatialCanvas").then((m) => m.SpatialCanvas),
@@ -21,8 +22,10 @@ const SpatialCanvasInternal = dynamic(
 
 interface SpatialCanvasWrapperProps {
   initialTier?: ZoomTierName;
+  /** Set when the URL addresses a Dive lens: the canvas lands directly inside Dive In on that lens. */
+  initialDiveLensId?: DiveLensId;
 }
 
-export function SpatialCanvasWrapper({ initialTier = "brain" }: SpatialCanvasWrapperProps) {
-  return <SpatialCanvasInternal initialTier={initialTier} />;
+export function SpatialCanvasWrapper({ initialTier = "brain", initialDiveLensId }: SpatialCanvasWrapperProps) {
+  return <SpatialCanvasInternal initialTier={initialTier} initialDiveLensId={initialDiveLensId} />;
 }

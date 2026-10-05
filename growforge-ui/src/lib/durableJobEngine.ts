@@ -65,8 +65,20 @@ export async function withDurableRetry<T>(
   throw new Error(`[durableEngine] Exhausted all ${policy.maxAttempts} attempts for stage "${actionName}".`);
 }
 
-// In-flight execution tracking to prevent duplicate executions in the same process
-const activeExecutions = new Set<string>();
+// In-flight execution tracking to prevent duplicate executions in the same process.
+// Held on globalThis so dev Fast Refresh of this module cannot forget a pipeline that is still running.
+const executionRegistry = globalThis as unknown as { __growforgeActiveExecutions?: Set<string> };
+const activeExecutions = (executionRegistry.__growforgeActiveExecutions ??= new Set<string>());
+
+/** True only while THIS process is actually running the job's pipeline. A persisted "running" status is not proof of this. */
+export function isJobExecuting(jobId: string): boolean {
+  return activeExecutions.has(jobId);
+}
+
+/** Ids of every job this process is executing right now (read-only snapshot). */
+export function listExecutingJobIds(): string[] {
+  return [...activeExecutions];
+}
 
 /**
  * Dispatches a job through the durable background engine.

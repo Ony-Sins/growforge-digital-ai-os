@@ -96,6 +96,11 @@ export function listPendingApprovals(): PendingApproval[] {
   return getStore().filter((a) => a.status === "pending");
 }
 
+/** Every retained approval record (pending and decided), read-only copies, newest first. */
+export function listApprovalHistory(): PendingApproval[] {
+  return getStore().map((a) => ({ ...a })).sort((x, y) => y.createdAt.localeCompare(x.createdAt));
+}
+
 /** Owner-only in practice — enforced by the API route, not here. Returns
  *  false if the approval was already decided (e.g. it timed out just
  *  before a click landed) so the caller can tell the difference between

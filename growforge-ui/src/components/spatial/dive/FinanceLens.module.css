@@ -1,0 +1,21 @@
+.field{position:absolute;top:clamp(268px,31%,330px);left:0;right:0;margin-inline:auto;width:min(680px,80%);bottom:calc(var(--dive-rail-bottom,44px) + 60px);display:flex;flex-direction:column;gap:12px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;pointer-events:none;padding:2px}
+.field>*{pointer-events:auto}
+.modes{align-self:center;display:flex;gap:2px;padding:3px;border:1px solid var(--dive-card-edge,#28526429);border-radius:var(--dive-pill-radius,999px);background:rgba(5,22,32,.55)}
+.modes button{padding:6px 16px;border:0;border-radius:var(--dive-pill-radius,999px);background:none;font:inherit;font-size:11px;letter-spacing:.05em;color:#8aa3b3;cursor:pointer;transition:background .2s var(--dive-ease,ease),color .2s var(--dive-ease,ease)}
+.modes button:hover{color:#e8f6fc}
+.modes button[aria-pressed="true"]{background:linear-gradient(145deg,#16506966,#0d2b3b40);color:#d4effa;box-shadow:inset 0 1px 0 #b8eaff16}
+.modes button:focus-visible{outline:2px solid rgba(126,219,238,.8);outline-offset:1px}
+.modeNote{margin:0;text-align:center;font-size:11px;line-height:1.55;color:#7f9aa9}
+.inspector{position:fixed;right:28px;top:28%;width:330px;max-height:52vh;box-sizing:border-box;overflow-y:auto;padding:20px 22px;border:1px solid var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none);pointer-events:auto;scrollbar-width:thin;animation:financeResolve 220ms ease both}
+.inspector h2{margin:4px 0 6px;font-family:Sora,sans-serif;font-size:16px;font-weight:500;color:#e8f5fc}
+.kind{margin:0;font-size:9px;letter-spacing:.16em;color:#7ba7bb}
+.purpose{margin:0 0 10px;font-size:12px;line-height:1.6;color:#9db7c5}
+.close{position:absolute;right:12px;top:10px;border:0;background:none;color:#9ab2c3;cursor:pointer}
+.link{margin-top:12px;padding:6px 13px;border:1px solid var(--dive-card-edge,#244e5e);border-radius:var(--dive-pill-radius,999px);background:var(--dive-accent-soft,#061b26);color:var(--dive-accent,#68d1e4);font:inherit;font-size:10px;letter-spacing:.04em;cursor:pointer}
+.link:hover{border-color:var(--dive-card-edge-hover,#40839b);color:#f0fbff}
+@keyframes financeResolve{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1099px){.inspector{top:auto;bottom:calc(var(--dive-rail-bottom,100px) + 70px);left:5%;right:5%;width:auto;max-height:38vh}}
+@media(max-width:900px){.field{top:clamp(236px,29%,300px);width:90%}}
+@media(prefers-reduced-motion:reduce){.inspector{animation:none}.modes button{transition:none}}
+/* Phone: the NORA dock top edge is 216px from the bottom; stop the field above it. */
+@media(max-width:900px){.field{bottom:228px}}

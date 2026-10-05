@@ -8,3 +8,9 @@
 
 @media(max-width:900px){.field:has(.inspector) .filter{visibility:visible;position:absolute;top:-32px;left:0;right:0;margin:0}.field:has(.filter) .inspector{top:32%;max-height:35vh}}
 
+
+/* Foundation pass (2026-10-05): shared Dive edge, radius and depth. Fill and layout untouched. */
+.inspector{border-color:var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none)}
+
+/* Foundation pass: same field offset as the other lenses so the shared header's scope row never touches the list. */
+@media(min-width:901px){.field{top:clamp(268px,31%,330px)}}

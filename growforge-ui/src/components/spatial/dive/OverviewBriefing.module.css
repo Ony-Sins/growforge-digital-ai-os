@@ -1,0 +1,405 @@
+/* Overview regions: obsidian / smoked glass. Near-black translucent fill, a cold-titanium hairline edge, a glossy specular
+   edge on the side that faces NORA, no hover lift, no coloured glow. Priority is a muted hue on a mark or hairline, never a
+   fill. Type: sentence case, three sizes (12 meta, 13.5 body, 30 figures). No nested cards. */
+
+/* Status line: one quiet sentence of real facts. */
+.strip { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:10px; pointer-events:auto; }
+.cell { padding:2px 14px; border:0; background:none; color:#7f96a3; font:inherit; font-size:12px; line-height:1.6; white-space:nowrap; }
+.cell+.cell { border-left:1px solid #9fc4d824; }
+button.cell { cursor:pointer; }
+button.cell:hover { color:#cfe4ee; }
+button.cell:focus-visible { outline:1px solid #6fb4c9; outline-offset:3px; }
+.cell[data-tone="live"] { color:#9bd8e6; }
+.cell[data-tone="attention"] { color:#b99a62; }
+.cell[data-tone="critical"] { color:#c98d89; }
+.cell[data-tone="muted"] { color:#7f96a3; }
+
+/* ---- Obsidian panel --------------------------------------------------------------------------------------- */
+/* One material for every surface: almost-black smoked glass with tonal depth, a glossy upper edge, a precise cold hairline,
+   a brighter edge on the side that faces NORA, one restrained corner specular, and a deep separation shadow. No glow. */
+.panel { position:relative; flex:none; min-width:0; padding:20px 24px; border:1px solid #9cc6dc1f; border-radius:12px;
+  background:
+    linear-gradient(180deg,#ffffff0b 0,transparent 44px),
+    linear-gradient(176deg,#0d1920cc 0%,#060d12e8 38%,#02070bf2 100%);
+  backdrop-filter:blur(20px) saturate(1.15);
+  box-shadow:inset 0 1px 0 #eaf6ff2e, inset 0 0 0 1px #0000005c, 0 1px 2px #000a, 0 34px 54px -26px #000f; }
+:global([data-overview-side="left"]) .panel { background:radial-gradient(ellipse 60% 55% at 100% 44%,#5db6dc16 0%,transparent 72%), radial-gradient(130px 70px at 100% 0,#cfefff1f,transparent 72%), linear-gradient(180deg,#ffffff0b 0,transparent 44px), linear-gradient(176deg,#0d1920cc 0%,#060d12e8 38%,#02070bf2 100%); }
+:global([data-overview-side="right"]) .panel { background:radial-gradient(ellipse 60% 55% at 0 44%,#5db6dc16 0%,transparent 72%), radial-gradient(130px 70px at 0 0,#cfefff1f,transparent 72%), linear-gradient(180deg,#ffffff0b 0,transparent 44px), linear-gradient(176deg,#0d1920cc 0%,#060d12e8 38%,#02070bf2 100%); }
+/* specular: a thin bright run along the upper edge, and a longer one on the edge that faces NORA */
+.panel::before { content:""; position:absolute; top:-1px; left:8%; right:36%; height:1px; background:linear-gradient(90deg,transparent,#dff2ff70,transparent); pointer-events:none; }
+.panel::after { content:""; position:absolute; top:10%; bottom:10%; width:1px; pointer-events:none; background:linear-gradient(180deg,transparent,#a8e2f857 28%,#e1f5ff7a 52%,#a8e2f83a 78%,transparent); }
+:global([data-overview-side="left"]) .panel::after { right:-1px; }
+:global([data-overview-side="right"]) .panel::after { left:-1px; }
+:global([data-overview-side="right"]) .panel::before { left:36%; right:8%; }
+.head { margin:0 0 10px; }
+.head h2 { margin:0; font-size:13px; font-weight:500; letter-spacing:.01em; color:#c9dae3; }
+.nowTitle:focus-visible, .next:focus-visible, .steps button:focus-visible, .rows button:focus-visible, .recent button:focus-visible, .briefMe:focus-visible, .reveal:focus-visible, .health summary:focus-visible { outline:1px solid #6fb4c9; outline-offset:3px; }
+.more, .quiet { margin:8px 0 0; font-size:12px; line-height:1.5; color:#6f8795; }
+
+/* ---- Operational snapshot ---------------------------------------------------------------------------------- */
+.counts { display:grid; grid-template-columns:repeat(3,1fr); margin:0 0 4px; padding:0; }
+.counts div { display:flex; flex-direction:column; gap:3px; padding:0 4px 0 0; }
+.counts div+div { padding-left:16px; border-left:1px solid #9fc4d81c; }
+.counts dd { margin:0; font-family:Sora,sans-serif; font-size:clamp(24px,3.2vh,32px); font-weight:300; line-height:1.05; color:#e9f3f8; }
+.counts dd[data-tone="attention"] { color:#c4a46a; }
+.counts dt { font-size:12px; color:#6f8795; }
+.chart { margin:16px 0 0; padding:0; }
+.chart svg { display:block; width:100%; height:auto; overflow:visible; }
+.chartBase { stroke:#a9d0e412; stroke-width:1; vector-effect:non-scaling-stroke; }
+.chartLine { fill:none; stroke:#a4e6f7; stroke-width:1.1; stroke-linejoin:round; stroke-linecap:round; filter:drop-shadow(0 0 1.5px #5fd3ee59); }
+.chartDot { fill:url(#gf-node); stroke:#b4eefb99; stroke-width:.7; filter:drop-shadow(0 0 2px #7fe0f48c); pointer-events:none; transition:filter 160ms ease; }
+.chartPoint { outline:none; cursor:default; }
+.chartGlow { fill:url(#gf-glow); opacity:calc(.28 + var(--k,0) * .5); pointer-events:none; transform-box:fill-box; transform-origin:center; transition:opacity 160ms ease, transform 160ms ease; }
+.chartHit { fill:transparent; }
+.chartPoint:hover .chartGlow, .chartPoint:focus-visible .chartGlow { opacity:calc(.6 + var(--k,0) * .4); transform:scale(1.6); }
+.chartPoint:hover .chartDot, .chartPoint:focus-visible .chartDot { fill:url(#gf-node); stroke:#b4eefb99; stroke-width:.7; filter:drop-shadow(0 0 2px #7fe0f48c); pointer-events:none; transition:filter 160ms ease; }
+.chartErr { cursor:default; }
+.chartErr:hover rect { filter:drop-shadow(0 0 3px #cdb27acc); }
+.chartErr rect { fill:#cdb27a; opacity:.92; transition:filter 160ms ease; }
+.chart figcaption { display:flex; justify-content:space-between; gap:8px; margin-top:6px; font-size:11px; color:#6a808d; line-height:1.3; }
+.chart figcaption span { white-space:nowrap; }
+.chart figcaption em { font-style:normal; text-align:center; min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#6f8795; }
+.chartNote { margin:10px 0 0; padding:0; font-size:12px; color:#6f8795; }
+.now { margin-top:14px; padding-top:12px; border-top:1px solid #9fc4d81a; }
+.nowTitle { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; padding:0; border:0; background:none; text-align:left; font:inherit; font-size:13.5px; line-height:1.4; color:#e3eff5; cursor:pointer; }
+.nowTitle:hover { color:#fff; }
+.evidence { display:flex; align-items:center; gap:8px; margin:3px 0 6px; font-size:12px; line-height:1.4; color:#7f96a3; }
+.evidence i { flex:none; width:7px; height:7px; border-radius:50%; border:1px solid #607887; background:transparent; }
+.evidence[data-evidence="executing"] { color:#b5e6f2; }
+.evidence[data-evidence="executing"] i { border-color:#7fd3e6; background:#7fd3e6; }
+.evidence[data-evidence="executor_absent"] i { border-color:#b99a62; }
+.steps { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 12px; margin:0; }
+.stageLine { display:inline-flex; align-items:center; gap:6px; min-width:0; max-width:100%; font-size:12px; color:#7f96a3; white-space:nowrap; }
+.stageLine b { min-width:0; overflow:hidden; text-overflow:ellipsis; font-weight:500; color:#c3d6df; }
+.stageLine em { min-width:0; overflow:hidden; text-overflow:ellipsis; font-style:normal; color:#7f96a3; }
+.stageLine svg { flex:none; color:#4f6a78; }
+.steps ol { display:flex; gap:5px; margin:0; padding:0; list-style:none; flex:none; }
+.steps button { display:block; width:12px; height:12px; padding:0; border-radius:50%; border:1px solid #3a5564; background:transparent; cursor:pointer; transition:border-color 160ms ease; }
+.steps button:hover, .steps button[aria-pressed="true"] { border-color:#a3dcea; }
+.steps button[data-status="done"], .steps button[data-status="skipped"] { background:#4f8798; border-color:#4f8798; }
+.steps button[data-status="active"] { border-color:#8fd6ea; border-style:dashed; } /* recorded active: a ring, never a filled "live" dot */
+.steps button[data-status="error"] { border-color:#b8777f; background:#b8777f40; }
+.flag { margin:8px 0 0; font-size:12px; color:#b99a62; }
+.next { display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:0; border:0; background:none; font:inherit; font-size:12px; color:#8cc4d4; cursor:pointer; }
+.next:hover { color:#c4e6f0; }
+
+/* ---- System health: the same glass, a disclosure so it can collapse once healthy ------------------------------ */
+.health { font-size:12px; color:#7f96a3; padding:16px 24px 16px; }
+.health summary { display:flex; align-items:center; gap:10px; list-style:none; cursor:pointer; }
+.health summary::-webkit-details-marker { display:none; }
+.health summary span { flex:1; font-size:13px; font-weight:500; letter-spacing:.01em; color:#c9dae3; }
+.health summary svg { flex:none; color:#5d7887; transition:transform 160ms ease; }
+.health[open] summary svg { transform:rotate(180deg); }
+.health[data-degraded="true"] summary span { color:#cdb07a; }
+.services { margin:10px 0 0; padding:0; list-style:none; }
+.services li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; font-size:13px; color:#d4e3eb; }
+.services li+li { border-top:1px solid #9fc4d817; }
+.services em { font-style:normal; font-size:12px; color:#7f96a3; }
+.services li[data-reachable="false"] em { color:#c7a669; }
+.health .next { margin-top:8px; }
+
+/* ---- Attention + recent rows ------------------------------------------------------------------------------ */
+.rows, .recent { flex:none; display:flex; flex-direction:column; margin:0; padding:0; list-style:none; }
+.rows li+li, .recent li+li { border-top:1px solid #9fc4d817; }
+.rows button, .recent button { position:relative; display:grid; width:100%; padding:10px 0; border:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer; border-radius:6px; }
+.rows button { grid-template-columns:20px minmax(0,1fr); grid-template-areas:"mark head" "mark sub"; column-gap:12px; row-gap:1px; align-items:center; }
+.rows button:hover, .recent button:hover { background:#a8d4e80c; }
+.rowMark { grid-area:mark; display:grid; place-items:center; color:#b99a62; }
+.rows li[data-priority="critical"] .rowMark { color:#c98d89; }
+.rows b { grid-area:head; font-size:13.5px; font-weight:500; color:#e0ecf2; min-width:0; }
+.rowSub { grid-area:sub; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#7f96a3; }
+.rows li[data-priority="critical"] { box-shadow:inset 2px 0 0 #b8777f99; }
+.recent button { grid-template-columns:44px minmax(0,1fr) auto; column-gap:12px; align-items:baseline; }
+.recent time { font-size:12px; color:#6f8795; }
+.recent b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; font-weight:400; color:#d4e3eb; }
+.recent button > span { font-size:12px; color:#6f8795; white-space:nowrap; }
+.recent li[data-outcome="failed"] button > span, .recent li[data-outcome="denied"] button > span { color:#c98d89; }
+.recent li[data-outcome="interrupted"] button > span, .recent li[data-outcome="timed_out"] button > span { color:#b99a62; }
+.reveal { display:inline-flex; align-items:center; gap:8px; align-self:flex-start; margin-top:6px; padding:3px 0; border:0; background:none; font:inherit; font-size:12px; color:#8cc4d4; cursor:pointer; }
+
+/* ---- NORA Brief: set into the stage, one state and one action ---------------------------------------------- */
+/* thinner and darker than the side panels, lit faintly from above (NORA sits above it) */
+.brief { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px; padding:7px 10px 7px 18px; border:1px solid #9cc6dc1c; border-radius:999px;
+  background:radial-gradient(ellipse 50% 120% at 50% -30%,#5db6dc1a 0%,transparent 70%), linear-gradient(180deg,#09121799,#02060ad4); backdrop-filter:blur(18px) saturate(1.1);
+  box-shadow:inset 0 1px 0 #eaf6ff26, inset 0 0 0 1px #0000004d, 0 22px 34px -18px #000f; }
+.brief::before { content:""; position:absolute; top:-1px; left:22%; right:22%; height:1px; background:linear-gradient(90deg,transparent,#dff2ff5c,transparent); }
+.briefMark { display:grid; place-items:center; color:#8fd0e2; }
+.briefBody { min-width:0; }
+.briefBody h2 { margin:0; font-size:13px; font-weight:500; color:#d4e5ee; }
+.briefStatus { margin:1px 0 0; font-size:12px; color:#7f96a3; line-height:1.35; }
+.briefMe { display:inline-flex; align-items:center; padding:8px 20px; border:1px solid #9ad3e547; border-radius:999px; background:linear-gradient(180deg,#a8e2f81f,#5db6dc0d); box-shadow:inset 0 1px 0 #eaf6ff2e; color:#c1e6f1; font:inherit; font-size:12.5px; cursor:default; opacity:.85; }
+
+@media(min-width:901px) and (max-height:950px) {
+ .panel { padding:15px 22px; }
+ .health { padding:12px 22px; }
+ .services { margin-top:6px; }
+ .health .next { margin-top:4px; }
+ .services li { padding:3px 0; }
+ .head { margin-bottom:6px; }
+ .counts dd { font-size:26px; }
+ .chart { margin-top:10px; }
+ .now { margin-top:10px; padding-top:9px; }
+ .recent button, .rows button { padding:8px 0; }
+}
+@media(max-width:900px) {
+ .strip { margin-top:8px; padding:0; }
+ .cell { padding:2px 10px; font-size:11.5px; white-space:normal; }
+ .panel { padding:18px 20px; }
+ .brief { padding:10px 12px 10px 14px; gap:10px; }
+ .briefMe { padding:8px 14px; }
+}
+@media(prefers-reduced-motion:reduce) { .steps button, .health summary svg { transition:none; } }
+
+/* ---- Phase 2 (final material pass): Operational snapshot only. Scoped to .snapshot; Health and Recent keep the shared .panel material. ----
+   Black glass catching light from NORA (to its right): mostly black, a few selective reflections, no continuous outline. CSS only. */
+/* BODY: a near-black centre, graphite / navy only toward the edges, one very soft optical reflection from the top-right corner that fades out
+   before the middle. Reflection layers sit above the body and carry almost no alpha. */
+.snapshot, :global([data-overview-side="left"]) .snapshot { border:0; border-radius:10px; padding:15px 20px 14px; backdrop-filter:blur(14px) saturate(1.05);
+  background:
+    radial-gradient(ellipse 42% 26% at 94% 3%, #b4e6f81f, transparent 72%),
+    linear-gradient(207deg, #d6f2ff14 0%, #d6f2ff07 11%, transparent 27%),
+    linear-gradient(180deg, #ffffff07 0, transparent 30px),
+    linear-gradient(90deg, #6fa8c41a 0%, #6fa8c40a 7%, transparent 20%),
+    radial-gradient(ellipse 30% 22% at 0 100%, #7fb8d014, transparent 72%),
+    radial-gradient(ellipse 76% 72% at 46% 52%, #010305f7 0%, #020407f5 50%, #07111af2 100%);
+  /* glass thickness: a faint lighter band just inside the shell, then a tiny dark depth shadow inside the perimeter */
+  box-shadow:
+    inset 0 0 0 3px #ffffff05, inset 0 0 7px #000000b0,
+    /* glossy edge glow: a soft inner bloom all round, stronger on the top and NORA-facing right, lighter on the left and bottom */
+    inset 0 0 14px -5px #8fd4ee38, inset 0 9px 13px -9px #d6f2ff52, inset -10px 0 15px -9px #9fe0f87a, inset 8px 0 13px -9px #8fc4dc40,
+    0 0 0 1px #000000a6, 0 0 11px -2px #9fdcf046, 4px -1px 15px -5px #9fe0f85c, -3px 0 11px -6px #8fc4dc30, 0 3px 5px #000c, 0 20px 32px -12px #000f, 0 50px 70px -28px #000; }
+/* EDGE LIGHT: separate, selective reflections on a 1px ring. Top: short cold segment on the NORA-facing half. Top-right corner: the
+   strongest catch. Right edge: upper-middle run only. Bottom: one faint streak. Left: a barely-there hairline so the shape still reads. */
+.snapshot::before, :global([data-overview-side="left"]) .snapshot::before { content:""; position:absolute; inset:0; top:0; left:0; right:0; height:auto; border-radius:inherit; padding:1px; pointer-events:none;
+  background:
+    radial-gradient(30px 26px at 100% 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 0 0, #cfeeff8c, transparent 100%),
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) left / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 0 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(90deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+/* INNER EDGE: a faint highlight 3px inside, only along the top and NORA-facing side, never a full second frame */
+.snapshot::after, :global([data-overview-side="left"]) .snapshot::after { content:""; position:absolute; inset:3px; top:3px; bottom:3px; left:3px; right:3px; width:auto; border-radius:7px; pointer-events:none; background:none; border:1px solid #c4eaf80f;
+  -webkit-mask:linear-gradient(207deg,#000 0%,#000 22%,transparent 56%), linear-gradient(90deg,#00000070 0%,transparent 38%); mask:linear-gradient(207deg,#000 0%,#000 22%,transparent 56%), linear-gradient(90deg,#00000070 0%,transparent 38%); }
+
+/* TYPE CONTRAST: soft white (never pure), cool grey-blue, darker metadata; champagne only on real error data */
+.snapshot .head h2 { font-size:12px; font-weight:600; letter-spacing:.01em; color:#b9ccd8; }
+.snapshot .head { margin:0 0 9px; }
+.snapshot .counts { margin:0; grid-template-columns:repeat(3,1fr); justify-content:stretch; }
+.snapshot .counts div { gap:1px; padding:0; position:relative; }
+.snapshot .counts div+div { border-left:0; padding-left:16px; }
+.snapshot .counts div+div::before { content:""; position:absolute; left:0; top:4%; bottom:4%; width:1px; background:linear-gradient(180deg,transparent,#a9d0e41f 28%,#a9d0e41f 72%,transparent); }
+.snapshot .counts dd { font-size:clamp(22px,2.7vh,27px); font-weight:400; letter-spacing:-.015em; font-variant-numeric:tabular-nums lining-nums; line-height:1.05; color:#e6eff5; }
+.snapshot .counts dd[data-tone="attention"] { color:#cdb27a; }
+.snapshot .counts dt { margin:0; font-size:10.5px; letter-spacing:.015em; color:#6a8493; }
+
+.snapshot .chart { margin:7px 0 0; }
+.snapshot .chart figcaption { margin-top:2px; font-size:10px; color:#6a8493; }
+.snapshot .chart figcaption span { color:#6a8493; }
+.legend { display:flex; justify-content:center; gap:11px; }
+.legend b { display:inline-flex; align-items:center; gap:4px; font-weight:400; color:#6a8493; white-space:nowrap; }
+.keyDot { display:inline-block; width:5px; height:5px; border-radius:50%; background:#eafaff; box-shadow:0 0 0 1px #5fc4e2; }
+.keyErr { display:inline-block; width:1.4px; height:8px; border-radius:1px; background:#cdb27a; }
+
+.snapshot .now { margin-top:9px; padding:0; border:0; background:none; }
+.snapshot .nowTitle { font-size:14px; font-weight:500; line-height:1.3; color:#e9f1f6; }
+.snapshot .evidence { margin:2px 0 7px; font-size:11px; line-height:1.4; color:#6a8493; }
+.snapshot .evidence i { width:6px; height:6px; border-color:#4c6675; }
+.snapshot .steps { flex-wrap:wrap; gap:6px 12px; }
+.snapshot .stageLine { flex:1 1 auto; font-size:12px; color:#7d95a4; }
+.snapshot .stageLine b { color:#cddbe5; font-weight:500; }
+.snapshot .stageLine em { color:#7d95a4; }
+.snapshot .stageLine svg { color:#4c6675; }
+.snapshot .steps ol { gap:4px; }
+.snapshot .steps button { width:10px; height:10px; border-color:#35505f; }
+.snapshot .steps button[data-status="done"], .snapshot .steps button[data-status="skipped"] { background:#4f93a8; border-color:#7fb8cb; }
+@media(min-width:901px) and (max-height:950px) { .snapshot, :global([data-overview-side="left"]) .snapshot { padding:13px 18px 12px; } }
+
+/* ---- Phase 3: System health only. The approved Operational snapshot material, applied here as its own copy (consolidation is a later pass). ---- *//* BODY: a near-black centre, graphite / navy only toward the edges, one very soft optical reflection from the top-right corner that fades out
+   before the middle. Reflection layers sit above the body and carry almost no alpha. */
+.health, :global([data-overview-side="left"]) .health { border:0; border-radius:10px; padding:15px 20px 14px; backdrop-filter:blur(14px) saturate(1.05);
+  background:
+    radial-gradient(ellipse 42% 26% at 94% 3%, #b4e6f81f, transparent 72%),
+    linear-gradient(207deg, #d6f2ff14 0%, #d6f2ff07 11%, transparent 27%),
+    linear-gradient(180deg, #ffffff07 0, transparent 30px),
+    linear-gradient(90deg, #6fa8c41a 0%, #6fa8c40a 7%, transparent 20%),
+    radial-gradient(ellipse 30% 22% at 0 100%, #7fb8d014, transparent 72%),
+    radial-gradient(ellipse 76% 72% at 46% 52%, #010305f7 0%, #020407f5 50%, #07111af2 100%);
+  /* glass thickness: a faint lighter band just inside the shell, then a tiny dark depth shadow inside the perimeter */
+  box-shadow:
+    inset 0 0 0 3px #ffffff05, inset 0 0 7px #000000b0,
+    /* glossy edge glow: a soft inner bloom all round, stronger on the top and NORA-facing right, lighter on the left and bottom */
+    inset 0 0 14px -5px #8fd4ee38, inset 0 9px 13px -9px #d6f2ff52, inset -10px 0 15px -9px #9fe0f87a, inset 8px 0 13px -9px #8fc4dc40,
+    0 0 0 1px #000000a6, 0 0 11px -2px #9fdcf046, 4px -1px 15px -5px #9fe0f85c, -3px 0 11px -6px #8fc4dc30, 0 3px 5px #000c, 0 20px 32px -12px #000f, 0 50px 70px -28px #000; }
+/* EDGE LIGHT: separate, selective reflections on a 1px ring. Top: short cold segment on the NORA-facing half. Top-right corner: the
+   strongest catch. Right edge: upper-middle run only. Bottom: one faint streak. Left: a barely-there hairline so the shape still reads. */
+.health::before, :global([data-overview-side="left"]) .health::before { content:""; position:absolute; inset:0; top:0; left:0; right:0; height:auto; border-radius:inherit; padding:1px; pointer-events:none;
+  background:
+    radial-gradient(30px 26px at 100% 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 0 0, #cfeeff8c, transparent 100%),
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) left / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 0 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(90deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+/* INNER EDGE: a faint highlight 3px inside, only along the top and NORA-facing side, never a full second frame */
+.health::after, :global([data-overview-side="left"]) .health::after { content:""; position:absolute; inset:3px; top:3px; bottom:3px; left:3px; right:3px; width:auto; border-radius:7px; pointer-events:none; background:none; border:1px solid #c4eaf80f;
+  -webkit-mask:linear-gradient(207deg,#000 0%,#000 22%,transparent 56%), linear-gradient(90deg,#00000070 0%,transparent 38%); mask:linear-gradient(207deg,#000 0%,#000 22%,transparent 56%), linear-gradient(90deg,#00000070 0%,transparent 38%); }
+
+/* HEALTH CONTENT: title + one derived status word, engineered rows, restrained champagne for unreachable, quiet tertiary action */
+.health, :global([data-overview-side="left"]) .health { padding:15px 20px 14px; }
+.health summary { gap:10px; }
+.health summary span { font-size:12px; font-weight:600; letter-spacing:.01em; color:#b9ccd8; }
+.health[data-degraded="true"] summary span { color:#b9ccd8; }
+.health summary svg { color:#4f6676; }
+.healthState { flex:none; font-size:11px; font-weight:500; letter-spacing:.02em; color:#cdb27a; }
+.services { margin:8px 0 0; }
+.services li { padding:6px 0; font-size:13px; color:#dbe6ed; border-top:0; background:linear-gradient(90deg,transparent,#a9d0e41a 14%,#a9d0e41a 86%,transparent) top / 100% 1px no-repeat; }
+.services li:first-child { background:none; }
+.services li+li { border-top:0; }
+.services em { display:inline-flex; align-items:center; font-size:11.5px; letter-spacing:.01em; color:#7d95a4; }
+.services li[data-reachable="false"] em { color:#cdb27a; }
+.services em::before { content:""; flex:none; width:5px; height:5px; margin-right:8px; border-radius:50%; background:#7fd6ee; box-shadow:0 0 6px #7fd6ee66; }
+.services li[data-reachable="false"] em::before { background:#cdb27a; box-shadow:0 0 6px #cdb27a66; }
+.health .next { margin-top:6px; padding:0; font-size:11.5px; color:#6f8999; }
+.health .next:hover { color:#a9c4d2; }
+@media(min-width:901px) and (max-height:950px) { .health, :global([data-overview-side="left"]) .health { padding:13px 18px 12px; } .services li { padding:4px 0; } .services { margin-top:6px; } }
+
+/* ---- Phase 4: Recent activity only. The approved card material, MIRRORED: this card sits right of NORA, so its LEFT edge catches
+   the extra cold light. Duplicated on purpose; consolidation is a later pass. ---- */
+.recentCard, :global([data-overview-side="right"]) .recentCard { border:0; border-radius:10px; padding:15px 20px 14px; backdrop-filter:blur(14px) saturate(1.05);
+  background:
+    radial-gradient(ellipse 42% 26% at 6% 3%, #b4e6f81f, transparent 72%),
+    linear-gradient(153deg, #d6f2ff14 0%, #d6f2ff07 11%, transparent 27%),
+    linear-gradient(180deg, #ffffff07 0, transparent 30px),
+    linear-gradient(270deg, #6fa8c41a 0%, #6fa8c40a 7%, transparent 20%),
+    radial-gradient(ellipse 30% 22% at 100% 100%, #7fb8d014, transparent 72%),
+    radial-gradient(ellipse 76% 72% at 54% 52%, #010305f7 0%, #020407f5 50%, #07111af2 100%);
+  box-shadow:
+    inset 0 0 0 3px #ffffff05, inset 0 0 7px #000000b0,
+    inset 0 0 14px -5px #8fd4ee38, inset 0 9px 13px -9px #d6f2ff52, inset 10px 0 15px -9px #9fe0f87a, inset -8px 0 13px -9px #8fc4dc40,
+    0 0 0 1px #000000a6, 0 0 11px -2px #9fdcf046, -4px -1px 15px -5px #9fe0f85c, 3px 0 11px -6px #8fc4dc30,
+    0 3px 5px #000c, 0 20px 32px -12px #000f, 0 50px 70px -28px #000; }
+.recentCard::before, :global([data-overview-side="right"]) .recentCard::before { content:""; position:absolute; inset:0; top:0; left:0; right:0; height:auto; border-radius:inherit; padding:1px; pointer-events:none;
+  background:
+    radial-gradient(30px 26px at 0 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 100% 0, #cfeeff8c, transparent 100%),
+    linear-gradient(270deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) right / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 100% 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(270deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.recentCard::after, :global([data-overview-side="right"]) .recentCard::after { content:""; position:absolute; inset:3px; top:3px; bottom:3px; left:3px; right:3px; width:auto; border-radius:7px; pointer-events:none; background:none; border:1px solid #c4eaf80f;
+  -webkit-mask:linear-gradient(153deg,#000 0%,#000 22%,transparent 56%), linear-gradient(270deg,#00000070 0%,transparent 38%); mask:linear-gradient(153deg,#000 0%,#000 22%,transparent 56%), linear-gradient(270deg,#00000070 0%,transparent 38%); }
+
+/* RECENT CONTENT: quiet, editorial. Date (subdued) | title (strongest, truncates; full title in its tooltip) | outcome (right-aligned). */
+.recentCard .head { margin:0 0 6px; }
+.recentCard .head h2 { font-size:12px; font-weight:600; letter-spacing:.01em; color:#b9ccd8; }
+.recentCard .recent li+li { border-top:0; background:linear-gradient(90deg,transparent,#a9d0e41a 14%,#a9d0e41a 86%,transparent) top / 100% 1px no-repeat; }
+.recentCard .recent button { grid-template-columns:46px minmax(0,1fr) auto; column-gap:14px; padding:9px 0; align-items:baseline; border-radius:4px; }
+.recentCard .recent button:hover { background:#a8d4e809; }
+.recentCard .recent time { font-size:11.5px; font-variant-numeric:tabular-nums; color:#6a8493; }
+.recentCard .recent b { font-size:13.5px; font-weight:500; color:#dfe9ef; }
+.recentCard .recent button > span { font-size:11.5px; letter-spacing:.01em; color:#6a8493; }
+.recentCard .recent li[data-outcome="failed"] button > span, .recentCard .recent li[data-outcome="denied"] button > span { color:#b98f8c; }
+.recentCard .recent li[data-outcome="interrupted"] button > span, .recentCard .recent li[data-outcome="timed_out"] button > span { color:#cdb27a; }
+@media(min-width:901px) and (max-height:950px) { .recentCard, :global([data-overview-side="right"]) .recentCard { padding:13px 18px 12px; } .recentCard .recent button { padding:7px 0; } }
+
+/* ---- Phase 6: NORA Brief only. The approved black-glass family, thinner and lighter. NORA is directly above, so the TOP edge
+   receives the reflected light; the sides are dim and the bottom almost dark. Cheaper than the cards: no extra rules or labels. ---- */
+.brief { border:0; border-radius:18px; padding:7px 10px 7px 18px; backdrop-filter:blur(14px) saturate(1.05);
+  background:
+    radial-gradient(ellipse 52% 120% at 50% -40%, #9bdcf226, transparent 72%),
+    linear-gradient(180deg, #ffffff08 0, transparent 16px),
+    radial-gradient(ellipse 80% 110% at 50% 55%, #010305f7 0%, #020407f4 55%, #07111aee 100%);
+  box-shadow:
+    inset 0 0 0 2px #ffffff04, inset 0 0 6px #000000a8, inset 0 7px 10px -7px #d6f2ff40, inset 0 0 10px -4px #8fd4ee26,
+    0 0 0 1px #000000a0, 0 -2px 12px -5px #9fe0f84a, 0 0 8px -3px #9fdcf02e,
+    0 10px 18px -10px #000f, 0 28px 40px -22px #000; }
+.brief::before { content:""; position:absolute; inset:0; top:0; left:0; right:0; height:auto; border-radius:inherit; padding:1px; pointer-events:none;
+  background:
+    radial-gradient(22px 18px at 0 0, #cfeeff80, transparent 100%),
+    radial-gradient(22px 18px at 100% 0, #cfeeff80, transparent 100%),
+    linear-gradient(90deg, transparent 8%, #bfeafa66 28%, #eaf9ffd6 50%, #bfeafa66 72%, transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, #8fc4dc34, transparent 62%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, #8fc4dc34, transparent 62%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 38%, #8fc4dc22 60%, transparent 90%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80a, #8fb4c80a);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.brief::after { content:""; position:absolute; inset:2.5px; border-radius:15px; pointer-events:none; border:1px solid #c4eaf80d;
+  -webkit-mask:linear-gradient(180deg,#000,transparent 72%); mask:linear-gradient(180deg,#000,transparent 72%); }
+.briefMark { color:#7fbfd3; }
+.briefBody h2 { font-size:12.5px; font-weight:600; letter-spacing:.01em; color:#c4d6e0; }
+.briefStatus { font-size:11.5px; color:#6a8493; }
+.briefMe { padding:7px 18px; border:0; border-radius:999px; position:relative; background:linear-gradient(180deg,#a8e2f81a,#04090d00 80%), #04090de6; color:#a9d4e2; opacity:.9;
+  box-shadow:inset 0 0 0 1px #9ad3e533, inset 0 1px 0 #eaf6ff2a, 0 1px 3px #000a; }
+
+/* ---- Phase 9: executive status line only. Quiet secondary text, fading hairline separators, restrained amber on Attention. ---- */
+.strip { margin-top:10px; }
+.cell { position:relative; padding:2px 16px; font-size:11.5px; line-height:19.2px; letter-spacing:.015em; color:#6a8493; }
+.cell+.cell { border-left:0; }
+.cell+.cell::before { content:""; position:absolute; left:0; top:16%; bottom:16%; width:1px; background:linear-gradient(180deg,transparent,#a9d0e430,transparent); }
+.cell[data-tone="attention"] { color:#cdb27a; font-weight:500; }
+.cell[data-tone="live"] { color:#8fcfe0; }
+.cell[data-tone="critical"] { color:#c4928f; }
+button.cell:hover { color:#bcd3df; }
+
+/* Phase 11: on narrow screens the status cells wrap, so the hairline separators (which belong between cells on one row) are dropped
+   and the cells are spaced instead. */
+@media (max-width: 900px) {
+  .strip { column-gap:6px; row-gap:0; }
+  .cell { padding:2px 10px; }
+  .cell+.cell::before { display:none; }
+}
+
+/* ---- Phase 12: dynamic specular. A slow glint travels ALONG the existing 1px rim only (the rim ring is masked to the edge, so nothing crosses content).
+   Custom properties --gx/--gy (registered in globals.css) are animated; each surface has its own duration, rest fraction and negative delay, so nothing is in sync.
+   Left cards: strongest on the right (NORA-facing) edge. Recent: strongest on the left edge. Brief: top edge. Reduced motion: no animation, glint rests off-edge. ---- */
+@keyframes gfY1{0%,35%{--gy:-35}100%{--gy:135}}
+@keyframes gfY2{0%,48%{--gy:-35}100%{--gy:135}}
+@keyframes gfY3{0%,58%{--gy:-35}100%{--gy:135}}
+@keyframes gfX1{0%,40%{--gx:-30}100%{--gx:130}}
+@keyframes gfX2{0%,52%{--gx:-30}100%{--gx:130}}
+@keyframes gfX3{0%,62%{--gx:-30}100%{--gx:130}}
+.snapshot::before, :global([data-overview-side="left"]) .snapshot::before { background:linear-gradient(180deg,transparent,#f2fcffc4 50%,transparent) right calc(var(--gy) * 1%) / 1.5px 30% no-repeat, linear-gradient(90deg,transparent,#eaf9ff66 50%,transparent) calc(var(--gx) * 1%) top / 26% 1.5px no-repeat, radial-gradient(30px 26px at 100% 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 0 0, #cfeeff8c, transparent 100%),
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) left / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 0 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(90deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e); animation:gfY1 23s ease-in-out -7s infinite, gfX1 31s ease-in-out -19s infinite; }
+.health::before, :global([data-overview-side="left"]) .health::before { background:linear-gradient(180deg,transparent,#f2fcffc4 50%,transparent) right calc(var(--gy) * 1%) / 1.5px 30% no-repeat, linear-gradient(90deg,transparent,#eaf9ff66 50%,transparent) calc(var(--gx) * 1%) top / 26% 1.5px no-repeat, radial-gradient(30px 26px at 100% 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 0 0, #cfeeff8c, transparent 100%),
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) left / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 0 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(90deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e); animation:gfY2 29s ease-in-out -3s infinite, gfX2 37s ease-in-out -11s infinite; }
+.recentCard::before, :global([data-overview-side="right"]) .recentCard::before { background:linear-gradient(180deg,transparent,#f2fcffc4 50%,transparent) left calc(var(--gy) * 1%) / 1.5px 30% no-repeat, linear-gradient(90deg,transparent,#eaf9ff66 50%,transparent) calc(var(--gx) * 1%) top / 26% 1.5px no-repeat, radial-gradient(30px 26px at 0 0, #ffffff, #d4f1ffd6 34%, transparent 100%),
+    radial-gradient(22px 20px at 100% 0, #cfeeff8c, transparent 100%),
+    linear-gradient(270deg, transparent 50%, #bfeafa9c 68%, #dff5ffb0 80%, transparent 96%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent 12%, #8fd6ee70 26%, #bdeafab4 42%, #8fd6ee40 56%, transparent 70%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, transparent 22%, #7fb8d03a 40%, #a8d8ea52 52%, transparent 72%) right / 1px 100% no-repeat,
+    radial-gradient(26px 22px at 100% 100%, #8fc4dc3a, transparent 100%),
+    linear-gradient(270deg, transparent 50%, #8fc4dc3a 64%, transparent 80%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80e, #8fb4c80e); animation:gfY3 26s ease-in-out -14s infinite, gfX3 34s ease-in-out -5s infinite; }
+.brief::before { background:linear-gradient(90deg,transparent,#f2fcffd0 50%,transparent) calc(var(--gx) * 1%) top / 24% 1.5px no-repeat, radial-gradient(22px 18px at 0 0, #cfeeff80, transparent 100%),
+    radial-gradient(22px 18px at 100% 0, #cfeeff80, transparent 100%),
+    linear-gradient(90deg, transparent 8%, #bfeafa66 28%, #eaf9ffd6 50%, #bfeafa66 72%, transparent 92%) top / 100% 1px no-repeat,
+    linear-gradient(180deg, #8fc4dc34, transparent 62%) left / 1px 100% no-repeat,
+    linear-gradient(180deg, #8fc4dc34, transparent 62%) right / 1px 100% no-repeat,
+    linear-gradient(90deg, transparent 38%, #8fc4dc22 60%, transparent 90%) bottom / 100% 1px no-repeat,
+    linear-gradient(#8fb4c80a, #8fb4c80a); animation:gfX1 21s ease-in-out -9s infinite; }
+@media (prefers-reduced-motion: reduce) { .snapshot::before, .health::before, .recentCard::before, .brief::before { animation:none !important; } }
+
+/* Phase 13 audit: the chart's hover/focus transitions respect reduced motion. */
+@media (prefers-reduced-motion: reduce) { .chartGlow, .chartDot, .chartErr rect { transition:none; } }

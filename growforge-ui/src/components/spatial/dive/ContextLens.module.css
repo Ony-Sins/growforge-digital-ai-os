@@ -7,3 +7,6 @@
 @keyframes resolve{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.inspector{animation:none}.rows button,.procedure button{transition:none}}
 .rows button>svg{margin-left:auto}.rows button small+svg{margin-left:0}.rows .back{border-bottom:0;margin-bottom:16px;font-size:10px;justify-content:flex-start}.rows .back svg{margin-left:0}.recordText{white-space:pre-wrap}.content small{display:block;color:#91aabb;font-size:10px}.title h1{margin-bottom:24px}.rows{max-height:38vh;overflow-y:auto;scrollbar-width:thin}@media(max-width:1099px){.rows{max-height:36vh}}
 .document h1,.document h2,.document h3{font-family:inherit;font-size:12px;line-height:1.6;font-weight:500;margin:18px 0 10px;color:#d4e6ef}.document h1:first-child{margin-top:0}.document ul,.document ol{padding-left:18px}.document pre{white-space:pre-wrap}.document code{font-size:10px}.document hr{border:0;border-top:1px solid #81b8d21a;margin:16px 0}
+
+/* Foundation pass (2026-10-05): shared Dive edge, radius and depth. Fill and layout untouched. */
+.inspector{border-color:var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none)}

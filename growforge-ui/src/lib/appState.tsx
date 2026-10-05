@@ -35,14 +35,22 @@ const PERSISTABLE_VIEWS: ActiveView[] = ["chat", "dashboard", "activity", "vault
 /** Replaces the current URL's query string without a navigation/history
  *  entry — keeps refresh (and only refresh) restoring where the user was,
  *  without polluting browser back/forward with every nav click. */
-function writeLocationParams(params: Record<string, string | undefined>) {
+function writeLocationParams(params: Record<string, string | undefined>, mode: "replace" | "push" = "replace") {
   try {
     const url = new URL(window.location.href);
+    const before = `${url.pathname}${url.search}${url.hash}`;
+    // tier / lens are the surface (CORE / Explore / Dive In + lens), owned by SpatialCanvas via lib/surfaceLocation.
+    // A panel or view change must keep them, otherwise opening Settings would forget where the user was.
+    const surface = (["tier", "lens"] as const).map((key) => [key, url.searchParams.get(key)] as const);
     url.search = "";
+    for (const [key, value] of surface) if (value) url.searchParams.set(key, value);
     for (const [key, value] of Object.entries(params)) {
       if (value) url.searchParams.set(key, value);
     }
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    if (next === before) return;
+    if (mode === "push") window.history.pushState(null, "", next);
+    else window.history.replaceState(null, "", next);
   } catch {
     // URL API unavailable — refresh just won't restore position this time
   }
@@ -275,7 +283,21 @@ export function AppStateProvider({ children, initialLocation }: { children: Reac
   const openSettings = useCallback((tab?: string) => {
     if (tab) setSettingsTab(tab);
     setIsSettingsOpen(true);
-    writeLocationParams({ panel: "settings", tab });
+    // Systems is a top-level surface: opening it is a history step, so Back returns to where the user was.
+    writeLocationParams({ panel: "settings", tab }, "push");
+  }, []);
+
+  // Back / Forward across the Systems overlay: the URL (panel=settings) is the source of truth.
+  useEffect(() => {
+    const syncSettingsFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const open = params.get("panel") === "settings";
+      setIsSettingsOpen(open);
+      const tab = params.get("tab");
+      if (open && tab) setSettingsTab(tab);
+    };
+    window.addEventListener("popstate", syncSettingsFromUrl);
+    return () => window.removeEventListener("popstate", syncSettingsFromUrl);
   }, []);
 
   const closeSettings = useCallback(() => {

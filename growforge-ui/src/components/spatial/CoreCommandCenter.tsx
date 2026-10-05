@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, MoreHorizontal, Minus, Plus, ChevronDown, ChevronRight, FileText, Image as ImageIcon, Loader2, Mic, Paperclip, Send, Settings2, Sparkles, X } from "lucide-react";
+import { ArrowDown, MoreHorizontal, Minus, ChevronRight, FileText, Image as ImageIcon, Loader2, Paperclip, Settings2, Sparkles, X } from "lucide-react";
+import { GrowForgeGlyph } from "./GrowForgeGlyph";
 import { CoreOrbField } from "./CoreOrbField";
 import { NORA_VISUAL_EVENT, NORA_VISUAL_REQUEST, NORA_AUDIO_EVENT, type NoraVisualSignal } from '@/lib/noraVisualSignal';
 import { resolveAssistantIdentity } from '@/lib/assistantIdentity';
@@ -7,7 +8,8 @@ import { createAudioSampler, type AudioSampler } from '@/lib/audioSampler';
 import { useAppState } from "@/lib/appState";
 import { Markdown } from "@/components/ui/Markdown";
 import type { GraphNode } from "@/lib/spatial/obsidianReader";
-import { noraSurfaceContext, type NoraSurface, type NoraDepartmentContext, type NoraAgentContext, type NoraWorkflowContext, type NoraContextRecord, type NoraToolRecord } from "@/lib/noraSurfaceContext";
+import { noraSurfaceContext, type NoraSurface, type NoraDepartmentContext, type NoraAgentContext, type NoraWorkflowContext, type NoraContextRecord, type NoraToolRecord, type NoraDiveScope } from "@/lib/noraSurfaceContext";
+import { DIVE_SCOPE_EVENT } from "@/lib/diveLenses";
 import { VoiceDiagnosticsPanel, type VoiceDiagnosticsData } from "./VoiceDiagnosticsPanel";
 import { LiveKitVoiceClient } from "@/lib/livekitVoiceClient";
 
@@ -416,7 +418,7 @@ function ReactiveOrb({
   onClick: () => void; open: boolean; disabled: boolean;
 }) {
   return (
-    <button type="button" className="nora-plus" aria-label="Attachment options" aria-expanded={open} disabled={disabled} onClick={onClick} data-state={state}><Plus size={23} strokeWidth={2.5}/></button>
+    <button type="button" className="nora-plus" aria-label="Attachment options" aria-expanded={open} disabled={disabled} onClick={onClick} data-state={state}><GrowForgeGlyph name="gap-add" size={23} strokeWidth={2} /></button>
   );
 }
 
@@ -1051,10 +1053,12 @@ export function CoreCommandCenter({
   const [isVoiceDiagOpen, setIsVoiceDiagOpen] = useState(false);
   const [voiceBackend, setVoiceBackend] = useState<"livekit" | "browser">("livekit");
   const livekitClientRef = useRef<LiveKitVoiceClient | null>(null);
+  const [diveScope,setDiveScope]=useState<NoraDiveScope|null>(null);
+  useEffect(()=>{const select=(event:Event)=>setDiveScope((event as CustomEvent<NoraDiveScope|null>).detail);window.addEventListener(DIVE_SCOPE_EVENT,select);return()=>window.removeEventListener(DIVE_SCOPE_EVENT,select);},[]);
   const voiceSurfaceContextRef = useRef("");
   useEffect(() => {
-    voiceSurfaceContextRef.current = noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord);
-  }, [contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord]);
+    voiceSurfaceContextRef.current = noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord, diveScope);
+  }, [contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord, diveScope]);
   const [liveMicEnergy, setLiveMicEnergy] = useState(0);
   useEffect(() => () => {
     isVoiceSessionActiveRef.current = false;
@@ -1332,7 +1336,7 @@ export function CoreCommandCenter({
           history: historyPayload,
           role,
           unlockedAgentIds,
-          attachmentContext: [attachmentContext, noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord)].filter(Boolean).join("\n\n"),
+          attachmentContext: [attachmentContext, noraSurfaceContext(contextSurface, selectedRecord, missionContext, departmentContext, agentContext, workflowContext, contextRecord, toolRecord, intelligenceRecord, diveScope)].filter(Boolean).join("\n\n"),
         }),
       });
 
@@ -2095,7 +2099,7 @@ export function CoreCommandCenter({
             />
 
             {/* 5. Microphone Button */}
-            {onHideDock && <button type="button" onClick={onHideDock} aria-label="Hide NORA Dock" title="Hide NORA Dock" className="shell-dock-collapse"><ChevronDown size={14} aria-hidden="true" /></button>}
+            {onHideDock && <button type="button" onClick={onHideDock} aria-label="Hide NORA Dock" title="Hide NORA Dock" className="shell-dock-collapse"><GrowForgeGlyph name="fold" size={14} /></button>}
             <button
               type="button"
               onClick={toggleVoice}
@@ -2113,7 +2117,7 @@ export function CoreCommandCenter({
                   : "bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/[0.12] border border-white/10"
               }`}
             >
-              <Mic className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <GrowForgeGlyph name="voice" className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
 
             {/* 6. Send / Submit Button */}
@@ -2127,7 +2131,7 @@ export function CoreCommandCenter({
                   : "bg-white/[0.04] text-slate-600 border border-white/[0.06] cursor-not-allowed"
               }`}
             >
-              <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <GrowForgeGlyph name="transmit" className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
           </form>
 

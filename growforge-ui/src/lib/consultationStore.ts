@@ -105,6 +105,11 @@ export function listPendingConsultations(): PendingConsultation[] {
   return getStore().filter((c) => c.status === "pending");
 }
 
+/** Every retained consultation record (pending and resolved), read-only copies, newest first. */
+export function listConsultationHistory(): PendingConsultation[] {
+  return getStore().map((c) => ({ ...c })).sort((x, y) => y.createdAt.localeCompare(x.createdAt));
+}
+
 export function answerConsultation(
   id: string,
   answer: string,

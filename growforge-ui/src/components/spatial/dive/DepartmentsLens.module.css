@@ -334,3 +334,6 @@
 
 
 
+
+/* Foundation pass (2026-10-05): shared Dive edge, radius and depth. Fill and layout untouched. */
+.inspector{border-color:var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none)}

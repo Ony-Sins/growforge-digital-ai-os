@@ -1,0 +1,15 @@
+.state{--state-color:#7f9bab;display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 18px;border:1px dashed color-mix(in srgb,var(--state-color) 40%,transparent);border-radius:14px;background:rgba(5,22,32,.32);text-align:center;pointer-events:auto}
+.state[data-lens-state="loading"]{--state-color:#6fb8d8}
+.state[data-lens-state="unavailable"]{--state-color:#9aa9b4}
+.state[data-lens-state="degraded"]{--state-color:#e0c080}
+.state[data-lens-state="error"]{--state-color:#e0a0aa}
+.badge{display:inline-flex;align-items:center;gap:7px;font-size:8px;letter-spacing:.2em;color:var(--state-color)}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--state-color)}
+.state[data-lens-state="loading"] .badge i{animation:lensStatePulse 1.4s ease-in-out infinite}
+.state p{margin:0;font-size:12px;line-height:1.55;color:#b4c9d4}
+.state small{font-size:10px;line-height:1.5;color:#7f9aa9;max-width:420px}
+.action{margin-top:4px}
+.compact{padding:9px 12px;gap:4px}
+.compact p{font-size:11px}
+@keyframes lensStatePulse{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.state[data-lens-state="loading"] .badge i{animation:none}}
