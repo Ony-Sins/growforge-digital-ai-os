@@ -5,6 +5,7 @@ import { listAiModels } from "@/lib/aiModelStore";
 import { telemetryStore } from "@/lib/telemetryStore";
 import { listPendingApprovals } from "@/lib/approvalStore";
 import { getSession, isPublicPreviewVisitor, isOwnerSession } from "@/lib/session";
+import { isOwnerReviewMode } from "@/lib/ownerReview";
 
 export const runtime = "nodejs";
 
@@ -66,7 +67,9 @@ export async function GET() {
 
     // Real jobs
     const jobs = listJobSummaries();
-    const activeJobs = jobs.filter((j) => j.status === "running");
+    // `activeJobCount` drives the CORE's "executing" visual state and the greeting. Owner-review mode shows another
+    // server's persisted state and runs nothing, so a persisted "running" job is listed but is never "executing" here.
+    const activeJobs = isOwnerReviewMode() ? [] : jobs.filter((j) => j.status === "running");
     const recentJobs = jobs.slice(0, 5).map((j) => ({
       id: j.id,
       title: j.title || "Execution Project",

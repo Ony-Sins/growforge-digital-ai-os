@@ -14,7 +14,10 @@
     "cf:build": "vite build",
     "cf:preview": "vite build && wrangler dev --port 8787 --local-protocol https",
     "cf:types": "wrangler types cloudflare-env.d.ts --include-runtime=false --env-file .dev.vars.example && node -e \"const f=require('fs'),p='cloudflare-env.d.ts';f.writeFileSync(p,f.readFileSync(p,'utf8').replace(/type StringifyValues[^]*$/,''))\"",
-    "cf:deploy": "vite build && wrangler deploy"
+    "cf:deploy": "vite build && wrangler deploy",
+    "dev:owner-review": "node scripts/owner-review/launch.mjs",
+    "owner-review:project": "node scripts/owner-review/build-projection.mjs",
+    "owner-review:verify": "node scripts/owner-review/verify.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.23.0",

@@ -16,6 +16,7 @@
 
 import { getJob, listJobSummaries, updateStep, updateJob } from "@/lib/jobStore";
 import { logJobStateChange, logStrategicDecision } from "@/lib/brainLogger";
+import { isOwnerReviewMode } from "@/lib/ownerReview";
 
 export interface StageRetryPolicy {
   maxAttempts: number;
@@ -84,6 +85,8 @@ export function listExecutingJobIds(): string[] {
  * Dispatches a job through the durable background engine.
  */
 export function dispatchDurableJob(jobId: string, runner: (id: string) => Promise<void>): void {
+  // Owner-review mode is a read-only view of another server's state: never run or resume work.
+  if (isOwnerReviewMode()) return;
   if (activeExecutions.has(jobId)) {
     console.log(`[durableEngine] Job ${jobId} is already actively executing in this worker.`);
     return;
@@ -129,6 +132,8 @@ export function dispatchDurableJob(jobId: string, runner: (id: string) => Promis
  * (e.g., following a Node.js / PM2 process restart or server crash) and resumes them.
  */
 export function recoverInterruptedJobs(runner: (id: string) => Promise<void>): number {
+  // Owner-review mode shows persisted "running" jobs as-is; they belong to the primary server, so never resume them here.
+  if (isOwnerReviewMode()) return 0;
   const summaries = listJobSummaries();
   const runningSummaries = summaries.filter((s) => s.status === "running");
 

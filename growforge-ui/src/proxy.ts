@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isBetaMode, isOwnerOnlyPath, testerMayAccess } from "@/lib/beta/access";
+import { isOwnerReviewMode, ownerReviewDecision, ownerReviewRefusalBody } from "@/lib/ownerReview";
 
 /**
  * Single server-side access-control choke point. Every request — pages,
@@ -12,6 +13,16 @@ import { isBetaMode, isOwnerOnlyPath, testerMayAccess } from "@/lib/beta/access"
  */
 export default auth((req) => {
   const { pathname } = req.nextUrl;
+
+  // ---- Owner-review mode (local dev only, set by scripts/owner-review/launch.mjs): read-only
+  // projection of owner state. Refuses every state-changing request and every route that executes
+  // models/providers, before any app code runs. Defense in depth with the fs write guard.
+  if (isOwnerReviewMode()) {
+    const decision = ownerReviewDecision(pathname, req.method);
+    if (!decision.allowed) {
+      return NextResponse.json(ownerReviewRefusalBody(decision.reason), { status: 403 });
+    }
+  }
 
   // ---- Private beta (BETA_MODE=true). No dev bypass and no anonymous preview identity here: the
   // session is real, and auth.ts re-validates it against the beta store on this very request, so a

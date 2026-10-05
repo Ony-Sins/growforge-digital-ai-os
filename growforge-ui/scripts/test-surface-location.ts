@@ -71,6 +71,8 @@ const overview = read("../src/components/spatial/dive/DiveOverview.tsx");
 assert.ok(overview.includes("initialLensId"), "DiveOverview opens on the URL's lens");
 
 // 9. CORE render-state guards (visual quality itself is verified in the browser, not here).
+const telemetry = read("../src/app/api/spatial/telemetry/route.ts");
+assert.ok(telemetry.includes("isOwnerReviewMode() ? []"), "owner-review never reports persisted jobs as executing");
 assert.ok(canvas.includes("Math.min(now - lastFrameTime, 100)"), "frame delta is clamped at the source");
 
 console.log("surface location tests: all passed");
