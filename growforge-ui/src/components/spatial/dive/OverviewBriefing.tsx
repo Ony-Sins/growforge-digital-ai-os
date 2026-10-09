@@ -3,7 +3,7 @@
 import { GrowForgeGlyph } from "../GrowForgeGlyph";
 import type { DiveLens } from "./overviewModel";
 import {
-  RECENT_ROWS_VISIBLE, type ActivityGraph, type AttentionRow, type HealthRow, type NowView, type RecentRow, type SnapshotCounts, type StripCell,
+  RECENT_ROWS_VISIBLE, type ActivityGraph, type AttentionRow, type HealthRow, type NowView, type RecentRow, type RecentState, type SnapshotCounts, type StripCell,
 } from "./overviewBriefingModel";
 import styles from "./OverviewBriefing.module.css";
 
@@ -134,17 +134,22 @@ export function SnapshotPanel({ counts, graph, now, selectedStageId, onStage, on
  * is shown, because nothing else is measured.
  */
 export function HealthDisclosure({ rows, onOpen }: { rows: HealthRow[] | null; onOpen: () => void }) {
-  if (!rows || !rows.length) return null;
-  const down = rows.filter((row) => !row.reachable);
+  const down = rows ? rows.filter((row) => !row.reachable) : [];
   const degraded = down.length > 0;
   return (
     <details className={`${styles.panel} ${styles.health}`} data-surface="health" data-degraded={degraded} open={degraded}>
       <summary><span>System health</span>{degraded && <b className={styles.healthState}>Degraded</b>}<GrowForgeGlyph name="fold" size={13} /></summary>
-      <ul className={styles.services}>
-        {(degraded ? down : rows).map((row) => (
-          <li key={row.id} data-reachable={row.reachable} data-entity-type="service" data-entity-id={row.id}><span>{row.name}</span><em>{row.detail}</em></li>
-        ))}
-      </ul>
+      {rows === null ? (
+        <p className={styles.quiet}>Services not measured in this view.</p>
+      ) : rows.length === 0 ? (
+        <p className={styles.quiet}>No measured services.</p>
+      ) : (
+        <ul className={styles.services}>
+          {(degraded ? down : rows).map((row) => (
+            <li key={row.id} data-reachable={row.reachable} data-entity-type="service" data-entity-id={row.id}><span>{row.name}</span><em>{row.detail}</em></li>
+          ))}
+        </ul>
+      )}
       <button type="button" className={styles.next} onClick={onOpen}>Open Tools</button>
     </details>
   );
@@ -173,22 +178,27 @@ export function AttentionPanel({ rows, hidden, expanded, onReveal, onInspect }: 
 }
 
 /** Secondary: a few real events, newest first. Not a log. */
-export function RecentPanel({ rows, onOpen }: { rows: RecentRow[]; onOpen: (row: RecentRow) => void }) {
-  if (!rows.length) return null;
+export function RecentPanel({ rows, state = "populated", onOpen }: { rows: RecentRow[]; state?: RecentState; onOpen: (row: RecentRow) => void }) {
   return (
     <section className={`${styles.panel} ${styles.recentCard}`} data-surface="recent" aria-label="Recent activity">
       <PanelHead title="Recent" />
-      <ul className={styles.recent}>
-        {rows.slice(0, RECENT_ROWS_VISIBLE).map((row) => (
-          <li key={row.id} data-outcome={row.outcome} data-entity-id={row.missionId ?? undefined}>
-            <button type="button" onClick={() => onOpen(row)}>
-              <time dateTime={row.occurredAt ?? undefined} title={row.when}>{row.dateLabel}</time>
-              <b title={row.subject}>{row.subject}</b>
-              <span>{row.outcomeLabel}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {state === "unavailable" ? (
+        <p className={styles.quiet}>Activity unavailable in this view.</p>
+      ) : rows.length === 0 ? (
+        <p className={styles.quiet}>No recorded activity.</p>
+      ) : (
+        <ul className={styles.recent}>
+          {rows.slice(0, RECENT_ROWS_VISIBLE).map((row) => (
+            <li key={row.id} data-outcome={row.outcome} data-entity-id={row.missionId ?? undefined}>
+              <button type="button" onClick={() => onOpen(row)}>
+                <time dateTime={row.occurredAt ?? undefined} title={row.when}>{row.dateLabel}</time>
+                <b title={row.subject}>{row.subject}</b>
+                <span>{row.outcomeLabel}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

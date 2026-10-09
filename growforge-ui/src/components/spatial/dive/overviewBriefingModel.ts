@@ -279,6 +279,14 @@ export function shortDate(occurredAt: string | null): string {
 }
 
 export type RecentSummary = { completed: number; failed: number; interrupted: number; decisions: number };
+export type RecentState = "unavailable" | "empty" | "populated";
+
+export function recentState(snapshot: OverviewSnapshot | null): RecentState {
+  if (!snapshot || snapshot.counts.missions === null || snapshot.context.mode === "restricted") {
+    return "unavailable";
+  }
+  return snapshot.recent.length > 0 ? "populated" : "empty";
+}
 
 export function recentRows(snapshot: OverviewSnapshot | null): { rows: RecentRow[]; summary: RecentSummary } {
   if (!snapshot) return { rows: [], summary: { completed: 0, failed: 0, interrupted: 0, decisions: 0 } };

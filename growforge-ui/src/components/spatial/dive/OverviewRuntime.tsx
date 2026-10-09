@@ -12,7 +12,7 @@ import { innerCorePhase, newlyCompleted } from './overviewCommandModel';
 import { IDLE_NORA_SIGNAL, NORA_VISUAL_EVENT, NORA_VISUAL_REQUEST, type NoraVisualSignal } from '@/lib/noraVisualSignal';
 import type { DiveLens } from './overviewModel';
 import type { SharedDepth } from './diveDepthModel';
-import { activityGraph, attentionRows, briefState, healthRows, liveStatusText, nowView, operationalStrip, recentRows, snapshotCounts, stageStatusLabel, type AttentionRow, type RecentRow } from './overviewBriefingModel';
+import { activityGraph, attentionRows, briefState, healthRows, liveStatusText, nowView, operationalStrip, recentRows, recentState, snapshotCounts, stageStatusLabel, type AttentionRow, type RecentRow } from './overviewBriefingModel';
 import { AttentionPanel, BriefPanel, HealthDisclosure, OperationalStrip, RecentPanel, SnapshotPanel } from './OverviewBriefing';
 import styles from './OverviewRuntime.module.css';
 
@@ -59,6 +59,7 @@ export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersio
   const [attentionExpanded, setAttentionExpanded] = useState(false);
   const attention = useMemo(() => attentionRows(snapshot, attentionExpanded), [snapshot, attentionExpanded]);
   const recent = useMemo(() => recentRows(snapshot), [snapshot]);
+  const recentStatus = useMemo(() => recentState(snapshot), [snapshot]);
   const counts = useMemo(() => snapshotCounts(snapshot), [snapshot]);
   const health = useMemo(() => healthRows(snapshot), [snapshot]);
   const graph = useMemo(() => activityGraph(snapshot), [snapshot]);
@@ -100,7 +101,7 @@ export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersio
         </div>
         <div className={styles.right} data-overview-side="right" inert={front ? undefined : true}>
           <AttentionPanel rows={attention.rows} hidden={attention.hidden} expanded={attentionExpanded} onReveal={() => setAttentionExpanded(value => !value)} onInspect={inspectAttention} />
-          <RecentPanel rows={recent.rows} onOpen={openRecent} />
+          <RecentPanel rows={recent.rows} state={recentStatus} onOpen={openRecent} />
         </div>
       </div>
     </div>
