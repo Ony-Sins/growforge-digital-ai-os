@@ -1,0 +1,383 @@
+/* W5.4A node material. One spatial-object system for Mission / Phase / Department / Step, in Graph and Pipeline alike: obsidian centre, hairline ring, titanium edge catches
+   on two opposite corners, a status tick on the leading edge, one selection language. No blur, no filter, no shadow beyond a 1 px inset ring, no animation beyond a short transform/opacity transition. */
+.root{position:fixed;z-index:6;display:flex;flex-direction:column;pointer-events:none;color:#cfe6ee;
+  /* C7E.1: one very faint teal atmosphere behind the graph (the reference is a teal-lit scene, not pure black); it fades to nothing at the edges */
+  background:radial-gradient(ellipse 62% 70% at 36% 50%,#1f6a7424 0%,#17525d14 45%,#0000 78%)}
+.loading{position:fixed;left:50%;top:50%;translate:-50% -50%;color:#7fa5b3;font-size:13px}
+.scroll{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
+.stage{position:relative}
+
+/* tokens: --hair ring, --c1 corner catch, --cl catch length, --tick leading-edge state mark, --spec top specular, --fill centre */
+.node{--hair:#9fc4d02e;--c1:#9fc4d070;--cl:9px;--tick:#9fc4d03a;--spec:#ffffff0c;--fill:linear-gradient(180deg,#0a161cd6,#050c10e6);
+  position:absolute;left:0;top:0;display:flex;align-items:flex-start;box-sizing:border-box;margin:0;padding:6px 8px 6px 10px;text-align:left;font:inherit;color:inherit;border:0;border-radius:2px;
+  background:var(--fill);box-shadow:inset 0 0 0 1px var(--hair),inset 0 1px 0 var(--spec);cursor:pointer;overflow:hidden;
+  transition:transform .45s cubic-bezier(.2,.7,.2,1),width .45s,height .45s,opacity .3s}
+.node::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;background:var(--tick);pointer-events:none}
+.node::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(var(--c1),var(--c1)) 0 0/var(--cl) 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 0/1px var(--cl) no-repeat,
+    linear-gradient(var(--c1),var(--c1)) 100% 100%/var(--cl) 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 100%/1px var(--cl) no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node:focus-visible{outline:2px solid #bff3fb;outline-offset:1px}
+.node[data-kind="mission"]:focus-visible,.node[data-kind="phase"]:focus-visible{outline-offset:-3px}
+
+/* W7 node family. One instrument family, four members that differ in MASS and SILHOUETTE, not one card at four sizes:
+   mission     the heaviest plate: two opposite chamfers, bright ring + catches, eyebrow, the seven-phase tick strip on its plinth
+   phase       a compact keyed plate: one chamfered corner and an ordinal gutter (its canonical execution position)
+   department  an open container: a leading rail and a floor hairline only (no ring), fading toward the open side
+   step        a thin line item, no ring */
+.node[data-kind="mission"]{--hair:#bfe8f24d;--c1:#cfeff6c0;--fill:linear-gradient(180deg,#0e242df2,#061218f4);--spec:#ffffff1a;padding:12px 14px 20px 18px;
+  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px)}
+.node[data-kind="mission"]::before{left:0;top:0;bottom:auto;width:16px;height:16px;background:linear-gradient(to bottom right,transparent calc(50% - 1px),var(--c1) calc(50% - 1px),var(--c1) calc(50% + 1px),transparent calc(50% + 1px))}
+.node[data-kind="mission"]::after{background:linear-gradient(to bottom right,transparent calc(50% - 1px),var(--c1) calc(50% - 1px),var(--c1) calc(50% + 1px),transparent calc(50% + 1px)) 100% 100%/16px 16px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 0/22px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 100%/22px 1px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="phase"]{--fill:linear-gradient(180deg,#0b181ee0,#050c10ec);padding:0 8px 0 0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.node[data-kind="phase"]::after{background:linear-gradient(var(--c1),var(--c1)) 0 0/var(--cl) 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 0/1px var(--cl) no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 100%/var(--cl) 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 100%/1px var(--cl) no-repeat,
+    linear-gradient(to bottom left,transparent calc(50% - .75px),var(--c1) calc(50% - .75px),var(--c1) calc(50% + .75px),transparent calc(50% + .75px)) 100% 0/10px 10px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-container]{--fill:linear-gradient(180deg,#06101544,#04090c33);--hair:#9fc4d01f;--c1:#9fc4d04d;cursor:pointer}
+.node[data-kind="department"]{--fill:linear-gradient(90deg,#0b1d25f4,#07131aea 62%,#051014d0);padding:3px 8px 3px 12px;box-shadow:inset 0 -1px 0 var(--hair);border-radius:0}
+.node[data-kind="department"]::before{top:0;bottom:0;width:3px}
+.node[data-kind="department"]::after{background:linear-gradient(var(--c1),var(--c1)) 0 0/var(--cl) 1px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="department"][data-container]{--fill:linear-gradient(180deg,#0a1a2090,#05101440);--hair:#9fc4d02a;box-shadow:inset 0 0 0 1px var(--hair)}
+.node[data-kind="department"][data-container]::before{top:7px;bottom:7px;width:2px}
+.node[data-kind="step"]{--fill:linear-gradient(180deg,#09151bcc,#060e12d9);--c1:transparent;padding:3px 8px 3px 10px;box-shadow:inset 0 -1px 0 var(--hair)}
+.node[data-kind="step"]::before{top:5px;bottom:5px}
+.node[data-kind="phase"][data-container]{padding-top:0;padding-bottom:0}
+.node[data-kind-unknown]::after{background:none;inset:1px;border:1px dashed var(--hair)}
+/* a phase's ordinal gutter: its canonical position in the execution order (01-07). A constant of the pipeline: it says nothing about status, time or importance. */
+.ord{flex:none;align-self:flex-start;height:var(--head);display:grid;place-items:center;width:28px;margin:0 8px 0 0;box-shadow:inset -1px 0 0 var(--hair);font-style:normal;font-size:10px;font-weight:540;letter-spacing:.06em;color:#7fa5b3;font-variant-numeric:tabular-nums}
+/* the Mission plate scales with the room it is given: full (desktop graph), compact (small desktops / yielded stage), chip (pipeline header, phone row) */
+.node[data-kind="mission"][data-mass="compact"]{padding:10px 12px 16px 16px}
+.node[data-kind="mission"][data-mass="compact"] .head b{font-size:13px;line-height:1.2}
+.node[data-kind="mission"][data-mass="compact"] .ticks{left:16px;right:18px;bottom:6px}
+.node[data-kind="mission"][data-mass="chip"]{padding:4px 10px 4px 12px;clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.node[data-kind="mission"][data-mass="chip"]::before{width:9px;height:9px}
+.node[data-kind="mission"][data-mass="chip"]::after{background:linear-gradient(to bottom right,transparent calc(50% - 1px),var(--c1) calc(50% - 1px),var(--c1) calc(50% + 1px),transparent calc(50% + 1px)) 100% 100%/9px 9px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="mission"][data-mass="chip"] .head{height:var(--head);justify-content:center;gap:1px}
+.node[data-kind="mission"][data-mass="chip"] .head b{font-size:12.5px;white-space:nowrap;display:block}
+.node[data-kind="mission"][data-mass="chip"] .head small{font-size:10px}
+.node[data-kind="mission"][data-mass="chip"] .eyebrow,.node[data-kind="mission"][data-mass="chip"] .ticks{display:none}
+.eyebrow{font-style:normal;font-size:9.5px;font-weight:540;letter-spacing:.14em;text-transform:uppercase;color:#8fe0ee;line-height:1}
+/* the Mission's plinth: seven ticks, one per canonical phase position, in execution order. Each tick is the recorded status of that phase (a missing phase is a hollow gap). No progress is inferred. */
+.ticks{position:absolute;left:18px;right:22px;bottom:8px;height:4px;display:flex;gap:3px;pointer-events:none}
+.ticks i{flex:1;background:#9fc4d03a}
+.ticks i[data-s="done"]{background:#75d9c28a}
+.ticks i[data-s="active"]{background:repeating-linear-gradient(90deg,#b4cdd6e6 0 5px,transparent 5px 7px)}
+.ticks i[data-s="error"]{background:#d08a4a}
+.ticks i[data-s="pending"],.ticks i[data-s="skipped"],.ticks i[data-s="assigned"],.ticks i[data-s="mixed"]{background:repeating-linear-gradient(90deg,#9fc4d066 0 2px,transparent 2px 4px)}
+.ticks i[data-s="gap"]{background:none;box-shadow:inset 0 0 0 1px #78cde038}
+/* state (static hierarchy; no motion here, W5.4B owns packets). A small marker sits in the top-right corner; the leading-edge tick carries rhythm.
+   pending           quiet, incomplete: dashed faint tick, no marker
+   completed         settled: steady cool tick, no marker
+   recorded-running  recorded activity, NOT live: a segmented (ledger) titanium tick + a HOLLOW ring marker; ring and catches stay quiet - nothing is confirmed
+   executor-live     strongest live-capable treatment: solid white tick, brighter cyan ring and catches, a FILLED core marker inside a ring (only when the mission is executor-confirmed AND the entity is recorded-active)
+   blocked / error   fault: solid amber tick and ring, a small solid amber SQUARE marker (never a circle)
+   unresolved        not a node state: the amber numbered marker is a dashed hollow circle (see .ambiguity) */
+.node[data-status="done"]{--tick:#75d9c28a;--hair:#9fd8cf33}
+.node[data-status="active"]{--tick:#b4cdd6;--hair:#9fc4d03a;--mk:radial-gradient(circle at calc(100% - 10px) 10px,#0000 3px,#b4cdd6 3.4px,#b4cdd6 4.4px,#0000 4.9px) no-repeat}
+.node[data-status="active"]:not([data-kind="mission"])::before{background:repeating-linear-gradient(180deg,#b4cdd6e6 0 9px,transparent 9px 12px)}
+.node[data-status="active"][data-live]{--tick:#ffffff;--hair:#8fe6f499;--c1:#d6fbff;--spec:#ffffff2e;--mk:radial-gradient(circle at calc(100% - 10px) 10px,#ffffff 0 2.2px,#0000 2.6px,#0000 3.8px,#8fe6f4 4.2px,#8fe6f4 5.4px,#0000 5.9px) no-repeat}
+.node[data-status="active"][data-live]:not([data-kind="mission"])::before{background:#ffffff;width:3px}
+.node[data-status="error"]{--tick:#d08a4a;--hair:#d08a4a5c;--c1:#d08a4aa0;--mk:linear-gradient(#d08a4a,#d08a4a) calc(100% - 7px) 7px/6px 6px no-repeat}
+.node[data-status="pending"],.node[data-status="skipped"],.node[data-status="assigned"]{--hair:#9fc4d01c;--c1:#9fc4d04a;--tick:transparent}
+.node[data-status="pending"]::before,.node[data-status="skipped"]::before,.node[data-status="assigned"]::before{background:repeating-linear-gradient(180deg,#9fc4d066 0 3px,transparent 3px 6px)}
+/* selected path: ancestry is lit, the selected entity is the strongest object in the graph */
+.node[data-lit]{--hair:#bff3fb66;--c1:#cff6fce0;--tick:#bff3fb;--spec:#ffffff1c}
+.node[data-selected]{--hair:#e6fbffb3;--c1:#ffffff;--cl:14px;--tick:#ffffff;--spec:#ffffff40;--fill:linear-gradient(180deg,#112d37f2,#08181ef5)}
+.node[data-kind="mission"][data-selected]{--fill:linear-gradient(180deg,#143440f5,#0a1c23f5)}
+
+.head{display:flex;flex-direction:column;justify-content:center;gap:1px;height:var(--head);min-width:0;flex:1}
+.head b{font-size:12px;font-weight:560;line-height:1.2;color:#eef9fd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.head small{font-size:10px;color:#7fa5b3;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node[data-kind="mission"] .head{height:auto;justify-content:flex-start;gap:4px}
+.node[data-kind="mission"] .head b{font-size:15px;font-weight:600;line-height:1.18;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.node[data-kind="mission"] .head small{font-size:10.5px}
+.node[data-kind="step"] .head{flex-direction:row;align-items:center;gap:8px}
+.node[data-kind="step"] .head b{font-size:11px;font-weight:520;flex:none;max-width:70%}
+.node[data-kind="step"] .head small{flex:1;min-width:0}
+/* W5.4C-R1: a step whose second line leads with its position ("Step 12 · error") stacks label over detail when the node is tall enough, so the state word is never clipped */
+.node[data-stacked] .head{flex-direction:column;align-items:flex-start;justify-content:center;gap:1px}
+.node[data-stacked] .head b{max-width:100%}
+.node[data-stacked] .head small{flex:none;max-width:100%}
+.node[data-kind="phase"]:not([data-lit]):not([data-selected]) .head b,.node[data-kind="step"]:not([data-lit]):not([data-selected]) .head b{color:#d3e9f0}
+/* When the layout had to compress a block, keep the title and drop the detail line (still in the tooltip) instead of clipping it. */
+.node[data-tight][data-kind="department"] .head small{display:none}
+.region{position:absolute;left:0;top:0;box-sizing:border-box;padding:4px 10px;display:flex;gap:8px;align-items:baseline;border:1px dashed #e0c0804d;border-radius:2px;color:#a8946a;pointer-events:none}
+.region b{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.region span{font-size:10px;letter-spacing:.04em;color:#7f7355}
+.gap{position:absolute;left:0;top:0;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:4px 10px;border:1px dashed #78cde038;border-radius:2px;color:#5f8392;pointer-events:none}
+.gap b{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gap span{font-size:10px;letter-spacing:.04em}
+.ambiguity{position:absolute;left:0;top:0;border-radius:50%;box-sizing:border-box;display:grid;place-items:center;padding:0;border:1px dashed #e0c080;font:inherit;font-size:10px;font-weight:560;line-height:1;color:#e8cf94;background:#06141af2;cursor:pointer;pointer-events:auto;z-index:2}
+/* the visible marker stays small; its hit area is extended (>= 38 px desktop, 56 px phone) */
+.ambiguity::after{content:"";position:absolute;inset:-9px}
+[data-mode="stack"] .ambiguity::after{inset:-12px}
+.ambiguity[data-selected]{box-shadow:0 0 0 2px #06141a,0 0 0 3px #e0c080}
+/* W5.4B uncertainty language: when inspected, the dashed outer ring hunts once (a short rotation) and settles. It never travels, never repeats, and there is no conduit. */
+.ambiguity[data-selected]::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px dashed #e0c08099;pointer-events:none;animation:ambHunt .9s cubic-bezier(.3,0,.2,1) 1 both}
+@keyframes ambHunt{from{transform:rotate(-70deg);opacity:0}30%{opacity:1}to{transform:rotate(0)}}
+.ambiguity:focus-visible{outline:2px solid #bff3fb;outline-offset:2px}
+
+.srOnly{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.node[data-has-expander]{padding-right:36px}
+.expander{position:absolute;left:0;top:0;display:grid;place-items:center;padding:0;border:0;border-radius:2px;background:transparent;color:#7fa5b3;font:inherit;font-size:12px;cursor:pointer;z-index:2;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.expander:hover{color:#e6f6fb;background:#12313b}
+.expander:focus-visible{outline:2px solid #bff3fb;outline-offset:1px}
+.filament{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:2}
+.filament path{fill:none;stroke-width:1;stroke-linecap:round}
+.filament circle{fill:#cfeff6;fill-opacity:.8}
+.peekSlot{position:absolute;left:0;top:0;z-index:3}
+
+/* W5.4B node-edge response to flow (opacity of the leading tick only; no layout, no filter). Selecting seats the tick once; an executor-confirmed live node breathes on the live conduit period. */
+.node[data-selected]:not([data-kind="mission"])::before{animation:tickSeat .7s ease-out 1 both}
+.node[data-live]:not([data-kind="mission"])::before{animation:tickLive 3.4s ease-in-out infinite}
+.node[data-selected][data-live]:not([data-kind="mission"])::before{animation:tickSeat .7s ease-out 1 both,tickLive 3.4s ease-in-out .7s infinite}
+@keyframes tickSeat{from{opacity:.25}to{opacity:1}}
+@keyframes tickLive{0%,100%{opacity:1}50%{opacity:.62}}
+@media(prefers-reduced-motion:reduce){.node::before,.ambiguity::before{animation:none!important}}
+
+/* W5.2 / W5.4A: with a selection the graph keeps one active path. Selected + ancestry = full clarity; direct neighbours readable but quieter; the rest recedes. NORA stays behind everything. */
+.stage{transition:transform .62s cubic-bezier(.32,.72,0,1)}
+.node[data-recede]{opacity:.5}
+.root[data-depth] .node{opacity:.5}
+.root[data-depth] .node[data-near]{opacity:.78}
+.root[data-depth] .node[data-lit]{opacity:1}
+.root[data-depth="workbench"] .node{opacity:.38}
+.root[data-depth="workbench"] .node[data-near]{opacity:.7}
+.root[data-depth="workbench"] .node[data-lit]{opacity:1}
+/* W6.2 Focus: the graph is spatial context only: strongly receded, the selected entity and its ancestry still legible, nothing in it interactive. */
+.root[data-focus] .scroll{pointer-events:none}
+.root[data-focus][data-depth] .node,.root[data-focus][data-depth] .node[data-near]{opacity:.2}
+.root[data-focus][data-depth] .node[data-lit]{opacity:.92}
+/* the attachment bridge: a short dual-line optical bridge (bright + receded line), a tiny junction ring on the entity, a specular catch where it meets the instrument's joint */
+.wbAttach{position:absolute;height:5px;margin-top:-2.5px;pointer-events:none;z-index:2;transform-origin:left center;animation:wbAttachIn .22s cubic-bezier(.2,.7,.2,1) both;
+  background:linear-gradient(#bff3fbd9,#bff3fbd9) 0 0/100% 1px no-repeat,linear-gradient(#8fe0ee59,#8fe0ee59) 0 100%/100% 1px no-repeat}
+.wbAttach[data-side="left"]{transform-origin:right center}
+.wbAttach::before{content:"";position:absolute;top:50%;width:7px;height:7px;margin-top:-3.5px;box-sizing:border-box;border:1px solid #cfeff6;border-radius:50%;background:#06151b}
+.wbAttach[data-side="right"]::before{left:-3px}.wbAttach[data-side="left"]::before{right:-3px}
+.wbAttach::after{content:"";position:absolute;top:50%;width:14px;height:1px;margin-top:-.5px;background:#ffffff}
+.wbAttach[data-side="right"]::after{right:0;background:linear-gradient(90deg,#ffffff00,#ffffff)}.wbAttach[data-side="left"]::after{left:0;background:linear-gradient(270deg,#ffffff00,#ffffff)}
+@keyframes wbAttachIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.stage,.node{transition:none}.node .head small{animation:none}.wbAttach{animation:none}}
+@media(prefers-reduced-motion:reduce){.expander{transition:none}}
+.fixture{margin:0;padding:0 2px 6px;font-size:11px;letter-spacing:.02em;color:#e0c080;pointer-events:none}
+.devDepth{position:absolute;left:0;top:-14px;z-index:7;margin:0;font-size:10px;color:#7fa5b3;pointer-events:none}
+
+/* W7.2 micro state. Phase: a thin recorded-progress rail (only when the phase has ONE step: its own recorded percent). Phase / department with several steps: one tick per recorded step, coloured by that step's recorded status. */
+.rail{position:absolute;left:36px;right:10px;bottom:5px;height:2px;background:#9fc4d026;pointer-events:none}
+.rail::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--p);background:#75d9c2a0}
+.node[data-status="active"] .rail::after{background:#b4cdd6}
+.node[data-status="error"] .rail::after{background:#d08a4a}
+.node[data-status="pending"] .rail::after{background:#9fc4d066}
+.micro{position:absolute;left:12px;right:36px;bottom:5px;height:3px;display:flex;gap:2px;pointer-events:none;overflow:hidden}
+.node[data-kind="phase"] .micro{left:36px;right:10px}
+.micro i{flex:none;width:10px;background:#9fc4d03a}
+.micro i[data-s="done"]{background:#75d9c2a0}
+.micro i[data-s="active"]{background:repeating-linear-gradient(90deg,#b4cdd6e6 0 3px,transparent 3px 4px)}
+.micro i[data-s="error"]{background:#d08a4a}
+.micro i[data-s="pending"],.micro i[data-s="skipped"]{background:repeating-linear-gradient(90deg,#9fc4d066 0 2px,transparent 2px 4px)}
+/* a sector opens: the department's steps emerge from it (from-state only, so the receded / lit opacity rules keep applying afterwards) */
+.root[data-view="graph"] .node[data-kind="step"]{animation:emerge .35s ease-out backwards}
+@keyframes emerge{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.root[data-view="graph"] .node[data-kind="step"]{animation:none}}
+/* keep the text clear of the micro state strip along the bottom edge */
+.node[data-kind="department"]:not([data-container]) .head,.node[data-kind="phase"]:not([data-container]) .head{height:calc(var(--head) - 9px)}
+
+
+/* ================================================================ W7.3 OPEN INSTRUMENTS
+   Nodes stop being cards. Each member of the family is mostly typography and light on the field: a structural spine on the side that FACES the Mission, an asymmetric catch on the far
+   side, a fade that dissolves away from the Mission, a compact state rail. A filled plane survives only where reading content needs one (the Peek / Workbench). No ring around any node. */
+.node{--fade:to right}
+.node[data-facing="r"]{--fade:to left}
+.node[data-facing="t"]{--fade:to bottom}
+.node[data-facing="b"]{--fade:to top}
+/* the Mission: an anchor, not a panel. A soft vignette of light under the type, a top rule, four brackets of unequal length. */
+.node[data-kind="mission"]:not([data-mass="chip"]){--c1:#d6f6fcd0;clip-path:none;box-shadow:none;padding:15px 20px 24px;
+  background:radial-gradient(ellipse 72% 92% at 50% 50%,#12333fa8 0,#0b212b70 50%,#0a1c2400 100%)}
+.node[data-kind="mission"]:not([data-mass="chip"])::before{left:20px;right:20px;top:0;bottom:auto;width:auto;height:1px;background:linear-gradient(90deg,var(--c1),#0000 88%)}
+.node[data-kind="mission"]:not([data-mass="chip"])::after{background:
+  linear-gradient(var(--c1),var(--c1)) 0 0/30px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 0/1px 30px no-repeat,
+  linear-gradient(var(--c1),var(--c1)) 100% 0/11px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 0/1px 11px no-repeat,
+  linear-gradient(var(--c1),var(--c1)) 0 100%/11px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 100%/1px 11px no-repeat,
+  linear-gradient(var(--c1),var(--c1)) 100% 100%/30px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 100%/1px 30px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="mission"][data-mass="full"] .head b{font-size:18px;letter-spacing:-.005em}
+.node[data-kind="mission"][data-selected]:not([data-mass="chip"]){background:radial-gradient(ellipse 75% 95% at 50% 50%,#18495af0 0,#0f2c37c0 52%,#0a1c2400 100%)}
+.node[data-kind="mission"][data-mass="chip"]{background:var(--fill);box-shadow:inset 0 0 0 1px var(--hair),inset 0 1px 0 var(--spec)}
+.ticks{left:20px;right:24px;bottom:9px}
+.ticks i{height:4px}
+/* a phase: ordinal light, label, state; the spine sits on the Mission-facing side, one long catch on the far corner */
+.node[data-kind="phase"]{clip-path:none;box-shadow:none;padding:0 12px 0 0;background:linear-gradient(var(--fade),#0e2028dc,#0e202800 96%)}
+.node[data-kind="phase"]::before{left:0;right:auto;top:6px;bottom:6px;width:2px;height:auto}
+.node[data-kind="phase"][data-facing="r"]::before{left:auto;right:0}
+.node[data-kind="phase"][data-facing="t"]::before{left:8px;right:8px;top:0;bottom:auto;width:auto;height:2px}
+.node[data-kind="phase"][data-facing="b"]::before{left:8px;right:8px;top:auto;bottom:0;width:auto;height:2px}
+.node[data-kind="phase"]::after{background:linear-gradient(var(--c1),var(--c1)) 100% 0/16px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 100% 0/1px 9px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="phase"][data-facing="r"]::after{background:linear-gradient(var(--c1),var(--c1)) 0 0/16px 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 0/1px 9px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.ord{width:30px;margin:0 6px 0 10px;box-shadow:none;font-size:13px;font-weight:420;letter-spacing:.02em;color:#a6cbd6}
+.node[data-kind="phase"] .head b{font-size:13px;font-weight:600}
+/* a department: a strip of light with a leading rail; its bottom hairline runs only part of the way (open edge) */
+.node[data-kind="department"]:not([data-container]){padding:3px 30px 3px 15px;box-shadow:none;border-radius:0;background:linear-gradient(var(--fade),#0c1e26e0,#0c1e2600 98%)}
+.node[data-kind="department"]:not([data-container])::before{top:0;bottom:0;width:3px}
+.node[data-kind="department"]:not([data-container])::after{background:linear-gradient(90deg,var(--c1),#0000) 0 100%/72% 1px no-repeat,linear-gradient(var(--c1),var(--c1)) 0 0/14px 1px no-repeat,var(--mk,linear-gradient(#0000,#0000))}
+.node[data-kind="department"] .head b{font-size:12.5px;font-weight:570}
+/* a step: a line of text on the field with a short rail */
+.node[data-kind="step"]{--fill:none;background:linear-gradient(var(--fade),#0b1a21c4,#0b1a2100 96%);box-shadow:none}
+.node[data-kind="step"] .head b{font-size:11.5px}
+/* selection and ancestry are LIGHT, not a different box */
+.node[data-selected]:not([data-kind="mission"]){background:linear-gradient(var(--fade),#1a4a5cf0,#1a4a5c14 98%)}
+.node[data-lit]:not([data-selected]):not([data-kind="mission"]){background:linear-gradient(var(--fade),#123844e6,#12384400 98%)}
+.node[data-selected]:not([data-kind="mission"]) .head b{color:#fff}
+/* depth: receded things sit slightly further away (scale + opacity), selected / near things nearer */
+/* C9: ONE glide for everything that changes size / place together (Workbench open / close, selection): position, size and the conduits (MissionConduits.module.css) share the same duration and easing, so nothing leads or lags. */
+.node{scale:1;transition:transform .62s cubic-bezier(.32,.72,0,1),scale .62s cubic-bezier(.32,.72,0,1),width .62s cubic-bezier(.32,.72,0,1),height .62s cubic-bezier(.32,.72,0,1),opacity .4s}
+/* a line that appears when the stage widens (the detail under a label) fades in instead of popping */
+.node .head small{animation:glideIn .5s ease-out .12s backwards}
+@keyframes glideIn{from{opacity:0}to{opacity:1}}
+.root[data-depth] .node:not([data-lit]):not([data-near]),.node[data-recede]{scale:.965}
+@media(prefers-reduced-motion:reduce){.node{transition:none}}
+.ord{width:26px;margin:0 4px 0 9px}
+.node[data-kind="phase"] .head small{letter-spacing:-.005em}
+
+/* While the Workbench holds the left of the stage the graph is laid out narrower. Narrow must not mean cut: the detail line steps aside and labels may take two lines instead of an ellipsis. */
+.root[data-yield] .node:not([data-kind="mission"]) .head small{display:none}
+.root[data-yield] .node:not([data-kind="mission"]) .head b{white-space:normal;line-height:1.14;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11.5px}
+.root[data-yield] .node[data-kind="step"] .head{align-items:center}
+.root[data-yield] .node[data-kind="step"] .head b{max-width:100%}
+.root[data-yield] .ord{width:20px;margin:0 3px 0 7px;font-size:11px}
+.root[data-yield] .eyebrow,.root[data-yield] .ticks{display:none}
+.root[data-yield] .node[data-kind="mission"]:not([data-mass="chip"]){padding:10px 12px}
+.root[data-yield] .node[data-kind="mission"] .head b{font-size:13px;-webkit-line-clamp:3}
+.root[data-yield] .micro,.root[data-yield] .rail{display:none}
+.root[data-yield] .node[data-kind="department"]:not([data-container]){padding-right:22px}
+
+/* ================================================================ C2 NODE STYLING (Graph desktop; Pipeline and the phone keep their own look)
+   Level 1: compact dark glass cards, a large count (recorded steps) over a tiny label, a thin champagne outline on the active / selected phase (selection gold is NOT the error orange).
+   Level 2: mostly frameless text rows with a tiny real status badge; they fade and shrink slightly with distance from the reference row. */
+.count{display:none}
+.badge{display:none}
+.root[data-view="graph"]:not([data-mode="stack"]){--gold:#e6cf9a;--goldDim:#e6cf9a66}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]{border-radius:10px;padding:0 12px 0 10px;gap:10px;align-items:center;background:linear-gradient(180deg,#112830eb,#08171dee);box-shadow:inset 0 0 0 1px #8fb4c230,inset 0 1px 0 #ffffff12;overflow:hidden}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]::before{display:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]::after{background:var(--mk,linear-gradient(#0000,#0000))}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .count{display:block;flex:none;min-width:30px;font-size:25px;font-weight:560;line-height:1;letter-spacing:-.02em;color:#f1fbff;font-variant-numeric:tabular-nums;text-align:left}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head{flex:1;min-width:0;height:auto;gap:2px;padding:0}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{font-size:12.5px;font-weight:560;color:#dcecf2}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head small{font-size:9.5px;color:#7fa5b3;letter-spacing:.01em}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .ord{position:absolute;right:9px;top:6px;width:auto;margin:0;font-size:9px;letter-spacing:.08em;color:#6d95a4;box-shadow:none;height:auto}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .rail{left:12px;right:12px;bottom:5px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .micro{left:12px;right:12px;bottom:5px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected]{background:linear-gradient(180deg,#1a2e2ceb,#0a1a1dee);box-shadow:inset 0 0 0 1px var(--gold),inset 0 1px 0 #fff2c820}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active] .count,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected] .count{color:#fff3cf}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected] .head b{color:#fff3cf}
+/* level 2: frameless rows */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container]),.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container]){background:none;box-shadow:none;border-radius:8px;padding:3px 26px 3px 14px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container])::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container])::before{display:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container])::after,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container])::after{background:var(--mk,linear-gradient(#0000,#0000))}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{position:relative;justify-content:center;gap:1px;opacity:calc(1 - .55 * var(--dist,0));transform:scale(calc(1 - .09 * var(--dist,0)));transform-origin:left center}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{font-size:12px;font-weight:520;color:#e3f1f6}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head small,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head small{font-size:9.5px;color:#6d95a4}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge{display:inline-flex;align-items:center;gap:5px;position:absolute;right:0;bottom:0;height:16px;padding:0 7px;border-radius:8px;font-style:normal;font-size:9px;font-weight:540;letter-spacing:.04em;text-transform:uppercase;color:#9fd9c9;background:#0d2b2a99;box-shadow:inset 0 0 0 1px #35dba833}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge::before{content:"";width:5px;height:5px;border-radius:50%;background:#35dba8}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="error"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="error"]{color:#e3b184;background:#2a1a0e99;box-shadow:inset 0 0 0 1px #d08a4a44}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="error"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="error"]::before{background:#d08a4a;border-radius:1px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="active"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="active"]{color:#bfe6f0;box-shadow:inset 0 0 0 1px #4a8da055;background:#0d2630aa}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="active"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="active"]::before{background:transparent;box-shadow:inset 0 0 0 1.5px #a8d6e2}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="pending"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="skipped"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="assigned"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="mixed"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="pending"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="skipped"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="assigned"],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="mixed"]{color:#8fb0bd;background:#0d1d24aa;box-shadow:inset 0 0 0 1px #8fb4c026}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="pending"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="skipped"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="assigned"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge[data-status="mixed"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="pending"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="skipped"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="assigned"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge[data-status="mixed"]::before{background:#6d95a4}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container])[data-selected],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container])[data-selected]{background:linear-gradient(90deg,#1a2e2ceb,#0b1a1d99);box-shadow:inset 0 0 0 1px var(--gold)}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-selected] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-lit] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-selected] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-lit] .head{opacity:1;transform:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-selected] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-selected] .head b{color:#fff3cf}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-selected]):hover .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-selected]):hover .head{opacity:1;transform:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .micro,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .micro{display:none}
+/* C2 on a yielded (narrower) stage: the badge keeps its real status colour as a marker only, so the label gets the width and never collides with it */
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .badge,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .badge{font-size:0;gap:0;padding:0;width:13px;height:13px;justify-content:center;border-radius:50%;top:50%;bottom:auto;transform:translateY(-50%);right:0}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{padding-right:18px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{padding-right:14px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container]),.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container]){padding-top:2px;padding-bottom:2px;align-items:center}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{height:auto}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{font-size:11px;line-height:1.1}
+
+/* ================================================================ C2.1 TARGET-PARITY CORRECTION (Graph desktop)
+   Level 1: the count is THE element, the label is secondary, no ordinal, no state sentence: one small real-state marker. Level 2: frameless even when selected (brighter text + a small accent marker),
+   no expander arrows (they do nothing here), a gentler depth fade. */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:0 14px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .count{font-size:30px;font-weight:600;min-width:0;line-height:1}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head{flex:none;width:100%}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{font-size:10.5px;font-weight:480;color:#9fc0cb;letter-spacing:.01em;padding-right:0}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head small,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .ord,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .rail,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .micro{display:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]::before{display:block;content:"";position:absolute;left:auto;right:11px;top:11px;bottom:auto;width:6px;height:6px;border-radius:50%;background:#35dba8}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-status="active"]::before{background:transparent;box-shadow:inset 0 0 0 1.5px #a8d6e2;animation:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-status="error"]::before{background:#d08a4a;border-radius:1px}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-status="pending"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-status="mixed"]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-status="skipped"]::before{background:#6d95a4}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected] .head b{color:#e9d9ae}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container])[data-selected],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container])[data-selected]{background:none;box-shadow:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-selected]::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-selected]::before{display:block;content:"";position:absolute;left:3px;right:auto;top:calc(50% - 8px);bottom:auto;width:3px;height:16px;border-radius:2px;background:var(--gold)}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-selected] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-selected] .head b{color:#fff6dc}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{opacity:calc(1 - .32 * var(--dist,0));transform:scale(calc(1 - .05 * var(--dist,0)))}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container]),.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container]){padding-right:14px}
+
+/* C4 MISSION CORE (desktop Graph): a compact dark disc with a precision tick ring that draws the RECORDED percent, a faint halo band, and one small luminous orb. The node box stays the
+   square layout slot, so every conduit anchor is unchanged; the disc is inscribed in it and its rings live outside the box. Sizes are container-relative so one design serves all tiers. */
+.orb,.coreAddon{display:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .coreAddon{display:block;position:absolute;z-index:7;transform:translateX(-50%);pointer-events:auto}
+.root[data-view="graph"]:not([data-mode="stack"]) .coreAddon[data-tier="1"]{--sel-w:132px}
+.root[data-view="graph"]:not([data-mode="stack"]) .coreAddon[data-tier="2"]{--sel-arrow:30px;--sel-gear:50px;--sel-gap:6px;--sel-w:112px}
+/* C8: the Mission Core is a transparent glass bubble (MissionCoreGlass) with the mission's name, status and recorded progress as holographic text inside it. No disc fill, no hard ring: the glass is the surface, a very soft
+   icy bloom sits just outside its edge (gradients only: no blur, no filter). The node box (the chassis slot) is unchanged. */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"]{container-type:size;overflow:visible;border-radius:50%;clip-path:none;padding:0;align-items:center;justify-content:center;--halo:#7fe3f2;background:none;box-shadow:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"][data-selected]{background:none;box-shadow:none;--halo:#7fe3f2}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"]::before{content:"";display:block;position:absolute;inset:-17cqw;width:auto;height:auto;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle closest-side,#0000 0 71%,color-mix(in srgb,var(--halo) 34%,transparent) 75.5%,color-mix(in srgb,var(--halo) 15%,transparent) 82%,color-mix(in srgb,var(--halo) 5%,transparent) 91%,#0000 100%)}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"]::after{content:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .orb{display:block;position:absolute;inset:0;width:auto;height:auto;transform:none;border-radius:0;background:none;box-shadow:none;pointer-events:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .orb::before,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .orb::after{content:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head{position:absolute;left:17cqw;right:17cqw;top:50%;transform:translateY(-52%);height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;z-index:1}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head b{order:1;font-size:max(10px,7.1cqw);font-weight:380;line-height:1.16;letter-spacing:.005em;color:#e4fafd;-webkit-line-clamp:3}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head b::first-line{font-weight:560;color:#a6f0fb}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head::after{content:"";order:2;display:block;width:34cqw;height:1px;margin:3.4cqw 0 3cqw;background:linear-gradient(90deg,#0000,#8fe6f455 20%,#e6fcff 50%,#8fe6f455 80%,#0000)}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head small{order:3;display:flex;align-items:center;justify-content:center;gap:1.8cqw;font-size:max(8.5px,4.6cqw);white-space:nowrap;color:#cfe8ee;line-height:1.2;letter-spacing:.01em}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head small::before{content:"";flex:none;width:1.28em;height:1.28em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%237fe3f2' stroke-width='1.5'%3E%3Ccircle cx='10' cy='10' r='8.4'/%3E%3Ccircle cx='10' cy='10' r='2.2' fill='%237fe3f2'/%3E%3C/svg%3E") center/contain no-repeat}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"][data-status="done"] .head small::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%237fe3f2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='10' cy='10' r='8.4'/%3E%3Cpath d='m6.2 10.2 2.6 2.6 5-5.4'/%3E%3C/svg%3E")}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"][data-status="error"] .head small::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23e8b47a' stroke-width='1.5' stroke-linecap='round'%3E%3Ccircle cx='10' cy='10' r='8.4'/%3E%3Cpath d='M10 5.8v5.2M10 13.9v.1'/%3E%3C/svg%3E")}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .eyebrow,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .ticks{display:none}
+@container (max-width:150px){.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head b{-webkit-line-clamp:2}}
+@container (max-width:110px){.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="mission"] .head small{display:none}}
+
+/* C5A.1: a step row in the Graph reads exactly like a department row (label over detail, left aligned), not like a Pipeline step line */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{flex-direction:column;align-items:flex-start;justify-content:center;gap:1px;flex:none;width:100%}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{flex:none;max-width:100%}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head small{flex:none;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* C7E.3: the active / selected phase card carries a stronger champagne outline and a restrained champagne glow (outer shadow only; never the error orange) */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active],.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected]{box-shadow:inset 0 0 0 1.5px var(--gold),inset 0 1px 0 #fff2c83a,0 0 0 1px #e6cf9a30,0 0 16px -3px #e6cf9a55}
+
+/* C7E.3.2: a level-2 row's status marker belongs to its TEXT, not to the arc's far edge. The head becomes a small grid: the label on the first line, then the recorded meta and, right after it
+   (a fixed 8px gap), the compact status badge; the marker never floats to the row's right end, however short the name. On the yielded tier (no meta line) the dot sits right after the label.
+   Badge language (Done / Running / Pending / Error / Mixed), row geometry, conduits and the selected-row treatment are untouched. */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{display:grid;grid-template-columns:minmax(0,max-content) max-content minmax(0,1fr);grid-template-areas:"name name name" "meta badge .";column-gap:8px;row-gap:1px;align-items:center;justify-items:start;justify-content:start;align-content:center;width:100%;flex-direction:initial}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{grid-area:name;max-width:100%;min-width:0}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head small,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head small{grid-area:meta;min-width:0;max-width:100%;flex:none}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head .badge,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head .badge{grid-area:badge;position:static;right:auto;bottom:auto;top:auto;transform:none;align-self:center}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head{grid-template-areas:"name badge .";grid-template-columns:minmax(0,max-content) max-content minmax(0,1fr);column-gap:6px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b{padding-right:0}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head .badge,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head .badge{position:static;top:auto;right:auto;bottom:auto;transform:none;grid-area:badge}
+/* the second, geometry-pinned status mark in the row's top-right corner (error square / active ring, drawn by the row's ::after from --mk) duplicated the badge and floated at the arc's far edge:
+   on level-2 rows the badge (error square / running ring / done dot) is now the one status indicator, anchored to the text */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"]:not([data-container])::after,.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"]:not([data-container])::after{background:none}
+/* C7E.3.2.1: on the yielded tiers the dot is inline in the label's text flow, so it sits ~6px after the LAST rendered line of a wrapped name (one line or two), never after the label box's widest line.
+   The flow is one block inside the 2-line-clamped label; only if the clamp cuts it (a name over two lines) is the dot placed by one measurement pass, 6px after the end of the last visible line (text + ellipsis). */
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b .flow,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b .flow{display:block}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head b .badge,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head b .badge{display:inline-flex;vertical-align:middle;margin:-2px 0 -2px 6px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"] .head>.badge[data-fallback],.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"] .head>.badge[data-fallback]{display:none}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="department"][data-clip] .head>.badge[data-fallback],.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="step"][data-clip] .head>.badge[data-fallback]{display:inline-flex;position:absolute;grid-area:auto;left:var(--dot-x,0);top:var(--dot-y,0);transform:translateY(-50%);right:auto;bottom:auto}
+
+/* ================================================================ C7F phase cards: the label is never squeezed to keep the geometry
+   The seven cards have one fixed size per STAGE tier (missionWorktreeLayout: sw / ph), identical for every mission, wide enough for a real text area. Tier 0 (a wide stage) keeps the reference's count-over-label
+   composition; the narrower tiers (stage < 1180 / < 860: the Workbench or the panel yielding space) lay the card out as a row: the count, a flexible label area (up to two lines, then a clean clamp),
+   the status marker top right. Font sizes are fixed per tier and never shrink to fit; a long label clamps. */
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:11.5px;line-height:1.18;overflow-wrap:break-word}
+.root[data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .count{font-size:27px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"]{flex-direction:row;align-items:center;justify-content:flex-start;gap:9px;padding:0 24px 0 12px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .count{font-size:24px;min-width:18px;flex:none;text-align:left}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head{flex:1 1 0;min-width:0;width:auto}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{font-size:12px;font-weight:540;line-height:1.16;color:#cfe3ea;padding-right:0}
+.root[data-yield="2"][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .count{font-size:22px}
+.root[data-yield="2"][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"] .head b{font-size:11.5px}
+.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-active] .head b,.root[data-yield][data-view="graph"]:not([data-mode="stack"]) .node[data-kind="phase"][data-selected] .head b{color:#e9d9ae}

@@ -14,3 +14,6 @@
 
 /* Foundation pass: same field offset as the other lenses so the shared header's scope row never touches the list. */
 @media(min-width:901px){.field{top:clamp(268px,31%,330px)}}
+
+/* Phase 15A: phone field starts below the real header (published by useLensContentStart), not at a viewport percentage. */
+@media(max-width:600px){.field{top:calc(var(--lens-content-start,29%) + 20px)}}

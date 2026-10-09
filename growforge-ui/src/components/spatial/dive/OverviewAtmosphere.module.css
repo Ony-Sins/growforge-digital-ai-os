@@ -1,10 +1,10 @@
 /* Overview environment (Phase 1, refinement). ~85-90% dark, selective light. Graphite / blue-black base; cyan only appears as
    reflected light near NORA. Every layer is a soft gradient with no edge. No floor, horizon, grid, lines or particle field. */
-.atmosphere { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:#020407; }
+.atmosphere { position:absolute; inset:0; overflow:hidden; pointer-events:none; background:var(--gf-env-base); }
 .atmosphere > * { position:absolute; inset:0; }
 
 /* base: graphite, almost black, with only a trace of cold blue through the middle band */
-.base { background:linear-gradient(180deg, #010305 0%, #03060a 30%, #04080c 54%, #03060a 78%, #010305 100%); }
+.base { background:linear-gradient(180deg, var(--gf-env-deep) 0%, #03060a 30%, #04080c 54%, #03060a 78%, var(--gf-env-deep) 100%); }
 
 /* FAR: a very few soft, out-of-focus lights at irregular spots, plus a few extremely faint, wide, soft shafts that fade into darkness */
 .bokeh { filter:blur(12px); background:
@@ -44,3 +44,15 @@
 
 /* deep vignette */
 .vignette { background:radial-gradient(ellipse 72% 68% at 48% 50%, transparent 30%, #00010340 58%, #000103ae 84%, #000103e6 100%); }
+
+/* Lens modulation: the same room, lit lower. Opacity only (never a new colour or a different background); `front` has no rule, so Overview is unchanged. */
+.atmosphere > * { transition:opacity .7s ease; }
+.atmosphere[data-depth="recede"] .source { opacity:.9; }
+.atmosphere[data-depth="recede"] .haze { opacity:.92; }
+.atmosphere[data-depth="recede"] .reflection { opacity:.78; }
+.atmosphere[data-depth="recede"] .streaks { opacity:.66; }
+.atmosphere[data-depth="deep"] .source { opacity:.62; }
+.atmosphere[data-depth="deep"] .haze { opacity:.72; }
+.atmosphere[data-depth="deep"] .reflection { opacity:.5; }
+.atmosphere[data-depth="deep"] .streaks { opacity:.4; }
+@media (prefers-reduced-motion: reduce) { .atmosphere > * { transition-duration:.12s; } }

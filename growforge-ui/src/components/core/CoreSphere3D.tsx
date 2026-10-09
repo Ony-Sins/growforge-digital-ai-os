@@ -15,6 +15,8 @@ interface CoreSphere3DProps {
   selectedId: string | null;
   onSelect?: (id: string) => void;
   theme?: "dark" | "canvas";
+  /** Visual rendering only: false stops the render loop (scene, GL context and animation phase are kept). Never gates job/CORE state. */
+  active?: boolean;
 }
 
 const HUB_COLORS_DARK: Record<HubStatus, number> = {
@@ -64,13 +66,22 @@ function glowTexture(): THREE.CanvasTexture {
  * department's step is genuinely running. With nothing running the sphere is
  * calm; it never animates activity that isn't happening.
  */
-export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark" }: CoreSphere3DProps) {
+export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark", active = true }: CoreSphere3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const liveRef = useRef({ hubs, selectedId, onSelect, theme });
+  const activeRef = useRef(active);
+  const loopRef = useRef<{ run: () => void; halt: () => void } | null>(null);
 
   useEffect(() => {
     liveRef.current = { hubs, selectedId, onSelect, theme };
   }, [hubs, selectedId, onSelect, theme]);
+
+  // Pause/resume the render loop from the surface that owns this renderer's visibility.
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) loopRef.current?.run();
+    else loopRef.current?.halt();
+  }, [active]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -243,12 +254,15 @@ export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark" }: Cor
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (!running) renderer.render(scene, camera); // resizing clears the drawing buffer; repaint once while paused
     };
     const observer = new ResizeObserver(resize);
     observer.observe(container);
 
-    const animationStartedAt = performance.now();
+    let animationStartedAt = performance.now();
     let frame = 0;
+    let running = false;
+    let haltedAt = 0;
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const t = (performance.now() - animationStartedAt) / 1000;
@@ -290,9 +304,25 @@ export function CoreSphere3D({ hubs, selectedId, onSelect, theme = "dark" }: Cor
 
       renderer.render(scene, camera);
     };
-    animate();
+    const run = () => {
+      if (running) return;
+      running = true;
+      if (haltedAt) animationStartedAt += performance.now() - haltedAt; // keep the animation phase continuous across a pause
+      animate();
+    };
+    const halt = () => {
+      if (!running) return;
+      running = false;
+      haltedAt = performance.now();
+      cancelAnimationFrame(frame);
+    };
+    loopRef.current = { run, halt };
+    if (activeRef.current) run();
+    else renderer.render(scene, camera); // first frame so a hidden-at-mount sphere is not blank when it appears
 
     return () => {
+      loopRef.current = null;
+      running = false;
       cancelAnimationFrame(frame);
       observer.disconnect();
       container.removeEventListener("pointerdown", onDown);

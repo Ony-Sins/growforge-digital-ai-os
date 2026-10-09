@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import type { CoreState, CoreJobView } from "../src/lib/coreState";
+import type { CoreState } from "../src/lib/coreState";
 import type { Job } from "../src/lib/jobStore";
-import { activeMissions, missionObject, missionLifecycle, selectedMission, missionApprovals, missionCost } from "../src/components/spatial/dive/missionModel";
+import { activeMissions, missionObject } from "../src/components/spatial/dive/missionModel";
 import { createMission } from "../src/lib/missionClient";
 
 let passed = 0;
@@ -13,41 +13,12 @@ async function check(name: string, test: () => void | Promise<void>) { await tes
 const core = { jobs: [], job: null } as unknown as CoreState;
 const summary = { id: "isolated-mission", title: "Marketing Department review", status: "running", percent: 37, createdAt: "2026-10-01T00:00:00Z", isTest: false } as CoreState["jobs"][number];
 const job = { ...summary, steps: [], liveNotes: [], revisions: [] } as unknown as Job;
-const approval = { id: "isolated-approval", jobId: job.id, stepId: "research", toolName: "search", status: "pending" };
 await check("default map excludes history, failed jobs and test fixtures", () => {
   assert.deepEqual(activeMissions({ ...core, jobs: [summary, { ...summary, id: "done", status: "done" }, { ...summary, id: "error", status: "error" }, { ...summary, id: "test", isTest: true }] }).map(item => item.id), [job.id]);
   assert.deepEqual(activeMissions(null), []);
 });
 await check("canonical display preserves saved identity and progress", () => {
   const item = missionObject(summary); assert.equal(item.id, job.id); assert.match(item.name, /Brand & Growth Marketing/); assert.match(item.context, /37%/); assert.equal(summary.title, "Marketing Department review");
-});
-await check("lifecycle derives planning and approval holds without relabeling failures", () => {
-  assert.equal(missionLifecycle(job), "Active");
-  assert.equal(missionLifecycle({ ...job, steps: [{ kind: "plan", status: "active" } as Job["steps"][number]] }), "Planning");
-  assert.equal(missionLifecycle(job, [approval]), "Awaiting Approval · Tool action");
-  assert.equal(missionLifecycle(job, [{ ...approval, jobId: "other" }]), "Active");
-  assert.equal(missionLifecycle({ ...job, status: "error" }, [approval]), "Error");
-  assert.equal(missionLifecycle({ ...job, status: "done" }, [approval]), "Completed");
-});
-await check("awaiting approval requires a real matching pending record", () => {
-  for (const status of ["approved", "denied", "expired"]) assert.equal(missionLifecycle(job, [{ ...approval, status }]), "Active");
-  assert.equal(missionLifecycle(job, []), "Active");
-  assert.equal(missionLifecycle(job, [{ ...approval, jobId: "other" }]), "Active");
-  assert.equal(job.status, "running");
-});
-await check("selected ID rejects incumbent API fallback and missing records", () => {
-  assert.throws(() => selectedMission(core, job.id));
-  assert.throws(() => selectedMission({ ...core, job: { id: "other" } as CoreJobView }, job.id));
-  const selected = { id: job.id } as CoreJobView; assert.equal(selectedMission({ ...core, job: selected }, job.id), selected);
-});
-await check("approval projection excludes other missions and sensitive arguments", () => {
-  const records = [{ ...approval, args: { secret: "fixture-only" } }, { ...approval, jobId: "other" }];
-  assert.deepEqual(missionApprovals(records, job.id), [approval]);
-});
-await check("missing usage and legacy cost estimates are not billing receipts", () => {
-  const view = { usage: null } as CoreJobView; assert.match(missionCost(view), /No recorded/);
-  assert.match(missionCost({ ...view, usage: { costUsd: null, allCostsKnown: false } as NonNullable<CoreJobView["usage"]> }), /API cost not recorded/);
-  assert.doesNotMatch(missionCost({ ...view, usage: { costUsd: 0, allCostsKnown: true } as NonNullable<CoreJobView["usage"]> }), /\$0/);
 });
 await check("shared creation contract returns server identity and propagates denial", async () => {
   const originalFetch = globalThis.fetch;

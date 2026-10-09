@@ -74,15 +74,16 @@ function sprite(kind: "sharp" | "soft" | "hot" | "warm"): HTMLCanvasElement {
 
 const KEYS: (keyof NoraMorphParams)[] = ["amp", "speed", "reach", "flow", "hot", "converge", "flat", "lean", "wave", "warm", "energy"];
 
-export function NoraMorphField({ level, phase, onWake, forceState }: { level: NoraStageLevel; phase: InnerCorePhase; onWake: () => void; forceState?: NoraMorphState }) {
+/** `quiet` only caps the frame rate (~30fps) while NORA is receded behind another lens; geometry, state machine and look are unchanged. */
+export function NoraMorphField({ level, phase, onWake, forceState, quiet = false }: { level: NoraStageLevel; phase: InnerCorePhase; onWake: () => void; forceState?: NoraMorphState; quiet?: boolean }) {
   const host = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef({ level, phase, forceState });
+  const stateRef = useRef({ level, phase, forceState, quiet });
   const audio = useRef(0);
   const redraw = useRef<(() => void) | null>(null);
   const recoil = useRef<{ x: number; y: number; t: number } | null>(null);
   const pointer = useRef({ tx: 0, ty: 0, x: 0, y: 0, ta: 0, act: 0 });
-  useEffect(() => { stateRef.current = { level, phase, forceState }; redraw.current?.(); }, [level, phase, forceState]);
+  useEffect(() => { stateRef.current = { level, phase, forceState, quiet }; redraw.current?.(); }, [level, phase, forceState, quiet]);
   useEffect(() => {
     const onAudio = (event: Event) => { const e = (event as CustomEvent<{ energy?: number }>).detail?.energy; audio.current = typeof e === "number" ? Math.max(0, Math.min(1, e)) : 0; };
     window.addEventListener(NORA_AUDIO_EVENT, onAudio);
@@ -321,6 +322,7 @@ export function NoraMorphField({ level, phase, onWake, forceState }: { level: No
     hostEl.addEventListener("pointermove", onMove); hostEl.addEventListener("pointerleave", onLeave); hostEl.addEventListener("click", onClick);
 
     const frame = (now: number) => {
+      if (stateRef.current.quiet && last && now - last < 30) { raf = requestAnimationFrame(frame); return; }
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now; t += dt; frameDt = dt || 0.016;
       const goal = resolve();
       const k = 1 - Math.exp(-dt * 1.8);

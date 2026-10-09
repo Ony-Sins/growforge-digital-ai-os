@@ -11,6 +11,7 @@ import { recordedOverviewStages, overviewExecutionLine } from './overviewRuntime
 import { innerCorePhase, newlyCompleted } from './overviewCommandModel';
 import { IDLE_NORA_SIGNAL, NORA_VISUAL_EVENT, NORA_VISUAL_REQUEST, type NoraVisualSignal } from '@/lib/noraVisualSignal';
 import type { DiveLens } from './overviewModel';
+import type { SharedDepth } from './diveDepthModel';
 import { activityGraph, attentionRows, briefState, healthRows, liveStatusText, nowView, operationalStrip, recentRows, snapshotCounts, stageStatusLabel, type AttentionRow, type RecentRow } from './overviewBriefingModel';
 import { AttentionPanel, BriefPanel, HealthDisclosure, OperationalStrip, RecentPanel, SnapshotPanel } from './OverviewBriefing';
 import styles from './OverviewRuntime.module.css';
@@ -23,7 +24,9 @@ const CORE_STATUS = { attentive:'Ready',listening:'Listening',thinking:'Thinking
  * only recorded-vs-live wording lives there. The center is reserved for NORA: today the temporary Inner Core, later
  * the NORA Morph Field plus a projection layer where contextual surfaces can appear and disappear.
  */
-export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersion, onMission, onLens }: { core: CoreState | null; snapshot: OverviewSnapshot | null; agentsWorking: number; dismissalVersion: number; onMission: (id: string) => void; onLens:(lens:DiveLens)=>void }) {
+export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersion, onMission, onLens, depth = 'front' }: { core: CoreState | null; snapshot: OverviewSnapshot | null; agentsWorking: number; dismissalVersion: number; onMission: (id: string) => void; onLens:(lens:DiveLens)=>void; depth?: SharedDepth }) {
+  // `front` = Overview. Any other depth = the same environment seen from a deeper lens: the cards, heading and brief dissolve (inert), NORA stays mounted and alive.
+  const front = depth === 'front';
   const [nora,setNora]=useState<NoraVisualSignal>(IDLE_NORA_SIGNAL);
   const [responseVisible,setResponseVisible]=useState(false);
   const seenResponse=useRef<string|null>(null);
@@ -49,7 +52,7 @@ export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersio
   const phase=innerCorePhase(core,nora,responseVisible,completedNow,snapshot?snapshot.executingNow.missionIds.length>0:undefined);
   const stages = useMemo(() => recordedOverviewStages(core), [core]);
   const [selection, setSelection] = useState<{ id: string; version: number } | null>(null);
-  const selected = selection?.version === dismissalVersion ? stages.find(stage => stage.id === selection.id) : undefined;
+  const selected = front && selection?.version === dismissalVersion ? stages.find(stage => stage.id === selection.id) : undefined;
   const job = selected ? core?.job : null;
   const now = useMemo(() => nowView(snapshot, core), [snapshot, core]);
   const strip = useMemo(() => operationalStrip(snapshot), [snapshot]);
@@ -75,14 +78,14 @@ export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersio
   const openRecent = (row: RecentRow) => { if (row.missionId) onMission(row.missionId); else onLens('Missions'); };
   return <>
     {/* Environment: light only (falloff, haze, reflected light, sparse particles). No floor, grid or scenery. Decorative only: it encodes no data. */}
-    <OverviewAtmosphere />
-    <div className={styles.layout} data-overview-layout>
-      <header className={styles.head}>
+    <OverviewAtmosphere depth={depth} />
+    <div className={styles.layout} data-overview-layout data-depth={depth}>
+      <header className={styles.head} inert={front ? undefined : true}>
         <h1 className={styles.heading}>Overview</h1>
         <OperationalStrip cells={strip} onLens={onLens} />
       </header>
       <div className={styles.stageGrid}>
-        <div className={styles.left} data-overview-side="left">
+        <div className={styles.left} data-overview-side="left" inert={front ? undefined : true}>
           <SnapshotPanel counts={counts} graph={graph} now={now} selectedStageId={selected?.id ?? null} onStage={id => setSelection({ id, version: dismissalVersion })} onMission={onMission} onLens={onLens} />
           <HealthDisclosure rows={health} onOpen={() => onLens('Tools')} />
         </div>
@@ -90,19 +93,19 @@ export function OverviewRuntime({ core, snapshot, agentsWorking, dismissalVersio
             to CORE runtime: it sits in one replaceable slot so the NORA Morph Field can take its place without re-layout. */}
         <div className={styles.center} data-nora-briefing-stage>
           <div className={styles.noraObject} data-nora-stage-object>
-            <div className={styles.volume} data-nora-stage-field-host><NoraStageField level={stageLevel} phase={phase} onWake={wake} /></div>
+            <div className={styles.volume} data-nora-stage-field-host inert={front ? undefined : true}><NoraStageField level={stageLevel} phase={phase} onWake={wake} quiet={!front} /></div>
           </div>
           <div className={styles.projectionLayer} data-briefing-projection-layer aria-hidden="true" />
-          <div className={styles.briefDock}><BriefPanel state={briefState(snapshot)} /></div>
+          <div className={styles.briefDock} inert={front ? undefined : true}><BriefPanel state={briefState(snapshot)} /></div>
         </div>
-        <div className={styles.right} data-overview-side="right">
+        <div className={styles.right} data-overview-side="right" inert={front ? undefined : true}>
           <AttentionPanel rows={attention.rows} hidden={attention.hidden} expanded={attentionExpanded} onReveal={() => setAttentionExpanded(value => !value)} onInspect={inspectAttention} />
           <RecentPanel rows={recent.rows} onOpen={openRecent} />
         </div>
       </div>
     </div>
     <div className={styles.srOnly} aria-live="polite">{phase==='idle'?`${overviewExecutionLine(core, agentsWorking, snapshot)}. ${liveStatusText(snapshot)}`:CORE_STATUS[phase]}</div>
-    {responseVisible&&!nora.conversationOpen&&nora.response&&nora.response.length<=220&&<button className={styles.subtitle} onClick={wake} aria-label="Open NORA response">{nora.response}</button>}
+    {front&&responseVisible&&!nora.conversationOpen&&nora.response&&nora.response.length<=220&&<button className={styles.subtitle} onClick={wake} aria-label="Open NORA response">{nora.response}</button>}
     {selected && job && <aside className={styles.inspector} data-dive-inspector aria-label="Recorded stage inspection"><header><div><small>RECORDED EXECUTION</small><h2>{selected.label}</h2></div><button aria-label="Dismiss stage inspector" onClick={() => setSelection(null)}><GrowForgeGlyph name="dismiss" size={16} /></button></header><p>{job.title}</p>{selected.steps.map(step => <section key={step.id}><h3>{step.label}</h3><span>{stageStatusLabel(step.status, evidence)}</span>{step.provider && <p>Provider · {step.provider}</p>}{step.startedAt && <p>Started · {new Date(step.startedAt).toLocaleString()}</p>}{step.finishedAt && <p>Finished · {new Date(step.finishedAt).toLocaleString()}</p>}{step.error && <p>{step.error}</p>}<details><summary>Provenance</summary><p>Job · {job.id}</p><p>Step · {step.id}</p>{step.startedAt && <p>{step.startedAt}</p>}</details></section>)}<button className={styles.openMission} onClick={() => onMission(job.id)}>Inspect mission <GrowForgeGlyph name="reach" size={14} /></button></aside>}
   </>;
 }

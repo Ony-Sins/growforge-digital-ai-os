@@ -1,0 +1,63 @@
+/* W3 conduit layers. SVG strokes only: no filter, no blur, no drop-shadow, no backdrop-filter, no rAF. Colour is one cold cyan-white family; state changes
+   edge treatment (opacity / a faint rose sheath), never a recolour of the object. */
+.svg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+/* C9: the lines glide with the nodes they join (same duration / easing as the nodes, see MissionWorktreeView.module.css); a path whose structure changes simply snaps */
+.svg path{transition:d .62s cubic-bezier(.32,.72,0,1)}
+@media(prefers-reduced-motion:reduce){.svg path{transition:none}}
+.sheath{fill:none;stroke:#7fd3e6;stroke-linecap:round;stroke-linejoin:round}
+.filament{fill:none;stroke:#a8e8f4;stroke-linecap:round;stroke-linejoin:round}
+g[data-tone="alert"] .sheath{stroke:#e0c080}
+g[data-tone="alert"] .filament{stroke:#cdc6b4}
+g[data-role="path"] .filament{stroke:#e4fbff}
+/* junctions: a tiny refractive node (ring + core + optional cross ticks), never a big dot */
+.junction .ring{fill:#06141acc;stroke:#a8e8f4;stroke-opacity:.34;stroke-width:.9}
+.junction .core{fill:#cfeff6;fill-opacity:.7}
+.junction .cross{fill:none;stroke:#cfeff6;stroke-opacity:.5;stroke-width:.9;stroke-linecap:round}
+.junction[data-role="receded"]{opacity:.45}
+.junction[data-role="path"] .ring{stroke-opacity:.8}
+.junction[data-kind="selected"] .ring{stroke:#e4fbff;stroke-opacity:.95}
+.junction[data-kind="selected"] .core{fill:#fff;fill-opacity:.95}
+.junction[data-tone="alert"] .ring{stroke:#e0c080;stroke-opacity:.55}
+.junction[data-kind="live"] .ring{stroke:#8fe6f4;stroke-opacity:.8}
+/* signal packets: one short dash travelling along the conduit (pathLength normalised to 100). Invisible before and after (fill-mode both). */
+/* signal packets: ONE slim crisp dash travelling along the conduit (pathLength normalised to 100). Invisible before and after (fill-mode both). */
+.packet,.tail{fill:none;stroke-linecap:round;stroke-dasharray:4 96;stroke-dashoffset:4;animation-name:travel;animation-timing-function:cubic-bezier(.45,0,.25,1);animation-iteration-count:1;animation-fill-mode:both}
+.packet{stroke:#f4fdff;stroke-width:1.7;stroke-opacity:.9}
+.tail{stroke:#8fe6f4;stroke-width:1.2;stroke-opacity:.34;stroke-dasharray:12 88;animation-name:travelTail}
+/* executor-confirmed live: the strongest flow (repeats, tail) */
+.packet[data-repeats],.tail[data-repeats]{animation-name:travelLive;animation-timing-function:linear;animation-iteration-count:infinite}
+.tail[data-repeats]{animation-name:travelLiveTail}
+.packet[data-repeats]{stroke-opacity:.85;stroke-width:1.5}
+/* blocked/error selected: the one-shot starts and STALLS part-way, fading; it never arrives */
+.packet[data-kind="stall"]{stroke:#d6bf86;stroke-width:1.5;stroke-opacity:.8;animation-name:travelStall;animation-timing-function:cubic-bezier(.3,0,.6,1)}
+/* static emphasis (also what reduced motion keeps): live = solid bright overlay, recorded = dotted ledger overlay */
+.flowLive{fill:none;stroke:#e4fbff;stroke-opacity:.5;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+.flowRecorded{fill:none;stroke:#b4cdd6;stroke-opacity:.6;stroke-width:1.3;stroke-dasharray:1 6;stroke-linecap:round;stroke-linejoin:round}
+/* seats: where a path / recorded-active conduit meets a node. Hollow = recorded, filled core = executor-confirmed live, square = fault */
+.junction[data-kind="socket"] .ring{fill:#06141acc;stroke-opacity:.3;stroke-width:.8}
+.junction[data-kind="socket"] .core{fill-opacity:.55}
+.junction[data-kind="socket"][data-role="path"] .ring{stroke-opacity:.8}
+.junction[data-kind="socket"][data-role="path"] .core{fill:#fff;fill-opacity:.9}
+.junction[data-kind="socket"][data-tone="recorded-active"] .ring{stroke:#b4cdd6;stroke-opacity:.6}
+.junction[data-kind="socket"][data-live] .ring{stroke:#8fe6f4;stroke-opacity:.9}
+.junction[data-kind="socket"][data-live] .core{fill:#fff;fill-opacity:.95}
+.fault{fill:#06141acc;stroke:#e0c080;stroke-opacity:.8;stroke-width:1}
+.junction[data-kind="fault"][data-role="receded"]{opacity:.5}
+@keyframes travel{from{stroke-dashoffset:4}to{stroke-dashoffset:-100}}
+@keyframes travelTail{from{stroke-dashoffset:12}to{stroke-dashoffset:-100}}
+@keyframes travelLive{0%{stroke-dashoffset:4}70%{stroke-dashoffset:-100}100%{stroke-dashoffset:-100}}
+@keyframes travelLiveTail{0%{stroke-dashoffset:12}70%{stroke-dashoffset:-100}100%{stroke-dashoffset:-100}}
+@keyframes travelStall{0%{stroke-dashoffset:4;opacity:1}65%{stroke-dashoffset:-48;opacity:.9}100%{stroke-dashoffset:-56;opacity:0}}
+@media(prefers-reduced-motion:reduce){.packet,.tail{animation:none;display:none}}
+
+/* a department's steps open: their conduit eases in once when the group first mounts (opacity only) */
+.rel[data-relation="department-membership"]{animation:conduitIn .5s ease-out backwards}
+@keyframes conduitIn{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.rel[data-relation="department-membership"]{animation:none}}
+
+/* C3 Graph fan: hairlines, and the one bright focal point beside the active phase card */
+.hair{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.junction[data-graph][data-kind="fan-out"] .ring{fill:#0a171ae8;stroke:#fff1cf;stroke-opacity:1;stroke-width:1.2}
+.junction[data-graph][data-kind="fan-out"] .core{fill:#fffaf0;fill-opacity:1}
+.junction .glow{pointer-events:none}
+.junction .halo{fill:none;stroke:#f0dca6;stroke-opacity:.34;stroke-width:.7}

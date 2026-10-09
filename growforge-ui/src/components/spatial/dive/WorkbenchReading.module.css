@@ -1,0 +1,180 @@
+/* Workbench reading content (W5.3A). Editorial / forensic: hairline-separated fact bands, records, output text, relationship rows. No cards, no tiles, no pills, no blur,
+   no filter, no shadow, no animation. Sized for the 270-310 px reading column; wraps instead of truncating (the plane scrolls). */
+.root{display:flex;flex-direction:column;gap:18px;font-size:12px;line-height:1.5;color:#c4dde6;min-width:0}
+.root button{font:inherit;color:inherit}
+
+/* fact band: label / value pairs separated by hairlines */
+.facts{margin:0;display:flex;flex-direction:column;min-width:0}
+.fact{display:grid;grid-template-columns:minmax(72px,104px) minmax(0,1fr);gap:12px;padding:6px 0;border-top:1px solid #9fc4d01a}
+.fact:first-child{border-top:0;padding-top:0}
+.fact dt{margin:0;font-size:11px;letter-spacing:.01em;color:#7fa5b3;line-height:18px}
+.fact dd{margin:0;min-width:0;overflow-wrap:anywhere;color:#e3f3f8}
+.fact[data-tone="alert"] dd{color:#e0c080}.fact[data-tone="live"] dd{color:#8fe6f4}.fact[data-tone="quiet"] dd{color:#8fb0bd}
+.prov{font-size:10px;letter-spacing:.02em;color:#6f98a6;font-style:italic}
+.inline{padding:0;border:0;background:none;color:#a8e8f4;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#a8e8f455;text-underline-offset:3px}
+.inline:hover{color:#e9fbff}
+.inline:focus-visible,.row:focus-visible,.stepRow:focus-visible{outline:1px solid #bff3fb;outline-offset:2px}
+.quiet{color:#7fa5b3}
+
+/* record group */
+.group{display:flex;flex-direction:column;gap:8px;min-width:0}
+.group>h5,.text>header>h5,.record>header>h5{margin:0;font-size:12px;font-weight:600;letter-spacing:.02em;color:#cfe6ee}
+.group>h5{padding-top:12px;border-top:1px solid #9fc4d026}
+.note{margin:0;font-size:11px;line-height:16px;color:#7fa5b3}
+.note[data-tone="alert"]{color:#e0c080}.note[data-tone="live"]{color:#8fe6f4}
+.empty{margin:0;font-size:11px;color:#6f98a6;font-style:italic}
+.unavailable{margin:0;padding:6px 0 6px 10px;border-left:1px dashed #78cde040;font-size:11px;line-height:16px;color:#7fa5b3}
+.unavailable b{display:block;font-weight:500;color:#a9c7d2}
+
+/* relationship rows: a status tick, a name, one quiet detail line. Resolved ones are buttons; unresolved ones are plain and dashed. */
+.relations,.steps,.usage{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.row{display:flex;align-items:stretch;gap:10px;width:100%;box-sizing:border-box;min-height:36px;padding:5px 6px 5px 0;border:0;border-top:1px solid #78cde014;background:none;text-align:left;cursor:pointer}
+.relations li:first-child .row{border-top:0}
+div.row{cursor:default}
+.row:hover{background:var(--wb-hover,#12313b66)}
+div.row:hover{background:none}
+.row i,.stepRow i{flex:none;width:2px;border-radius:1px;background:#8fe0ee66;align-self:stretch}
+.row[data-tone="alert"] i,.stepRow[data-tone="alert"] i{background:#e0c080}
+.row[data-tone="live"] i,.stepRow[data-tone="live"] i{background:#8fe6f4}
+.row[data-tone="quiet"] i,.stepRow[data-tone="quiet"] i{background:#78cde033}
+.row[data-unresolved] i{background:none;border-left:1px dashed #e0c08099;width:0}
+.row span{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.row b{font-weight:500;color:#e3f3f8;overflow-wrap:anywhere}
+.row small,.stepRow small{font-size:11px;color:#7fa5b3;overflow-wrap:anywhere}
+.row[data-tone="alert"] small{color:#d8b878}
+.row[data-unresolved] b{color:#d6c08a}
+
+/* step rows (department Steps section): every recorded step, selectable, never truncated semantically */
+.stepRow{display:grid;grid-template-columns:2px minmax(0,1fr) auto;gap:10px;width:100%;box-sizing:border-box;min-height:44px;padding:6px 4px 6px 0;border:0;border-top:1px solid #78cde014;background:none;text-align:left;cursor:pointer;align-items:stretch}
+.steps li:first-child .stepRow{border-top:0}
+.stepRow:hover{background:var(--wb-hover,#12313b66)}
+.stepMain{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.stepMain b{font-weight:500;color:#eef9fd;overflow-wrap:anywhere}
+.stepMain em{font-style:normal;font-size:11px;line-height:16px;color:#d8b878;overflow-wrap:anywhere}
+.activity{color:#a9c7d2}
+.stepState{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;font-size:11px;color:#a9c7d2;white-space:nowrap}
+.stepRow[data-tone="alert"] .stepState{color:#e0c080}.stepRow[data-tone="live"] .stepState{color:#8fe6f4}.stepRow[data-tone="quiet"] .stepState{color:#7fa5b3}
+
+/* usage records */
+.usage li{display:flex;flex-direction:column;gap:1px;padding:6px 0;border-top:1px solid #78cde014;min-width:0}
+.usage li:first-child{border-top:0;padding-top:0}
+.usage b{font-weight:500;color:#eef9fd;overflow-wrap:anywhere}
+.usage span{color:#a9c7d2;overflow-wrap:anywhere}
+.usage small{font-size:11px;color:#7fa5b3}
+
+/* output / brief / long text */
+.text{display:flex;flex-direction:column;gap:6px;min-width:0}
+.text>header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-top:2px}
+.text>header small,.record>header small{font-size:10px;color:#6f98a6}
+.plain{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#d3e9f0}
+.text>.plain,.record>.plain{padding:2px 0 2px 10px;border-left:1px solid #78cde02e}
+.md{min-width:0;overflow-wrap:anywhere;padding-left:10px;border-left:1px solid #78cde02e;color:#d3e9f0}
+.para{margin:0 0 9px;white-space:pre-wrap}
+h5.md{margin:12px 0 5px;padding:0;border:0;font-weight:560;color:#eef9fd;font-size:12.5px}
+h5.md[data-level="1"]{font-size:14px}h5.md[data-level="2"]{font-size:13.5px}
+.list{margin:0 0 9px;padding-left:18px}.list li{margin:2px 0}
+.fence{margin:0 0 9px;padding:7px 9px;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.45;color:#bfe3ec;background:var(--wb-recess,#02080b99);border-left:1px solid #78cde03a;white-space:pre}
+.md code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#bfe3ec;background:var(--wb-recess,#02080b88);padding:0 3px}
+
+/* approval / consultation / requested-change records */
+.record{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid #78cde026;min-width:0}
+.record:first-child{border-top:0;padding-top:0}
+.record>header{display:flex;flex-direction:column;gap:1px}
+.record>header>h5{text-transform:none;letter-spacing:.02em;font-size:12.5px;font-weight:560;color:#eef9fd}
+
+/* research ledgers (W5.3B): an index mark, a thin rule between entries, typography for hierarchy. No boxes, no badges. */
+.ledger{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;min-width:0}
+.ledger>li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;padding:9px 0;border-top:1px solid #78cde01a}
+.ledger>li:first-child{border-top:0;padding-top:2px}
+.mark{padding-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:500;letter-spacing:.04em;color:#8fe0ee;white-space:nowrap}
+.ledger>li>p{margin:0;color:#e3f3f8;overflow-wrap:anywhere}
+.entry{min-width:0;display:flex;flex-direction:column;gap:3px}
+.entry h6{margin:0;font-size:12.5px;font-weight:560;line-height:1.4;color:#eef9fd;overflow-wrap:anywhere}
+.entry .md{margin-top:2px;padding-left:0;border-left:0}
+.refs{font-size:11px;line-height:16px;color:#7fa5b3;overflow-wrap:anywhere}
+.refs[data-tone="alert"]{color:#d8b878}
+.srcTitle{color:#e3f3f8;font-weight:500;overflow-wrap:anywhere}
+.rawUri{color:#8fb0bd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;overflow-wrap:anywhere}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ledger[data-kind="sources"] .inline{display:inline-flex;align-items:center;min-height:24px}
+
+/* phones / narrow sheets: 44 px targets */
+.root[data-phone] .row,.root[data-phone] .stepRow{min-height:44px}
+.root[data-phone] .inline{min-height:24px}
+.root[data-phone] .ledger[data-kind="sources"] .inline{min-height:44px}
+.root[data-phone] .fact{grid-template-columns:minmax(72px,96px) minmax(0,1fr)}
+
+/* Focus reading scale (W6.2): same blocks and grammar, a larger and more open measure. Nothing is hidden or reflowed semantically. */
+.root[data-scale="focus"]{font-size:14.5px;line-height:1.7;gap:26px}
+.root[data-scale="focus"] .fact{grid-template-columns:minmax(110px,160px) minmax(0,1fr);padding:8px 0}
+.root[data-scale="focus"] .fact dt{font-size:12px;line-height:22px}
+.root[data-scale="focus"] .group>h5,.root[data-scale="focus"] .text>header>h5,.root[data-scale="focus"] .record>header>h5{font-size:13.5px}
+.root[data-scale="focus"] .note,.root[data-scale="focus"] .row small,.root[data-scale="focus"] .stepRow small,.root[data-scale="focus"] .refs{font-size:12.5px;line-height:1.55}
+.root[data-scale="focus"] h5.md{font-size:15px}.root[data-scale="focus"] h5.md[data-level="1"]{font-size:17px}.root[data-scale="focus"] h5.md[data-level="2"]{font-size:16px}
+.root[data-scale="focus"] .fence,.root[data-scale="focus"] .md code,.root[data-scale="focus"] .rawUri{font-size:12.5px}
+.root[data-scale="focus"] .entry h6{font-size:14.5px}
+.root[data-scale="focus"] .para{margin-bottom:13px}
+
+/* C7G usage breakdown: a total instrument, one segmented share bar (several contributors only), one row per provider / model. Cool tones + one champagne; no glow. */
+.ubd{margin:0 0 14px;display:flex;flex-direction:column;gap:10px}
+.ubdTotal{margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));background:var(--wb-plane-primary,#1a3a41b0);box-shadow:inset 0 1px 0 #9ec6cc38,inset 0 -1px 0 #9ec6cc24}
+.ubdTotal>div{min-width:0;padding:9px 11px 8px;display:flex;flex-direction:column;gap:2px;box-shadow:inset 1px 0 0 #9ec6cc1c}
+.ubdTotal dt{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#7fa5b3}
+.ubdTotal dd{margin:0;font-size:17px;font-weight:600;line-height:1.15;color:#f1fbff;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ubdTotal small{font-size:10px;color:#8fb0bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ubdTotal [data-quiet] dd,.ubdTotal [data-state="unknown"] dd{color:#8fb0bd;font-size:14px;font-weight:540}
+.ubdBar{display:flex;height:8px;gap:2px;border-radius:4px;overflow:hidden}
+.ubdBar i,.ubdName i{display:block;background:#7fe3f2}
+.ubdBar i{min-width:3px;border-radius:2px}
+.ubdBar i[data-i="1"],.ubdName i[data-i="1"]{background:#e6cf9a}.ubdBar i[data-i="2"],.ubdName i[data-i="2"]{background:#6fb7a6}.ubdBar i[data-i="3"],.ubdName i[data-i="3"]{background:#8aa4c8}.ubdBar i[data-i="4"],.ubdName i[data-i="4"]{background:#b9c7cc}
+.ubdRows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.ubdRows li{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:1px;padding:8px 0;border-top:1px solid #9fc4d01a;align-items:baseline}
+.ubdRows li:first-child{border-top:0}
+.ubdName{grid-column:1;display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;font-weight:560;color:#e9f6fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ubdName i{flex:none;width:8px;height:8px;border-radius:2px}
+.ubdRows b{grid-column:2;grid-row:1;font-size:12px;font-weight:540;color:#cfe6ee;font-variant-numeric:tabular-nums;text-align:right}
+.ubdTok{grid-column:1;font-size:11px;color:#8fb0bd;font-variant-numeric:tabular-nums}
+.ubdRows em{grid-column:2;grid-row:2;font-style:normal;font-size:12px;color:#d9edf3;font-variant-numeric:tabular-nums;text-align:right}
+.ubdRows li[data-state="unknown"] em{color:#8fb0bd}
+
+/* C7G timeline: a group per verified department; names wrap (a department is read in full), bars sit at their real start and run for their real duration */
+.tl{margin:0 0 14px}.tl h5{margin:0 0 6px}
+.tl>ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.tlHead{display:grid;grid-template-columns:20px minmax(96px,32%) minmax(0,1fr) auto;align-items:start;gap:8px}
+.tlHead>.inline,.tlSteps .inline{text-align:left;white-space:normal;overflow-wrap:anywhere;font-size:11.5px;line-height:1.35}
+.tlHead>.inline small,.tlSteps .inline small{color:#8fb0bd}
+.tlToggle{width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:#a8e8f4;cursor:pointer;font-size:11px;line-height:20px}
+.tlToggle:hover{background:var(--wb-hover,#12313b99)}.tlToggle:focus-visible{outline:1px solid #bff3fb;outline-offset:1px}
+.tlGap{display:block;width:20px}
+.tlTrack{position:relative;display:block;height:6px;margin-top:6px;border-radius:3px;background:#9fc4d01c}
+.tlTrack i{position:absolute;top:0;bottom:0;border-radius:3px;background:#75d9c2aa}
+.tl li[data-s="error"] .tlTrack i,.tlTrack i[data-s="error"]{background:#d08a4a}.tlTrack i[data-s="active"]{background:#b4cdd6}.tlTrack i[data-s="pending"],.tlTrack i[data-s="skipped"]{background:#6d95a4}
+.tlHead>small,.tlSteps small{font-size:10.5px;color:#8fb0bd;text-align:right;font-variant-numeric:tabular-nums;line-height:1.35;padding-top:2px}
+.tlSteps{list-style:none;margin:6px 0 2px 28px;padding:0 0 0 10px;box-shadow:inset 1px 0 0 #9ec6cc26;display:flex;flex-direction:column;gap:5px}
+.tlSteps li{display:grid;grid-template-columns:minmax(80px,32%) minmax(0,1fr) auto;align-items:start;gap:8px}
+.tlAxis{margin:8px 0 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:10px;color:#7fa5b3}
+
+/* ================================================================ C7G.1 */
+/* token composition (input vs output) and cost composition: thin bars under the total instrument, only where the recorded numbers support them */
+.ubdComp{display:flex;flex-direction:column;gap:3px}
+.ubdComp small{font-size:10.5px;color:#8fb0bd;font-variant-numeric:tabular-nums}
+.ubdSplit{display:flex;height:5px;gap:2px}
+.ubdSplit i{display:block;min-width:2px;background:#7fe3f2}.ubdSplit i[data-p="out"]{background:#e6cf9a}
+/* dependencies: a compact two-sided instrument (what this needs / what waits on it) */
+.dep{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:9px 0;box-shadow:inset 0 1px 0 #9ec6cc26,inset 0 -1px 0 #9ec6cc1a;flex-wrap:wrap}
+.depSide{display:flex;flex-direction:column;gap:4px;min-width:0}
+.depSide[data-end]{align-items:flex-end;margin-left:auto}
+.depDots{display:flex;gap:3px;flex-wrap:wrap}
+.depDots i{display:block;width:7px;height:7px;border-radius:50%;background:#7fe3f2}
+.depSide[data-end] .depDots i{background:#e6cf9a}
+.depSide small{font-size:10.5px;color:#8fb0bd}
+.depCore{flex:1;min-width:24px;height:1px;background:linear-gradient(90deg,#7fe3f2aa,#e9fbff,#e6cf9aaa);position:relative}
+.depCore::after{content:"";position:absolute;left:50%;top:-3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:#f4fdff}
+.dep em{flex-basis:100%;font-style:normal;font-size:11px;color:#d8b878}
+/* provenance / details plane: the "where these values come from" block is a recessed plane, not a card */
+.root details,.derive{background:var(--wb-plane-detail,#040b0e)}
+/* Focus artifact: nothing is cut off or boxed; long lines wrap, code keeps a left rule only */
+.root[data-scale="focus"] .md,.root[data-scale="focus"] .plain{border-left:0;padding-left:0}
+.root[data-scale="focus"] .fence{white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:visible;background:none;border-left:1px solid #9ec6cc33;padding:2px 0 2px 14px;font-size:13.5px;line-height:1.7;color:#d3e9f0}
+.root[data-scale="focus"] .text>header{padding-bottom:6px;box-shadow:inset 0 -1px 0 #9ec6cc26}
+.root[data-scale="focus"] .text>header>h5{font-size:15px}

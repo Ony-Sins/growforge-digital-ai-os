@@ -1160,3 +1160,108 @@ body:has([data-dive-overview]):not(:has([data-systems-surface])) .studio-command
     linear-gradient(90deg,transparent 40%,#8fc4dc18 60%,transparent 90%) bottom/100% 1px no-repeat,
     linear-gradient(#8fb4c80a,#8fb4c80a);animation:gfComposerX 27s ease-in-out -2s infinite}
 @media(prefers-reduced-motion:reduce){body:has([data-dive-overview]):not(:has([data-systems-surface])) .studio-command-dock-wrapper form.studio-command-dock::before{animation:none}}
+
+
+/* ---- Phase 13 refinement: the Dive on a phone (every lens, so the persistent chrome is identical). The three persistent lower surfaces (composer, lens rail, global nav) stop dominating the viewport.
+   Scoped to the Missions lens only, so Overview / other lenses / desktop keep their approved chrome. Bottom-up: nav 6..52, rail 56..100, composer 104..148 (was ~216px in all).
+   The composer rests as a slim 44px command dock and grows upward while it has focus; the transcript panel and every control keep their behaviour. ---- */
+@media(max-width:900px){
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .spatial-hud{--dock-base:104px}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock-wrapper{top:auto;bottom:104px}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock{height:44px!important;padding:2px 4px 2px 3px!important;gap:2px!important;transition:height .24s ease}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock:focus-within{height:54px!important}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock>button,
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock>.shell-dock-collapse,
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .nora-plus{width:40px;height:40px}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .nora-composer-separator{height:16px;margin-right:0}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .nora-conversation{top:auto;bottom:calc(104px + var(--composer-height,44px) + 10px)}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .spatial-mobile-nav{bottom:6px;left:12px;right:12px;padding:3px;gap:2px;border-radius:16px}
+ body:has([data-dive-journey]:not([inert]) [data-lens]) .spatial-mobile-nav button{min-height:40px;padding-top:0;padding-bottom:0}
+}
+@media(max-width:900px) and (prefers-reduced-motion:reduce){body:has([data-dive-journey]:not([inert]) [data-lens]) .studio-command-dock{transition:none}}
+
+/* Missions' permanent Intelligence panel (W7 target, C7D): on desktop Missions the ONE NORA chat input (the same component, state and behaviour: only its placement changes) is pinned to the footer of the
+   right Intelligence panel, as in the Control AI reference, and its conversation opens just above it. `data-intel-inset` / `--intel-inset` exist only while the panel is mounted, i.e. never on the phone. */
+html[data-intel-inset] .studio-command-dock-wrapper{left:auto!important;right:30px!important;bottom:30px!important;--tw-translate-x:0px!important;translate:none!important;transform:none!important;z-index:40;--nora-width:calc(var(--intel-inset, 0px) - 44px)!important}
+html[data-intel-inset] .nora-conversation{left:auto!important;right:30px!important;transform:none!important;translate:none!important;bottom:calc(30px + var(--composer-height, 48px) + 12px)!important;--nora-width:calc(var(--intel-inset, 0px) - 44px)!important}
+html[data-intel-inset] .studio-command-dock{height:48px!important;padding:5px 8px 5px 6px!important;gap:7px!important}
+
+/* C7E.6 / C7E.6.1 / C7E.6.2: mission switch = a true content cross-fade in TWO timing classes. The chassis (Graph stage, Core disc, phase-card shells, selector, panel shell and its card surfaces, NORA dock, background) is never
+   duplicated, faded or moved. When the next recorded mission is read, MissionWorktreeLens lays inert, aria-hidden CLONES of only the outgoing mission-dependent layers (`[data-mx-ghost]`) over the same positions.
+   STRUCTURAL layers (child rows, gaps, conduits, status markers, the histogram / dots, the Core's progress ticks): a soft overlap, out 1 -> 0 over 220ms, in 0 -> 1 over 280ms after 70ms.
+   TYPOGRAPHY / VALUE layers (Core title / state, phase counts / detail, header title / status / thread, NORA's context chip, the panel's title, brief, status / timestamp, headline figure, KPI numerals and labels, Analysis text):
+   a tight hand-off, out 1 -> 0 over 140ms (-2px), in 0 -> 1 over 170ms after 85ms (outgoing ~0.4 then; +2px -> 0), so the old and new text are never strongly legible together and one is always present.
+   Opacity + a 2px translate only; no blur, no scale, no filter. Reduced motion: no clones, no animation, atomic swap. (Static labels are neither cloned visibly nor faded: `data-mx-static`.) */
+@keyframes mx-ghost{from{opacity:1}to{opacity:0}}
+@keyframes mx-in{from{opacity:0;translate:0 3px}to{opacity:1;translate:0 0}}
+@keyframes mx-tout{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -2px}}
+@keyframes mx-tin{from{opacity:0;translate:0 2px}to{opacity:1;translate:0 0}}
+html [data-mx-ghost]{pointer-events:none!important}
+html [data-mx-ghost]:not([data-mx-split]):not([data-mx-text]){animation:mx-ghost .22s linear both!important}
+html [data-mx-ghost][data-mx-text]{animation:mx-tout .14s linear both!important}
+/* a ghost of a SHELL (Core, phase card, panel, the panel's cards, header thread) carries content only: its own surface is hidden so the persistent shell is never doubled */
+html [data-mx-shell],html [data-mx-shell]::before,html [data-mx-shell]::after{background:none!important;box-shadow:none!important;border-color:transparent!important;outline:none!important}
+html [data-mx-shell]::before,html [data-mx-shell]::after{content:none!important}
+html [data-mx-ghost] [data-mx-static]{visibility:hidden}
+/* outgoing, split layers: structural soft / typography tight */
+html button[data-mx-ghost]>span[aria-hidden],html aside[data-mx-ghost] [data-slot="headline"]>div:nth-child(2){animation:mx-ghost .22s linear both}
+html button[data-mx-ghost][data-kind="mission"]>span:not([aria-hidden])>:is(b,small),html button[data-mx-ghost][data-kind="phase"]>b[aria-hidden],html button[data-mx-ghost][data-kind="phase"] small,
+html aside[data-mx-ghost]>:is(h2,p),html aside[data-mx-ghost] :is([data-slot="status"]>span,[data-slot="headline"]>div:first-child,[data-slot="kpis"] section>*,[data-slot="analysis"]>div>*),
+html header[data-mx-ghost]>p,html header[data-mx-ghost] nav ol{animation:mx-tout .14s linear both}
+/* incoming, structural */
+html[data-mx="in"] [data-worktree] :is(button[data-kind="department"],button[data-kind="step"],[data-gap],[data-conduits]):not([data-mx-ghost]),
+html[data-mx="in"] [data-worktree] :is(button[data-kind="phase"],button[data-kind="mission"]):not([data-mx-ghost])>span[aria-hidden],
+html[data-mx="in"] aside[data-intel-panel] [data-slot="headline"]>div:nth-child(2){animation:mx-in .28s cubic-bezier(.16,.84,.3,1) .07s both}
+/* incoming, typography / values */
+html[data-mx="in"] [data-worktree] button[data-kind="mission"]:not([data-mx-ghost])>span:not([aria-hidden])>:is(b,small),
+html[data-mx="in"] [data-worktree] button[data-kind="phase"]:not([data-mx-ghost])>:is(b[aria-hidden]),
+html[data-mx="in"] [data-worktree] button[data-kind="phase"]:not([data-mx-ghost]) small,
+html[data-mx="in"] aside[data-intel-panel]>:is(h2,p),
+html[data-mx="in"] aside[data-intel-panel] [data-slot="status"]>span,
+html[data-mx="in"] aside[data-intel-panel] [data-slot="headline"]>div:first-child,
+html[data-mx="in"] aside[data-intel-panel] [data-slot="kpis"] section>*,
+html[data-mx="in"] aside[data-intel-panel] [data-slot="analysis"]>div>*,
+html[data-mx="in"] header[data-mission-header="selected"]:not([data-mx-ghost])>p,
+html[data-mx="in"] header[data-mission-header="selected"]:not([data-mx-ghost]) nav ol,
+html[data-mx="in"] .nora-context-chip:not([data-mx-ghost]){animation:mx-tin .17s cubic-bezier(.1,.9,.2,1) .085s both}
+@media (prefers-reduced-motion:reduce){html [data-mx-ghost],html [data-mx-ghost] *,html[data-mx] *{animation:none!important}}
+
+/* ---------------------------------------------------------------------------------------------
+   GROWFORGE GLASS MATERIAL: canonical semantic tokens (S2.2B, made authoritative in S2.2B.1). The values were extracted from the Overview lens's own panel material
+   ("one material for every surface: almost-black smoked glass with tonal depth, a glossy upper edge, a precise cold hairline, a brighter edge on the side that faces NORA,
+   one restrained corner specular, and a deep separation shadow. No glow"; OverviewAtmosphere: graphite #020407 environment). THIS BLOCK IS THE SINGLE SOURCE OF TRUTH:
+   Overview (OverviewBriefing / OverviewAtmosphere / DiveOverview) and the Missions Intelligence Panel, Workspace and morph surface all read these names through var(--gf-*);
+   no material literal for these roles may be redefined next to them (test-glass-tokens enforces it). Surfaces differ only by which tokens they pick: instruments use the
+   primary glass set, very large overlays use the `wide` set (same hues, lower alpha), and a surface adds its own elevation / depth on top.
+   --------------------------------------------------------------------------------------------- */
+:root {
+  /* environment */
+  --gf-env-base: #020407;      /* Overview atmosphere floor */
+  --gf-env-deep: #010305;
+  /* primary glass: the Overview .panel fill (instruments, side panels). The `wide` set is the SAME three hues at lower alpha for very large overlays, so the recessed lens still reads through. */
+  --gf-glass-a: #0d1920cc; --gf-glass-b: #060d12e8; --gf-glass-c: #02070bf2;
+  --gf-glass-wide-a: #0d192096; --gf-glass-wide-b: #060d12b8; --gf-glass-wide-c: #02070bd6;
+  --gf-glass-angle: 176deg;
+  /* light on the glass */
+  --gf-gloss: #ffffff0b;       /* glossy upper edge (first 44px) */
+  --gf-specular: #cfefff1f;    /* one restrained corner specular */
+  --gf-facing-glow: #5db6dc16; /* the edge that faces the scene / NORA */
+  /* edges */
+  --gf-hairline: #9cc6dc1f;    /* precise cold hairline */
+  --gf-edge-top: #eaf6ff2e;    /* inset top edge */
+  --gf-edge-inner: #0000005c;
+  --gf-rule: #9fc4d81c;        /* separators */
+  --gf-run: #dff2ff70;         /* thin bright run along the upper edge */
+  --gf-edge-line: #e1f5ff7a;   /* brightest silver-white accent on an edge */
+  /* depth inside the glass */
+  --gf-raised-a: #9cc6dc17; --gf-raised-b: #9cc6dc0a; --gf-raised-edge: #9cc6dc1c; --gf-raised-hover: #9cc6dc1a;
+  --gf-recess: #010305a6;      /* recessed content (fences, code, wells) */
+  /* diffusion + separation (large surfaces) */
+  --gf-blur: 20px; --gf-saturate: 1.15;
+  --gf-shadow: 0 1px 2px #000a, 0 34px 54px -26px #000f;
+  --gf-scrim: #02040774;       /* dimming layer behind a workspace overlay */
+  /* typography hierarchy */
+  --gf-text-title: #e9f3f8; --gf-text: #c9dae3; --gf-text-body: #9ab2c3; --gf-text-quiet: #6f8795;
+  /* accents: cyan = interaction, champagne = selection / attention. Semantic status colours (done / running / pending / error) stay with their components. */
+  --gf-accent: #a4e6f7; --gf-accent-ring: #a4e6f799; --gf-focus: #6fb4c9; --gf-champagne: #cdb27a; --gf-champagne-ring: #cdb27a88;
+}

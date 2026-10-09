@@ -1,0 +1,48 @@
+/* Contextual header. One restrained row on desktop, two on phones; no eyebrow, no large title. */
+.srOnly{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.header{position:fixed;z-index:7;left:14px;right:14px;top:78px;display:flex;align-items:center;gap:12px;min-height:44px;pointer-events:none;color:#cfe6ee}
+.header>*{pointer-events:auto}
+.metrics{margin:0 auto;padding:0;list-style:none;display:flex;gap:18px;font-size:11px;color:#7fa5b3;letter-spacing:.02em}
+.metrics strong{color:#d9eef4;font-weight:560;margin-right:2px}
+.metrics li[data-tone="live"] strong{color:#8fe6f4}
+.metrics li[data-tone="warn"] strong{color:#e0c080}
+.note{font-size:11px;color:#7fa5b3}
+.back{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px 0 8px;border:0;border-radius:2px;font:inherit;font-size:12px;color:#9fc4d0;cursor:pointer;background:none}
+.back svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.back:hover{color:#e6f6fb;background:#12313b66}
+.back:focus-visible,.thread button:focus-visible{outline:2px solid #bff3fb;outline-offset:2px}
+.identity{flex:none;max-width:30%;margin:0;display:flex;flex-direction:column;min-width:0}
+.identity b{font-size:13px;font-weight:560;color:#eef9fd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.identity span{font-size:11px;color:#7fa5b3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.identity span[data-state="error"]{color:#e0c080}
+.identity span[data-live]{color:#8fe6f4}
+.counts{flex:none;margin:0;font-size:10px;letter-spacing:.04em;color:#6f98a6;white-space:nowrap}
+/* Context Thread: NORA's current working context, from the canonical selection */
+.thread{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:0 12px 0 11px;height:30px;border-radius:0;background:linear-gradient(90deg,#9fc4d014,#9fc4d000 75%);box-shadow:inset 1px 0 0 #bff3fb73,inset 0 -1px 0 #9fc4d01f;overflow:hidden}
+.nora{flex:none;font-size:10px;font-weight:560;letter-spacing:.16em;color:#8fe0ee}
+.thread ol{margin:0;padding:0;list-style:none;display:flex;align-items:center;min-width:0;overflow:hidden;align-self:stretch}
+.thread li{display:flex;align-items:center;min-width:0;flex:0 1 auto;align-self:stretch}
+.thread li+li::before{content:"";flex:none;width:12px;height:1px;margin:0 8px;background:#4f7482}
+.thread button{height:100%;max-width:220px;min-width:0;padding:0 2px;border:0;background:transparent;font:inherit;font-size:11px;color:#9fc3cf;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thread li:first-child button{color:#6f98a6}
+.thread li:last-child button{color:#eef9fd;font-weight:560}
+.thread li:last-child::after{content:"";flex:none;width:4px;height:4px;margin-left:8px;border-radius:50%;background:#e9fbff}
+.thread button:hover{color:#e6f6fb}
+/* phones: two rows (back + identity, then the context thread), 40-44 px targets; the right of row one is the shared "Mission controls" control */
+.header[data-phone]{top:74px;left:12px;right:12px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px 8px;align-items:center}
+.header[data-phone] .back{grid-column:1;grid-row:1;min-height:44px}
+.header[data-phone] .identity{grid-column:2 / 4;grid-row:1;min-width:0;max-width:none;margin:0}
+/* "Mission controls" sits at the top right of this row below 1180 (DiveOverview.module.css), so the identity reserves room for it: the mission name may take two lines */
+.header[data-phone] .identity b{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;line-height:1.25;font-size:14px}
+.header[data-phone] .counts{display:none}
+.header[data-phone] .thread{grid-column:1 / 4;grid-row:2;height:40px;min-height:40px;min-width:0;gap:8px}
+/* phones keep the last two segments visible (the Mission is in the identity row); the rest stay in the accessibility tree */
+.header[data-phone] .thread li:first-child:not(:last-child),.header[data-phone] .thread li:not(:nth-last-child(-n+2)){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.header[data-phone] .thread li:nth-last-child(2)::before,.header[data-phone] .thread li:nth-child(2):last-child::before{content:none}
+.header[data-phone] .thread:has(li:nth-last-child(3)) ol::before{content:"…";margin-right:6px;color:#4f7482}
+.header[data-phone] .thread button{font-size:12px;max-width:150px}
+.header[data-phone][data-mission-header="index"]{display:flex}
+@media(max-width:600px){.metrics{gap:9px;flex-wrap:nowrap;justify-content:space-between;width:100%;margin:0;font-size:10.5px;letter-spacing:0;white-space:nowrap}.metrics strong{margin-right:1px}}
+/* W5.4C: the recorded-counts line is the lowest-value item; below 1440 it steps aside before the Context Thread has to truncate */
+@media(max-width:1439px){.counts{display:none}}
+@media(max-width:1179px){.header[data-mission-header="selected"] .identity{padding-right:112px}}

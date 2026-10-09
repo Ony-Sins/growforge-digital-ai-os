@@ -1,0 +1,26 @@
+/* The Mission Core's glass bubble (C8). Gradients only (no blur, no filter); motion is transform / opacity only and slow:
+   a side-to-side yaw (the skin's reflections slide one way, the internal flow drifts the other, the whole sphere turns a few degrees in perspective), drifting ribbons and orbit trails, a breathing edge.
+   Every animation is infinite and runs on the persistent Core, so a mission switch never restarts it. Reduced motion: a still bubble. */
+.glass{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;transform-origin:50% 50%;animation:yaw 18s ease-in-out infinite alternate}
+.tilt,.inner,.skin,.rim,.flowA,.flowB,.flowC,.orbitA,.orbitB,.orbitC,.orbitD,.twinkle,.twinkle2{transform-box:view-box;transform-origin:100px 100px}
+.inner{animation:driftIn 18s ease-in-out infinite alternate}
+.skin{animation:driftSkin 18s ease-in-out infinite alternate}
+.rim{animation:breathe 7.5s ease-in-out infinite}
+.flowA{animation:swayA 23s ease-in-out infinite alternate}
+.flowB{animation:swayB 29s ease-in-out infinite alternate}
+.flowC{animation:swayA 37s ease-in-out infinite alternate-reverse}
+.orbitA{animation:spin 64s linear infinite}
+.orbitB{animation:spin 88s linear infinite reverse}
+.orbitC{animation:spin 52s linear infinite}
+.orbitD{animation:spin 41s linear infinite reverse}
+.twinkle{animation:twinkle 5.2s ease-in-out infinite alternate}
+.twinkle2{animation:twinkle 6.6s ease-in-out -2.4s infinite alternate}
+@keyframes yaw{from{transform:perspective(560px) rotateY(-6deg)}to{transform:perspective(560px) rotateY(6deg)}}
+@keyframes driftIn{from{transform:translateX(-2.6px)}to{transform:translateX(2.6px)}}
+@keyframes driftSkin{from{transform:translateX(2px)}to{transform:translateX(-2px)}}
+@keyframes breathe{0%,100%{opacity:.86}50%{opacity:1}}
+@keyframes swayA{from{transform:rotate(-13deg)}to{transform:rotate(13deg)}}
+@keyframes swayB{from{transform:rotate(11deg)}to{transform:rotate(-15deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes twinkle{from{opacity:.55}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.glass,.glass *{animation:none!important}}

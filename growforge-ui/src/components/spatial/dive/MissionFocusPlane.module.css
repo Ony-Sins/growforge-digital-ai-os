@@ -1,0 +1,82 @@
+/* Focus instrument (W6.2). The Workbench's material at reading scale: obsidian slab, partial titanium edges, restrained catches, a joint on the graph-facing edge. No backdrop-filter, no blur, no filter,
+   no shadow. It grows from the Workbench's footprint by a paint-only clip-path animation; the reading field resolves after it. Reduced motion: no animation at all. */
+.focus{position:absolute;left:0;top:0;z-index:5;box-sizing:border-box;color:#d3e9f0;pointer-events:none}
+.focus>*{pointer-events:auto}
+/* C7G: the Workbench's material at reading scale (C7F): smoked-petrol glass, 18px outer / 12px inner corners, a 1px hairline ring, one top highlight; the near (graph-facing) edge stays square. */
+.surface,.field{position:absolute;display:block;pointer-events:none}
+.surface{inset:0;border-radius:18px;background:radial-gradient(ellipse 85% 70% at 100% 100%,#010608cc 0%,#0000 72%),linear-gradient(165deg,#1b3a40f6 0%,#12292ef8 38%,#0a1c20fa 70%,#061115fc 100%);box-shadow:inset 0 0 0 1px #9ec6cc29,inset 0 1px 0 #d7f2f636}
+.surface::before{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,#0000,#7fe0eeaa,#0000)}
+.focus[data-side="right"] .surface{border-top-left-radius:4px;border-bottom-left-radius:4px}
+.focus[data-side="left"] .surface{border-top-right-radius:4px;border-bottom-right-radius:4px}
+.field{top:var(--head);bottom:var(--bot);left:var(--near);right:var(--far);border-radius:12px;background:linear-gradient(160deg,#0a1b20f2,#040e12f6);box-shadow:inset 0 0 0 1px #9ec6cc1f,inset 0 1px 0 #ffffff0d}
+.focus[data-side="left"] .field{left:var(--far);right:var(--near)}
+.focus[data-phone] .surface{border-radius:0}.focus[data-phone] .field{left:0;right:0;bottom:0;border-radius:0}
+.focus[data-grow]{animation:foGrow .36s cubic-bezier(.2,.7,.2,1) both}
+.focus[data-grow] .head>*,.focus[data-grow] .content{animation:foResolve .24s ease-out .2s both}
+.focus[data-phone]:not([data-grow]){animation:foSheet .2s ease-out both}
+
+/* JOINT: the socket on the graph-facing edge where the attachment arrives; it follows the entity (one CSS variable set on scroll / selection) */
+.joint{position:absolute;top:0;z-index:2;width:12px;height:12px;box-sizing:border-box;border:1px solid #d7e6ec;border-radius:50%;background:#06151b;pointer-events:none;transform:translateY(calc(var(--seam,60px) - 6px))}
+.joint::before{content:"";position:absolute;inset:3px;border-radius:50%;background:#e9fbff}
+.joint::after{content:"";position:absolute;top:50%;height:1px;width:26px;margin-top:-.5px;background:linear-gradient(90deg,#d7e6ecb0,#d7e6ec00)}
+.focus[data-side="right"] .joint{left:-6px}.focus[data-side="right"] .joint::after{left:12px}
+.focus[data-side="left"] .joint{right:-6px}.focus[data-side="left"] .joint::after{right:12px;background:linear-gradient(270deg,#d7e6ecb0,#d7e6ec00)}
+
+/* header band: identity on the left, the ONE way out on the right */
+.head{position:absolute;left:0;right:0;top:0;height:var(--head);box-sizing:border-box;display:flex;align-items:flex-start;gap:14px;padding:15px 16px 0 34px}
+.focus[data-side="left"] .head{flex-direction:row-reverse;padding:15px 34px 0 16px}
+.focus[data-phone] .head{padding:11px 8px 0 18px}
+.id{min-width:0;flex:1}
+.eyebrow{margin:0;height:14px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8fb7c4;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.depth{color:#9fd9e4}
+.title{margin:4px 0 0;height:26px;font-size:19px;font-weight:600;line-height:26px;color:#f1fbff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.focus[data-phone] .title{font-size:17px}
+.back{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px 0 8px;border:0;border-radius:2px;background:transparent;color:#bfe3ec;font:inherit;font-size:12.5px;letter-spacing:.02em;cursor:pointer;box-shadow:inset 0 -1px 0 #bff3fb55}
+.back i{font-style:normal;font-size:17px;line-height:1}
+.back:hover{color:#fff;background:#12313b66}
+.back:focus-visible,.content:focus-visible{outline:1px solid #bff3fb;outline-offset:2px}
+.focus[data-phone] .back{min-height:44px;min-width:44px}
+
+/* reading field: an inset plane; the text keeps a comfortable measure and never stretches with the instrument */
+.content{position:absolute;top:var(--head);bottom:var(--bot);left:var(--near);right:var(--far);box-sizing:border-box;padding:26px clamp(20px,4vw,56px) 36px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#9fc4d055 transparent}
+.focus[data-phone] .content{padding:18px 18px 28px}
+.measure{max-width:var(--measure);min-width:0}
+
+@keyframes foGrow{from{clip-path:inset(var(--from-t,0) var(--from-r,0) var(--from-b,0) var(--from-l,0))}to{clip-path:inset(0 0 0 0)}}
+@keyframes foResolve{from{opacity:0}to{opacity:1}}
+@keyframes foSheet{from{opacity:.4}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.focus,.focus[data-grow],.focus[data-grow] .head>*,.focus[data-grow] .content,.focus[data-phone]:not([data-grow]){animation:none}}
+
+/* identity header (the Workbench's): recorded status, parent context, one recorded purpose line */
+.ident{margin:6px 0 0;height:22px;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.pill{flex:none;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;border-radius:7px;font-size:11.5px;font-weight:480;white-space:nowrap;color:#e3f6f1;background:linear-gradient(180deg,#1b4745d8,#143a39da);box-shadow:inset 0 0 0 1px #4fc4a44d}
+.pill i{display:block;width:7px;height:7px;border-radius:50%;background:#35dba8}
+.pill[data-tone="live"] i{background:#7fe9ff}
+.pill[data-tone="running"] i{background:transparent;box-shadow:inset 0 0 0 1.5px #a8d6e2}
+.pill[data-tone="running"]{color:#dcecf2;box-shadow:inset 0 0 0 1px #4a8da077}
+.pill[data-tone="error"]{color:#f6e2c0;background:linear-gradient(180deg,#46321bd8,#392715da);box-shadow:inset 0 0 0 1px #a7703e88}
+.pill[data-tone="error"] i{background:#d08a4a;border-radius:2px}
+.pill[data-tone="neutral"]{color:#cfe0e6;box-shadow:inset 0 0 0 1px #6d95a455}
+.pill[data-tone="neutral"] i{background:#6d95a4}
+.parent{min-width:0;font-size:11px;color:#8fb0bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.purpose{margin:5px 0 0;font-size:12.5px;line-height:17px;color:#c3dce3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.focus[data-phone] .ident,.focus[data-phone] .purpose{display:none}
+
+/* ================================================================ C7G.1 structure: Focus is the DEEP ARTIFACT plane (darkest / highest contrast), not a modal around a text box.
+   One flat canvas: a header band for identity + the way out, then the artifact itself on the canvas beside a datum rail (champagne at the top, hairline below). No inner rounded field, no nested boxes.
+   Tokens are the polish pass's hooks. */
+.focus{--fo-canvas:#02080a;--fo-band:#0a1c20;--fo-rule:#9ec6cc29;--fo-edge:#9ec6cc2e;--fo-active:#e6cf9a;--fo-seam:#e9fbff}
+.surface{background:linear-gradient(180deg,#040d10 0,var(--fo-canvas) 220px,#010507 100%);box-shadow:inset 0 0 0 1px var(--fo-edge);border-radius:4px 14px 14px 4px}
+.focus[data-side="left"] .surface{border-radius:14px 4px 4px 14px}
+.focus[data-phone] .surface{border-radius:0}
+/* the header band: slightly lifted from the canvas, closed by one hairline */
+.surface::before{left:0;right:0;top:0;height:var(--head);width:auto;background:linear-gradient(180deg,#0d2227f4,var(--fo-band));box-shadow:inset 0 -1px 0 var(--fo-rule);border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.surface::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#9ec6cc33 0,#9ec6cc33 calc(var(--seam,60px) - 70px),var(--fo-seam) var(--seam,60px),#9ec6cc33 calc(var(--seam,60px) + 70px),#9ec6cc33 100%)}
+.focus[data-side="right"] .surface::after{left:0}.focus[data-side="left"] .surface::after{right:0}.focus[data-phone] .surface::after{display:none}
+.field{display:none}
+/* the artifact: on the canvas, with a datum rail. The reading rail is champagne for the first lines, then a hairline for the full length. */
+.measure{position:relative;padding-left:26px}
+.measure::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:1px;background:linear-gradient(180deg,var(--fo-active) 0,var(--fo-active) 56px,#9ec6cc2e 56px,#9ec6cc2e 100%)}
+.focus[data-phone] .measure{padding-left:0}.focus[data-phone] .measure::before{display:none}
+.title{font-size:21px;letter-spacing:-.01em}
+.purpose{color:#a9c7d2}

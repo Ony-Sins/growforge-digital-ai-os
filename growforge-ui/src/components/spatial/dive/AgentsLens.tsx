@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 import type { Agent } from '@/lib/agents';
 import type { SpatialGraphData } from '@/lib/spatial/obsidianReader';
@@ -9,9 +9,12 @@ import { agentRecords, filteredAgents, type AgentRecord } from './agentModel';
 import { FoundationAreas } from './FoundationAreas';
 import { LensHeader } from './LensHeader';
 import { LensState } from './LensState';
+import { useLensContentStart } from './useLensContentStart';
 import styles from './AgentsLens.module.css';
 
 export function AgentsLens({departmentFilter,onClearFilter,dismissalVersion,onInspect,onClose,closing}:{departmentFilter:string|null;onClearFilter:()=>void;dismissalVersion:number;onInspect:()=>void;onClose:()=>void;closing:boolean}) {
+  const fieldRef=useRef<HTMLDivElement>(null);
+  useLensContentStart(fieldRef);
   const [roster,setRoster]=useState<Agent[]|null>(null);
   const [graph,setGraph]=useState<SpatialGraphData|null>(null);
   const [failed,setFailed]=useState(false);
@@ -29,7 +32,7 @@ export function AgentsLens({departmentFilter,onClearFilter,dismissalVersion,onIn
   const select=(record:AgentRecord,runtime=false)=>{onInspect();setSelection({id:record.id,version:dismissalVersion,runtime});};
   return <>
     <LensHeader lensId="lens.agents" metrics={roster?[{label:'running now',value:records.filter(record=>record.running).length,tone:records.some(record=>record.running)?'live':undefined},{label:'specialist blueprints',value:records.filter(record=>record.kind==='specialist').length},{label:'orchestration',value:records.filter(record=>record.kind==='orchestration').length}]:undefined} note={!roster?(failed?'Agent roster unavailable':'Loading agent roster'):undefined}/>
-    <div className={styles.field} data-agents-lens>
+    <div ref={fieldRef} className={styles.field} data-agents-lens>
       {departmentFilter && <div className={styles.filter} data-dive-inspector><span>{departmentDisplayName(departmentFilter)}</span><button onClick={onClearFilter} aria-label="Clear department filter">Clear <X size={11}/></button></div>}
       <div className={styles.rows} data-dive-inspector>
         {roster && !visible.some(record=>record.running) && <section aria-label="Runtime agents" data-runtime-agents><h2>Runtime · running now</h2><LensState compact kind="empty" message="No agent is running." detail="The blueprints below are definitions, not live agents."/></section>}

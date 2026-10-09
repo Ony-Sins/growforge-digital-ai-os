@@ -17,6 +17,8 @@ import { DiveInterior } from "./DiveInterior";
 import { OverviewRuntime } from "./OverviewRuntime";
 import { DiveInspector } from "./DiveInspector";
 import { MissionLens } from "./MissionLens";
+import { DIVE_TIMING, sharedDepth } from "./diveDepthModel";
+import { useLensPresence } from "./useLensPresence";
 import { activeMissions, missionObject } from "./missionModel";
 import type { OverviewSnapshot } from "@/lib/overviewSnapshot";
 import { MissionControls } from "./MissionControls";
@@ -49,7 +51,7 @@ export function DiveOverview({ initialLensId }: { initialLensId?: DiveLensId } =
     setDismissalVersion(version=>version+1);
     setClosing(true);
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
-    dismissTimer.current = setTimeout(() => { setSelectedId(null); setClosing(false); }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180);
+    dismissTimer.current = setTimeout(() => { setSelectedId(null); setClosing(false); }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 240);
   }, []);
   useEffect(() => {
     const controller = new AbortController();
@@ -74,11 +76,15 @@ export function DiveOverview({ initialLensId }: { initialLensId?: DiveLensId } =
     const timer = setInterval(() => void load(), 10000);
     return () => { controller.abort(); clearInterval(timer); window.removeEventListener("growforge:missions-refresh", refresh); };
   }, []);
+  // Missions keeps its selected mission until the explicit back control is used; every other lens still dismisses on background/Esc.
+  const lensRef = useRef(lens);
+  useEffect(() => { lensRef.current = lens; });
   useEffect(() => {
     let pressedAt: { x: number; y: number } | null = null;
     const press = (event: PointerEvent) => { pressedAt = { x: event.clientX, y: event.clientY }; };
-    const dismiss = (event: KeyboardEvent) => { if (event.key === "Escape") dismissInspection(); };
+    const dismiss = (event: KeyboardEvent) => { if (event.key === "Escape" && lensRef.current !== "Missions") dismissInspection(); };
     const background = (event: MouseEvent) => {
+      if (lensRef.current === "Missions") return;
       if (!pressedAt || Math.hypot(event.clientX - pressedAt.x, event.clientY - pressedAt.y) > 5) return;
       const target = event.target;
       if (target instanceof Element && !target.closest("button, input, textarea, [data-dive-inspector]")) dismissInspection();
@@ -113,10 +119,21 @@ export function DiveOverview({ initialLensId }: { initialLensId?: DiveLensId } =
     window.addEventListener(DIVE_OPEN_EVENT, open);
     return () => window.removeEventListener(DIVE_OPEN_EVENT, open);
   }, []);
+  // One persistent environment: Overview and Missions share the atmosphere and NORA (see diveDepthModel). Only the depth changes between them, and the
+  // Missions layer lingers (inert, fading) while the Overview layer returns, so neither direction is a cut.
+  const depth = sharedDepth(lens, Boolean(selectedId));
+  const reducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // On a phone the lens rail scrolls horizontally: keep the active lens in view (no-op where the rail fits).
+  const railRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const rail = railRef.current, active = rail?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (rail && active && rail.scrollWidth > rail.clientWidth) rail.scrollLeft = Math.max(0, active.offsetLeft - (rail.clientWidth - active.offsetWidth) / 2);
+  }, [lens]);
+  const missionLayer = useLensPresence(lens === "Missions", reducedMotion ? DIVE_TIMING.reducedLeave : DIVE_TIMING.leave);
   const scopeAddress = useDiveScopeAddress((lensByLabel(lens) ?? lensByLabel('Overview')!).id);
   return <DiveScopeProvider address={scopeAddress}><section className={styles.shell} aria-label="Dive Command Overview" data-dive-overview data-lens={lens} data-lens-id={scopeAddress.lensId}>
     <DiveInterior />
-    {lens === 'Overview' && <OverviewRuntime core={core} snapshot={snapshot} agentsWorking={working.length} dismissalVersion={dismissalVersion} onLens={setLens} onMission={id => { setLens('Missions'); setSelectedId(id); setClosing(false); }} />}
+    {depth !== null && <OverviewRuntime depth={depth} core={core} snapshot={snapshot} agentsWorking={working.length} dismissalVersion={dismissalVersion} onLens={setLens} onMission={id => { setLens('Missions'); setSelectedId(id); setClosing(false); }} />}
     {lens !== 'Overview' && lens !== 'Missions' && <div className={styles.map} aria-label="Execution map">
       {lens !== 'Departments' && lens !== 'Agents' && lens !== 'Workflows' && lens !== 'Context' && lens !== 'Tools' && lens !== 'Intelligence' && (missions.length > 0 || working.length > 0) && <p className={styles.eyebrow}>EXECUTION MAP</p>}
       <div className={styles.systemField}>
@@ -127,7 +144,9 @@ export function DiveOverview({ initialLensId }: { initialLensId?: DiveLensId } =
       </div>
       {visible.length > 5 && <p className={styles.mapNote}>{visible.length - 5} additional running objects · overview condensed</p>}
     </div>}
-    {lens === 'Missions' && <MissionLens jobs={core?.jobs ?? []} available={available} missions={missions} selectedRecord={selectedRecord} selectedId={selectedId} closing={closing} onSelect={id => { if (dismissTimer.current) clearTimeout(dismissTimer.current); setClosing(false); setSelectedId(id); }} onClose={dismissInspection} />}
+    {missionLayer.mounted && <div className={styles.missionLayer} data-mission-layer data-leaving={missionLayer.leaving || undefined} inert={missionLayer.leaving ? true : undefined}>
+      <MissionLens scopeActive={!missionLayer.leaving} jobs={core?.jobs ?? []} available={available} missions={missions} selectedRecord={selectedRecord} selectedId={selectedId} closing={closing} snapshot={snapshot} onSelect={id => { if (dismissTimer.current) clearTimeout(dismissTimer.current); setClosing(false); setSelectedId(id); }} onClose={dismissInspection} />
+    </div>}
     {lens === 'Finance' && <FinanceLens dismissalVersion={dismissalVersion} closing={closing} onClose={dismissInspection} onInspect={()=>{if(dismissTimer.current)clearTimeout(dismissTimer.current);setClosing(false);}} onOpenIntelligence={()=>navigate('Intelligence')} />}
     {lens === 'Departments' && <DepartmentsLens dismissalVersion={dismissalVersion} closing={closing} onClose={dismissInspection} onInspect={()=>{if(dismissTimer.current)clearTimeout(dismissTimer.current);setClosing(false);}}/>}
     {lens === 'Agents' && <AgentsLens departmentFilter={departmentFilter} onClearFilter={()=>setDepartmentFilter(null)} dismissalVersion={dismissalVersion} closing={closing} onClose={dismissInspection} onInspect={()=>{if(dismissTimer.current)clearTimeout(dismissTimer.current);setClosing(false);}}/>}
@@ -136,7 +155,8 @@ export function DiveOverview({ initialLensId }: { initialLensId?: DiveLensId } =
     {lens === 'Tools' && <ToolsLens departmentFilter={toolsDepartmentFilter} onClearFilter={()=>setToolsDepartmentFilter(null)} dismissalVersion={dismissalVersion} closing={closing} onClose={dismissInspection} onInspect={()=>{if(dismissTimer.current)clearTimeout(dismissTimer.current);setClosing(false);}}/>}
     {lens === 'Intelligence' && <IntelligenceLens core={core} available={available} dismissalVersion={dismissalVersion} closing={closing} onClose={dismissInspection} onInspect={()=>{if(dismissTimer.current)clearTimeout(dismissTimer.current);setClosing(false);}}/>}
     {lens !== 'Intelligence' && requestedLens === lens && lensResponse && <aside key={lens} className={styles.lensResponse} aria-label={`${lens} lens response`} data-dive-inspector><button className={styles.close} aria-label="Dismiss lens response" onClick={() => setRequestedLens(null)}>×</button><h2>{lens}</h2><p>{lensResponse}</p></aside>}
-    <nav className={styles.lenses} aria-label="Dive lenses">{DIVE_LENSES.map(name => <button key={name} aria-pressed={lens === name} data-semantic-id={lensByLabel(name)?.id} onClick={() => navigate(name)}><GrowForgeGlyph name={LENS_GLYPH[name]} size={15} strokeWidth={1.4} />{name}</button>)}</nav>
-    {lens === "Missions" && available && <MissionControls jobs={core?.jobs ?? []} onSelect={id => { if (dismissTimer.current) clearTimeout(dismissTimer.current); setClosing(false); setSelectedId(id); window.dispatchEvent(new Event("growforge:missions-refresh")); }} />}
+    <nav className={styles.lenses} ref={railRef} aria-label="Dive lenses">{DIVE_LENSES.map(name => <button key={name} aria-pressed={lens === name} data-semantic-id={lensByLabel(name)?.id} onClick={() => navigate(name)}><GrowForgeGlyph name={LENS_GLYPH[name]} size={15} strokeWidth={1.4} />{name}</button>)}</nav>
+    {/* Not on the Mission Field (it repeats the composer there); shown with a selected mission, and when there is no recorded mission so one can still be created. */}
+    {lens === "Missions" && available && (Boolean(selectedId) || !(core?.jobs ?? []).some(job => !job.isTest)) && <MissionControls jobs={core?.jobs ?? []} onSelect={id => { if (dismissTimer.current) clearTimeout(dismissTimer.current); setClosing(false); setSelectedId(id); window.dispatchEvent(new Event("growforge:missions-refresh")); }} />}
   </section></DiveScopeProvider>;
 }

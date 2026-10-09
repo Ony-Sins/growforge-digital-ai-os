@@ -1,0 +1,145 @@
+/* Mission Field (Phase 11). Mission selection as thin, dark-glass strata suspended at slightly different depths inside the shared Dive environment.
+   No cards, rows, pills, table or bars: a chamfered translucent slab, a partial specular edge, a state tick and a luminous trace along its lower edge.
+   Light/dark only; the material has no blur (it sits over a live NORA) and no permanent full-viewport filters. */
+.field{position:absolute;top:clamp(246px,29.5%,306px);left:0;right:0;margin-inline:auto;width:min(800px,90%);bottom:calc(var(--dive-rail-bottom,44px) + 158px);display:flex;flex-direction:column;gap:14px;overflow:hidden;pointer-events:none}
+.field>*{pointer-events:auto}
+
+/* one restrained control: text labels with counts on a hairline, a luminous underline marks the active state */
+.filters{position:relative;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:6px 22px;flex-shrink:0;padding:2px 8px 15px;animation:fieldIn .5s ease backwards;animation-delay:.3s}
+.filters::after{content:"";position:absolute;left:10%;right:10%;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#78cde02e 30%,#78cde02e 70%,transparent)}
+.filters button{position:relative;padding:4px 1px;border:0;background:none;font:inherit;font-size:10.5px;letter-spacing:.05em;color:#6f8c9b;cursor:pointer;transition:color .25s ease}
+.filters button span{margin-left:7px;font-variant-numeric:tabular-nums;color:#8fb0c0}
+.filters button::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:1.5px;background:linear-gradient(90deg,transparent,#8fe6f4,transparent);opacity:0;transform:scaleX(.35);transition:opacity .3s ease,transform .35s cubic-bezier(.2,.7,.2,1)}
+.short{display:none}
+.full,.short{font-weight:inherit}
+.filters button:hover{color:#d3eaf2}
+.filters button[aria-pressed="true"]{color:#e6f7fc}
+.filters button[aria-pressed="true"]::after{opacity:.95;transform:scaleX(1)}
+.filters button:focus-visible,.stratum:focus-visible{outline:2px solid rgba(126,219,238,.85);outline-offset:3px}
+
+.list{flex:1;min-height:0;width:min(720px,100%);align-self:center;margin:0;padding:8px 4px 18px;list-style:none;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;perspective:900px;perspective-origin:50% 36%;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 20px),transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 18px,#000 calc(100% - 20px),transparent 100%)}
+.list::-webkit-scrollbar{display:none}
+/* Depth planes (see strataPlacement): every stratum sits on one of three shallow planes with its own height, clarity and depth, an asymmetric offset, a slightly
+   different length and a restrained chamfer; strata come in small groups separated by extra space. Composition only: nothing here ranks a mission. */
+.item{--sig:#7f9bab;--z:0px;--h:45px;--clarity:.94;width:calc(var(--w)*1%);margin-left:calc(var(--left)*1%);margin-top:var(--gap,0px);flex-shrink:0}
+.item[data-plane="0"]{--z:12px;--h:47px;--clarity:1}
+.item[data-plane="1"]{--z:0px;--h:45px;--clarity:.94}
+.item[data-plane="2"]{--z:-14px;--h:42px;--clarity:.86}
+
+/* the material: a dark smoked slab (a cool smoke bloom at its leading end, nearly black elsewhere), no border, no blur, no uniform outline */
+.stratum{position:relative;display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;height:var(--h);padding:0 26px 0 calc(var(--sl) + 8px);border:0;font:inherit;text-align:left;color:#cfe3ec;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:radial-gradient(120% 190% at 12% 0%,rgba(46,104,128,.15) 0%,transparent 58%),linear-gradient(100deg,rgba(8,23,31,.84) 0%,rgba(4,12,17,.78) 54%,rgba(3,9,13,.62) 100%);
+  clip-path:polygon(var(--sl) 0,100% 0,calc(100% - var(--sr)) 100%,0 100%);opacity:var(--clarity);transform:translate3d(0,0,var(--z));
+  transition:transform .4s cubic-bezier(.2,.7,.2,1),opacity .4s ease,background .3s ease,filter .35s ease;animation:strataIn .64s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(min(var(--i,0),10)*34ms + .2s)}
+/* data seam: a thin incision just inside the top edge with one break; its specular lobe sits where the stratum faces NORA (--catch leans toward the centre) */
+.stratum::before{content:"";position:absolute;left:calc(var(--sl) + 6px);right:12%;top:5px;height:1px;
+  background:linear-gradient(90deg,rgba(150,215,232,.1) 0%,rgba(150,215,232,.1) 100%),linear-gradient(90deg,transparent calc(var(--catch)*1% - 26%),rgba(218,250,255,.62) calc(var(--catch)*1%),transparent calc(var(--catch)*1% + 28%));
+  -webkit-mask-image:linear-gradient(90deg,#000 0 30%,transparent 30% 32.5%,#000 32.5% 100%);mask-image:linear-gradient(90deg,#000 0 30%,transparent 30% 32.5%,#000 32.5% 100%);transition:opacity .3s ease}
+.stratum::after{content:"";position:absolute;left:0;right:var(--sr);bottom:0;height:1px;background:linear-gradient(90deg,rgba(120,205,224,.09),transparent 72%)}
+
+.stratum[data-mission-state="running"]{--sig:#8fe6f4}
+.stratum[data-mission-state="waiting"]{--sig:#9aa9ff}
+.stratum[data-mission-state="completed"]{--sig:#75d9c2}
+.stratum[data-mission-state="blocked"]{--sig:#e0c080}
+.stratum[data-mission-state="unverified"]{--sig:#e0c080}
+.stratum[data-mission-state="checking"]{--sig:#7f9bab}
+
+/* state signal: a tiny custom notch (a diamond cut into the leading edge). solid = running / completed, hollow = waiting / unverified / checking, slit = blocked */
+.notch{position:relative;display:block;width:12px;height:12px;background:radial-gradient(circle,color-mix(in srgb,var(--sig) 38%,transparent) 0%,transparent 68%)}
+.notch::after{content:"";position:absolute;left:2.5px;top:2.5px;width:7px;height:7px;background:var(--sig);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);z-index:1}
+.notch::before{content:"";position:absolute;left:4.5px;top:4.5px;width:3px;height:3px;background:#050d12;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);z-index:2;display:none}
+.stratum[data-mission-state="waiting"] .notch::before,.stratum[data-mission-state="unverified"] .notch::before,.stratum[data-mission-state="checking"] .notch::before{display:block}
+.stratum[data-mission-state="blocked"] .notch::before{display:block;left:5.4px;top:3.2px;width:1.2px;height:5.6px;clip-path:none}
+
+.name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;letter-spacing:.01em;color:#dcebf2;transition:color .3s ease}
+.meta{font-size:10px;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--sig) 50%,#8ba5b3)}
+/* progress energy, embedded: a faint channel inside the slab with the recorded percent lit along it and a small bright head where it ends */
+.trace{position:absolute;left:calc(var(--sl) + 8px);right:30px;bottom:7px;height:1px;background:linear-gradient(90deg,rgba(120,205,224,.16),rgba(120,205,224,.07) 60%,rgba(120,205,224,.03));transition:background .3s ease}
+.trace::before{content:"";position:absolute;left:0;top:0;height:1px;width:calc(var(--p)*1%);background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sig) 60%,transparent) 22%,var(--sig));opacity:.82;transition:opacity .3s ease,box-shadow .3s ease}
+.trace::after{content:"";position:absolute;top:-1.5px;left:calc(var(--p)*1% - 2px);width:4px;height:4px;border-radius:50%;background:var(--sig);opacity:.8;box-shadow:0 0 6px color-mix(in srgb,var(--sig) 80%,transparent);transition:opacity .3s ease,box-shadow .3s ease}
+
+/* depth model on hover / focus: the stratum advances a few px and clarifies, its seam catches the light and its trace becomes one coherent channel;
+   the rest fall back through opacity and a hair of softness (no scaling, no bounce) */
+.stratum:hover,.stratum:focus-visible{opacity:1;transform:translate3d(0,-1px,calc(var(--z) + 16px));background:radial-gradient(120% 190% at 12% 0%,rgba(62,132,158,.2) 0%,transparent 60%),linear-gradient(100deg,rgba(11,33,44,.92) 0%,rgba(6,17,24,.84) 56%,rgba(4,12,17,.68) 100%);filter:brightness(1.1)}
+.stratum:hover::before,.stratum:focus-visible::before{background:linear-gradient(90deg,rgba(150,215,232,.2) 0%,rgba(150,215,232,.2) 100%),linear-gradient(90deg,transparent calc(var(--catch)*1% - 34%),rgba(236,252,255,.95) calc(var(--catch)*1%),transparent calc(var(--catch)*1% + 38%))}
+.stratum:hover .name,.stratum:focus-visible .name{color:#f2fbff}
+.stratum:hover .trace,.stratum:focus-visible .trace{background:linear-gradient(90deg,rgba(120,205,224,.3),rgba(120,205,224,.16) 60%,rgba(120,205,224,.07))}
+.stratum:hover .trace::before,.stratum:focus-visible .trace::before{opacity:1;box-shadow:0 0 8px color-mix(in srgb,var(--sig) 70%,transparent)}
+.stratum:hover .trace::after,.stratum:focus-visible .trace::after{opacity:1;box-shadow:0 0 10px var(--sig)}
+.list:has(.stratum:hover) .item:not(:hover) .stratum,.list:has(.stratum:focus-visible) .item:not(:has(:focus-visible)) .stratum{opacity:calc(var(--clarity) * .74);filter:brightness(.9)}
+.item:hover+.item .stratum,.item:has(+.item:hover) .stratum,.item:has(:focus-visible)+.item .stratum,.item:has(+.item :focus-visible) .stratum{opacity:calc(var(--clarity) * .9)!important;filter:none!important}
+.stratum:focus-visible{outline:2px solid rgba(126,219,238,.85);outline-offset:3px}
+
+/* selection: this stratum comes forward and its trace converges toward the nucleus point; the others dissolve. The lens mounts the nucleus after. */
+.field[data-picking] .stratum:not([data-picked]){opacity:0;transform:scale(.985);transition-duration:.26s;pointer-events:none}
+.stratum[data-picked]{animation:strataPick .42s cubic-bezier(.5,0,.2,1) forwards;pointer-events:none;z-index:2}
+.field[data-picking] .filters{opacity:0;transition:opacity .26s ease}
+
+/* scroll depth where supported: strata near the top/bottom of the corridor sit deeper (quieter and slightly smaller) */
+@supports (animation-timeline:view()){
+  .item{animation:strataDepth linear both;animation-timeline:view(block);animation-range:entry 0% exit 100%}
+}
+@keyframes strataDepth{0%{opacity:.7;scale:.98}18%{opacity:1;scale:1}82%{opacity:1;scale:1}100%{opacity:.8;scale:.98}}
+@keyframes strataIn{from{opacity:0;transform:translate3d(0,8px,var(--z)) scaleX(.94)}to{opacity:var(--clarity);transform:translate3d(0,0,var(--z));filter:none}}
+@keyframes fieldIn{from{opacity:0}to{opacity:1}}
+@keyframes strataPick{0%{transform:translate3d(0,0,var(--z));filter:brightness(1)}30%{transform:translate3d(0,0,26px);filter:brightness(1.3)}100%{transform:translate3d(var(--dx,0px),var(--dy,0px),0) scaleX(.3);filter:brightness(1.5);opacity:0}}
+
+@media(max-width:900px){.field{top:clamp(196px,23%,216px);width:100%;bottom:156px;gap:6px}
+  /* the six filters become ONE horizontal strip (All · Running · Queued · Blocked · Completed · Unverified): counts, active underline and semantics kept, 40px touch height */
+  .filters{flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;gap:0 4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:0 10px;scroll-snap-type:x proximity;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 44px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 44px),transparent 100%)}
+  .filters::-webkit-scrollbar{display:none}
+  .filters::after{left:0;right:0}
+  .filters button{flex:none;display:inline-flex;align-items:center;min-height:40px;padding:0 11px;font-size:11px;white-space:nowrap;scroll-snap-align:center}
+  .filters button::after{left:8px;right:8px;bottom:0}
+  .full{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .short{display:inline}
+  .filters button span{margin-left:6px}
+  /* W5.4C: with the preview's one-line metrics row (header ends ~y 122) the field starts right under it, not at the legacy 196-216 px that left a ~70 px dead band */
+  :global(body):has([data-mission-header="index"]) .field{top:132px}
+  .list{padding-top:12px}.stratum{padding-right:18px}.item{margin-left:calc(var(--left)*.5%);width:calc(100% - var(--left)*.5%)}}
+@media(prefers-reduced-motion:reduce){
+  .stratum,.filters{animation:none;transition:none}
+  .stratum:hover,.stratum:focus-visible{transform:translate3d(0,0,var(--z))}
+  .item{animation:none!important}
+  .stratum[data-picked]{animation:none}
+  .filters button,.filters button::after{transition:none}
+}
+
+/* Touch devices at any width: the filter strip keeps a 40px target. */
+@media(pointer:coarse){.filters button{min-height:40px;display:inline-flex;align-items:center}}
+
+
+/* ---- Phase 14: material + motion (polish only; the approved geometry above is untouched) ----
+   The light comes from where NORA is: every stratum's seam keeps its lobe where it faces the centre (--catch) and that lobe only changes BRIGHTNESS, slowly and out of phase with its
+   neighbours (a different period and phase per stratum, derived from its index), like one lamp reaching strata at different depths. A narrow reflection crosses the seam rarely on every third
+   stratum. Hover / focus wakes the seam (a brighter, narrower catch eases in) and lights the progress trace once. Nothing here depends on, or implies, execution state.
+   All of it is opacity/transform (compositor) except the one-shot trace ignite; phones keep only the hover/focus response; reduced motion keeps only a 120ms opacity change. */
+.item{--breath-d:calc(17s + var(--i,0) * 1.9s);--breath-o:calc(var(--i,0) * -3.3s);--sweep-d:calc(34s + var(--i,0) * 2.3s);--sweep-o:calc(var(--i,0) * -7.1s)}
+.stratum::before{animation:seamBreath var(--breath-d) ease-in-out var(--breath-o) infinite alternate}
+@keyframes seamBreath{from{opacity:.62}to{opacity:1}}
+.catch{position:absolute;left:calc(var(--sl) + 6px);right:12%;top:4px;height:3px;pointer-events:none;opacity:0;transform:translateX(-4%);transition:opacity .45s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);
+  background:radial-gradient(ellipse 15% 100% at calc(var(--catch) * 1%) 50%,rgba(240,253,255,.9),transparent 72%)}
+.stratum:hover .catch,.stratum:focus-visible .catch{opacity:.95;transform:none}
+.sweep{display:none;position:absolute;left:calc(var(--sl) + 6px);right:12%;top:5px;height:1px;overflow:hidden;pointer-events:none}
+.item:nth-child(3n+1) .sweep{display:block}
+.sweep::after{content:"";position:absolute;top:0;bottom:0;left:0;width:24%;background:linear-gradient(90deg,transparent,rgba(226,250,255,.5),transparent);transform:translateX(-130%);animation:strataSweep var(--sweep-d) linear var(--sweep-o) infinite;will-change:transform}
+@keyframes strataSweep{0%,93%{transform:translateX(-130%)}100%{transform:translateX(480%)}}
+.stratum:hover .trace::before,.stratum:focus-visible .trace::before{transform-origin:left center;animation:traceIgnite .62s cubic-bezier(.3,.7,.2,1) both}
+.stratum:hover .trace::after,.stratum:focus-visible .trace::after{animation:headWake .5s ease .3s both}
+@keyframes traceIgnite{from{transform:scaleX(.02);opacity:.4}to{transform:scaleX(1);opacity:1}}
+@keyframes headWake{from{opacity:0}to{opacity:1}}
+@media(max-width:900px){.stratum::before{animation:none}.sweep,.item:nth-child(3n+1) .sweep{display:none}}
+@media(prefers-reduced-motion:reduce){.stratum::before{animation:none}.sweep,.item:nth-child(3n+1) .sweep{display:none}.catch{transition:opacity .12s;transform:none}.stratum:hover .trace::before,.stratum:focus-visible .trace::before,.stratum:hover .trace::after,.stratum:focus-visible .trace::after{animation:none}}
+
+
+/* Phase 14 fix: on selection EVERY other stratum dissolves together. The hover rules that soften the clicked stratum's direct neighbours (!important) were still winning during the
+   pick, so the strata immediately above and below stayed visible for the whole convergence while the rest had already faded. During a pick nothing but the chosen stratum may stay. */
+.field[data-picking] .item .stratum:not([data-picked]){opacity:0!important;filter:none!important;transform:scale(.985);transition-duration:.26s;pointer-events:none}
+
+
+/* Phase 14 fix: returning from a mission. The strata unfold immediately (a short, tighter stagger, no entrance delay) while the nucleus is still releasing, so the two overlap like the forward
+   convergence does, instead of "release, empty beat, then unfold". */
+.field[data-return] .stratum{animation-duration:.46s;animation-delay:calc(min(var(--i,0),8) * 16ms)}
+.field[data-return] .filters{animation-delay:.04s}
+@media(prefers-reduced-motion:reduce){.field[data-return] .stratum,.field[data-return] .filters{animation-delay:0s}}

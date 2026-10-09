@@ -1,0 +1,150 @@
+/* Workbench instrument shell (W5.2R). Three connected strata (frame L, reading inset, joint) drawn by two SVGs; HTML is laid over them with CSS variables shared with
+   missionWorkbenchLayout.ts. Smoked obsidian + cold titanium partial edges + restrained cyan-white catches. No backdrop-filter, no blur, no filter, no shadow.
+   Motion: the frame resolves from the graph-facing edge, then the reading plane unfolds from it (clip-path, paint only); entity changes only resolve content. */
+.plane{position:absolute;left:0;top:0;z-index:4;box-sizing:border-box;color:#d3e9f0;pointer-events:none;transition:transform .38s cubic-bezier(.2,.7,.2,1)}
+.plane>*{pointer-events:auto}
+.plane[data-wb-leaving],.plane[data-wb-leaving] *{pointer-events:none!important}
+.plane[data-wb-leaving]{transition:none;animation:wbLeave .3s cubic-bezier(.4,0,.6,1) both}
+.plane[data-wb-leaving] *{animation:none!important}
+@keyframes wbLeave{from{opacity:1}to{opacity:0}}
+/* C7F: the Workbench is a deeper instrument of the SAME material as the Intelligence panel: smoked-petrol glass (slightly darker, more concentrated), 18px outer / 12px inner corners, a 1px hairline ring and one soft top highlight.
+   The surface holds the identity header and the section index; the field is the inset reading plane. The graph-facing edge (where the joint sits) is square so the attachment meets a straight edge. */
+.surface,.field{position:absolute;display:block;pointer-events:none}
+.surface{inset:0;border-radius:18px;background:radial-gradient(ellipse 85% 70% at 100% 100%,#010608cc 0%,#0000 72%),linear-gradient(165deg,#1b3a40f0 0%,#12292ef3 38%,#0a1c20f6 70%,#061115f9 100%);box-shadow:inset 0 0 0 1px #9ec6cc29,inset 0 1px 0 #d7f2f636;animation:wbFrameR .22s cubic-bezier(.2,.7,.2,1) .08s both}
+.surface::before{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,#0000,#7fe0eeaa,#0000)}
+.field{top:var(--head);bottom:var(--bot);left:var(--rail);right:var(--far);border-radius:12px;background:linear-gradient(160deg,#0a1b20ee,#040e12f3);box-shadow:inset 0 0 0 1px #9ec6cc1f,inset 0 1px 0 #ffffff0d;animation:wbReadR .3s cubic-bezier(.2,.7,.2,1) .16s both}
+.plane[data-side="right"] .surface{border-top-left-radius:4px;border-bottom-left-radius:4px}
+.plane[data-side="left"] .surface{border-top-right-radius:4px;border-bottom-right-radius:4px}
+.plane[data-side="left"] .surface{animation-name:wbFrameL}
+.plane[data-side="left"] .field{left:var(--far);right:var(--rail);animation-name:wbReadL}
+.plane[data-side="slot"]{transition:none}
+.plane[data-side="slot"] .surface{animation-name:wbFrameS;border-radius:14px}.plane[data-side="slot"] .field{animation-name:wbReadS}
+.plane[data-variant="strip"] .field{top:calc(var(--head) + var(--strip));left:0;right:0;bottom:0;border-radius:0 0 14px 14px}
+
+/* JOINT: the socket on the graph-facing edge where the attachment arrives. It follows the entity (its y is one CSS variable set on scroll / selection). */
+.joint{position:absolute;top:0;z-index:2;width:12px;height:12px;box-sizing:border-box;border:1px solid #d7e6ec;border-radius:50%;background:#06151b;pointer-events:none;
+  transform:translateY(calc(var(--seam,60px) - 6px));transition:transform .38s cubic-bezier(.2,.7,.2,1)}
+.joint::before{content:"";position:absolute;inset:3px;border-radius:50%;background:#e9fbff}
+.joint::after{content:"";position:absolute;top:50%;height:1px;width:26px;margin-top:-.5px;background:linear-gradient(90deg,#d7e6ecb0,#d7e6ec00)}
+.plane[data-side="right"] .joint{left:-6px}.plane[data-side="right"] .joint::after{left:12px}
+.plane[data-side="left"] .joint{right:-6px}.plane[data-side="left"] .joint::after{right:12px;background:linear-gradient(270deg,#d7e6ecb0,#d7e6ec00)}
+
+/* FRAME: identity header across the top (it projects past the reading plane), index rail down the graph-facing edge */
+.head{position:absolute;left:0;right:0;top:0;height:var(--head);box-sizing:border-box;display:flex;align-items:flex-start;gap:10px;padding:13px 14px 0 28px}
+.plane[data-side="left"] .head{flex-direction:row-reverse;padding:13px 28px 0 14px}
+.id{min-width:0;flex:1;animation:wbResolve .22s ease-out both}
+.eyebrow{margin:0;height:12px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8fb7c4;line-height:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.depth{color:#9fd9e4}
+.title{margin:3px 0 0;height:24px;font-size:18px;font-weight:620;letter-spacing:-.005em;line-height:24px;color:#f3fcff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead{margin:4px 0 0;padding:0;list-style:none;height:16px;display:flex;gap:0 14px;overflow:hidden;font-size:11px;line-height:16px;color:#a9c7d2}
+.lead li{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lead b{font-weight:400;color:#6f98a6;font-size:10px;letter-spacing:.02em;margin-right:4px}
+.lead li[data-tone="alert"]{color:#e0c080}.lead li[data-tone="live"]{color:#8fe6f4}
+.actions{flex:none;display:flex;align-items:center;gap:2px}
+.focusBtn{flex:none;display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 8px 0 10px;border:0;border-radius:2px;background:transparent;color:#a8e8f4;font:inherit;font-size:12px;letter-spacing:.02em;cursor:pointer;box-shadow:inset 0 -1px 0 #8fe0ee66}
+.focusBtn i{font-style:normal;font-size:16px;line-height:1}
+.focusBtn:hover{color:#fff;background:#12313b}
+.focusBtn:focus-visible{outline:1px solid #bff3fb;outline-offset:2px}
+.plane[data-side="left"] .actions{flex-direction:row-reverse}
+.back{flex:none;display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 10px 0 8px;border:0;border-radius:2px;background:transparent;color:#9fc4d0;font:inherit;font-size:12px;letter-spacing:.02em;cursor:pointer}
+.back i{font-style:normal;font-size:16px;line-height:1}
+.back:hover{color:#e6f6fb;background:#12313b}
+.back:focus-visible,.mark:focus-visible,.content:focus-visible{outline:1px solid #bff3fb;outline-offset:2px}
+
+/* INDEX (rail): hairline ticks and plain labels; the active entry lengthens and is coupled to the reading plane by a short rule. No pills, no boxes. */
+.index{position:absolute;top:var(--head);bottom:0;left:0;width:var(--rail);box-sizing:border-box;padding:12px 0 14px 20px;display:flex;flex-direction:column;gap:1px;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.plane[data-side="left"] .index{left:auto;right:0;padding:12px 20px 14px 0}
+.mark{position:relative;flex:none;display:flex;align-items:center;gap:8px;min-height:32px;padding:0;border:0;border-radius:3px;background:transparent;color:#8fb0bd;font:inherit;font-size:12.5px;text-align:left;cursor:pointer;white-space:nowrap}
+.plane[data-side="left"] .mark{flex-direction:row-reverse;text-align:right}
+.mark i{flex:none;width:6px;height:1px;background:#8fe0ee70;transition:width .2s ease-out,background-color .2s}
+.mark span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.mark:hover{color:#d8eef5}.mark:hover i{width:10px}
+.mark[aria-selected="true"]{color:#f1fbff;font-weight:560}
+.mark[aria-selected="true"] i{width:12px;background:#e9fbff}
+.couple{flex:1;min-width:6px;height:1px;position:relative;background:linear-gradient(90deg,#cfeff6b0,#cfeff6)}
+.plane[data-side="left"] .couple{background:linear-gradient(270deg,#cfeff6b0,#cfeff6)}
+.couple::after{content:"";position:absolute;right:-1px;top:-1.5px;width:4px;height:4px;border-radius:50%;background:#f4fdff}
+.plane[data-side="left"] .couple::after{right:auto;left:-1px}
+.mark[data-state="derived"] span::after,.mark[data-state="parsed"] span::after{content:"";display:inline-block;width:3px;height:3px;margin-left:5px;border-radius:50%;background:#7fa5b3;vertical-align:middle}
+
+/* READING plane content */
+.content{position:absolute;top:var(--head);bottom:var(--bot);left:var(--rail);right:var(--far);box-sizing:border-box;padding:14px 16px 12px 18px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;animation:wbReadR .3s cubic-bezier(.2,.7,.2,1) .16s both}
+.plane[data-side="left"] .content{left:var(--far);right:var(--rail);animation-name:wbReadL}
+.plane[data-side="slot"] .content{animation-name:wbReadS}
+.sheet{animation:wbResolve .22s ease-out both}
+.sheet h4{margin:0 0 12px;padding-bottom:9px;position:relative;font-size:14px;font-weight:600;letter-spacing:.01em;color:#f1fbff;border-bottom:1px solid #9fc4d01f}
+.sheet h4::after{content:"";position:absolute;left:0;bottom:-1px;width:28px;height:1px;background:#bff3fb}
+.meta{margin:0 0 4px;font-size:11px;letter-spacing:.02em;color:#7fa5b3}
+.reason{margin:0 0 10px;font-size:11px;line-height:16px;color:#a9c7d2}
+.placeholder{margin:10px 0 0;font-size:11px;line-height:16px;color:#5f8392;border-top:1px dashed #78cde02e;padding-top:10px}
+
+/* STRIP variant (narrow inline sheets): the index is a horizontal run of 44 px markers under the header, inside the frame; the active one meets the reading plane. */
+.plane[data-variant="strip"] .head{padding:9px 6px 0 20px}
+.plane[data-variant="strip"] .title{font-size:15px}
+.plane[data-variant="strip"] .back{height:44px;min-width:44px;margin-top:-6px}
+.plane[data-variant="strip"] .index{top:var(--head);bottom:auto;left:0;right:0;width:auto;height:var(--strip);padding:0 8px 0 20px;flex-direction:row;gap:2px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity}
+.plane[data-variant="strip"] .mark{flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;min-height:44px;min-width:44px;padding:0 14px 0 0;font-size:13.5px;scroll-snap-align:start}
+.plane[data-variant="strip"] .mark i{order:2;width:8px}
+.plane[data-variant="strip"] .mark[aria-selected="true"] i{width:100%;height:2px}
+.plane[data-variant="strip"] .couple{display:none}
+.plane[data-variant="strip"] .content{top:calc(var(--head) + var(--strip));left:0;padding:12px 14px 10px 20px}
+
+@keyframes wbFrameR{from{clip-path:inset(0 calc(100% - 10px) 0 0);opacity:.45}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbFrameL{from{clip-path:inset(0 0 0 calc(100% - 10px));opacity:.45}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbFrameS{from{clip-path:inset(0 0 calc(100% - 10px) 0);opacity:.45}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbReadR{from{clip-path:inset(0 100% 0 0);opacity:0}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbReadL{from{clip-path:inset(0 0 0 100%);opacity:0}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbReadS{from{clip-path:inset(0 0 100% 0);opacity:0}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes wbResolve{from{opacity:.25}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.plane,.joint,.mark i,.frame,.read,.content,.id,.sheet{transition:none;animation:none}}
+
+.plane[data-variant="strip"] .focusBtn{height:44px;min-width:44px;margin-top:-6px;font-size:13px}
+
+/* C7F identity header: type, title, recorded status + parent context, one short recorded purpose (the same recorded facts as the Intelligence panel's identity) */
+.ident{margin:5px 0 0;height:22px;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.pill{flex:none;display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;border-radius:7px;font-size:11.5px;font-weight:480;white-space:nowrap;color:#e3f6f1;background:linear-gradient(180deg,#1b4745d8,#143a39da);box-shadow:inset 0 0 0 1px #4fc4a44d}
+.pill i{display:block;width:7px;height:7px;border-radius:50%;background:#35dba8}
+.pill[data-tone="live"] i{background:#7fe9ff}
+.pill[data-tone="running"] i{background:transparent;box-shadow:inset 0 0 0 1.5px #a8d6e2}
+.pill[data-tone="running"]{color:#dcecf2;box-shadow:inset 0 0 0 1px #4a8da077}
+.pill[data-tone="error"]{color:#f6e2c0;background:linear-gradient(180deg,#46321bd8,#392715da);box-shadow:inset 0 0 0 1px #a7703e88}
+.pill[data-tone="error"] i{background:#d08a4a;border-radius:2px}
+.pill[data-tone="neutral"]{color:#cfe0e6;box-shadow:inset 0 0 0 1px #6d95a455}
+.pill[data-tone="neutral"] i{background:#6d95a4}
+.parent{min-width:0;font-size:11px;color:#8fb0bd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.purpose{margin:5px 0 0;font-size:12px;line-height:16px;color:#c3dce3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* section index: the active entry carries the champagne accent (where I am), as in the selector */
+.mark[aria-selected="true"] i{background:#e6cf9a}
+.couple{background:linear-gradient(90deg,#e6cf9a99,#e6cf9a)}
+.plane[data-side="left"] .couple{background:linear-gradient(270deg,#e6cf9a99,#e6cf9a)}
+.couple::after{background:#f1dfb3}
+.sheet h4::after{background:#e6cf9a}
+
+/* ================================================================ C7G.1 structure (not the final polish): the Workbench is the OPERATIONAL plane.
+   Depth roles (smoked-petrol family): Intelligence = illuminated glass instrument; Workbench = darker operational glass (this file); Focus = darkest artifact plane (MissionFocusPlane.module.css).
+   Structure: a frame (header band + a systems rail) and ONE flat information plane that continues from the rail across a seam; no inner rounded box. The graph-facing (near) edge is a bright seam that
+   brightens where the entity attaches (--seam); the outer edges are a quiet hairline with a larger radius. Tokens below are the hooks the later polish pass refines (edge layers, seams, active edge, accents). */
+.plane{--wb-a:#102529;--wb-b:#040c0f;--wb-rule:#9ec6cc26;--wb-edge:#9ec6cc33;--wb-seam:#e9fbff;--wb-active:#e6cf9a;--wb-plane-primary:#1a3a41b0;--wb-plane-support:#07161a;--wb-plane-detail:#040b0e}
+.surface{background:linear-gradient(168deg,var(--wb-a) 0%,#0a1b1ff6 42%,var(--wb-b) 100%);box-shadow:inset 0 0 0 1px var(--wb-edge);border-radius:4px 16px 16px 4px}
+.plane[data-side="left"] .surface{border-radius:16px 4px 4px 16px}
+.surface::before{display:none}
+/* the graph-facing seam: a 2px edge, dim along its length and bright where the entity attaches */
+.surface::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#9ec6cc33 0,#9ec6cc33 calc(var(--seam,60px) - 70px),var(--wb-seam) var(--seam,60px),#9ec6cc33 calc(var(--seam,60px) + 70px),#9ec6cc33 100%)}
+.plane[data-side="right"] .surface::after,.plane[data-side="slot"] .surface::after{left:0}
+.plane[data-side="left"] .surface::after{right:0}
+/* the one information plane: flat, continuing from the rail across a seam; only its far bottom corner is rounded to follow the frame */
+.field{border-radius:0 0 16px 0;background:linear-gradient(170deg,#091a1ef2,var(--wb-plane-support) 70%);box-shadow:inset 1px 0 0 var(--wb-rule),inset 0 1px 0 var(--wb-rule)}
+.plane[data-side="left"] .field{border-radius:0 0 0 16px;box-shadow:inset -1px 0 0 var(--wb-rule),inset 0 1px 0 var(--wb-rule)}
+.plane[data-variant="strip"] .field{border-radius:0 0 14px 14px}
+/* the systems rail: a datum line with ticks; the active entry lengthens in champagne and runs into the plane */
+.index::before{content:"";position:absolute;left:14px;top:12px;bottom:14px;width:1px;background:linear-gradient(180deg,#9ec6cc00,#9ec6cc40 10%,#9ec6cc40 90%,#9ec6cc00)}
+.plane[data-side="left"] .index::before{left:auto;right:14px}
+.plane[data-variant="strip"] .index::before{display:none}
+.mark i{background:#9ec6cc55}
+.mark[aria-selected="true"] i{width:14px;background:var(--wb-active)}
+.couple{background:linear-gradient(90deg,var(--wb-active),#e6cf9acc)}
+.plane[data-side="left"] .couple{background:linear-gradient(270deg,var(--wb-active),#e6cf9acc)}
+.couple::after{background:var(--wb-active)}
+/* the header band is part of the frame, separated from the plane by the plane's own top hairline */
+.sheet h4::after{background:var(--wb-active)}
+@media(prefers-reduced-motion:reduce){.surface,.field{animation:none}}

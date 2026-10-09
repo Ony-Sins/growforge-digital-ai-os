@@ -71,6 +71,8 @@ const overview = read("../src/components/spatial/dive/DiveOverview.tsx");
 assert.ok(overview.includes("initialLensId"), "DiveOverview opens on the URL's lens");
 
 // 9. CORE render-state guards (visual quality itself is verified in the browser, not here).
+const engine = read("../src/components/spatial/neutronCore/NeutronCoreEngine.ts");
+assert.ok(engine.includes("uMapReady") && engine.includes("baseline(p, t)"), "sphere has a lit procedural baseline until the surface image decodes");
 const telemetry = read("../src/app/api/spatial/telemetry/route.ts");
 assert.ok(telemetry.includes("isOwnerReviewMode() ? []"), "owner-review never reports persisted jobs as executing");
 assert.ok(canvas.includes("Math.min(now - lastFrameTime, 100)"), "frame delta is clamped at the source");
@@ -82,3 +84,19 @@ assert.equal(withSurface("?lens=Finance&panel=settings&tab=connectors", { surfac
 assert.equal(withSurface("?lens=bogus", { surface: "dive", lensId: "lens.overview" }), "?lens=overview");
 assert.equal(withSurface("?job=abc&tier=brain&view=x", { surface: "explore" }), "?job=abc&tier=brain&view=x");
 console.log("surface location canonicalization tests: all passed");
+
+// 11. W0: CORE's Missions card enters the canonical Dive Missions lens, never the legacy "core" tier (which the Explore framing clamp bounced to ?tier=brain).
+{
+  const hud = read("../src/components/spatial/SpatialHud.tsx");
+  const canvas = read("../src/components/spatial/SpatialCanvas.tsx");
+  assert.match(hud, /onOpenMissions=\{onOpenMissions \?\? /, "the CORE Missions card uses the supplied canonical opener");
+  assert.match(canvas, /const openMissionsLens = useCallback\(\(\) => \{\s*setDiveInitialLens\("lens\.missions"\);\s*startDiveInRef\.current\(\);/, "the opener seeds the Missions lens and starts the existing dive");
+  assert.match(canvas, /onOpenMissions=\{openMissionsLens\}/, "SpatialCanvas wires the opener into the HUD");
+  assert.ok(!/openMissionsLens[\s\S]{0,400}handleSelectTier\("core"\)/.test(canvas), "the opener must not route through the legacy core tier");
+  // The URL that results is the canonical one, and the other CORE-ish entries keep meaning CORE.
+  assert.deepEqual(parseSurfaceLocation("?lens=missions"), { surface: "dive", lensId: "lens.missions" });
+  assert.deepEqual(parseSurfaceLocation("?tier=core"), { surface: "core" }, "/core and ?tier=core still mean the CORE surface");
+  assert.deepEqual(parseSurfaceLocation(new URL(resolveSemanticRoute({ type: "SHOW_CORE" }).path, "http://x").searchParams), { surface: "core" }, "SHOW_CORE still means CORE");
+  assert.deepEqual(parseSurfaceLocation(new URL(resolveSemanticRoute({ type: "SHOW_MISSIONS" }).path, "http://x").searchParams), { surface: "dive", lensId: "lens.missions" }, "SHOW_MISSIONS already opens the Missions lens");
+}
+console.log("W0 missions entry routing tests: all passed");

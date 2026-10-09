@@ -206,9 +206,11 @@ export interface CoreZoomTierProps {
   jobState?: CoreState | null;
   initialJobId?: string | null;
   className?: string;
+  /** The CORE tier is the visible surface. Gates only the 3D sphere's render loop; polling and job state are unaffected. */
+  active?: boolean;
 }
 
-export function CoreZoomTier({ jobState: externalState = null, initialJobId = null, className = "" }: CoreZoomTierProps) {
+export function CoreZoomTier({ jobState: externalState = null, initialJobId = null, className = "", active = true }: CoreZoomTierProps) {
   const [internalState, setInternalState] = useState<CoreState | null>(externalState);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(initialJobId);
@@ -538,6 +540,7 @@ export function CoreZoomTier({ jobState: externalState = null, initialJobId = nu
                 <CoreSphere3D
                   hubs={job.departments.map((d) => ({ id: d.id, status: hubStatus(d) }))}
                   selectedId={focusId}
+                  active={active}
                   onSelect={(id) => {
                     if (job.departments.find((d) => d.id === id)?.assigned) setSelectedDept(id);
                   }}

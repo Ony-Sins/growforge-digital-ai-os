@@ -117,3 +117,10 @@ export type DiveOpenDetail = { lensId: DiveLensId } | { back: true };
 /** Window event publishing the current scope (consumed by NORA surface context). */
 export const DIVE_SCOPE_EVENT = "growforge:dive-scope";
 export type DiveScopeDetail = { lensId: DiveLensId; lens: string; scope: string; address: string; entity?: DiveEntityRef; detail?: DiveEntityRef } | null;
+
+/**
+ * Window event publishing the entity selected INSIDE the selected entity (e.g. the department or step of a mission, or a deep-inspection category).
+ * It becomes the `detail` of the NORA scope address. null clears it. Owned by whichever lens owns the entity; it never depends on a panel being open.
+ */
+export const DIVE_DETAIL_EVENT = "growforge:dive-detail";
+export type DiveDetailDetail = DiveEntityRef | null;

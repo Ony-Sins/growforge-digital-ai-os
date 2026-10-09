@@ -2120,19 +2120,21 @@ export function CoreCommandCenter({
               <GrowForgeGlyph name="voice" className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
 
-            {/* 6. Send / Submit Button */}
+            {/* 6. Send / Submit Button: shown only when there is something to send (text or attachments). With nothing to send it was a permanently disabled, unexplained icon beside the microphone; Enter in the field still submits the form. */}
+            {(prompt.trim() || attachments.length > 0) && (
             <button
               type="submit"
               aria-label="Send message"
-              disabled={(!prompt.trim() && attachments.length === 0) || isUploadingAttachments}
+              disabled={isUploadingAttachments}
               className={`grid h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 place-items-center rounded-full transition-all duration-200 ${
-                (prompt.trim() || attachments.length > 0) && !isUploadingAttachments
+                !isUploadingAttachments
                   ? "bg-gradient-to-b from-cyan-300 via-cyan-400 to-sky-500 text-slate-950 font-bold shadow-[0_0_18px_rgba(34,211,238,0.70)] hover:brightness-110 active:scale-95"
                   : "bg-white/[0.04] text-slate-600 border border-white/[0.06] cursor-not-allowed"
               }`}
             >
               <GrowForgeGlyph name="transmit" className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
             </button>
+            )}
           </form>
 
           {/* Conversation Settings Popover from Dock */}

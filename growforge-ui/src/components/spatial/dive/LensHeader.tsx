@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { diveDepth, lensById, scopeText, semanticAddress, type DiveLensId } from "@/lib/diveLenses";
 import { useDiveScope } from "./diveScope";
+import { compactScopeText } from "./missionFlowModel";
 import styles from "./LensHeader.module.css";
 
 export type LensMetric = {
@@ -18,17 +19,19 @@ export function NoraScope({ className }: { className?: string }) {
   if (!address) return null;
   const text = scopeText(address);
   return <p className={`${styles.scope} ${className ?? ""}`} data-nora-scope data-semantic-id={semanticAddress(address)} data-scope-depth={diveDepth(address)} data-entity-type={address.entity?.type} data-entity-id={address.entity?.id} title={`NORA scope: ${text}`}>
-    <span>NORA SCOPE</span><strong>{text}</strong>
+    <span>NORA SCOPE</span><strong data-scope-full>{text}</strong><strong data-scope-compact aria-hidden="true">{compactScopeText(text)}</strong>
   </p>;
 }
 
 /** One header shape for every lens: identity, purpose, truthful live state, NORA scope, actions. */
-export function LensHeader({ lensId, title, purpose, metrics, note, actions }: {
+export function LensHeader({ lensId, title, purpose, metrics, note, actions, entrance, quiet }: {
+  /** The page heading is secondary to the workspace beneath it (Missions): smaller, dimmer, higher. */ quiet?: boolean;
+  /** Resolves last when a lens materialises into the shared environment (Phase 11). */ entrance?: boolean;
   lensId: DiveLensId; title?: string; purpose?: string; metrics?: LensMetric[]; note?: string; actions?: ReactNode;
 }) {
   const lens = lensById(lensId);
   if (!lens) return null;
-  return <header className={styles.header} data-lens-header data-lens-id={lensId}>
+  return <header className={styles.header} data-lens-header data-lens-id={lensId} data-entrance={entrance || undefined} data-quiet={quiet || undefined}>
     <p className={styles.eyebrow}>DIVE IN / {lens.label.toUpperCase()}</p>
     <h1>{title ?? lens.label.toUpperCase()}</h1>
     <p className={styles.purpose}>{purpose ?? lens.purpose}</p>

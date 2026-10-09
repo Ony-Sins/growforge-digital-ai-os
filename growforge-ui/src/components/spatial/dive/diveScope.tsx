@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { DIVE_SCOPE_EVENT, scopeText, semanticAddress, type DiveAddress, type DiveEntityRef, type DiveLensId, type DiveScopeDetail, lensById } from "@/lib/diveLenses";
+import { DIVE_DETAIL_EVENT, DIVE_SCOPE_EVENT, scopeText, semanticAddress, type DiveAddress, type DiveEntityRef, type DiveLensId, type DiveDetailDetail, type DiveScopeDetail, lensById } from "@/lib/diveLenses";
 
 /**
  * Selection sources that already exist. Each lens inspector already announces what it
@@ -25,9 +25,10 @@ type Selection = { event: string; entity: DiveEntityRef };
 /** Owns the scope for the open lens and publishes it for NORA. Mount once, in DiveOverview. */
 export function useDiveScopeAddress(lensId: DiveLensId): DiveAddress {
   // A selection belongs to the lens it was made in. State is reset by deriving it during render.
-  const [state, setState] = useState<{ lensId: DiveLensId; selection: Selection | null }>({ lensId, selection: null });
-  if (state.lensId !== lensId) setState({ lensId, selection: null });
+  const [state, setState] = useState<{ lensId: DiveLensId; selection: Selection | null; detail: DiveEntityRef | null }>({ lensId, selection: null, detail: null });
+  if (state.lensId !== lensId) setState({ lensId, selection: null, detail: null });
   const selection = state.lensId === lensId ? state.selection : null;
+  const detail = state.lensId === lensId ? state.detail : null;
   useEffect(() => {
     const listeners = SOURCES.map(source => {
       const handler = (event: Event) => {
@@ -39,9 +40,16 @@ export function useDiveScopeAddress(lensId: DiveLensId): DiveAddress {
       window.addEventListener(source.event, handler);
       return () => window.removeEventListener(source.event, handler);
     });
-    return () => listeners.forEach(remove => remove());
+    // What is selected inside the selected entity (department / step / inspection). It is cleared with the entity and never implies a panel is open.
+    const onDetail = (event: Event) => {
+      const next = (event as CustomEvent<DiveDetailDetail>).detail;
+      const valid = next && typeof next.type === "string" && typeof next.id === "string" && next.id && typeof next.label === "string" && next.label;
+      setState(current => ({ ...current, detail: valid ? { type: next.type, id: next.id, label: next.label } : null }));
+    };
+    window.addEventListener(DIVE_DETAIL_EVENT, onDetail);
+    return () => { listeners.forEach(remove => remove()); window.removeEventListener(DIVE_DETAIL_EVENT, onDetail); };
   }, []);
-  const address = useMemo<DiveAddress>(() => (selection ? { lensId, entity: selection.entity } : { lensId }), [lensId, selection]);
+  const address = useMemo<DiveAddress>(() => (selection ? { lensId, entity: selection.entity, ...(detail ? { detail } : {}) } : { lensId }), [lensId, selection, detail]);
   useEffect(() => {
     const lens = lensById(address.lensId);
     const detail: DiveScopeDetail = lens ? { lensId: address.lensId, lens: lens.label, scope: scopeText(address), address: semanticAddress(address), entity: address.entity, detail: address.detail } : null;

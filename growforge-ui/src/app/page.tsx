@@ -1,4 +1,5 @@
 import React from "react";
+import { preload } from "react-dom";
 import { AppStateProvider } from "@/lib/appState";
 import { getSession } from "@/lib/session";
 import { isBetaMode } from "@/lib/beta/access";
@@ -21,6 +22,8 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ tier?: "home" | "brain" | "dashboard" | "core"; lens?: string; panel?: string; tab?: string; job?: string }>;
 }) {
+  // Start fetching the CORE's surface image with the document, not after the 3D chunk boots (shortens the baseline window).
+  preload("/textures/stellar-core-reference-v1.png", { as: "image", crossOrigin: "anonymous" }); // three.js loads it with crossOrigin=anonymous
   const session = await getSession();
   const { tier, lens, panel, tab } = await searchParams;
   const initialTier = tier === "brain" || tier === "core" ? tier : "home";

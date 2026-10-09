@@ -526,6 +526,12 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
     const url = `${window.location.pathname}${withSurface(window.location.search, desired)}${window.location.hash}`;
     window.history.pushState(window.history.state, "", url);
   }, [diveLayer, visualMode, activeLensId, diveInitialLens, armNavTarget]);
+  // CORE's Missions card: enter the canonical Dive lens through the same plunge the URL/Back path uses (never the legacy "core" tier,
+  // which the Explore framing clamp turned into Explore). The URL is not pre-armed, so the surface effect above writes ONE history entry on arrival.
+  const openMissionsLens = useCallback(() => {
+    setDiveInitialLens("lens.missions");
+    startDiveInRef.current();
+  }, []);
   useEffect(() => {
     const onPopState = () => {
       const loc = parseSurfaceLocation(window.location.search);
@@ -828,11 +834,23 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
     const transitField = new THREE.Points(transitGeo, transitMat);
     scene.add(transitField);
 
+    // The container's size changes only when the window or the container is resized, so the per-frame label
+    // projection must not read it from the DOM (clientWidth/Height are synchronous layout reads). Cached here and
+    // invalidated by the resize handler (same tick as the renderer resize) and a container ResizeObserver.
+    const containerSize = { w: container.clientWidth, h: container.clientHeight };
+    const containerSizeObserver = new ResizeObserver(() => {
+      containerSize.w = container.clientWidth;
+      containerSize.h = container.clientHeight;
+    });
+    containerSizeObserver.observe(container);
+
     // Resize Handler
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
+      containerSize.w = w;
+      containerSize.h = h;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -856,8 +874,8 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
       scratchVec.copy(worldPos).project(camera);
       if (scratchVec.z > 1) return null; // behind the camera
       return {
-        x: (scratchVec.x * 0.5 + 0.5) * container.clientWidth,
-        y: (-scratchVec.y * 0.5 + 0.5) * container.clientHeight,
+        x: (scratchVec.x * 0.5 + 0.5) * containerSize.w,
+        y: (-scratchVec.y * 0.5 + 0.5) * containerSize.h,
       };
     };
     const proximityTargetFor = (worldPos: THREE.Vector3): number => {
@@ -1173,21 +1191,27 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
         const hideLayer = visible < 0.005;
         if ((layer.style.visibility === "hidden") !== hideLayer) layer.style.visibility = hideLayer ? "hidden" : "visible";
         const occupied: {left:number;right:number;top:number;bottom:number}[] = [];
-        const viewport = container.getBoundingClientRect();
-        for (const panel of document.querySelectorAll('aside, nav[aria-label="Primary navigation"]')) {
-          const rect = panel.getBoundingClientRect();
-          if (rect.width && rect.height) occupied.push({left:rect.left-viewport.left,right:rect.right-viewport.left,top:rect.top-viewport.top,bottom:rect.bottom-viewport.top});
-        }
-        const reader = document.querySelector('button[title="Close reader (Esc)"]')?.closest('.fixed');
-        if (reader) {
-          const rect=reader.getBoundingClientRect();
-          occupied.push({left:rect.left-viewport.left,right:rect.right-viewport.left,top:rect.top-viewport.top,bottom:rect.bottom-viewport.top});
+        // Nothing below can place a label unless the layer is meaningfully visible (the per-label `px` is null at
+        // visible <= 0.01), so the panel/core geometry is only measured then. Idle in CORE, Overview, Missions and
+        // the other Dive lenses therefore performs no layout reads here.
+        const labelsLive = visible > 0.01;
+        if (labelsLive) {
+          const viewport = container.getBoundingClientRect();
+          for (const panel of document.querySelectorAll('aside, nav[aria-label="Primary navigation"]')) {
+            const rect = panel.getBoundingClientRect();
+            if (rect.width && rect.height) occupied.push({left:rect.left-viewport.left,right:rect.right-viewport.left,top:rect.top-viewport.top,bottom:rect.bottom-viewport.top});
+          }
+          const reader = document.querySelector('button[title="Close reader (Esc)"]')?.closest('.fixed');
+          if (reader) {
+            const rect=reader.getBoundingClientRect();
+            occupied.push({left:rect.left-viewport.left,right:rect.right-viewport.left,top:rect.top-viewport.top,bottom:rect.bottom-viewport.top});
+          }
         }
         const labelDepth = 1 - THREE.MathUtils.smoothstep(d, 136, 600);
         const hasLabelFocus = data.some(r => r.labelPriority === 3);
         const idleAlpha = hasLabelFocus ? .20 + .08 * labelDepth : .22 + .12 * labelDepth;
-        const corePx=projectToPixels(ZERO_VEC);
-        const coreEdge = neutronCore ? new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0).multiplyScalar(neutronCore.getNucleusRadius()) : null;
+        const corePx=labelsLive ? projectToPixels(ZERO_VEC) : null;
+        const coreEdge = labelsLive && neutronCore ? new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0).multiplyScalar(neutronCore.getNucleusRadius()) : null;
         const coreEdgePx=coreEdge ? projectToPixels(coreEdge) : null;
         const coreRadius=corePx && coreEdgePx ? Math.hypot(coreEdgePx.x-corePx.x,coreEdgePx.y-corePx.y)+12 : 0;
         for (const r of [...data].sort((a,b)=>b.labelPriority-a.labelPriority || a.id.localeCompare(b.id))) {
@@ -1222,11 +1246,13 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
           }
           const orbEdge=inspectRef.current && r.labelPriority===3 ? projectToPixels(r.world.clone().addScaledVector(new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),arbor.getRecordRadius(r.id))) : null;
           const pad=orbEdge ? Math.max(9,Math.hypot(orbEdge.x-px.x,orbEdge.y-px.y)+8) : 9;
-          const candidates=[[px.x+pad,px.y-14],[px.x-pad-el.offsetWidth,px.y-14],[px.x-el.offsetWidth/2,px.y-pad-el.offsetHeight],[px.x-el.offsetWidth/2,px.y+pad]];
-          const box=candidates.map(([left,top])=>({left,top,right:left+el.offsetWidth,bottom:top+el.offsetHeight})).find(box=>{
+          // One measurement per label per frame (the label's size cannot change between these reads: nothing is written to it until the box is chosen).
+          const labelW=el.offsetWidth, labelH=el.offsetHeight;
+          const candidates=[[px.x+pad,px.y-14],[px.x-pad-labelW,px.y-14],[px.x-labelW/2,px.y-pad-labelH],[px.x-labelW/2,px.y+pad]];
+          const box=candidates.map(([left,top])=>({left,top,right:left+labelW,bottom:top+labelH})).find(box=>{
             const overlap=occupied.some(o=>box.left<o.right+6 && box.right>o.left-6 && box.top<o.bottom+6 && box.bottom>o.top-6);
             const overCore=corePx && Math.hypot(Math.max(box.left,Math.min(corePx.x,box.right))-corePx.x,Math.max(box.top,Math.min(corePx.y,box.bottom))-corePx.y)<coreRadius;
-            return !overlap && !overCore && box.left>=6 && box.right<=container.clientWidth-6 && box.top>=76 && box.bottom<=container.clientHeight-10;
+            return !overlap && !overCore && box.left>=6 && box.right<=containerSize.w-6 && box.top>=76 && box.bottom<=containerSize.h-10;
           });
           if(!box) {
             el.style.visibility="hidden";el.style.opacity="0";continue;
@@ -1283,6 +1309,7 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
       window.removeEventListener("pointermove", onCoreMove);
       window.removeEventListener("pointerup", onCoreUp);
       window.removeEventListener("resize", handleResize);
+      containerSizeObserver.disconnect();
       journeySurface.removeEventListener("wheel", handleWheel, true);
       controls.removeEventListener("start", onInteractionStart);
       controls.removeEventListener("end", onInteractionEnd);
@@ -1513,6 +1540,7 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
         onSelectTier={handleSelectTier}
         diveActive={diveLayer}
         onDiveIn={() => startDiveInRef.current()}
+        onOpenMissions={openMissionsLens}
         categories={graphData?.categories || []}
         activeCategories={activeCategories}
         onToggleCategory={handleToggleCategory}
@@ -1565,7 +1593,7 @@ export function SpatialCanvas({ className = "", initialTier = "home", initialDiv
             : "opacity-0 pointer-events-none translate-y-4"
         }`}
       >
-        <CoreZoomTier className="pt-28 pb-28 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto" />
+        <CoreZoomTier active={currentTier === "core" && visualMode === "missions" && !diveLayer} className="pt-28 pb-28 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto" />
       </div>
 
       {/* Note Reader Modal (Wikilinks & Markdown Previews) */}

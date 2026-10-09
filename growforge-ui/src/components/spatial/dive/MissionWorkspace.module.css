@@ -1,0 +1,20 @@
+/* S2 / S2.2B: the workspace page. Structure only: the shell owns the surfaces, WorkbenchReading owns the content styling; text tones come from the canonical --gf-* tokens. Semantic status colours (the pill) stay as they are. No blur, no filter, no drop shadow. */
+.pill{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;border-radius:7px;font-size:12px;font-weight:480;color:#e3f6f1;background:linear-gradient(180deg,#1b4745d8,#143a39da);box-shadow:inset 0 0 0 1px #4fc4a44d}
+.pill i{display:block;width:7px;height:7px;border-radius:50%;background:#35dba8}
+.pill[data-tone="error"]{color:#f6e2c0;background:linear-gradient(180deg,#46321bd8,#392715da);box-shadow:inset 0 0 0 1px #a7703e88}
+.pill[data-tone="error"] i{background:#d08a4a;border-radius:2px}
+.pill[data-tone="running"] i,.pill[data-tone="live"] i{background:transparent;box-shadow:inset 0 0 0 1.5px #a8d6e2}
+.page{max-width:1040px;min-width:0}
+.page[data-mode="reading"]{max-width:860px;margin:0 auto}
+.trail{margin:0 0 12px}
+.back{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px 0 8px;border:0;border-radius:8px;background:transparent;color:var(--gf-text-body);font:inherit;font-size:12.5px;cursor:pointer;box-shadow:inset 0 0 0 1px var(--gf-hairline);text-align:left}
+.back:hover{color:var(--gf-text-title);box-shadow:inset 0 0 0 1px var(--gf-accent-ring)}
+.back:focus-visible{outline:2px solid var(--gf-focus);outline-offset:2px}
+.back span{overflow-wrap:anywhere}
+.notice{margin:0 0 12px;padding:8px 12px;font-size:12.5px;line-height:1.45;color:#f6e2c0;background:#2a2112d0;box-shadow:inset 0 0 0 1px #a7703e66;border-radius:8px}
+.purpose{margin:0 0 16px;font-size:13.5px;line-height:1.55;color:var(--gf-text);overflow-wrap:anywhere}
+.section{margin:0 0 14px;font-size:15px;font-weight:600;letter-spacing:.01em;color:var(--gf-text-title)}
+.empty{font-size:13px;line-height:1.55;color:var(--gf-text-body)}
+.empty p{margin:0 0 8px}
+.meta{font-size:11.5px;color:var(--gf-text-quiet)}
+@media(max-width:700px){.back{min-height:44px}}

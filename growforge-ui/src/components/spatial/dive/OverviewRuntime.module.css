@@ -98,3 +98,42 @@
   .stageGrid [data-surface="recent"] { order: 5; margin-top: 0; }
   .layout { padding-bottom: 28px; }
 }
+/* ---- Phase 11: one persistent environment. When a deeper lens is in front, the Overview layer dissolves and NORA recedes; nothing unmounts. ----
+   Dissolve = luminance + opacity (+ a slight blur/lift) with staggered delays; return = the reverse, after the deeper layer has begun to leave.
+   `front` carries no rule, so Overview is pixel-identical when idle. */
+.head, .left, .right, .briefDock { transition: opacity .56s ease, filter .56s ease, transform .56s cubic-bezier(.2,.7,.2,1); }
+.noraObject { transition: opacity .7s ease, filter .7s ease; }
+.layout[data-depth="front"] .left { transition-delay: .06s; }
+.layout[data-depth="front"] .right { transition-delay: .1s; }
+.layout[data-depth="front"] .head { transition-delay: .12s; }
+.layout[data-depth="front"] .briefDock { transition-delay: .08s; }
+.layout:not([data-depth="front"]) .left, .layout:not([data-depth="front"]) .right, .layout:not([data-depth="front"]) .head, .layout:not([data-depth="front"]) .briefDock { opacity: 0; filter: blur(3px) brightness(.7); pointer-events: none; }
+.layout:not([data-depth="front"]) .left { transform: translateX(-10px); transition-delay: 0s; }
+.layout:not([data-depth="front"]) .right { transform: translateX(10px); transition-delay: .06s; }
+.layout:not([data-depth="front"]) .head { transform: translateY(-6px); transition-delay: .1s; }
+.layout:not([data-depth="front"]) .briefDock { transform: translateX(-50%) translateY(6px); transition-delay: .03s; }
+/* NORA: still there and alive, softer, darker and slightly out of focus. It is not clickable behind the Mission layer. */
+.layout[data-depth="recede"] .noraObject { opacity: .58; filter: blur(2.4px) brightness(.9); }
+.layout[data-depth="deep"] .noraObject { opacity: .52; filter: blur(5px) brightness(.92); }
+.layout:not([data-depth="front"]) .volume * { pointer-events: none; }
+@media (max-width: 900px) { .layout:not([data-depth="front"]) .briefDock { transform: translateY(6px); } }
+/* Phase 13: on mobile .left/.right are display:contents (no box), so the dissolve above never reached the Overview cards and they showed through the Mission layer.
+   The cards themselves dissolve, and the idle scroll column stops capturing touches while a deeper lens is in front. */
+@media (max-width: 900px) {
+  .stageGrid [data-surface] { transition: opacity .56s ease, filter .56s ease; }
+  .layout:not([data-depth="front"]) { overflow: hidden; pointer-events: none; }
+  .layout:not([data-depth="front"]) .stageGrid [data-surface] { opacity: 0; filter: blur(3px) brightness(.7); pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) { .stageGrid [data-surface] { transition-duration: .12s; } .layout:not([data-depth="front"]) .stageGrid [data-surface] { filter: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .head, .left, .right, .briefDock, .noraObject { transition-duration: .12s; transition-delay: 0s !important; }
+  .layout:not([data-depth="front"]) .left, .layout:not([data-depth="front"]) .right, .layout:not([data-depth="front"]) .head { filter: none; transform: none; }
+  .layout:not([data-depth="front"]) .briefDock { filter: none; transform: translateX(-50%); }
+}
+
+/* Phase 14 (performance): the Overview cards, heading and brief dock dissolve behind a deeper lens, but their ambient specular animations (custom-property paints) kept running while invisible.
+   They pause while that layer is not in front and resume with it; nothing visible changes. */
+.layout:not([data-depth="front"]) :is(.head, .left, .right, .briefDock),
+.layout:not([data-depth="front"]) :is(.head, .left, .right, .briefDock) *,
+.layout:not([data-depth="front"]) :is(.head, .left, .right, .briefDock) *::before,
+.layout:not([data-depth="front"]) :is(.head, .left, .right, .briefDock) *::after { animation-play-state: paused !important; }

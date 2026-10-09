@@ -1,0 +1,38 @@
+/* Mission Intelligence panel: a tall rounded panel on the right edge in the canonical GrowForge glass (S2.2B): the Overview panel material through the shared --gf-* tokens (almost-black smoked graphite, glossy upper edge, cold hairline,
+   a corner specular and a faint glow on the edge that faces the Graph), inner glass cards with 12px corners (the body cards live in MissionIntelBody). The Missions rules still hold: no blur, no filter, no drop shadow; depth is gradients and 1px rings. */
+.panel{position:fixed;z-index:5;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:20px 20px 16px;overflow:hidden;pointer-events:auto;border-radius:18px;color:var(--gf-text);
+  background:radial-gradient(ellipse 60% 55% at 0 44%,var(--gf-facing-glow) 0%,transparent 72%),radial-gradient(130px 70px at 0 0,var(--gf-specular),transparent 72%),linear-gradient(180deg,var(--gf-gloss) 0,transparent 44px),linear-gradient(var(--gf-glass-angle),var(--gf-glass-a) 0%,var(--gf-glass-b) 38%,var(--gf-glass-c) 100%);box-shadow:inset 0 0 0 1px var(--gf-hairline),inset 0 1px 0 var(--gf-edge-top)}
+.panel::before{content:"";position:absolute;left:18%;right:18%;top:0;height:1px;background:linear-gradient(90deg,#0000,var(--gf-run),#0000);pointer-events:none}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px;flex:none}
+.eyebrow{display:flex;align-items:center;gap:8px;margin:0;font-size:11px;font-weight:560;letter-spacing:.14em;color:var(--gf-text-body)}
+.eyebrow svg{display:block;width:16px;height:16px;fill:none;stroke:var(--gf-accent);stroke-width:1.4;stroke-linejoin:round}
+.eyebrow circle{fill:var(--gf-accent);stroke:none}
+.title{margin:2px 0 0;font-size:clamp(22px,2.1vw,34px);font-weight:620;line-height:1.16;letter-spacing:-.012em;flex:none;padding-bottom:2px;color:var(--gf-text-title);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.brief{flex:none;margin:0;font-size:clamp(12.5px,.9vw,15px);line-height:1.45;color:var(--gf-text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.brief[data-empty]{color:var(--gf-text-quiet);font-style:italic}
+/* the status / context row: recorded status, one recorded timestamp, Explore details */
+.status{flex:none;display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;background:linear-gradient(120deg,var(--gf-raised-a),var(--gf-raised-b));box-shadow:inset 0 0 0 1px var(--gf-raised-edge),inset 0 1px 0 var(--gf-gloss)}
+.pill{flex:none;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:480;white-space:nowrap;color:#e3f6f1;background:linear-gradient(180deg,#1b4745d8,#143a39da);box-shadow:inset 0 0 0 1px #4fc4a44d}
+.pill i{display:block;width:9px;height:9px;border-radius:50%;background:#35dba8}
+.pill[data-tone="live"] i{background:#7fe9ff;box-shadow:0 0 0 3px #7fe9ff22}
+.pill[data-tone="running"] i{background:transparent;box-shadow:inset 0 0 0 2px #a8d6e2}
+.pill[data-tone="running"]{color:var(--gf-text);box-shadow:inset 0 0 0 1px #4a8da077}
+.pill[data-tone="error"]{color:#f6e2c0;background:linear-gradient(180deg,#46321bd8,#392715da);box-shadow:inset 0 0 0 1px #a7703e88}
+.pill[data-tone="error"] i{background:#d08a4a;border-radius:2px}
+.pill[data-tone="neutral"]{color:var(--gf-text);box-shadow:inset 0 0 0 1px var(--gf-hairline)}
+.pill[data-tone="neutral"] i{background:var(--gf-text-quiet)}
+.context{flex:1;min-width:0;font-size:11px;line-height:1.35;color:var(--gf-text-body);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.explore{flex:none;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border:0;border-radius:8px;font:inherit;font-size:13px;font-weight:480;white-space:nowrap;cursor:pointer;color:var(--gf-text);
+  background:linear-gradient(180deg,var(--gf-raised-a),var(--gf-raised-b));box-shadow:inset 0 0 0 1px var(--gf-hairline),inset 0 1px 0 var(--gf-gloss);transition:box-shadow .18s,color .18s}
+.explore svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.explore:hover:not([data-open]){color:var(--gf-text-title);box-shadow:inset 0 0 0 1px var(--gf-accent-ring)}
+.explore:focus-visible{outline:2px solid var(--gf-focus);outline-offset:2px}
+.explore[data-open]{cursor:default;color:var(--gf-champagne);box-shadow:inset 0 0 0 1px var(--gf-champagne-ring)}
+@media(prefers-reduced-motion:reduce){.explore{transition:none}}
+
+/* a very short viewport never cuts the body: the panel scrolls its own content; 1366 x 768 tightens the description first */
+.panel{overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+@media(max-height:820px){.brief{-webkit-line-clamp:2}.panel{gap:8px;padding:14px 18px 12px}.title{font-size:21px}}
+
+/* the footer belongs to the NORA chat input (pinned here by globals.css while the panel is mounted): the body never runs underneath it */
+.panel{padding-bottom:76px}

@@ -19,7 +19,7 @@
 .lenses button[aria-pressed=true],.tabs button[aria-selected=true]{color:#d4effa;background:#6aaeca0d;border-radius:5px}.lenses button:hover,.tabs button:hover{color:white}
 .footer{position:absolute;bottom:5%;width:100%;text-align:center;font-size:8px;letter-spacing:.17em;color:#4e6c7f}.footer span{margin:0 12px}
 .inspector{pointer-events:auto;position:absolute;left:calc(100% + 20px);top:-25px;width:300px;background:linear-gradient(135deg,#0b1a27f0,#07111eef);border:1px solid #79b8d52c;border-radius:12px;padding:22px;text-align:left;backdrop-filter:blur(20px);box-shadow:0 20px 55px #0006;animation:resolve .35s ease both;z-index:4;white-space:normal}
-.inspector h2{font-family:Sora,sans-serif;font-size:15px;line-height:1.5;font-weight:500;margin:0 12px 16px 0}.inspector .eyebrow{font-size:8px;margin-bottom:8px}.tabs{display:flex;gap:2px;border-bottom:1px solid #ffffff0c;padding-bottom:8px}.tabs button{font-size:10px;padding:6px 8px}.detail{font-size:11px;line-height:1.9;color:#9ab2c3;min-height:70px;padding-top:14px}.identity{font-size:8px;color:#50748a;overflow-wrap:anywhere;margin-top:14px}.close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:#9ab2c3;font-size:20px;cursor:pointer}
+.inspector h2{font-family:Sora,sans-serif;font-size:15px;line-height:1.5;font-weight:500;margin:0 12px 16px 0}.inspector .eyebrow{font-size:8px;margin-bottom:8px}.tabs{display:flex;gap:2px;border-bottom:1px solid #ffffff0c;padding-bottom:8px}.tabs button{font-size:10px;padding:6px 8px}.detail{font-size:11px;line-height:1.9;color:var(--gf-text-body);min-height:70px;padding-top:14px}.identity{font-size:8px;color:#50748a;overflow-wrap:anywhere;margin-top:14px}.close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:var(--gf-text-body);font-size:20px;cursor:pointer}
 @keyframes resolve{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:900px){.inspector{left:50%;top:100%;transform:translateX(-50%);width:min(300px,80vw);animation:mobileResolve .35s ease both}.title{top:16%}.status{gap:14px;font-size:10px}.lenses{gap:0}.lenses button{font-size:10px;padding:8px}.map{top:39%}.inspector .detail{min-height:45px}.footer{bottom:4%}}
 @keyframes mobileResolve{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
@@ -27,35 +27,17 @@
 .dissolving{opacity:0;transition:opacity .18s ease;animation:none;pointer-events:none}
 .map{z-index:2}.lenses{z-index:1}.inspector{max-height:40vh;overflow-y:auto}
 @media(prefers-reduced-motion:reduce){.dissolving{transition:none}}
-.missionAnchor{position:absolute;top:45%;transform:translate(-50%,-50%);animation:mobileResolve .3s ease both}
-.missionNode{white-space:normal;max-width:210px;min-width:140px;line-height:1.6;text-align:center}
-.missionInspector{position:fixed;left:50%;top:100%;transform:translateX(-50%);width:300px;max-height:min(44vh,380px);animation:mobileResolve .35s ease both}
-.deepInspection{width:min(420px,84vw)}
-.inspectionAction{pointer-events:auto;font:inherit;font-size:10px;border:1px solid #79b8d52c;border-radius:5px;background:#6aaeca0d;color:#d4effa;padding:6px 10px;cursor:pointer;display:inline-block;margin:8px 0}
-.inspectionControls{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ffffff0c;padding-bottom:8px}
-.inspectionControls select{font:inherit;font-size:11px;border:1px solid #79b8d52c;border-radius:5px;background:#0b1a27;color:#d4effa;padding:6px;max-width:65%}
-.missionContent{overflow-wrap:anywhere;white-space:pre-wrap;animation:mobileResolve .2s ease both}.missionContent p{margin:0 0 14px}.missionContent a{color:#b5d7e9;text-decoration:underline;text-underline-offset:3px}
-.missionPaging{pointer-events:auto;position:absolute;left:50%;bottom:0;transform:translateX(-50%);display:flex;align-items:center;gap:15px;font-size:10px;color:#7891a3}.missionPaging button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.missionPaging button:disabled{opacity:.35;cursor:default}
 .lensResolve{animation:mobileResolve .25s ease both}
-@media(min-width:901px){.missionInspector{left:50%;top:100%;transform:translateX(-50%)}}
-@media(max-width:600px){.missionAnchor .missionNode{max-width:130px;min-width:90px;font-size:10px}.missionInspector{width:min(300px,80vw)}}
-@media(prefers-reduced-motion:reduce){.missionAnchor,.missionInspector,.missionContent,.lensResolve{animation:none}}
-.missionControls{pointer-events:auto;position:absolute;left:50%;bottom:7.4%;transform:translateX(-50%);z-index:5}.missionControls>.inspectionAction{border:0;background:transparent;margin:0;color:#7891a3;font-size:9px}
-.controlSurface{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:min(360px,88vw);max-height:48vh;overflow-y:auto;background:#0b1a27f5;border:1px solid #79b8d52c;border-radius:12px;padding:22px;backdrop-filter:blur(20px)}
-.missionHistory{display:flex;flex-direction:column;gap:10px;max-height:25vh;overflow:auto}.missionHistory button{font:inherit;font-size:11px;text-align:left;color:#d4effa;border:0;background:transparent;padding:7px;cursor:pointer}.missionHistory small{display:block;color:#7891a3;margin-top:4px;font-size:9px}.controlSurface textarea{width:100%;border:1px solid #79b8d52c;border-radius:6px;background:#07111e;color:#d4effa;font:inherit;font-size:11px;padding:10px;resize:vertical}.missionContent summary{cursor:pointer;color:#b5d7e9;margin-bottom:10px}.inspectionAction:disabled{opacity:.4;cursor:default}
-.actionInput{width:100%;border:1px solid #79b8d52c;background:#07111e;color:#d4effa;font:inherit;font-size:11px;padding:8px;border-radius:6px}.missionInspector .detail{min-height:0}.missionInspector{max-height:min(44vh,380px)}
-@media(min-width:901px){.missionInspector{position:absolute;left:calc(100% + 20px);top:-25px;transform:none}} @media(max-width:900px){.missionInspector{max-height:min(27vh,260px)}.missionAnchor:has(.missionInspector){top:30%}}
-.historyTimeline{border-left:1px solid #79b8d52c;padding-left:12px}.tabs button[aria-pressed=true]{color:#d4effa;background:#6aaeca0d;border-radius:5px}
+@media(prefers-reduced-motion:reduce){.lensResolve{animation:none}}.tabs button[aria-pressed=true]{color:#d4effa;background:#6aaeca0d;border-radius:5px}
 /* Stable Dive lens instrument; inspection stays above its reserved space. */
 .shell{--dive-rail-bottom:clamp(24px,4.5vh,44px)}
 .lenses{bottom:var(--dive-rail-bottom);gap:3px;padding:5px;max-width:calc(100% - 32px);border:1px solid #81b8d214;border-radius:12px;background:linear-gradient(135deg,#0b1928b8,#07111bc7);backdrop-filter:blur(16px);box-shadow:0 8px 24px #0002;z-index:6;scrollbar-width:none}
 .lenses::-webkit-scrollbar{display:none}.lenses button{flex-shrink:0;padding:8px 11px;white-space:nowrap}.lenses button[aria-pressed=true]{color:#bfe8f6;background:#65b9d515;border-radius:7px}.lenses button:focus-visible{outline:1px solid #7ebbd860;outline-offset:-1px;border-radius:7px}
-.inspector,.missionInspector{max-height:min(38vh,300px)}
-.missionControls{bottom:calc(var(--dive-rail-bottom) + 54px)}
+.inspector{max-height:min(38vh,300px)}
 .lensResponse{pointer-events:auto;position:absolute;left:50%;bottom:calc(var(--dive-rail-bottom) + 68px);transform:translateX(-50%);width:min(330px,calc(100% - 48px));padding:15px 28px 15px 18px;background:#0b192888;border:1px solid #81b8d214;border-radius:10px;backdrop-filter:blur(12px);text-align:left;animation:mobileResolve .25s ease both;z-index:3}.lensResponse h2{font-family:Sora,sans-serif;font-size:12px;font-weight:500;color:#bdd5e4;margin:0 0 7px}.lensResponse p{font-size:11px;line-height:1.7;color:#7893a6;margin:0}.lensResponse .close{font-size:16px;right:8px;top:6px}
-@media(max-width:900px){.shell{--dive-rail-bottom:104px}.lenses{gap:0}.lenses button{font-size:10px;padding:8px}.inspector,.missionInspector{max-height:min(24vh,200px)}.anchor:has(.inspector),.missionAnchor:has(.missionInspector){top:20%}}
+@media(max-width:900px){.shell{--dive-rail-bottom:104px}.lenses{gap:0}.lenses button{font-size:10px;padding:8px}.inspector{max-height:min(24vh,200px)}.anchor:has(.inspector){top:20%}}
 @media(prefers-reduced-motion:reduce){.lensResponse{animation:none}}
-@media(max-width:900px){.missionControls{bottom:86px}}
+
 /* Inside the CORE: native surfaces at the periphery, quiet central space. */
 .shell{animation:none}
 .interior{position:absolute;inset:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 50% 60%,#061522 0%,#030b13 48%,#02070e 90%);animation:interiorReveal 1.8s ease both}
@@ -180,15 +162,11 @@
 /* Keep Overview content in flow: browser chrome and wrapped counters must not
    move the CORE into the title or the fixed command/navigation controls. */
 @media(max-width:900px){
- .shell[data-lens="Overview"]{display:flex;flex-direction:column;gap:24px;min-height:0;top:80px;height:calc(100dvh - 308px);bottom:auto;padding:26px 18px 24px;overflow-y:auto;overflow-x:hidden;pointer-events:auto;overscroll-behavior-y:contain;}
+ .shell[data-lens="Overview"]{display:flex;flex-direction:column;gap:24px;min-height:0;top:80px;height:calc(100dvh - 240px);bottom:auto;padding:26px 18px 24px;overflow-y:auto;overflow-x:hidden;pointer-events:auto;overscroll-behavior-y:contain;}
  .shell[data-lens="Overview"] .title{position:relative;inset:auto;order:1;width:100%;}
  .shell[data-lens="Overview"] .stateSpine{align-items:stretch;}
  .shell[data-lens="Overview"] .stateSpine button{justify-content:space-between;}
 }
-
-/* Foundation pass: the Mission controls entry sat under the NORA dock on desktop (dock top edge is 164px from the
-   bottom), so mission creation was unreachable. Lift it just above the dock. Pre-existing layout defect. */
-@media(min-width:901px){.missionControls{bottom:176px}}
 
 /* Lens rail: reference treatment (thin cyan edge, dark glass, bright-but-restrained active tab). Glyphs are GrowForge's own. */
 .lenses{gap:4px;padding:6px;border-radius:20px;border:1px solid #4a8fb238;background:linear-gradient(160deg,#0a2438b8,#030f1ccf);backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 #96d7f012,0 14px 36px #00000052}
@@ -209,12 +187,12 @@
 .lenses button[aria-pressed=true]{background:linear-gradient(180deg,#a8d4e826,#a8d4e80c);box-shadow:inset 0 1px 0 #eaf6ff33,inset 0 0 0 1px #a9cde12e}
 :global(body:has([data-dive-overview]):not(:has([data-systems-surface]))) :global(.studio-command-dock){background:linear-gradient(180deg,#ffffff09 0,transparent 50%),linear-gradient(180deg,#09131acc,#02060af2)!important;border-color:#9cc6dc26!important;box-shadow:inset 0 1px 0 #eaf6ff2a,inset 0 0 0 1px #0000004d,0 26px 40px -20px #000f!important}
 
-/* ---- Phase 8: Overview lens rail only (scoped to the Overview lens; other lenses keep the shared rail). The approved black-glass
+/* ---- Phase 8 (generalized after review): the Overview lens rail's black glass is now THE Dive lens rail on every lens: one size, one position, one material. The approved black-glass
    family, quieter than the composer. Behaviour, order and glyphs untouched. ---- */
-.shell[data-lens="Overview"] .lenses.lenses{padding:3px;gap:1px;border:0;border-radius:999px;backdrop-filter:blur(14px) saturate(1.05);
+.shell[data-lens] .lenses.lenses{padding:3px;gap:1px;border:0;border-radius:999px;backdrop-filter:blur(14px) saturate(1.05);
   background:linear-gradient(180deg,#ffffff06 0,transparent 14px),radial-gradient(ellipse 80% 140% at 50% 55%,#010305f6 0%,#020407f2 60%,#06101aec 100%);
   box-shadow:inset 0 0 0 2px #ffffff03,inset 0 0 7px #000000a8,inset 0 6px 9px -7px #d6f2ff30,inset 0 0 10px -5px #8fd4ee18,0 0 0 1px #0000009a,0 -1px 9px -6px #9fe0f830,0 10px 16px -10px #000e,0 26px 38px -22px #000}
-.shell[data-lens="Overview"] .lenses.lenses::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+.shell[data-lens] .lenses.lenses::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
   background:
     radial-gradient(22px 24px at 0 50%,#9fdcf02c,transparent 100%),
     radial-gradient(22px 24px at 100% 50%,#9fdcf02c,transparent 100%),
@@ -222,23 +200,58 @@
     linear-gradient(90deg,transparent 40%,#8fc4dc18 60%,transparent 90%) bottom/100% 1px no-repeat,
     linear-gradient(#8fb4c80a,#8fb4c80a);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
-.shell[data-lens="Overview"] .lenses.lenses button{padding:6px 12px;gap:7px;border-radius:999px;color:#6d8797;font-size:11.5px;letter-spacing:.01em;background:transparent;box-shadow:none;transition:color 160ms ease,background 160ms ease,box-shadow 160ms ease}
-.shell[data-lens="Overview"] .lenses.lenses button svg{opacity:.72}
-.shell[data-lens="Overview"] .lenses.lenses button:hover{color:#cfe2ec;background:#a8d4e80a}
-.shell[data-lens="Overview"] .lenses.lenses button:hover svg{opacity:.95}
-.shell[data-lens="Overview"] .lenses.lenses button:focus-visible{outline:0;color:#e3f1f8;box-shadow:inset 0 0 0 1px #7fdcf255}
-.shell[data-lens="Overview"] .lenses.lenses button[aria-pressed=true]{color:#e6f3f9;background:linear-gradient(180deg,#a8d4e820,#a8d4e808);box-shadow:inset 0 0 0 1px #a9cde124,inset 0 1px 0 #eaf6ff30,0 0 10px -6px #7fdcf24d}
-.shell[data-lens="Overview"] .lenses.lenses button[aria-pressed=true] svg{opacity:1;color:#bdeaf7}
-@media(prefers-reduced-motion:reduce){.shell[data-lens="Overview"] .lenses.lenses button{transition:none}}
+.shell[data-lens] .lenses.lenses button{padding:6px 12px;gap:7px;border-radius:999px;color:#6d8797;font-size:11.5px;letter-spacing:.01em;background:transparent;box-shadow:none;transition:color 160ms ease,background 160ms ease,box-shadow 160ms ease}
+.shell[data-lens] .lenses.lenses button svg{opacity:.72}
+.shell[data-lens] .lenses.lenses button:hover{color:#cfe2ec;background:#a8d4e80a}
+.shell[data-lens] .lenses.lenses button:hover svg{opacity:.95}
+.shell[data-lens] .lenses.lenses button:focus-visible{outline:0;color:#e3f1f8;box-shadow:inset 0 0 0 1px #7fdcf255}
+.shell[data-lens] .lenses.lenses button[aria-pressed=true]{color:#e6f3f9;background:linear-gradient(180deg,#a8d4e820,#a8d4e808);box-shadow:inset 0 0 0 1px #a9cde124,inset 0 1px 0 #eaf6ff30,0 0 10px -6px #7fdcf24d}
+.shell[data-lens] .lenses.lenses button[aria-pressed=true] svg{opacity:1;color:#bdeaf7}
+@media(prefers-reduced-motion:reduce){.shell[data-lens] .lenses.lenses button{transition:none}}
 
 /* Phase 10: lift the Overview rail 9px (desktop) so the composer-to-rail gap matches the Brief-to-composer gap. */
-@media(min-width:901px){.shell[data-lens="Overview"] .lenses.lenses{bottom:49px}}
+@media(min-width:901px){.shell[data-lens] .lenses.lenses{bottom:49px}}
 
 /* Phase 12: dynamic specular on the rail rim (top edge, slow, irregular; reduced motion off). */
 @keyframes gfRailX{0%,50%{--gx:-30}100%{--gx:130}}
-.shell[data-lens="Overview"] .lenses.lenses::before{ background:linear-gradient(90deg,transparent,#f2fcffd0 50%,transparent) calc(var(--gx) * 1%) top / 24% 1.5px no-repeat, radial-gradient(22px 24px at 0 50%,#9fdcf02c,transparent 100%),
+.shell[data-lens] .lenses.lenses::before{ background:linear-gradient(90deg,transparent,#f2fcffd0 50%,transparent) calc(var(--gx) * 1%) top / 24% 1.5px no-repeat, radial-gradient(22px 24px at 0 50%,#9fdcf02c,transparent 100%),
     radial-gradient(22px 24px at 100% 50%,#9fdcf02c,transparent 100%),
     linear-gradient(90deg,transparent 8%,#bfeafa48 32%,#eaf9ffb0 52%,#bfeafa48 72%,transparent 92%) top/100% 1px no-repeat,
     linear-gradient(90deg,transparent 40%,#8fc4dc18 60%,transparent 90%) bottom/100% 1px no-repeat,
     linear-gradient(#8fb4c80a,#8fb4c80a); animation:gfRailX 33s ease-in-out -16s infinite; }
-@media (prefers-reduced-motion: reduce){ .shell[data-lens="Overview"] .lenses.lenses::before{ animation:none; } }
+@media (prefers-reduced-motion: reduce){ .shell[data-lens] .lenses.lenses::before{ animation:none; } }
+
+/* ---- Phase 11: one persistent Dive environment ---- */
+/* The Missions layer is the deeper lens over the shared atmosphere + NORA. It fades in with the Overview layer dissolving, and lingers (inert) while that layer returns. */
+.missionLayer{position:absolute;inset:0;pointer-events:none;animation:layerIn .55s ease backwards;animation-delay:.16s;transition:opacity .38s cubic-bezier(.4,0,.6,1)}
+.missionLayer[data-leaving]{opacity:0!important}
+@keyframes layerIn{from{opacity:0}to{opacity:1}}
+/* lens click acknowledgement: a brief local cyan response on the rail item that just became active */
+.lenses button[aria-pressed=true]{animation:railAck .7s ease-out}
+@keyframes railAck{0%{box-shadow:0 0 0 0 #7fe3f200,inset 0 0 0 1px #7fe3f200}28%{box-shadow:0 0 14px -2px #7fe3f26b,inset 0 0 0 1px #7fe3f26e}100%{box-shadow:0 0 0 0 #7fe3f200,inset 0 0 0 1px #7fe3f200}}
+@media(prefers-reduced-motion:reduce){.missionLayer{animation:none;transition-duration:.12s}.lenses button[aria-pressed=true]{animation:none}}
+
+/* Phase 13 refinement: Missions on a phone. One compact lens rail (44px, 40px targets, horizontally scrollable, the active lens kept in view). Phones only; the rail is shared by every Dive lens. */
+@media(max-width:900px){
+ .shell[data-lens]{--dive-rail-bottom:56px}
+ .shell[data-lens] .lenses{top:auto;bottom:56px;min-height:0;padding:2px;gap:2px;width:calc(100% - 24px);max-width:700px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+ .shell[data-lens] .lenses button{min-height:40px;padding:0 14px;font-size:11px;scroll-snap-align:center}
+}
+
+/* Same move for the wide flow (901-1365 wide, or a short desktop window): the control leaves the strip above the composer, where it touched the Steps column, for the header row. The 1366x820+ graph keeps it where it was. */
+
+
+
+
+/* Phase 14 note: the Missions-only rail reflection was removed; the generalized rail above carries the one slow top-edge reflection on every lens. */
+
+
+/* Phase 14 fix: Missions -> Overview was a cut, not a fade. A higher-specificity shell rule ([data-dive-journey] .shell > :not(.interior...) { opacity: var(--dive-content-opacity, 1) })
+   overrode the leaving state, so the Mission layer held at opacity 1 and vanished when it unmounted. The leaving opacity now wins, so the layer fades (.38s) while the Overview layer returns. */
+/* and the lens rail no longer snaps between its Missions and Overview glass: padding, border and shadow ease over the same window. */
+.lenses{transition:padding .32s ease,border-width .32s ease,border-color .32s ease,box-shadow .32s ease}
+@media(prefers-reduced-motion:reduce){.lenses{transition:none}}
+
+
+/* with the Missions Intelligence panel mounted the lens rail centres in the space left of it */
+:global(html[data-intel-inset]) .lenses{left:calc((100vw - var(--intel-inset, 0px)) / 2);max-width:calc(100vw - var(--intel-inset, 0px) - 140px)}

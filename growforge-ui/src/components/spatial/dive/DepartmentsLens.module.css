@@ -337,3 +337,22 @@
 
 /* Foundation pass (2026-10-05): shared Dive edge, radius and depth. Fill and layout untouched. */
 .inspector{border-color:var(--dive-card-edge,#81b8d238);border-radius:var(--dive-card-radius,14px);box-shadow:var(--dive-card-shadow,none)}
+
+/* Phase 15A: on a phone the header's height changes with its wrapped purpose / metrics / NORA scope rows, so the field starts below the real
+   header (published by useLensContentStart) instead of at a viewport percentage. The list also ends above the composer (top = viewport - 148px). */
+@media (max-width: 600px) {
+  .field {
+    top: calc(var(--lens-content-start, 25%) + 20px);
+    bottom: 156px;
+    display: flex;
+    flex-direction: column;
+  }
+  /* The shorter region scrolls the department list; the Oversight group stays pinned in view above the composer. */
+  .departments {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+  .oversight {
+    flex: none;
+  }
+}

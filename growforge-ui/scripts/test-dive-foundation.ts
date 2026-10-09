@@ -106,7 +106,9 @@ assert.ok(overview.includes("<FinanceLens") && overview.includes("<DiveScopeProv
 const header = read("../src/components/spatial/dive/LensHeader.tsx");
 assert.ok(header.includes("data-lens-id") && header.includes("data-nora-scope") && header.includes("data-entity-id"));
 assert.ok(/metric\.value \?\? "(?:—|\\u2014)"/.test(header), "unknown metrics render as an em dash, never a zero");
-for (const lens of ["MissionLens", "DepartmentsLens", "AgentsLens", "WorkflowsLens", "ContextLens", "ToolsLens", "IntelligenceLens", "FinanceLens"]) {
+// Missions is the Worktree (its own contextual header carries the Context Thread NORA reads); the other eight lenses share LensHeader.
+{ const missions = read("../src/components/spatial/dive/MissionLens.tsx"); assert.ok(missions.includes("<MissionsIndexHeader") && missions.includes("<MissionWorktreeLens"), "MissionLens is the Worktree + its index header"); }
+for (const lens of ["DepartmentsLens", "AgentsLens", "WorkflowsLens", "ContextLens", "ToolsLens", "IntelligenceLens", "FinanceLens"]) {
   assert.ok(read(`../src/components/spatial/dive/${lens}.tsx`).includes("<LensHeader"), `${lens} uses the shared LensHeader`);
 }
 const core = read("../src/components/spatial/CoreCommandCenter.tsx");

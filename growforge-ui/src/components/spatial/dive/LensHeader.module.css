@@ -20,3 +20,42 @@
 @media(max-width:900px){.header{top:clamp(84px,12%,120px);left:4%;right:4%}.purpose{font-size:11px;margin-top:6px}.meta{margin-top:9px;gap:6px 12px}.metrics{font-size:10px;gap:3px 11px}}
 @media(max-width:480px){.eyebrow{margin-bottom:5px}.purpose{max-width:300px}.scope{padding:4px 11px}.scope strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.scope{transition:none}}
+
+/* Phase 10: a scope that reaches a department/step/inspection (detail depth) needs more room than an entity-only scope. */
+.scope[data-scope-depth="detail"]{max-width:min(100%,680px)}
+
+/* Phase 11: when a lens materialises into the shared environment its header resolves last. */
+.header[data-entrance]{animation:headerResolve .5s ease backwards;animation-delay:.4s}
+@keyframes headerResolve{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.header[data-entrance]{animation:none}}
+
+/* Phase 12: where the lens is a workspace (Missions) the heading steps back: higher, smaller, dimmer, so the field / nucleus is the hero and nothing under it is crowded. */
+.header[data-quiet]{top:clamp(78px,11.6%,128px)}
+.header[data-quiet] .eyebrow{margin-bottom:5px;color:#587a8c}
+.header[data-quiet] h1{font-size:clamp(19px,1.55vw,24px);font-weight:400;letter-spacing:.17em;color:#c6dae5}
+.header[data-quiet] .purpose{margin-top:6px;font-size:11px;color:#657f90}
+.header[data-quiet] .meta{margin-top:9px;gap:6px 16px}
+.header[data-quiet] .metrics{font-size:10.5px;color:#6f8899}
+.header[data-quiet] .metrics strong{color:#bcd3df}
+
+/* Phase 13: on a phone the generic purpose line is what the vertical budget can least afford; the counts, scope and everything recorded stay. */
+@media(max-width:600px){.header[data-quiet] .purpose{display:none}}
+
+/* Phase 13: the meta row is a shrink-to-content flex item, so the scope chip's own max-width (a percentage) had nothing to resolve against and a department/step scope ran off a phone screen. */
+.meta{max-width:100%}
+.scope{min-width:0}
+
+/* Phase 13 refinement: the compact scope is what a phone SEES; the full address stays in the DOM as the accessible text. */
+.scope strong[data-scope-compact]{display:none}
+@media(max-width:600px){
+  .scope strong[data-scope-full]{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .scope strong[data-scope-compact]{display:block}
+  .header[data-quiet]{top:92px}
+  .header[data-quiet] .eyebrow{display:none}
+  .header[data-quiet] h1{display:flex;align-items:center;justify-content:center;height:44px;font-size:17px;letter-spacing:.2em}
+  .header[data-quiet] .meta{margin-top:3px;gap:4px 12px}
+  .header[data-quiet] .metrics{font-size:10px}
+  .scope{padding:3px 11px}
+}
+
+@media(max-width:400px){.header[data-quiet] h1{font-size:16px;letter-spacing:.12em}}

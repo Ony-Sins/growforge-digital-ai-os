@@ -1,0 +1,115 @@
+/* Workspace shell (C8 / S1 -> S2.2B). Surfaces, hierarchy, tokens. As of S2.2B EVERY material value here comes from the canonical GrowForge glass tokens (`--gf-*`, declared on :root in globals.css with values extracted from the Overview lens's
+   own panel material), so the workspace, its morph surface and the Missions Intelligence Panel are one material: almost-black smoked graphite, a glossy upper edge, a cold hairline, one corner specular, a faint glow on the edge that faces the scene,
+   and a deep separation shadow. The `--ws-*` names below are the shell's own contract (workspaceTokens.ts); they only alias gf tokens. Large overlays use the `wide` alpha set (same hues, lower alpha) so the recessed lens still reads through.
+   Background diffusion (backdrop-filter) exists ONLY on `.backdrop`; the workspace body itself is never blurred. */
+.backdrop{--ws-scrim:var(--gf-scrim);--ws-diffusion:10px;position:fixed;inset:0;z-index:20;pointer-events:auto;background:var(--ws-scrim);-webkit-backdrop-filter:blur(var(--ws-diffusion));backdrop-filter:blur(var(--ws-diffusion));animation:wsFade .2s ease-out both}
+.backdrop[data-closing]{animation:wsFadeOut .18s ease-in both;pointer-events:none}
+.root,.morph{
+  /* what the shared content styles (WorkbenchReading / AnalyticsInstrument) read inside the glass */
+  --wb-plane-primary:var(--gf-raised-a);--wb-plane-detail:var(--gf-recess);--wb-hover:var(--gf-raised-hover);--wb-recess:var(--gf-recess);
+  /* glass body */
+  --ws-surface-a:var(--gf-glass-wide-a);--ws-glass-mid:var(--gf-glass-wide-b);--ws-surface-b:var(--gf-glass-wide-c);
+  --ws-canvas:var(--gf-env-deep);--ws-plane-primary:var(--gf-raised-a);--ws-plane-support:var(--gf-glass-wide-b);--ws-plane-detail:var(--gf-recess);
+  /* edges and the optical rim (same family as Overview's silver-white edge light; brightest only at the upper corners) */
+  --ws-rule:var(--gf-rule);--ws-edge:var(--gf-hairline);--ws-rim:#9cc6dc66;--ws-rim-soft:#9cc6dc33;--ws-rim-mid:var(--gf-edge-line);--ws-rim-bright:#e1f5ffb3;--ws-rim-inner:#cfefff38;--ws-rim-fall:#cfefff2e;
+  --ws-seam:var(--gf-text-title);--ws-active:var(--gf-champagne);--ws-text:var(--gf-text);--ws-text-quiet:var(--gf-text-quiet);--ws-gap:16px;--ws-radius:16px;--ws-radius-inner:12px;
+  /* the what-if region is deliberately NOT part of the material: it must read as "not recorded" */
+  --ws-hypo-accent:#b9a6ff;--ws-hypo-tint:#b9a6ff14;
+}
+.root{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;color:var(--ws-text);border-radius:var(--ws-radius);overflow:hidden;
+  background:
+    radial-gradient(ellipse 50% 45% at 0 44%,var(--gf-facing-glow) 0%,transparent 72%),
+    radial-gradient(170px 90px at 0 0,var(--gf-specular),transparent 72%),
+    linear-gradient(180deg,var(--gf-gloss) 0,transparent 44px),
+    linear-gradient(var(--gf-glass-angle),var(--ws-surface-a) 0%,var(--ws-glass-mid) 38%,var(--ws-surface-b) 100%);
+  box-shadow:inset 0 0 0 1px var(--ws-edge),inset 0 1px 0 var(--gf-edge-top),inset 0 42px 38px -32px var(--ws-rim-fall),inset 34px 0 34px -30px var(--gf-specular),inset -30px 0 32px -28px var(--gf-facing-glow),inset 0 -24px 26px -22px var(--gf-facing-glow),var(--gf-shadow);animation:wsIn .22s cubic-bezier(.2,.7,.2,1) both}
+/* The optical perimeter (S2.1B): two masked rings (no border, no filter). The outer one catches light unevenly (brightest at the upper-left corner, strong at the upper-right, faint along the lower corners, a cool even trace between);
+   the inner one, 3px in, is a very faint second reflection near the upper corners that reads as glass thickness. Both follow the rounded corners. */
+.root::before,.root::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;padding:1px;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.root::after{padding:2px;background:
+  linear-gradient(90deg,transparent 3%,var(--ws-rim-bright) 17%,var(--ws-rim-mid) 33%,transparent 52%,var(--ws-rim-mid) 74%,var(--ws-rim-bright) 90%,transparent 98%) top/100% 3px no-repeat,
+  radial-gradient(340px 240px at 0 0,var(--ws-rim-bright),var(--ws-rim-mid) 20%,transparent 70%),
+  radial-gradient(300px 210px at 100% 0,var(--ws-rim-bright),var(--ws-rim-mid) 22%,transparent 70%),
+  radial-gradient(240px 170px at 100% 100%,var(--gf-run),transparent 70%),
+  radial-gradient(180px 120px at 0 100%,var(--ws-rim-soft),transparent 70%),
+  linear-gradient(180deg,var(--ws-rim),var(--ws-rim-soft) 36%,var(--ws-rim-soft) 70%,var(--ws-rim-soft))}
+.root::before{inset:3px;border-radius:calc(var(--ws-radius) - 3px);background:
+  radial-gradient(240px 150px at 0 0,var(--ws-rim-inner),transparent 70%),
+  radial-gradient(190px 120px at 100% 0,var(--gf-specular),transparent 70%)}
+.root[data-geometry="inset"]::before{border-radius:11px}
+.root[data-geometry="full"]::before{display:none}
+/* S2.2A / S2.2B: the shared-surface morph. `.morph` is an empty body of the SAME glass (same tokens, same gradient, same edge and shadow) animated (JS, Web Animations) between the origin's rect and the workspace rect, so there is no colour step
+   as the panel expands or contracts; the root only fades over it (opacity, never a scale: text is never stretched). */
+.morph{position:fixed;z-index:21;box-sizing:border-box;pointer-events:none;left:0;top:0;width:0;height:0;
+  background:
+    radial-gradient(ellipse 50% 45% at 0 44%,var(--gf-facing-glow) 0%,transparent 72%),
+    radial-gradient(170px 90px at 0 0,var(--gf-specular),transparent 72%),
+    linear-gradient(180deg,var(--gf-gloss) 0,transparent 44px),
+    linear-gradient(var(--gf-glass-angle),var(--gf-glass-a) 0%,var(--gf-glass-b) 38%,var(--gf-glass-c) 100%);
+  box-shadow:inset 0 0 0 1px var(--gf-hairline),inset 0 1px 0 var(--gf-edge-top),var(--gf-shadow)}
+.morph[hidden]{display:none}
+.root[data-morph="in"]{animation:wsMorphIn .24s ease-out .1s both}
+.root[data-morph="out"]{animation:wsMorphOut .14s ease-in both}
+.root[data-closing]{animation:wsOut .18s ease-in both}
+.root[data-closing][data-morph="out"]{animation:wsMorphOut .14s ease-in both}
+.root[data-mode="reading"]{background:linear-gradient(var(--gf-glass-angle),var(--gf-glass-b) 0%,var(--gf-glass-c) 40%,var(--gf-glass-c) 100%)}
+.root[data-geometry="full"]{border-radius:0;box-shadow:none;--ws-surface-a:var(--gf-glass-a);--ws-glass-mid:var(--gf-glass-b);--ws-surface-b:var(--gf-glass-c)}
+.root[data-geometry="inset"]{border-radius:14px}
+
+.head{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px 12px 22px;box-shadow:inset 0 -1px 0 var(--ws-rule);background:linear-gradient(180deg,var(--gf-gloss),transparent)}
+.id{min-width:0;flex:1}
+.eyebrow{margin:0;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gf-text-body)}
+/* a title is read in full: it wraps (never an ellipsis, never a single-line clamp) */
+.title{margin:4px 0 0;font-size:clamp(20px,2vw,28px);font-weight:620;line-height:1.2;letter-spacing:-.01em;color:var(--gf-text-title);overflow-wrap:anywhere;outline:none}
+.title:focus-visible{outline:2px solid var(--gf-focus);outline-offset:3px}
+.context{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--ws-text-quiet);overflow-wrap:anywhere}
+.status{margin-top:10px}
+.actions{flex:none;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.action{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:0;border-radius:8px;background:linear-gradient(180deg,var(--gf-raised-a),var(--gf-raised-b));color:var(--gf-text);font:inherit;font-size:12.5px;letter-spacing:.01em;cursor:pointer;box-shadow:inset 0 0 0 1px var(--gf-hairline),inset 0 1px 0 var(--gf-gloss)}
+.action:hover{color:var(--gf-text-title);box-shadow:inset 0 0 0 1px var(--gf-accent-ring),inset 0 1px 0 var(--gf-gloss)}
+.action[aria-pressed="true"]{color:var(--gf-champagne);box-shadow:inset 0 0 0 1px var(--gf-champagne-ring)}
+.action:focus-visible,.tab:focus-visible,.content:focus-visible{outline:2px solid var(--gf-focus);outline-offset:2px}
+
+.body{flex:1;min-height:0;display:flex}
+.rail{flex:none;width:176px;box-sizing:border-box;padding:14px 0 14px 18px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;scrollbar-width:none;position:relative}
+.rail::before{content:"";position:absolute;left:14px;top:14px;bottom:14px;width:1px;background:linear-gradient(180deg,transparent,var(--ws-rim-soft) 10%,var(--ws-rim-soft) 90%,transparent)}
+.tab{position:relative;display:flex;align-items:center;gap:10px;min-height:38px;padding:0 12px 0 0;border:0;background:transparent;color:var(--gf-text-body);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.tab i{flex:none;width:8px;height:1px;background:var(--ws-rim-soft);transition:width .18s ease-out}
+.tab span{min-width:0;overflow-wrap:anywhere;line-height:1.25}
+.tab:hover{color:var(--gf-text-title)}.tab:hover i{width:12px}
+.tab[aria-selected="true"]{color:var(--gf-text-title);font-weight:560}
+.tab[aria-selected="true"] i{width:18px;background:var(--ws-active)}
+/* the information plane: ONE recessed pane inside the glass (a gentle darkening for reading contrast), not a stack of cards */
+.content{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding:18px 22px calc(18px + var(--ws-pad-bottom,0px));background:var(--gf-recess);box-shadow:inset 1px 0 0 var(--ws-rule)}
+.root[data-mode="reading"] .content{background:none;box-shadow:none;padding-left:clamp(22px,6vw,96px);padding-right:clamp(22px,6vw,96px)}
+.root[data-geometry="full"] .rail{width:132px;padding-left:12px}
+
+/* narrow sheets: the rail becomes a horizontal strip so the content gets the width */
+@media(max-width:700px){
+  .body{flex-direction:column}
+  .rail{width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:8px 12px 0;gap:4px}
+  .rail::before{display:none}
+  .tab{min-height:44px;padding:0 14px;flex:none}.tab i{display:none}
+  .tab[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--ws-active)}
+  .content{box-shadow:inset 0 1px 0 var(--ws-rule);padding:16px 16px calc(16px + var(--ws-pad-bottom,0px))}
+  .action{min-height:44px;min-width:44px}
+  .head{padding:12px 12px 10px 16px}
+}
+
+/* the discard confirmation: part of the workspace, never a second window */
+.confirm{position:absolute;left:0;right:0;bottom:var(--ws-pad-bottom,0px);z-index:2;display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 18px;background:linear-gradient(180deg,#2a2112f6,#1f180ff8);box-shadow:inset 0 1px 0 #a7703e88;color:#f6e2c0}
+.confirm p{margin:0;flex:1 1 240px;font-size:13px;line-height:1.4}
+
+/* reserved: what-if / scenario analysis. Visibly NOT a recorded fact: dashed edge, hatched tint, its own accent and a permanent label. */
+.hypothetical{margin-top:22px;padding:14px 16px;border:1px dashed var(--ws-hypo-accent);background:repeating-linear-gradient(135deg,var(--ws-hypo-tint) 0 8px,transparent 8px 16px);border-radius:var(--ws-radius-inner)}
+.hypoLabel{margin:0 0 8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ws-hypo-accent)}
+
+@keyframes wsMorphIn{from{opacity:0}to{opacity:1}}
+@keyframes wsMorphOut{from{opacity:1}to{opacity:0}}
+@keyframes wsFade{from{opacity:0}to{opacity:1}}
+@keyframes wsFadeOut{from{opacity:1}to{opacity:0}}
+@keyframes wsIn{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+@keyframes wsOut{from{opacity:1;translate:0 0}to{opacity:0;translate:0 6px}}
+/* a viewer who asked for less transparency gets the densest glass tone and no diffusion */
+@media(prefers-reduced-transparency:reduce){.backdrop{-webkit-backdrop-filter:none;backdrop-filter:none;--ws-scrim:var(--gf-glass-c)}.root{--ws-surface-a:var(--gf-glass-c);--ws-glass-mid:var(--gf-glass-c);--ws-surface-b:var(--gf-glass-c)}.head,.content{background:var(--gf-glass-c)}}
+@media(prefers-reduced-motion:reduce){.backdrop,.root,.backdrop[data-closing],.root[data-closing],.root[data-morph],.root[data-closing][data-morph]{animation:none}.tab i{transition:none}}

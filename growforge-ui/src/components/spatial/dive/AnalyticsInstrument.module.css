@@ -1,0 +1,92 @@
+/* W7.2 analytics instrument. Hairlines, thin bars, tabular numerals. No cards, no pills, no blur / filter / shadow. Colour = the same cold cyan-white family; amber only for failure. */
+.an{display:flex;flex-direction:column;gap:8px;min-width:0;font-variant-numeric:tabular-nums}
+.headline{display:flex;align-items:baseline;gap:8px;min-width:0}
+.headline b{font-size:22px;font-weight:560;letter-spacing:-.01em;color:#eef9fd;line-height:1}
+.headline b[data-empty]{color:#5f8392}
+.headline span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7fa5b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.comp{display:flex;flex-direction:column;gap:4px;min-width:0}
+.comp small{font-size:10px;color:#7fa5b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{display:flex;gap:2px;height:4px;width:100%}
+.bar i{display:block;min-width:3px;background:#9fc4d03a}
+.bar i[data-s="done"]{background:#75d9c2a8}
+.bar i[data-s="active"]{background:repeating-linear-gradient(90deg,#b4cdd6e6 0 5px,transparent 5px 7px)}
+.bar i[data-s="error"]{background:#e0c080}
+.bar i[data-s="pending"],.bar i[data-s="skipped"]{background:repeating-linear-gradient(90deg,#9fc4d066 0 2px,transparent 2px 4px)}
+
+/* peek: six instruments separated by hairlines */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:1px solid #9fc4d01f}
+.tile{min-width:0;padding:6px 7px 5px 0;margin:0;box-shadow:inset 0 -1px 0 #9fc4d01a;height:56px;box-sizing:border-box;overflow:hidden}
+.tile:not(:nth-child(3n+1)){padding-left:8px;box-shadow:inset 1px 0 0 #9fc4d01a,inset 0 -1px 0 #9fc4d01a}
+.tile dt{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#6d95a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile dd{margin:2px 0 0;font-size:13px;font-weight:540;color:#e6f6fb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile small{display:block;font-size:9.5px;color:#6d95a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile[data-tone="quiet"] dd{color:#7fa5b3;font-weight:480}
+.tile[data-tone="alert"] dd{color:#e8cf94}
+.tile[data-tone="live"] dd{color:#bff3fb}
+.cost{display:flex;gap:12px;margin:0;font-size:10px;color:#7fa5b3;white-space:nowrap;overflow:hidden}
+.cost b{font-weight:520;color:#9fc4d0;margin-right:4px;letter-spacing:.04em;text-transform:uppercase;font-size:9px}
+.cost span{overflow:hidden;text-overflow:ellipsis}
+
+/* full: grouped instrument rows */
+.an[data-variant="full"]{gap:14px}
+.an[data-variant="full"] .headline b{font-size:30px}
+.group h6,.dist h6{margin:0 0 4px;font-size:9.5px;font-weight:540;letter-spacing:.12em;text-transform:uppercase;color:#8fe0ee}
+.group dl{margin:0}
+.row{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:10px;padding:5px 0;border-top:1px solid #9fc4d014;font-size:12px}
+.row dt{color:#7fa5b3;overflow:hidden;text-overflow:ellipsis}
+.row dd{margin:0;color:#e6f6fb;min-width:0;overflow-wrap:anywhere}
+.row dd small{display:block;font-size:10.5px;color:#6d95a4}
+.row[data-tone="quiet"] dd{color:#7fa5b3}
+.row[data-tone="alert"] dd{color:#e8cf94}
+.row[data-tone="live"] dd{color:#bff3fb}
+.dist ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.dist li{display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr) auto;align-items:center;gap:8px;font-size:11.5px;color:#cfe6ee}
+.dist li span,.dist li button{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.dist li button{padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#9fc4d03a;text-underline-offset:3px}
+.dist li button:hover{color:#fff;text-decoration-color:#bff3fb}
+.dist li button:focus-visible{outline:2px solid #bff3fb;outline-offset:2px}
+.dist li i{display:block;height:4px;width:var(--w);background:linear-gradient(90deg,#8fe6f4cc,#8fe6f455)}
+.dist li b{font-weight:500;color:#9fc4d0;font-size:11px}
+.split{display:flex;gap:2px;height:4px}
+.split i{display:block;min-width:3px}
+.split i[data-p="in"]{background:#8fe6f4b0}
+.split i[data-p="out"]{background:#e6fbffd0}
+.splitText{display:block;margin-top:4px;font-size:10.5px;color:#7fa5b3}
+.derive{border-top:1px solid #9fc4d014;padding-top:8px;font-size:11px;color:#7fa5b3}
+.derive summary{cursor:pointer;color:#9fc4d0;letter-spacing:.04em}
+.derive summary:focus-visible{outline:2px solid #bff3fb;outline-offset:2px}
+.derive dl{margin:8px 0 0;display:flex;flex-direction:column;gap:6px}
+.derive dt{color:#cfe6ee;font-size:11px}
+.derive dd{margin:1px 0 0;color:#6d95a4;font-size:10.5px;line-height:1.35}
+
+/* full variant: instrument cells, not a list. A micro-label over a large numeral; wide values take the row. */
+.group h6,.dist h6{display:flex;align-items:center;gap:8px}
+.group h6::after,.dist h6::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#9fc4d038,#0000)}
+.group dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.row{display:block;padding:0 0 0 10px;border:0;border-left:1px solid #9fc4d02e;font-size:12px}
+.row dt{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#6d95a4;white-space:nowrap}
+.row dd{margin:3px 0 0;font-size:16px;font-weight:540;line-height:1.15;color:#eef9fd}
+.row dd small{font-size:10px;font-weight:400;margin-top:2px}
+.row[data-wide]{grid-column:1/-1}
+.row[data-wide] dd{font-size:12.5px;font-weight:480;line-height:1.3}
+.row[data-tone="quiet"] dd{font-size:13px}
+.an[data-variant="full"] .bar{height:6px}
+
+/* C7F: the Overview's one compact summary row: Completion, Elapsed, Steps, API cost (four hairline-separated cells, same material family as the Intelligence panel's key figures) */
+/* C7G.1: the primary recorded-state PLANE (flat, hairlines top and bottom), not a rounded card */
+.summary{margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--wb-plane-primary,#1a3a41b0);box-shadow:inset 0 1px 0 #9ec6cc38,inset 0 -1px 0 #9ec6cc24}
+.sum{min-width:0;padding:10px 12px 9px;display:flex;flex-direction:column;gap:2px;box-shadow:inset 1px 0 0 #9ec6cc1c}
+.sum:first-child{box-shadow:none}
+.sum dt{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#7fa5b3}
+.sum dd{margin:0;font-size:18px;font-weight:600;line-height:1.15;color:#f1fbff;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sum small{font-size:10px;line-height:1.3;color:#8fb0bd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sum[data-tone="quiet"] dd{color:#8fb0bd;font-size:14px;font-weight:540}
+.sum[data-tone="alert"] dd{color:#e8b47a}
+/* the reading field is a container: a narrow plane lays the four cells out 2 x 2 so no value is ever truncated to fit */
+.an[data-variant="full"]{container-type:inline-size}
+@container (max-width:470px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.sum:nth-child(3){box-shadow:none}.sum:nth-child(n+3){box-shadow:inset 0 1px 0 #9ec6cc1c}.sum:nth-child(4){box-shadow:inset 1px 0 0 #9ec6cc1c,inset 0 1px 0 #9ec6cc1c}.sum dd{white-space:normal}}
+
+.derive{margin-top:10px;padding:8px 10px;box-shadow:inset 2px 0 0 #9ec6cc2e}
+.derive summary{cursor:pointer}
+/* C7G.1: a label is never cut to fit: it wraps */
+.row dt{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}

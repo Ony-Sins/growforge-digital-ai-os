@@ -1,0 +1,13 @@
+/* Plan approval action (C1b.1). Same instrument-control language as the Mission controls: a leading tick and text, no pill, no card, no glow. Faults are amber, never pink. */
+.root{margin:0 0 14px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.action{display:inline-flex;align-items:center;min-height:32px;padding:0 12px 0 10px;border:0;border-left:2px solid #8fe0ee;border-radius:0;background:transparent;color:#e3f3f8;font:inherit;font-size:12px;letter-spacing:.01em;cursor:pointer}
+.action:hover:not(:disabled){background:#12313b66;color:#fff}
+.action:disabled{border-left-color:#9fc4d03a;color:#7fa5b3;cursor:default}
+.quiet{display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#7fa5b3;font:inherit;font-size:12px;cursor:pointer}
+.quiet:hover:not(:disabled){color:#e6f6fb}
+.quiet:disabled{opacity:.5;cursor:default}
+.action:focus-visible,.quiet:focus-visible{outline:1px solid #bff3fb;outline-offset:2px}
+.note{margin:0 0 8px;font-size:11px;line-height:16px;color:#7fa5b3}
+.error{margin:8px 0 0;font-size:11px;line-height:16px;color:#e0c080}
+:global([data-phone]) .action,:global([data-phone]) .quiet{min-height:44px}

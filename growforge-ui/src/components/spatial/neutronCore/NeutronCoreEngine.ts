@@ -243,9 +243,12 @@ export class NeutronCoreEngine {
     uShock: { value: 0 }, // strongest active wave (0 = none): drives the surface brightening
     uShocks: { value: [0, 0, 0, 0, 0, 0] }, // each click's own wave, 0..1 progress (0 = free slot)
     uClose: { value: 0 }, // 0 far .. 1 at the closest Explore point: more light, motion and atmosphere
+    uMapReady: { value: 0 }, // 0 until the surface image has decoded, then eases to 1 (see buildStellarSprite)
     uDive: { value: 0 }, // exterior radiance dissolves into the interior during the boundary crossing
   };
   private shockStarts: number[] = [];
+  /** performance.now() when the surface image finished loading; null while it is still streaming in. */
+  private stellarMapLoadedAt: number | null = null;
 
   /** User grabbed the core: turn ONLY the core, about the camera's own axes (a trackball). */
   public dragCore(dxPx: number, dyPx: number, dtMs: number) {
@@ -276,7 +279,9 @@ export class NeutronCoreEngine {
   }
 
   private buildStellarSprite() {
-    const tex = new THREE.TextureLoader().load("/textures/stellar-core-reference-v1.png");
+    // The 2 MB surface image streams in after the first frames. Until it decodes the sphere shows its own procedural
+    // plasma (below) at the same colour/brightness, then crossfades to the image: never an unlit black ball.
+    const tex = new THREE.TextureLoader().load("/textures/stellar-core-reference-v1.png", () => { this.stellarMapLoadedAt = performance.now(); });
     tex.colorSpace = THREE.SRGBColorSpace;
     this.stellarUniforms.uMap.value = tex;
     const U = this.stellarUniforms;
@@ -298,9 +303,16 @@ export class NeutronCoreEngine {
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
       fragmentShader: `
-        uniform sampler2D uMap; uniform float uTime; uniform float uEnergy; uniform float uSpinCharge; uniform float uHover; uniform float uShock; uniform float uShocks[6]; uniform float uClose; uniform float uDive;
+        uniform sampler2D uMap; uniform float uTime; uniform float uEnergy; uniform float uSpinCharge; uniform float uHover; uniform float uShock; uniform float uShocks[6]; uniform float uClose; uniform float uDive; uniform float uMapReady;
         varying vec3 vObj; varying vec3 vViewN;
         ${NOISE}
+        // Baseline surface used before the image is available: deep-blue plasma with bright electric veins.
+        vec3 baseline(vec3 p, float t){
+          float f = fbm(p.xy * 3.2 + p.z * 1.7 + t * 0.05);
+          float g = fbm(p.yz * 7.0 - p.x * 2.0 - t * 0.07);
+          vec3 deep = vec3(0.012, 0.075, 0.30), vein = vec3(0.30, 0.72, 1.0);
+          return mix(deep, vein, smoothstep(0.38, 0.80, f) * (0.35 + 0.65 * g));
+        }
         // centre crop of the image only (the disc spans r<0.405; the rim is never sampled)
         vec3 tap(vec2 p){ return texture2D(uMap, p * 0.27 + 0.5).rgb; }
         void main(){
@@ -314,6 +326,7 @@ export class NeutronCoreEngine {
           p += vec3(w2.x, w2.y, w2.x - w2.y) * 0.05 * uClose;
           vec3 bw = pow(abs(normalize(p)), vec3(10.0)); bw /= (bw.x + bw.y + bw.z);
           vec3 col = tap(p.yz) * bw.x + tap(p.xz) * bw.y + tap(p.xy) * bw.z;
+          col = mix(baseline(p, t), col, uMapReady);
           // restore the photo's deep-blue contrast (blending three taps flattens it toward white)
           // up close, lift the deep blues so the body glows rather than reading as a dark painted ball
           col = pow(col, vec3(mix(1.55, 1.2, uClose))) * (1.3 + 0.45 * uClose);
@@ -613,6 +626,7 @@ export class NeutronCoreEngine {
       const spinEase=1-Math.exp(-Math.min(deltaMs,100)/140);
       this.stellarUniforms.uSpinCharge.value+=(spinTarget-this.stellarUniforms.uSpinCharge.value)*spinEase;
       this.stellarUniforms.uTime.value = reducedMotion ? 0 : elapsedSec;
+      this.stellarUniforms.uMapReady.value = this.stellarMapLoadedAt === null ? 0 : THREE.MathUtils.smoothstep(performance.now() - this.stellarMapLoadedAt, 0, 600);
       this.stellarUniforms.uHover.value += (this.smoothedProximity - this.stellarUniforms.uHover.value) * 0.15;
       // click shockwave progress (1.6 s)
       const nowMs = performance.now();

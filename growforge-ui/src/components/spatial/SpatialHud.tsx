@@ -22,6 +22,8 @@ interface SpatialHudProps {
   /** In the DIVE IN space (highlights the Dive In button, hides the Explore panel). */
   diveActive?: boolean;
   onDiveIn?: () => void;
+  /** CORE's Missions card: opens the canonical Dive Missions lens. */
+  onOpenMissions?: () => void;
   categories: GraphCategory[];
   activeCategories: Set<string>;
   onToggleCategory: (catId: string) => void;
@@ -66,7 +68,7 @@ const NAV = [
 export function SpatialHud({
   currentTier, visualMode, coreZoomProgress = 0, onSelectTier,
   allNodes, selectedNode, onSelectNode, onFocusNode, telemetryData,
-  useGpuCore = true, onListeningChange, onHoverNode, onOpenNode, onHoverNodes, onFitGraph, diveActive = false, onDiveIn,
+  useGpuCore = true, onListeningChange, onHoverNode, onOpenNode, onHoverNodes, onFitGraph, diveActive = false, onDiveIn, onOpenMissions,
 }: SpatialHudProps) {
   const { openSettings, closeSettings, isSettingsOpen } = useAppState();
   const { state: visibility, panels, setPanel, toggleFocus } = useShellVisibility();
@@ -335,7 +337,7 @@ export function SpatialHud({
           zoomProgress={coreZoomProgress}
           conversationView={conversationView}
           onConversationViewChange={setConversationView}
-          onOpenMissions={() => onSelectTier("core")}
+          onOpenMissions={onOpenMissions ?? (() => onSelectTier("core"))}
           onOpenSystems={() => openSettings("connectors")}
           onOpenApprovals={() => setApprovalsOpen((prev) => !prev)}
           conversationOnly={surface !== "core" || isSettingsOpen}

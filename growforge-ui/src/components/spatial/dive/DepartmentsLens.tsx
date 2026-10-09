@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, X } from "lucide-react";
 import type { SpatialGraphData } from "@/lib/spatial/obsidianReader";
 import { departmentRecords, type DepartmentRecord } from "./departmentModel";
 import { LensHeader } from "./LensHeader";
 import { LensState } from "./LensState";
+import { useLensContentStart } from "./useLensContentStart";
 import styles from "./DepartmentsLens.module.css";
 
 export function DepartmentsLens({
@@ -19,6 +20,8 @@ export function DepartmentsLens({
   onInspect: () => void;
   dismissalVersion: number;
 }) {
+  const fieldRef = useRef<HTMLDivElement>(null);
+  useLensContentStart(fieldRef);
   const [graph, setGraph] = useState<SpatialGraphData | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [selection, setSelection] = useState<{ id: string; version: number } | null>(null);
@@ -51,7 +54,7 @@ export function DepartmentsLens({
   return (
     <>
     <LensHeader lensId="lens.departments" metrics={[{ label: "operating departments", value: operating }, { label: "oversight", value: oversightCount }]} />
-    <div className={styles.field} data-departments-lens>
+    <div ref={fieldRef} className={styles.field} data-departments-lens>
       <div className={styles.departments} data-dive-inspector aria-label="Operating departments">
         {records
           .filter((item) => item.taxon.kind === "department")
