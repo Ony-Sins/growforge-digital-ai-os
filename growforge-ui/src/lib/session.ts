@@ -14,6 +14,10 @@ import { isPublicPreviewMode } from "@/lib/previewMode";
  */
 export { isPublicPreviewMode };
 
+export function isExplicitPublicPreview(): boolean {
+  return process.env.PUBLIC_PREVIEW_MODE === "true" || process.env.NEXT_PUBLIC_PREVIEW_MODE === "true";
+}
+
 function publicPreviewSession(): Session {
   return {
     user: { name: "Operator", email: "preview@growforge.local", image: null, role: "employee" },
@@ -28,6 +32,9 @@ function publicPreviewSession(): Session {
  * of client credentials or cookies, guaranteeing no owner escalation is possible.
  */
 export async function getSession(): Promise<Session | null> {
+  if (isExplicitPublicPreview()) {
+    return publicPreviewSession();
+  }
   // Private beta: only a real, re-validated Google session counts. No anonymous preview identity and no
   // development auto-login, so signed-out, uninvited, frozen and deleted users genuinely have no session.
   if (isBetaMode()) {

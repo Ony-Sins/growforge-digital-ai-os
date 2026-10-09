@@ -28,7 +28,9 @@ export default auth((req) => {
   // session is real, and auth.ts re-validates it against the beta store on this very request, so a
   // frozen / revoked / deleted tester arrives with no session at all.
   if (isBetaMode()) {
-    const role = req.auth?.user?.role;
+    const isExplicitPreview = process.env.PUBLIC_PREVIEW_MODE === "true" || process.env.NEXT_PUBLIC_PREVIEW_MODE === "true";
+    if (!isExplicitPreview) {
+      const role = req.auth?.user?.role;
     const isPublic = pathname === "/login" || pathname.startsWith("/api/auth");
     if (isPublic) {
       if (role && pathname === "/login") return NextResponse.redirect(new URL("/", req.nextUrl.origin));
@@ -57,6 +59,7 @@ export default auth((req) => {
       return NextResponse.redirect(new URL("/", req.nextUrl.origin));
     }
     return NextResponse.next();
+    }
   }
 
   // Dev-only bypass, hard-gated to NODE_ENV==="development" (see

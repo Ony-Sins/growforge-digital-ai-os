@@ -1,7 +1,7 @@
 import React from "react";
 import { preload } from "react-dom";
 import { AppStateProvider } from "@/lib/appState";
-import { getSession } from "@/lib/session";
+import { getSession, isExplicitPublicPreview } from "@/lib/session";
 import { isBetaMode } from "@/lib/beta/access";
 import { SpatialCanvasWrapper } from "@/components/spatial/SpatialCanvasWrapper";
 import { JobNotifier } from "@/components/workspace/JobNotifier";
